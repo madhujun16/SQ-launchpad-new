@@ -150,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast.success('Successfully signed in!');
-      navigate('/');
+      navigate('/dashboard');
       return { error: null };
     } catch (error: any) {
       toast.error('An unexpected error occurred');
@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       toast.success('Successfully signed out!');
-      navigate('/auth');
+      navigate('/');
     } catch (error: any) {
       toast.error('An unexpected error occurred');
     }

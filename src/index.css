@@ -8,21 +8,21 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Compass Launchpad Design System - Professional Blue Theme */
+    /* Compass Launchpad Design System - Dark Sage Green Theme */
     --background: 0 0% 100%;
-    --foreground: 210 20% 15%;
+    --foreground: 220 15% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 220 15% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 220 15% 20%;
 
-    /* Primary: Professional Blue inspired by Compass Group */
-    --primary: 210 85% 45%;
+    /* Primary: Dark Sage Green */
+    --primary: 150 25% 35%;
     --primary-foreground: 0 0% 98%;
-    --primary-light: 210 75% 55%;
-    --primary-dark: 210 95% 35%;
+    --primary-light: 150 20% 45%;
+    --primary-dark: 150 30% 25%;
 
     /* Secondary: Light blue tones */
     --secondary: 210 20% 96%;
@@ -75,20 +75,20 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark mode with professional blue accents */
-    --background: 210 25% 8%;
-    --foreground: 210 15% 90%;
+    /* Dark mode with sage green accents */
+    --background: 220 15% 8%;
+    --foreground: 150 10% 90%;
 
-    --card: 210 25% 10%;
-    --card-foreground: 210 15% 90%;
+    --card: 220 15% 10%;
+    --card-foreground: 150 10% 90%;
 
-    --popover: 210 25% 10%;
-    --popover-foreground: 210 15% 90%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 150 10% 90%;
 
-    --primary: 210 85% 55%;
-    --primary-foreground: 210 25% 8%;
-    --primary-light: 210 75% 65%;
-    --primary-dark: 210 95% 45%;
+    --primary: 150 25% 45%;
+    --primary-foreground: 220 15% 8%;
+    --primary-light: 150 20% 55%;
+    --primary-dark: 150 30% 35%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;

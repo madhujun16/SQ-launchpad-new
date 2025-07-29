@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building, Users, Settings, Bell, LogOut, User } from "lucide-react";
 import { useAuth } from '@/components/AuthGuard';
 import { Link, useNavigate } from 'react-router-dom';
-import compassLogo from '@/assets/compass-logo.svg';
+import compassLogo from '@/assets/compass-logo.png';
 import launchpadLogo from '@/assets/launchpad-logo.png';
 import {
   DropdownMenu,
@@ -26,20 +26,19 @@ const Header = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link to="/" className="flex items-center space-x-4">
+            <Link to="/dashboard" className="flex items-center space-x-4">
               <img src={compassLogo} alt="Compass Group" className="h-12" />
               <div className="flex items-center space-x-3">
                 <img src={launchpadLogo} alt="Launchpad" className="h-10 w-10" />
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Launchpad</h1>
-                  <p className="text-sm text-muted-foreground">Site Onboarding Management</p>
                 </div>
               </div>
             </Link>
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
             <a href="#sites" className="text-foreground hover:text-primary transition-colors">
