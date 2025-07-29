@@ -24,17 +24,18 @@ const Header = () => {
   return (
     <header className="bg-background border-b border-border">
       <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between relative">
           <div className="flex items-center space-x-4">
-            <Link to="/dashboard" className="flex items-center space-x-4">
-              <img src={compassLogo} alt="Compass Group" className="h-12" />
-              <div className="flex items-center space-x-3">
-                <img src={launchpadLogo} alt="Launchpad" className="h-10 w-10" />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Launchpad</h1>
-                </div>
+            <Link to="/dashboard" className="flex items-center space-x-3">
+              <img src={launchpadLogo} alt="Launchpad" className="h-10 w-10" />
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Launchpad</h1>
               </div>
             </Link>
+          </div>
+
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            <img src={compassLogo} alt="Compass UK & Ireland" className="h-12" />
           </div>
           
           <nav className="hidden md:flex items-center space-x-6">
