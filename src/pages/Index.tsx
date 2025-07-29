@@ -47,7 +47,7 @@ const Index = () => {
                 Streamline Your Site Onboarding Workflow
               </h1>
               <p className="text-xl mb-8 text-white/90">
-                SmartQ LaunchPad manages the complete lifecycle from site creation to hardware deployment, 
+                Compass Launchpad manages the complete lifecycle from site creation to hardware deployment, 
                 inventory tracking, and system integration across the UK.
               </p>
               <div className="flex space-x-4">
@@ -63,7 +63,7 @@ const Index = () => {
             <div className="relative">
               <img 
                 src={heroImage} 
-                alt="SmartQ LaunchPad Dashboard" 
+                alt="Compass Launchpad Dashboard" 
                 className="rounded-lg shadow-2xl"
               />
             </div>

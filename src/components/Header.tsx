@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Building, Users, Settings, Bell, LogOut, User } from "lucide-react";
 import { useAuth } from '@/components/AuthGuard';
 import { Link, useNavigate } from 'react-router-dom';
+import compassLogo from '@/assets/compass-logo.svg';
+import launchpadLogo from '@/assets/launchpad-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,11 +26,14 @@ const Header = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link to="/" className="flex items-center space-x-2">
-              <Building className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">SmartQ LaunchPad</h1>
-                <p className="text-sm text-muted-foreground">Site Onboarding Management</p>
+            <Link to="/" className="flex items-center space-x-4">
+              <img src={compassLogo} alt="Compass Group" className="h-12" />
+              <div className="flex items-center space-x-3">
+                <img src={launchpadLogo} alt="Launchpad" className="h-10 w-10" />
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Launchpad</h1>
+                  <p className="text-sm text-muted-foreground">Site Onboarding Management</p>
+                </div>
               </div>
             </Link>
           </div>
