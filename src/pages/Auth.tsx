@@ -4,16 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'email' | 'otp'>('email');
-  const { sendOTP, verifyOTP, user } = useAuth();
+  const [emailSent, setEmailSent] = useState(false);
+  const { sendMagicLink, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +20,7 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast.error('Please enter your email address');
@@ -30,28 +28,16 @@ const Auth = () => {
     }
 
     setLoading(true);
-    const { error } = await sendOTP(email);
+    const { error } = await sendMagicLink(email);
     if (!error) {
-      setStep('otp');
+      setEmailSent(true);
     }
-    setLoading(false);
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp) {
-      toast.error('Please enter the OTP code');
-      return;
-    }
-
-    setLoading(true);
-    await verifyOTP(email, otp);
     setLoading(false);
   };
 
   const handleBackToEmail = () => {
-    setStep('email');
-    setOtp('');
+    setEmailSent(false);
+    setEmail('');
   };
 
   return (
@@ -60,15 +46,15 @@ const Auth = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">Compass Launchpad</CardTitle>
           <CardDescription>
-            {step === 'email' 
-              ? 'Enter your email to receive a login code'
-              : 'Enter the code sent to your email'
+            {!emailSent 
+              ? 'Enter your email to receive a magic link'
+              : 'Check your email for the magic link'
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === 'email' ? (
-            <form onSubmit={handleSendOTP} className="space-y-4">
+          {!emailSent ? (
+            <form onSubmit={handleSendMagicLink} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -86,54 +72,32 @@ const Auth = () => {
                 className="w-full" 
                 disabled={loading}
               >
-                {loading ? 'Sending code...' : 'Send Login Code'}
+                {loading ? 'Sending magic link...' : 'Send Magic Link'}
               </Button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOTP} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Login Code</Label>
-                <div className="flex justify-center">
-                  <InputOTP
-                    value={otp}
-                    onChange={(value) => setOtp(value)}
-                    maxLength={6}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Code sent to {email}
+            <div className="space-y-4 text-center">
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">
+                  We've sent a magic link to:
                 </p>
+                <p className="font-medium">{email}</p>
               </div>
               
-              <div className="space-y-2">
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading}
-                >
-                  {loading ? 'Verifying...' : 'Sign In'}
-                </Button>
-                
-                <Button 
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={handleBackToEmail}
-                  disabled={loading}
-                >
-                  Use different email
-                </Button>
-              </div>
-            </form>
+              <p className="text-sm text-muted-foreground">
+                Click the link in your email to sign in. The link will expire in 1 hour.
+              </p>
+              
+              <Button 
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleBackToEmail}
+                disabled={loading}
+              >
+                Use different email
+              </Button>
+            </div>
           )}
           
           <div className="mt-6 text-center text-sm text-muted-foreground">

@@ -10,8 +10,7 @@ interface AuthContextType {
   profile: any | null;
   userRoles: string[];
   loading: boolean;
-  sendOTP: (email: string) => Promise<{ error: any }>;
-  verifyOTP: (email: string, token: string) => Promise<{ error: any }>;
+  sendMagicLink: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   isAdmin: () => boolean;
@@ -111,15 +110,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const sendOTP = async (email: string) => {
+  const sendMagicLink = async (email: string) => {
     try {
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           shouldCreateUser: false, // Only allow existing users
-          data: {
-            otp_type: 'email'
-          }
+          emailRedirectTo: redirectUrl,
         },
       });
 
@@ -128,29 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      toast.success('OTP sent to your email!');
-      return { error: null };
-    } catch (error: any) {
-      toast.error('An unexpected error occurred');
-      return { error };
-    }
-  };
-
-  const verifyOTP = async (email: string, token: string) => {
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return { error };
-      }
-
-      toast.success('Successfully signed in!');
-      navigate('/dashboard');
+      toast.success('Magic link sent to your email! Check your inbox and click the link to sign in.');
       return { error: null };
     } catch (error: any) {
       toast.error('An unexpected error occurred');
@@ -182,8 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     userRoles,
     loading,
-    sendOTP,
-    verifyOTP,
+    sendMagicLink,
     signOut,
     hasRole,
     isAdmin,
