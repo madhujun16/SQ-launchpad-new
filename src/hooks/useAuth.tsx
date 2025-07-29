@@ -112,9 +112,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .from('profiles')
       .select('email')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
-    if (profileError || !existingProfile) {
+    if (profileError) {
+      console.error('Error checking profile:', profileError);
+      return { 
+        error: { 
+          message: "Failed to verify registration. Please try again.",
+          code: "verification_error"
+        } 
+      };
+    }
+
+    if (!existingProfile) {
       return { 
         error: { 
           message: "This email address is not registered in our system. Please contact your administrator to get access.",
