@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import smartqLogo from '@/assets/smartq-logo-transparent.png';
+import smartqLogo from '@/assets/smartq-icon-logo.png';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
