@@ -52,49 +52,25 @@ const Admin = () => {
 
     setLoading(true);
     try {
-      // Create user account with temporary password
-      const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
-      
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password: tempPassword,
-        user_metadata: { full_name: fullName },
-        email_confirm: true
-      });
-
-      if (authError) {
-        toast.error(authError.message);
-        setLoading(false);
-        return;
-      }
-
-      // Update profile with role
+      // Create user profile directly (no auth user needed for OTP)
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
-          role,
+        .insert({ 
+          user_id: crypto.randomUUID(),
+          email,
           full_name: fullName,
+          role,
           invited_by: profile?.user_id,
           invited_at: new Date().toISOString()
-        })
-        .eq('user_id', authData.user.id);
+        });
 
       if (profileError) {
-        toast.error('Failed to update user profile');
+        toast.error('Failed to create user profile');
         setLoading(false);
         return;
       }
 
-      // Send password reset email for user to set their own password
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset`
-      });
-
-      if (resetError) {
-        toast.error('Failed to send invitation email');
-      } else {
-        toast.success(`User created successfully! Invitation email sent to ${email}`);
-      }
+      toast.success(`User created successfully! ${email} can now sign in using OTP`);
 
       // Reset form
       setEmail('');
@@ -136,7 +112,7 @@ const Admin = () => {
             <CardHeader>
               <CardTitle>Create New User</CardTitle>
               <CardDescription>
-                Add a new user to the system. They will receive an invitation email to set their password.
+                Add a new user to the system. They can sign in immediately using email OTP.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -181,7 +157,7 @@ const Admin = () => {
                 </div>
                 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating User...' : 'Create User & Send Invitation'}
+                  {loading ? 'Creating User...' : 'Create User'}
                 </Button>
               </form>
             </CardContent>

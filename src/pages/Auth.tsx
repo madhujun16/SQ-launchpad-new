@@ -10,9 +10,10 @@ import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, resetPassword, user } = useAuth();
+  const [step, setStep] = useState<'email' | 'otp'>('email');
+  const { sendOTP, verifyOTP, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,19 +22,7 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-    await signIn(email, password);
-    setLoading(false);
-  };
-
-  const handlePasswordReset = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast.error('Please enter your email address');
@@ -41,8 +30,28 @@ const Auth = () => {
     }
 
     setLoading(true);
-    await resetPassword(email);
+    const { error } = await sendOTP(email);
+    if (!error) {
+      setStep('otp');
+    }
     setLoading(false);
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) {
+      toast.error('Please enter the OTP code');
+      return;
+    }
+
+    setLoading(true);
+    await verifyOTP(email, otp);
+    setLoading(false);
+  };
+
+  const handleBackToEmail = () => {
+    setStep('email');
+    setOtp('');
   };
 
   return (
@@ -51,76 +60,74 @@ const Auth = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">SmartQ LaunchPad</CardTitle>
           <CardDescription>
-            Sign in to access your workflow dashboard
+            {step === 'email' 
+              ? 'Enter your email to receive a login code'
+              : 'Enter the code sent to your email'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="reset">Reset Password</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
+          {step === 'email' ? (
+            <form onSubmit={handleSendOTP} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loading}
+              >
+                {loading ? 'Sending code...' : 'Send Login Code'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="otp">Login Code</Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                  required
+                />
+                <p className="text-sm text-muted-foreground">
+                  Code sent to {email}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
                 <Button 
                   type="submit" 
                   className="w-full" 
                   disabled={loading}
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? 'Verifying...' : 'Sign In'}
                 </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="reset">
-              <form onSubmit={handlePasswordReset} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">Email</Label>
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
                 
                 <Button 
-                  type="submit" 
-                  className="w-full" 
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={handleBackToEmail}
                   disabled={loading}
                 >
-                  {loading ? 'Sending...' : 'Send Reset Email'}
+                  Use different email
                 </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+              </div>
+            </form>
+          )}
           
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Contact your administrator if you need an account or have trouble accessing the system.

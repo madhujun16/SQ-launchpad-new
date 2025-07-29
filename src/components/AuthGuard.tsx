@@ -9,9 +9,9 @@ interface AuthContextType {
   session: Session | null;
   profile: any | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  sendOTP: (email: string) => Promise<{ error: any }>;
+  verifyOTP: (email: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -86,11 +86,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const sendOTP = async (email: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
-        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return { error };
+      }
+
+      toast.success('OTP sent to your email!');
+      return { error: null };
+    } catch (error: any) {
+      toast.error('An unexpected error occurred');
+      return { error };
+    }
+  };
+
+  const verifyOTP = async (email: string, token: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
       });
 
       if (error) {
@@ -122,35 +145,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (email: string) => {
-    try {
-      const redirectUrl = `${window.location.origin}/auth/reset`;
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return { error };
-      }
-
-      toast.success('Password reset email sent!');
-      return { error: null };
-    } catch (error: any) {
-      toast.error('An unexpected error occurred');
-      return { error };
-    }
-  };
-
   const value = {
     user,
     session,
     profile,
     loading,
-    signIn,
+    sendOTP,
+    verifyOTP,
     signOut,
-    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
