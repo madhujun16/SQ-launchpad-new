@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Building, Users, Target, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import compassLogo from '@/assets/compass-logo-new.png';
+import smartqLogo from '@/assets/smartq-logo.png';
 const Landing = () => {
   const navigate = useNavigate();
   const handleLoginClick = () => {
@@ -16,9 +16,9 @@ const Landing = () => {
             <div className="flex items-center space-x-4">
               
               <div className="flex items-center space-x-3">
-                <img src={compassLogo} alt="Compass" className="h-10 w-10" />
+                <img src={smartqLogo} alt="SmartQ Launchpad" className="h-10 w-10" />
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Compass</h1>
+                  <h1 className="text-2xl font-bold text-foreground">SmartQ Launchpad</h1>
                 </div>
               </div>
             </div>
@@ -40,7 +40,7 @@ const Landing = () => {
               <span className="text-primary"> Onboarding</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-              Efficient site onboarding management for Compass Group locations. 
+              Efficient site onboarding management for SmartQ Group locations. 
               Track progress, manage workflows, and ensure successful launches.
             </p>
             
