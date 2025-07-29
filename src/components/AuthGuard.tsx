@@ -116,7 +116,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          shouldCreateUser: false, // Only allow existing users
+          data: {
+            otp_type: 'email'
+          }
         },
       });
 
