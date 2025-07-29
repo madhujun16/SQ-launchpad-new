@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Building, Users, Target, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import compassLogo from '@/assets/compass-logo.png';
 import launchpadLogo from '@/assets/launchpad-logo.png';
 const Landing = () => {
   const navigate = useNavigate();

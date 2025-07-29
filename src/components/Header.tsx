@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building, Users, Settings, Bell, LogOut, User } from "lucide-react";
-import { useAuth } from '@/components/AuthGuard';
+import { Building, Users, Settings, Bell, LogOut, User, Menu, RotateCcw } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
-import compassLogo from '@/assets/compass-logo.png';
 import launchpadLogo from '@/assets/launchpad-logo.png';
 import {
   DropdownMenu,
@@ -14,11 +13,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Header = () => {
-  const { profile, signOut } = useAuth();
+  const { profile, currentRole, availableRoles, switchRole, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleAdminClick = () => {
     navigate('/admin');
+  };
+
+  const handleRoleBasedNavigation = (role: string) => {
+    switch (role) {
+      case 'ops_manager':
+        navigate('/ops-manager');
+        break;
+      case 'deployment_engineer':
+        navigate('/deployment');
+        break;
+      default:
+        navigate('/dashboard');
+    }
+  };
+
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'ops_manager':
+        return 'OPS Manager';
+      case 'deployment_engineer':
+        return 'Deployment Engineer';
+      case 'admin':
+        return 'Admin';
+      default:
+        return 'User';
+    }
   };
 
   return (
@@ -34,9 +59,6 @@ const Header = () => {
             </Link>
           </div>
 
-          <div className="absolute left-1/2 transform -translate-x-1/2">
-            <img src={compassLogo} alt="Compass UK & Ireland" className="h-12" />
-          </div>
           
           <nav className="hidden md:flex items-center space-x-6">
             <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
@@ -72,7 +94,7 @@ const Header = () => {
                       {profile?.full_name || 'User'}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {profile?.role?.replace('_', ' ').toUpperCase() || 'USER'}
+                      {getRoleDisplayName(currentRole || 'user')}
                     </p>
                   </div>
                 </Button>
@@ -83,12 +105,36 @@ const Header = () => {
                   <span>{profile?.email}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {profile?.role === 'admin' && (
+                
+                {/* Role Switching */}
+                {availableRoles.length > 1 && (
+                  <>
+                    {availableRoles.map((role) => (
+                      <DropdownMenuItem 
+                        key={role}
+                        onClick={() => {
+                          switchRole(role);
+                          handleRoleBasedNavigation(role);
+                        }}
+                        className={currentRole === role ? "bg-muted" : ""}
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        <span>Switch to {getRoleDisplayName(role)}</span>
+                        {currentRole === role && <span className="ml-auto text-xs">(Current)</span>}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+
+                {/* Admin Panel */}
+                {availableRoles.includes('admin') && (
                   <DropdownMenuItem onClick={handleAdminClick}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Admin Panel</span>
                   </DropdownMenuItem>
                 )}
+                
                 <DropdownMenuItem onClick={signOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign Out</span>

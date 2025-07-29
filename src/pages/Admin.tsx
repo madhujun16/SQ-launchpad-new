@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/components/AuthGuard';
+import { useAuth } from '@/hooks/useAuth';
+import { UKCitySelect } from '@/components/UKCitySelect';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,14 +13,15 @@ import { toast } from 'sonner';
 import Header from '@/components/Header';
 
 const Admin = () => {
-  const { isAdmin } = useAuth();
+  const { availableRoles, profile } = useAuth();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['user']);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
 
-  const availableRoles = [
+  const roleOptions = [
     { id: 'user', label: 'User' },
     { id: 'ops_manager', label: 'Ops Manager' },
     { id: 'deployment_engineer', label: 'Deployment Engineer' },
@@ -27,10 +29,10 @@ const Admin = () => {
   ];
 
   useEffect(() => {
-    if (isAdmin()) {
+    if (availableRoles?.includes('admin')) {
       fetchUsers();
     }
-  }, [isAdmin]);
+  }, [availableRoles]);
 
   const fetchUsers = async () => {
     try {
@@ -84,6 +86,7 @@ const Admin = () => {
           user_id: userId,
           email,
           full_name: fullName,
+          invited_by: profile?.user_id,
           invited_at: new Date().toISOString()
         });
 
@@ -115,6 +118,7 @@ const Admin = () => {
       // Reset form
       setEmail('');
       setFullName('');
+      setSelectedCity('');
       setSelectedRoles(['user']);
       
       // Refresh users list
@@ -133,7 +137,7 @@ const Admin = () => {
     );
   };
 
-  if (!isAdmin()) {
+  if (!availableRoles?.includes('admin')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card>
@@ -188,11 +192,20 @@ const Admin = () => {
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">UK City</Label>
+                  <UKCitySelect
+                    value={selectedCity}
+                    onValueChange={setSelectedCity}
+                    placeholder="Select a UK city"
+                  />
+                </div>
                 
                 <div className="space-y-2">
                   <Label>Roles</Label>
                   <div className="space-y-2">
-                    {availableRoles.map(role => (
+                    {roleOptions.map(role => (
                       <div key={role.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={role.id}

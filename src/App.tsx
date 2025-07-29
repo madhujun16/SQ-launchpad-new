@@ -8,6 +8,8 @@ import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import OpsManager from "./pages/OpsManager";
+import Deployment from "./pages/Deployment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,16 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute>
                 <Admin />
+              </ProtectedRoute>
+            } />
+            <Route path="/ops-manager" element={
+              <ProtectedRoute>
+                <OpsManager />
+              </ProtectedRoute>
+            } />
+            <Route path="/deployment" element={
+              <ProtectedRoute>
+                <Deployment />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

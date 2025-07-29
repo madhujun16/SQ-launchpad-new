@@ -4,6 +4,7 @@ import DashboardStats from "@/components/DashboardStats";
 import WorkflowCard from "@/components/WorkflowCard";
 import heroImage from "@/assets/hero-image.jpg";
 import { ArrowRight, Target, Users, BarChart3 } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   const recentActivities = [
