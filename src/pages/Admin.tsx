@@ -5,39 +5,62 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 
 const Admin = () => {
-  const { profile } = useAuth();
+  const { isAdmin } = useAuth();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState('user');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(['user']);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
 
+  const availableRoles = [
+    { id: 'user', label: 'User' },
+    { id: 'ops_manager', label: 'Ops Manager' },
+    { id: 'deployment_engineer', label: 'Deployment Engineer' },
+    { id: 'admin', label: 'Admin' }
+  ];
+
   useEffect(() => {
-    if (profile?.role === 'admin') {
+    if (isAdmin()) {
       fetchUsers();
     }
-  }, [profile]);
+  }, [isAdmin]);
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
+      if (profileError) {
         toast.error('Failed to fetch users');
         return;
       }
 
-      setUsers(data || []);
+      // Fetch roles for each user
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) {
+        toast.error('Failed to fetch user roles');
+        return;
+      }
+
+      // Combine profile data with roles
+      const usersWithRoles = profiles?.map(profile => ({
+        ...profile,
+        roles: userRoles?.filter(role => role.user_id === profile.user_id).map(r => r.role) || []
+      })) || [];
+
+      setUsers(usersWithRoles);
     } catch (error) {
       toast.error('An error occurred while fetching users');
     }
@@ -45,22 +68,22 @@ const Admin = () => {
 
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !fullName) {
-      toast.error('Please fill in all fields');
+    if (!email || !fullName || selectedRoles.length === 0) {
+      toast.error('Please fill in all fields and select at least one role');
       return;
     }
 
     setLoading(true);
     try {
-      // Create user profile directly (no auth user needed for OTP)
+      const userId = crypto.randomUUID();
+      
+      // Create user profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({ 
-          user_id: crypto.randomUUID(),
+          user_id: userId,
           email,
           full_name: fullName,
-          role,
-          invited_by: profile?.user_id,
           invited_at: new Date().toISOString()
         });
 
@@ -70,12 +93,29 @@ const Admin = () => {
         return;
       }
 
+      // Create user roles
+      const roleInserts = selectedRoles.map(role => ({
+        user_id: userId,
+        role: role as 'user' | 'ops_manager' | 'deployment_engineer' | 'admin',
+        assigned_at: new Date().toISOString()
+      }));
+
+      const { error: rolesError } = await supabase
+        .from('user_roles')
+        .insert(roleInserts);
+
+      if (rolesError) {
+        toast.error('Failed to assign user roles');
+        setLoading(false);
+        return;
+      }
+
       toast.success(`User created successfully! ${email} can now sign in using OTP`);
 
       // Reset form
       setEmail('');
       setFullName('');
-      setRole('user');
+      setSelectedRoles(['user']);
       
       // Refresh users list
       fetchUsers();
@@ -85,7 +125,15 @@ const Admin = () => {
     setLoading(false);
   };
 
-  if (profile?.role !== 'admin') {
+  const handleRoleToggle = (roleId: string) => {
+    setSelectedRoles(prev => 
+      prev.includes(roleId) 
+        ? prev.filter(role => role !== roleId)
+        : [...prev, roleId]
+    );
+  };
+
+  if (!isAdmin()) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card>
@@ -142,18 +190,21 @@ const Admin = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="ops_manager">Ops Manager</SelectItem>
-                      <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Roles</Label>
+                  <div className="space-y-2">
+                    {availableRoles.map(role => (
+                      <div key={role.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={role.id}
+                          checked={selectedRoles.includes(role.id)}
+                          onCheckedChange={() => handleRoleToggle(role.id)}
+                        />
+                        <Label htmlFor={role.id} className="text-sm font-normal">
+                          {role.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -177,7 +228,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead>Roles</TableHead>
                       <TableHead>Created</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -187,9 +238,23 @@ const Admin = () => {
                         <TableCell>{user.full_name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                            {user.role.replace('_', ' ').toUpperCase()}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles?.length > 0 ? (
+                              user.roles.map((role: string) => (
+                                <Badge 
+                                  key={role} 
+                                  variant={role === 'admin' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {role.replace('_', ' ').toUpperCase()}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="outline" className="text-xs">
+                                No roles assigned
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString()}
