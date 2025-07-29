@@ -107,6 +107,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const sendMagicLink = async (email: string) => {
+    // First, check if the email exists in the profiles table
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (profileError || !existingProfile) {
+      return { 
+        error: { 
+          message: "This email address is not registered in our system. Please contact your administrator to get access.",
+          code: "email_not_registered"
+        } 
+      };
+    }
+
+    // If email exists, proceed with sending magic link
     const redirectUrl = `${window.location.origin}/dashboard`;
     
     const { error } = await supabase.auth.signInWithOtp({

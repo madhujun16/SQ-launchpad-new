@@ -30,7 +30,13 @@ const Auth = () => {
 
     setLoading(true);
     const { error } = await sendMagicLink(email);
-    if (!error) {
+    if (error) {
+      if (error.code === 'email_not_registered') {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to send magic link. Please try again.');
+      }
+    } else {
       setEmailSent(true);
     }
     setLoading(false);
