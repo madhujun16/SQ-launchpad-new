@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building, Users, Settings, Bell, LogOut, User, Menu, RotateCcw } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
-import smartqLogo from '@/assets/smartq-icon-logo.png';
+import smartqLogo from '@/assets/smartq-icon-logo.svg';
 import {
   DropdownMenu,
   DropdownMenuContent,

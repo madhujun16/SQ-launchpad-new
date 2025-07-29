@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Building, Users, Target, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import smartqLogo from '@/assets/smartq-icon-logo.png';
+import smartqLogo from '@/assets/smartq-icon-logo.svg';
 const Landing = () => {
   const navigate = useNavigate();
   const handleLoginClick = () => {
