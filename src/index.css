@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Compass Launchpad Design System - Dark Sage Green Theme */
+    /* Compass Design System - Dark Sage Green Theme */
     --background: 0 0% 100%;
     --foreground: 220 15% 20%;
 

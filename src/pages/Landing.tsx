@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Building, Users, Target, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import launchpadLogo from '@/assets/launchpad-logo.png';
+import compassLogo from '@/assets/compass-logo-new.png';
 const Landing = () => {
   const navigate = useNavigate();
   const handleLoginClick = () => {
@@ -16,9 +16,9 @@ const Landing = () => {
             <div className="flex items-center space-x-4">
               
               <div className="flex items-center space-x-3">
-                <img src={launchpadLogo} alt="Launchpad" className="h-10 w-10" />
+                <img src={compassLogo} alt="Compass" className="h-10 w-10" />
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">Launchpad</h1>
+                  <h1 className="text-2xl font-bold text-foreground">Compass</h1>
                 </div>
               </div>
             </div>

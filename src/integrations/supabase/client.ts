@@ -14,7 +14,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     // Set session to last 30 days
-    storageKey: 'compass-launchpad-auth',
+    storageKey: 'compass-auth',
     detectSessionInUrl: true,
   }
 });
