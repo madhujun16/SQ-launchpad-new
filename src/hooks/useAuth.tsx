@@ -107,11 +107,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const sendMagicLink = async (email: string) => {
-    // First, check if the email exists in the profiles table
+    // First, check if the email exists in the profiles table (case-insensitive)
     const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
       .select('email')
-      .eq('email', email)
+      .eq('email', email.toLowerCase())
       .maybeSingle();
 
     if (profileError) {

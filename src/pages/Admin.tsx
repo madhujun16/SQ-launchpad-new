@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
+import UserManagement from '@/components/UserManagement';
 
 const Admin = () => {
   const { availableRoles, profile } = useAuth();
@@ -77,6 +78,25 @@ const Admin = () => {
 
     setLoading(true);
     try {
+      // Check if email already exists (case-insensitive)
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        toast.error('Failed to check email availability');
+        setLoading(false);
+        return;
+      }
+
+      if (existingUser) {
+        toast.error('A user with this email address already exists');
+        setLoading(false);
+        return;
+      }
+
       const userId = crypto.randomUUID();
       
       // Create user profile
@@ -84,7 +104,7 @@ const Admin = () => {
         .from('profiles')
         .insert({ 
           user_id: userId,
-          email,
+          email: email.toLowerCase(), // Will be normalized by trigger anyway
           full_name: fullName,
           invited_by: profile?.user_id,
           invited_at: new Date().toISOString()
@@ -229,9 +249,9 @@ const Admin = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>User Management</CardTitle>
+              <CardTitle>Quick User Overview</CardTitle>
               <CardDescription>
-                Manage existing users and their roles.
+                View existing users. Use the detailed user management section below for editing.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -246,7 +266,7 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
+                    {users.slice(0, 5).map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>{user.full_name}</TableCell>
                         <TableCell>{user.email}</TableCell>
@@ -279,6 +299,11 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+        
+        {/* Full width user management section */}
+        <div className="w-full">
+          <UserManagement />
         </div>
       </div>
     </div>
