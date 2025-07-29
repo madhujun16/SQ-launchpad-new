@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
       .select('email')
-      .ilike('email', cleanEmail)
+      .eq('email', cleanEmail)
       .maybeSingle();
     
     console.log('Profile lookup result:', { existingProfile, profileError });
