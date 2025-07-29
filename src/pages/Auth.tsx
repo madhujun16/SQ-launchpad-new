@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import smartqLogo from '@/assets/smartq-logo-transparent.png';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -44,7 +45,10 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">SmartQ Launchpad</CardTitle>
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <img src={smartqLogo} alt="SmartQ Launchpad" className="h-12 w-12" />
+            <CardTitle className="text-2xl font-bold text-primary">SmartQ Launchpad</CardTitle>
+          </div>
           <CardDescription>
             {!emailSent 
               ? 'Enter your email to receive a magic link'
