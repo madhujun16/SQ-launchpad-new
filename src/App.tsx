@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import OpsManager from "./pages/OpsManager";
 import Deployment from "./pages/Deployment";
+import SiteStudy from "./pages/SiteStudy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,11 @@ const App = () => (
             <Route path="/deployment" element={
               <ProtectedRoute>
                 <Deployment />
+              </ProtectedRoute>
+            } />
+            <Route path="/site-study" element={
+              <ProtectedRoute>
+                <SiteStudy />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

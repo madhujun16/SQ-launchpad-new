@@ -64,6 +64,9 @@ const Header = () => {
             <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
+            <Link to="/site-study" className="text-foreground hover:text-primary transition-colors">
+              Site Study
+            </Link>
             <a href="#sites" className="text-foreground hover:text-primary transition-colors">
               Sites
             </a>

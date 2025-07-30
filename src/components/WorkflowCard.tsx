@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "./StatusBadge";
 import { MapPin, User, Calendar, ArrowRight } from "lucide-react";
+import React from "react";
 
 interface WorkflowCardProps {
   title: string;
@@ -14,7 +15,7 @@ interface WorkflowCardProps {
   actionLabel?: string;
 }
 
-const WorkflowCard = ({ 
+const WorkflowCard: React.FC<WorkflowCardProps> = ({ 
   title, 
   location, 
   assignee, 
@@ -23,7 +24,7 @@ const WorkflowCard = ({
   description,
   onAction,
   actionLabel = "View Details"
-}: WorkflowCardProps) => {
+}) => {
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardHeader className="pb-3">

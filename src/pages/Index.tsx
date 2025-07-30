@@ -1,6 +1,9 @@
 import Header from "@/components/Header";
 import DashboardStats from "@/components/DashboardStats";
 import WorkflowCard from "@/components/WorkflowCard";
+import { Button } from "@/components/ui/button";
+import { Building } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const recentActivities = [
@@ -38,8 +41,18 @@ const Index = () => {
       <section className="py-8">
         <div className="container mx-auto px-6">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-4 text-foreground">Dashboard</h2>
-            <p className="text-muted-foreground">Real-time overview of your site onboarding pipeline</p>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
+                <p className="text-muted-foreground">Real-time overview of your site onboarding pipeline</p>
+              </div>
+              <Link to="/site-study">
+                <Button className="bg-primary hover:bg-primary-dark">
+                  <Building className="mr-2 h-4 w-4" />
+                  Site Study
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <DashboardStats />
@@ -50,7 +63,12 @@ const Index = () => {
               {recentActivities.map((activity, index) => (
                 <WorkflowCard
                   key={index}
-                  {...activity}
+                  title={activity.title}
+                  location={activity.location}
+                  assignee={activity.assignee}
+                  dueDate={activity.dueDate}
+                  status={activity.status}
+                  description={activity.description}
                   onAction={() => console.log(`View details for ${activity.title}`)}
                 />
               ))}
