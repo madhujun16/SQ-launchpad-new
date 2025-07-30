@@ -107,17 +107,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const sendMagicLink = async (email: string) => {
-    console.log('Attempting to send magic link for email:', email);
-    
-    // For invite-only platform, directly attempt to send magic link
-    // Supabase will handle checking if user exists
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectUrl,
-        shouldCreateUser: false // Don't create new users since this is invite-only
+        emailRedirectTo: `${window.location.origin}/dashboard`
       }
     });
     
