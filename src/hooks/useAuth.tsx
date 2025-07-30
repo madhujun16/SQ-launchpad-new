@@ -143,7 +143,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: false // Don't create new users since this is invite-only
       }
     });
     return { error };
