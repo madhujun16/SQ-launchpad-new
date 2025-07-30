@@ -108,36 +108,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const sendMagicLink = async (email: string) => {
     console.log('Attempting to send magic link for email:', email);
-    // Check if the email exists in the profiles table
     
-    const { data: existingProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', email)
-      .maybeSingle();
-    
-    console.log('Profile lookup result:', { existingProfile, profileError });
-
-    if (profileError) {
-      console.error('Error checking profile:', profileError);
-      return { 
-        error: { 
-          message: "Failed to verify registration. Please try again.",
-          code: "verification_error"
-        } 
-      };
-    }
-
-    if (!existingProfile) {
-      return { 
-        error: { 
-          message: "This email address is not registered in our system. Please contact your administrator to get access.",
-          code: "email_not_registered"
-        } 
-      };
-    }
-
-    // If email exists, proceed with sending magic link
+    // For invite-only platform, directly attempt to send magic link
+    // Supabase will handle checking if user exists
     const redirectUrl = `${window.location.origin}/dashboard`;
     
     const { error } = await supabase.auth.signInWithOtp({
@@ -147,6 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         shouldCreateUser: false // Don't create new users since this is invite-only
       }
     });
+    
     return { error };
   };
 
