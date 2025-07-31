@@ -12,9 +12,15 @@ import Admin from "./pages/Admin";
 import OpsManager from "./pages/OpsManager";
 import Deployment from "./pages/Deployment";
 import SiteStudy from "./pages/SiteStudy";
+import Site from "./pages/Site";
+import HardwareScoping from "./pages/HardwareScoping";
+import Integrations from "./pages/Integrations";
+import Forecast from "./pages/Forecast";
 import Inventory from "./pages/Inventory";
 import LicenseManagement from "./pages/LicenseManagement";
 import NotFound from "./pages/NotFound";
+import SiteStudyForm from "./components/SiteStudyForm";
+import SiteCreationForm from "./components/SiteCreationForm";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +69,31 @@ const App = () => (
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
+            <Route path="/site" element={
+              <ProtectedRoute>
+                <Site />
+              </ProtectedRoute>
+            } />
+            <Route path="/hardware-scoping" element={
+              <ProtectedRoute>
+                <HardwareScoping />
+              </ProtectedRoute>
+            } />
+            <Route path="/control-desk" element={
+              <ProtectedRoute>
+                <Integrations />
+              </ProtectedRoute>
+            } />
+            <Route path="/forecast" element={
+              <ProtectedRoute>
+                <Forecast />
+              </ProtectedRoute>
+            } />
+            <Route path="/site-study-form" element={
+              <ProtectedRoute>
+                <SiteStudyForm />
+              </ProtectedRoute>
+            } />
             <Route path="/inventory" element={
               <ProtectedRoute>
                 <Inventory />
@@ -73,6 +104,12 @@ const App = () => (
                 <LicenseManagement />
               </ProtectedRoute>
             } />
+            <Route path="/site-creation" element={
+              <ProtectedRoute>
+                <SiteCreationForm />
+              </ProtectedRoute>
+            } />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

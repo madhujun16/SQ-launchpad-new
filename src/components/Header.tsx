@@ -91,38 +91,45 @@ const Header = () => {
           </div>
 
           <nav className="hidden md:flex items-center space-x-6">
-<<<<<<< HEAD
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`text-foreground hover:text-primary transition-colors ${
-                  location.pathname === item.path ? 'text-primary font-medium' : ''
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-=======
             <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
             <Link to="/site-study" className="text-foreground hover:text-primary transition-colors">
               Site Study
             </Link>
-            <a href="#sites" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/site" className="text-foreground hover:text-primary transition-colors">
               Sites
-            </a>
+            </Link>
+            <Link to="/hardware-scoping" className="text-foreground hover:text-primary transition-colors">
+              Hardware
+            </Link>
+            <Link to="/control-desk" className="text-foreground hover:text-primary transition-colors">
+              Control Desk
+            </Link>
+            <Link to="/forecast" className="text-foreground hover:text-primary transition-colors">
+              Forecast
+            </Link>
             <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">
               Inventory
             </Link>
             <Link to="/license-management" className="text-foreground hover:text-primary transition-colors">
-              License Management
+              Licenses
             </Link>
-            <a href="#forecast" className="text-foreground hover:text-primary transition-colors">
-              Forecast
-            </a>
->>>>>>> e5248822f1d97a61a0daa9c20597af22e50d7781
+            {currentRole === 'admin' && (
+              <Link to="/admin" className="text-foreground hover:text-primary transition-colors">
+                Admin
+              </Link>
+            )}
+            {currentRole === 'ops_manager' && (
+              <Link to="/ops-manager" className="text-foreground hover:text-primary transition-colors">
+                Ops Manager
+              </Link>
+            )}
+            {currentRole === 'deployment_engineer' && (
+              <Link to="/deployment" className="text-foreground hover:text-primary transition-colors">
+                Deployment
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -186,14 +193,6 @@ const Header = () => {
                     })}
                     <DropdownMenuSeparator />
                   </>
-                )}
-
-                {/* Admin Panel */}
-                {availableRoles.includes('admin') && (
-                  <DropdownMenuItem onClick={handleAdminClick}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Admin Panel</span>
-                  </DropdownMenuItem>
                 )}
                 
                 <DropdownMenuItem onClick={signOut}>

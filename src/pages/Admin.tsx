@@ -447,6 +447,7 @@ const Admin = () => {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
 
       {/* Create Site Modal */}
       {isCreatingSite && (
