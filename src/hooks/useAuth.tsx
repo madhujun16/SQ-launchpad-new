@@ -20,10 +20,9 @@ interface AuthContextType {
   switchRole: (role: UserRole) => void;
   signOut: () => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
-  signUpWithPassword: (email: string, password: string) => Promise<{ error: any }>;
+  createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (password: string) => Promise<{ error: any }>;
-  setFirstTimePassword: (password: string) => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -119,13 +118,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const signUpWithPassword = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+  const createUserAsAdmin = async (email: string, password: string, role: UserRole) => {
+    // This function should only be called by admin users
+    // It creates a new user with the specified role
+    const { data, error } = await supabase.auth.admin.createUser({
       email,
-      password
+      password,
+      email_confirm: true, // Auto-confirm email for B2B
     });
-    
-    return { error };
+
+    if (error) {
+      return { error };
+    }
+
+    if (data.user) {
+      // Assign role to the new user
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: data.user.id,
+          role: role
+        });
+
+      if (roleError) {
+        return { error: roleError };
+      }
+
+      // Create profile for the new user
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: data.user.id,
+          email: email,
+          full_name: email.split('@')[0], // Default name from email
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        return { error: profileError };
+      }
+    }
+
+    return { error: null };
   };
 
   const resetPassword = async (email: string) => {
@@ -144,36 +179,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const setFirstTimePassword = async (password: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        return { error: { message: 'No active session' } };
-      }
-
-      // Call the Supabase Edge Function for first-time password setup
-      const response = await fetch(`https://ngzvoekvwgjinagdvdhf.supabase.co/functions/v1/handle-first-time-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        return { error: result.error || 'Failed to set password' };
-      }
-
-      return { error: null };
-    } catch (error) {
-      return { error: { message: error.message } };
-    }
-  };
-
   const signOut = async () => {
     setCurrentRole(null);
     setAvailableRoles([]);
@@ -190,10 +195,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     switchRole,
     signOut,
     signInWithPassword,
-    signUpWithPassword,
+    createUserAsAdmin,
     resetPassword,
     updatePassword,
-    setFirstTimePassword,
     loading,
   };
 
