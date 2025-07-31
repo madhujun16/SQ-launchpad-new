@@ -1,0 +1,5 @@
+[33m260bae7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Remove first-time password setup functionality, including related Edge Function, modal component, and authentication hook methods. Update Admin page to support user management and site creation, enhancing user experience with improved error handling and UI elements.
+[33mc812bee[m - Introduced a new Edge Function for handling first-time password setup. - Created a modal component for users to set their password upon first login. - Updated the authentication hook to include methods for setting and updating passwords. - Enhanced the Auth page to support first-time password setup and user registration flows. - Implemented error handling and user feedback for password operations.
+[33m17a10ee[m Add user configuration for email and name
+[33m5e3f8bc[m Implement role-based access control and auto-login with manual fallback
+[33m08aaf88[m Merge branch 'main' of https://github.com/shivanshusqlens/sq-launchpad-cg
