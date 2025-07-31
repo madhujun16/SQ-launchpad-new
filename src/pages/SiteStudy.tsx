@@ -28,124 +28,141 @@ import {
   Globe,
   Shield,
   Activity,
-  TrendingUp
+  TrendingUp,
+  Navigation
 } from "lucide-react";
 import { UKCitySelect } from "@/components/UKCitySelect";
+import { useAuth } from "@/hooks/useAuth";
+import { getRoleConfig, hasPermission } from "@/lib/roles";
+import { useNavigate } from "react-router-dom";
+import RoleIndicator from "@/components/RoleIndicator";
+import { toast } from "sonner";
+import { Site, getStatusColor, getStatusDisplayName } from "@/lib/siteTypes";
 
-interface SiteStudy {
+interface SiteStudyData {
   id: string;
+  siteId: string;
   siteName: string;
-  location: string;
-  status: 'planning' | 'in-progress' | 'review' | 'completed';
-  progress: number;
+  location: {
+    address: string;
+    city: string;
+    postcode: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  status: 'pending' | 'in-progress' | 'completed';
   assignedTo: string;
   dueDate: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   description: string;
-  requirements: {
-    hardware: string[];
-    software: string[];
-    network: string[];
-    security: string[];
+  findings: {
+    infrastructure: string[];
+    requirements: string[];
+    challenges: string[];
+    recommendations: string[];
   };
-  feasibility: {
-    technical: boolean;
-    financial: boolean;
-    operational: boolean;
-    timeline: boolean;
+  geolocation?: {
+    latitude: number;
+    longitude: number;
+    addedBy: string;
+    addedAt: string;
   };
-  risks: string[];
-  recommendations: string[];
 }
 
 const SiteStudy = () => {
-  const [selectedSite, setSelectedSite] = useState<SiteStudy | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const { currentRole } = useAuth();
+  const navigate = useNavigate();
+  const [selectedStudy, setSelectedStudy] = useState<SiteStudyData | null>(null);
+  const [isAddingGeolocation, setIsAddingGeolocation] = useState(false);
+  const [geolocationData, setGeolocationData] = useState({
+    latitude: '',
+    longitude: ''
+  });
 
-  const siteStudies: SiteStudy[] = [
+  // Check if user has access to site study
+  React.useEffect(() => {
+    if (currentRole && !hasPermission(currentRole, 'conduct_site_studies') && !hasPermission(currentRole, 'create_sites')) {
+      toast.error('You do not have permission to access the Site Study panel');
+      navigate('/dashboard');
+    }
+  }, [currentRole, navigate]);
+
+  const siteStudies: SiteStudyData[] = [
     {
       id: "1",
-      siteName: "Manchester Central",
-      location: "Manchester, UK",
-      status: "in-progress",
-      progress: 65,
+      siteId: "1",
+      siteName: "Manchester Central Cafeteria",
+      location: {
+        address: "123 Main Street",
+        city: "Manchester",
+        postcode: "M1 1AA"
+      },
+      status: "completed",
       assignedTo: "Sarah Johnson",
       dueDate: "2024-08-15",
       priority: "high",
-      description: "Large shopping center with high foot traffic. Requires comprehensive network infrastructure and multiple POS systems.",
-      requirements: {
-        hardware: ["POS Terminals", "Network Switches", "Security Cameras", "Digital Signage"],
-        software: ["Inventory Management", "Payment Processing", "Security System", "Analytics Dashboard"],
-        network: ["High-speed WiFi", "Ethernet Backbone", "VPN Access", "Redundant Connections"],
-        security: ["Access Control", "CCTV System", "Data Encryption", "Backup Systems"]
+      description: "Large cafeteria with high foot traffic. Requires comprehensive network infrastructure and multiple POS systems.",
+      findings: {
+        infrastructure: ["Existing WiFi network", "POS terminals", "Kitchen equipment", "Seating area"],
+        requirements: ["High-speed WiFi upgrade", "Additional POS terminals", "Digital signage", "Security cameras"],
+        challenges: ["Limited parking space", "Complex network requirements", "High security needs"],
+        recommendations: ["Extend timeline by 2 weeks", "Add additional network capacity", "Implement phased deployment"]
       },
-      feasibility: {
-        technical: true,
-        financial: true,
-        operational: true,
-        timeline: false
-      },
-      risks: ["Limited parking space", "Complex network requirements", "High security needs"],
-      recommendations: ["Extend timeline by 2 weeks", "Add additional network capacity", "Implement phased deployment"]
+      geolocation: {
+        latitude: 53.4808,
+        longitude: -2.2426,
+        addedBy: "Sarah Johnson",
+        addedAt: "2024-07-15"
+      }
     },
     {
       id: "2",
-      siteName: "Birmingham Food Court",
-      location: "Birmingham, UK",
-      status: "planning",
-      progress: 25,
+      siteId: "2",
+      siteName: "Birmingham Office Cafeteria",
+      location: {
+        address: "456 Business Park",
+        city: "Birmingham",
+        postcode: "B1 1BB"
+      },
+      status: "in-progress",
       assignedTo: "Mike Thompson",
       dueDate: "2024-09-01",
       priority: "medium",
-      description: "Food court environment with multiple vendors. Requires shared infrastructure and individual vendor systems.",
-      requirements: {
-        hardware: ["Shared POS Systems", "Kitchen Displays", "Order Management", "Payment Terminals"],
-        software: ["Vendor Management", "Order Processing", "Inventory Tracking", "Customer Analytics"],
-        network: ["Shared WiFi", "Vendor Networks", "Kitchen Communication", "Customer Access"],
-        security: ["Vendor Access Control", "Payment Security", "Food Safety Tracking", "Customer Data Protection"]
-      },
-      feasibility: {
-        technical: true,
-        financial: true,
-        operational: true,
-        timeline: true
-      },
-      risks: ["Vendor coordination", "Shared infrastructure complexity", "Peak hour capacity"],
-      recommendations: ["Create vendor onboarding plan", "Implement shared payment system", "Add capacity planning"]
-    },
-    {
-      id: "3",
-      siteName: "Leeds Shopping Center",
-      location: "Leeds, UK",
-      status: "completed",
-      progress: 100,
-      assignedTo: "Emma Wilson",
-      dueDate: "2024-07-30",
-      priority: "high",
-      description: "Modern shopping center with integrated digital experience. Successfully deployed with advanced analytics.",
-      requirements: {
-        hardware: ["Interactive Kiosks", "Digital Signage", "POS Systems", "Security Infrastructure"],
-        software: ["Customer Analytics", "Digital Marketing", "Inventory Management", "Security Monitoring"],
-        network: ["High-speed WiFi", "IoT Network", "Digital Signage Network", "Security Network"],
-        security: ["Access Control", "CCTV System", "Data Protection", "Cybersecurity"]
-      },
-      feasibility: {
-        technical: true,
-        financial: true,
-        operational: true,
-        timeline: true
-      },
-      risks: ["Complex integration", "High initial cost", "Training requirements"],
-      recommendations: ["Excellent implementation", "Consider expansion", "Share best practices"]
+      description: "Office cafeteria environment with staff dining requirements.",
+      findings: {
+        infrastructure: ["Basic kitchen setup", "Limited seating", "No existing POS"],
+        requirements: ["Complete POS system", "Kitchen equipment", "Seating expansion"],
+        challenges: ["Space constraints", "Budget limitations"],
+        recommendations: ["Phased implementation", "Space optimization"]
+      }
     }
   ];
+
+  // If user doesn't have site study permissions, show access denied
+  if (currentRole && !hasPermission(currentRole, 'conduct_site_studies') && !hasPermission(currentRole, 'create_sites')) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+            <p className="text-muted-foreground">
+              You do not have permission to access the Site Study panel.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const roleConfig = currentRole ? getRoleConfig(currentRole) : null;
+  const isDeploymentEngineer = currentRole === 'deployment_engineer';
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-500';
       case 'in-progress': return 'bg-blue-500';
-      case 'review': return 'bg-yellow-500';
-      case 'planning': return 'bg-gray-500';
+      case 'pending': return 'bg-gray-500';
       default: return 'bg-gray-500';
     }
   };
@@ -160,8 +177,35 @@ const SiteStudy = () => {
     }
   };
 
-  const getFeasibilityIcon = (feasible: boolean) => {
-    return feasible ? <CheckCircle className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-red-500" />;
+  const addGeolocation = async (studyId: string) => {
+    if (!geolocationData.latitude || !geolocationData.longitude) {
+      toast.error('Please enter both latitude and longitude');
+      return;
+    }
+
+    try {
+      // This would be replaced with actual Supabase update
+      const updatedStudies = siteStudies.map(study => {
+        if (study.id === studyId) {
+          return {
+            ...study,
+            geolocation: {
+              latitude: parseFloat(geolocationData.latitude),
+              longitude: parseFloat(geolocationData.longitude),
+              addedBy: "Current User",
+              addedAt: new Date().toISOString()
+            }
+          };
+        }
+        return study;
+      });
+
+      toast.success('Geolocation added successfully');
+      setIsAddingGeolocation(false);
+      setGeolocationData({ latitude: '', longitude: '' });
+    } catch (error) {
+      toast.error('Failed to add geolocation');
+    }
   };
 
   return (
@@ -170,78 +214,80 @@ const SiteStudy = () => {
       
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Site Study Management</h1>
-          <p className="text-muted-foreground">Comprehensive site analysis and planning for SmartQ deployments</p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex gap-4">
-            <Button onClick={() => setIsCreating(true)} className="bg-primary hover:bg-primary-dark">
-              <Building className="mr-2 h-4 w-4" />
-              New Site Study
-            </Button>
-            <Button variant="outline">
-              <FileText className="mr-2 h-4 w-4" />
-              Export Reports
-            </Button>
+          <div className="flex items-center space-x-3 mb-2">
+            <h1 className="text-3xl font-bold text-foreground">Site Study Management</h1>
+            <RoleIndicator />
           </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Filter</Button>
-            <Button variant="outline" size="sm">Sort</Button>
-          </div>
+          <p className="text-muted-foreground">
+            {roleConfig?.description || 'Conduct site studies for Compass Group cafeteria deployments'}
+          </p>
         </div>
 
         {/* Site Studies Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {siteStudies.map((site) => (
+          {siteStudies.map((study) => (
             <Card 
-              key={site.id} 
+              key={study.id} 
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedSite(site)}
+              onClick={() => setSelectedStudy(study)}
             >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{site.siteName}</CardTitle>
+                    <CardTitle className="text-lg">{study.siteName}</CardTitle>
                     <CardDescription className="flex items-center mt-1">
                       <MapPin className="h-3 w-3 mr-1" />
-                      {site.location}
+                      {study.location.city}
                     </CardDescription>
                   </div>
-                                     <div className="flex gap-1">
-                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(site.status)} text-white`}>
-                       {site.status.replace('-', ' ')}
-                     </span>
-                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getPriorityColor(site.priority)} text-white`}>
-                       {site.priority}
-                     </span>
-                   </div>
+                  <div className="flex gap-1">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(study.status)} text-white`}>
+                      {study.status.replace('-', ' ')}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getPriorityColor(study.priority)} text-white`}>
+                      {study.priority}
+                    </span>
+                  </div>
                 </div>
               </CardHeader>
               
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{site.progress}%</span>
-                  </div>
-                  <Progress value={site.progress} className="h-2" />
-                  
-                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Assigned to</span>
-                    <span className="font-medium">{site.assignedTo}</span>
+                    <span className="font-medium">{study.assignedTo}</span>
                   </div>
                   
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Due date</span>
-                    <span className="font-medium">{site.dueDate}</span>
+                    <span className="font-medium">{study.dueDate}</span>
                   </div>
                   
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {site.description}
+                    {study.description}
                   </p>
+
+                  {isDeploymentEngineer && !study.geolocation && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedStudy(study);
+                        setIsAddingGeolocation(true);
+                      }}
+                    >
+                      <Navigation className="mr-1 h-3 w-3" />
+                      Add Geolocation
+                    </Button>
+                  )}
+
+                  {study.geolocation && (
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Navigation className="mr-1 h-3 w-3" />
+                      Location: {study.geolocation.latitude.toFixed(4)}, {study.geolocation.longitude.toFixed(4)}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -249,15 +295,15 @@ const SiteStudy = () => {
         </div>
 
         {/* Detailed Site Study View */}
-        {selectedSite && (
+        {selectedStudy && (
           <Card className="mt-8">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl">{selectedSite.siteName}</CardTitle>
+                  <CardTitle className="text-2xl">{selectedStudy.siteName}</CardTitle>
                   <CardDescription className="flex items-center mt-2">
                     <MapPin className="h-4 w-4 mr-2" />
-                    {selectedSite.location}
+                    {selectedStudy.location.address}, {selectedStudy.location.city}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -270,11 +316,10 @@ const SiteStudy = () => {
             
             <CardContent>
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="requirements">Requirements</TabsTrigger>
-                  <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
-                  <TabsTrigger value="risks">Risks</TabsTrigger>
+                  <TabsTrigger value="findings">Findings</TabsTrigger>
+                  <TabsTrigger value="geolocation">Location</TabsTrigger>
                   <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
                 </TabsList>
                 
@@ -284,32 +329,33 @@ const SiteStudy = () => {
                       <CardHeader>
                         <CardTitle className="flex items-center">
                           <BarChart3 className="mr-2 h-5 w-5" />
-                          Project Status
+                          Study Status
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex justify-between">
-                          <span>Progress</span>
-                          <span className="font-bold">{selectedSite.progress}%</span>
+                          <span>Status</span>
+                          <Badge className={getStatusColor(selectedStudy.status)}>
+                            {selectedStudy.status.replace('-', ' ')}
+                          </Badge>
                         </div>
-                        <Progress value={selectedSite.progress} className="h-3" />
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className="text-muted-foreground">Status</span>
-                            <div className="font-medium">{selectedSite.status}</div>
-                          </div>
-                          <div>
                             <span className="text-muted-foreground">Priority</span>
-                            <div className="font-medium">{selectedSite.priority}</div>
+                            <div className="font-medium">{selectedStudy.priority}</div>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Assigned to</span>
-                            <div className="font-medium">{selectedSite.assignedTo}</div>
+                            <div className="font-medium">{selectedStudy.assignedTo}</div>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Due date</span>
-                            <div className="font-medium">{selectedSite.dueDate}</div>
+                            <div className="font-medium">{selectedStudy.dueDate}</div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Client</span>
+                            <div className="font-medium">Compass Group</div>
                           </div>
                         </div>
                       </CardContent>
@@ -324,25 +370,25 @@ const SiteStudy = () => {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground">
-                          {selectedSite.description}
+                          {selectedStudy.description}
                         </p>
                       </CardContent>
                     </Card>
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="requirements" className="space-y-6">
+                <TabsContent value="findings" className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center">
                           <HardDrive className="mr-2 h-5 w-5" />
-                          Hardware Requirements
+                          Current Infrastructure
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-2">
-                          {selectedSite.requirements.hardware.map((item, index) => (
+                          {selectedStudy.findings.infrastructure.map((item, index) => (
                             <li key={index} className="flex items-center text-sm">
                               <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
                               {item}
@@ -355,53 +401,15 @@ const SiteStudy = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center">
-                          <Monitor className="mr-2 h-5 w-5" />
-                          Software Requirements
+                          <Target className="mr-2 h-5 w-5" />
+                          Requirements
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="space-y-2">
-                          {selectedSite.requirements.software.map((item, index) => (
+                          {selectedStudy.findings.requirements.map((item, index) => (
                             <li key={index} className="flex items-center text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Wifi className="mr-2 h-5 w-5" />
-                          Network Requirements
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2">
-                          {selectedSite.requirements.network.map((item, index) => (
-                            <li key={index} className="flex items-center text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Shield className="mr-2 h-5 w-5" />
-                          Security Requirements
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2">
-                          {selectedSite.requirements.security.map((item, index) => (
-                            <li key={index} className="flex items-center text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                              <CheckCircle className="h-4 w-4 text-blue-500 mr-2" />
                               {item}
                             </li>
                           ))}
@@ -410,93 +418,69 @@ const SiteStudy = () => {
                     </Card>
                   </div>
                 </TabsContent>
-                
-                <TabsContent value="feasibility" className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Settings className="mr-2 h-5 w-5" />
-                          Technical Feasibility
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <span>Technical Implementation</span>
-                          {getFeasibilityIcon(selectedSite.feasibility.technical)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <TrendingUp className="mr-2 h-5 w-5" />
-                          Financial Feasibility
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <span>Budget Approval</span>
-                          {getFeasibilityIcon(selectedSite.feasibility.financial)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Users className="mr-2 h-5 w-5" />
-                          Operational Feasibility
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <span>Operational Readiness</span>
-                          {getFeasibilityIcon(selectedSite.feasibility.operational)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Calendar className="mr-2 h-5 w-5" />
-                          Timeline Feasibility
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <span>Schedule Realistic</span>
-                          {getFeasibilityIcon(selectedSite.feasibility.timeline)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="risks" className="space-y-6">
+
+                <TabsContent value="geolocation" className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center">
-                        <AlertTriangle className="mr-2 h-5 w-5" />
-                        Identified Risks
+                        <Navigation className="mr-2 h-5 w-5" />
+                        Site Location
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ul className="space-y-3">
-                        {selectedSite.risks.map((risk, index) => (
-                          <li key={index} className="flex items-start text-sm">
-                            <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-0.5" />
-                            {risk}
-                          </li>
-                        ))}
-                      </ul>
+                      {selectedStudy.geolocation ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Latitude</Label>
+                              <div className="font-mono text-sm">{selectedStudy.geolocation.latitude}</div>
+                            </div>
+                            <div>
+                              <Label>Longitude</Label>
+                              <div className="font-mono text-sm">{selectedStudy.geolocation.longitude}</div>
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Added by {selectedStudy.geolocation.addedBy} on {new Date(selectedStudy.geolocation.addedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            No geolocation data available for this site.
+                          </p>
+                          {isDeploymentEngineer && (
+                            <Button onClick={() => setIsAddingGeolocation(true)}>
+                              <Navigation className="mr-2 h-4 w-4" />
+                              Add Geolocation
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
                 
                 <TabsContent value="recommendations" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <AlertTriangle className="mr-2 h-5 w-5" />
+                        Challenges
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-3">
+                        {selectedStudy.findings.challenges.map((challenge, index) => (
+                          <li key={index} className="flex items-start text-sm">
+                            <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-0.5" />
+                            {challenge}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                  
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center">
@@ -506,7 +490,7 @@ const SiteStudy = () => {
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-3">
-                        {selectedSite.recommendations.map((recommendation, index) => (
+                        {selectedStudy.findings.recommendations.map((recommendation, index) => (
                           <li key={index} className="flex items-start text-sm">
                             <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
                             {recommendation}
@@ -521,75 +505,57 @@ const SiteStudy = () => {
           </Card>
         )}
 
-        {/* Create New Site Study Modal */}
-        {isCreating && (
+        {/* Add Geolocation Modal */}
+        {isAddingGeolocation && selectedStudy && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-2xl mx-4">
+            <Card className="w-full max-w-md mx-4">
               <CardHeader>
-                <CardTitle>Create New Site Study</CardTitle>
-                <CardDescription>Add a new site for analysis and planning</CardDescription>
+                <CardTitle>Add Geolocation</CardTitle>
+                <CardDescription>
+                  Add precise location coordinates for {selectedStudy.siteName}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="siteName">Site Name</Label>
-                    <Input id="siteName" placeholder="Enter site name" />
+              <CardContent>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  addGeolocation(selectedStudy.id);
+                }} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="latitude">Latitude</Label>
+                      <Input
+                        id="latitude"
+                        type="number"
+                        step="any"
+                        value={geolocationData.latitude}
+                        onChange={(e) => setGeolocationData(prev => ({ ...prev, latitude: e.target.value }))}
+                        placeholder="e.g., 53.4808"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="longitude">Longitude</Label>
+                      <Input
+                        id="longitude"
+                        type="number"
+                        step="any"
+                        value={geolocationData.longitude}
+                        onChange={(e) => setGeolocationData(prev => ({ ...prev, longitude: e.target.value }))}
+                        placeholder="e.g., -2.2426"
+                        required
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="location">Location</Label>
-                    <UKCitySelect 
-                      value="" 
-                      onValueChange={(value) => console.log('Selected city:', value)}
-                      placeholder="Select a UK city"
-                    />
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsAddingGeolocation(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Add Location
+                    </Button>
                   </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Describe the site and requirements" />
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="assignedTo">Assigned To</Label>
-                    <Input id="assignedTo" placeholder="Enter assignee name" />
-                  </div>
-                  <div>
-                    <Label htmlFor="dueDate">Due Date</Label>
-                    <Input id="dueDate" type="date" />
-                  </div>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="priority">Priority</Label>
-                    <select id="priority" className="w-full p-2 border rounded">
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="critical">Critical</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <select id="status" className="w-full p-2 border rounded">
-                      <option value="planning">Planning</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="review">Review</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsCreating(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={() => setIsCreating(false)}>
-                    Create Site Study
-                  </Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </div>

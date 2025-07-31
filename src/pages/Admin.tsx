@@ -8,46 +8,136 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import UserManagement from '@/components/UserManagement';
+import RoleIndicator from '@/components/RoleIndicator';
+import { getRoleConfig, hasPermission } from '@/lib/roles';
+import { useNavigate } from 'react-router-dom';
+import { Building, MapPin, Users, Calendar, Plus, Edit, Trash2 } from 'lucide-react';
+import { Site, getStatusColor, getStatusDisplayName } from '@/lib/siteTypes';
 
 const Admin = () => {
-  const { availableRoles, profile } = useAuth();
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
-  const [selectedRoles, setSelectedRoles] = useState<string[]>(['user']);
-  const [loading, setLoading] = useState(false);
+  const { currentRole, profile } = useAuth();
+  const navigate = useNavigate();
+  const [sites, setSites] = useState<Site[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [isCreatingSite, setIsCreatingSite] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const roleOptions = [
-    { id: 'user', label: 'User' },
-    { id: 'ops_manager', label: 'Ops Manager' },
-    { id: 'deployment_engineer', label: 'Deployment Engineer' },
-    { id: 'admin', label: 'Admin' }
-  ];
+  // Form state for new site
+  const [newSite, setNewSite] = useState({
+    name: '',
+    city: '',
+    address: '',
+    postcode: '',
+    cafeteriaType: 'staff' as const,
+    capacity: 0,
+    expectedFootfall: 0,
+    description: '',
+    opsManagerId: '',
+    deploymentEngineerId: ''
+  });
+
+  // Check if user has admin permissions
+  React.useEffect(() => {
+    if (currentRole && !hasPermission(currentRole, 'manage_users')) {
+      toast.error('You do not have permission to access the Admin panel');
+      navigate('/dashboard');
+    }
+  }, [currentRole, navigate]);
 
   useEffect(() => {
-    if (availableRoles?.includes('admin')) {
+    if (hasPermission(currentRole || 'user', 'manage_users')) {
+      fetchSites();
       fetchUsers();
     }
-  }, [availableRoles]);
+  }, [currentRole]);
+
+  const fetchSites = async () => {
+    try {
+      // This would be replaced with actual Supabase query
+      const mockSites: Site[] = [
+        {
+          id: '1',
+          name: 'Manchester Central Cafeteria',
+          location: {
+            address: '123 Main Street',
+            city: 'Manchester',
+            postcode: 'M1 1AA'
+          },
+          status: {
+            study: 'completed',
+            costApproval: 'completed',
+            inventory: 'completed',
+            products: 'completed',
+            deployment: 'completed'
+          },
+          overallStatus: 'deployed',
+          assignment: {
+            opsManagerId: 'user1',
+            deploymentEngineerId: 'user2',
+            assignedAt: '2024-01-15',
+            assignedBy: 'admin1'
+          },
+          createdAt: '2024-01-01',
+          updatedAt: '2024-07-30',
+          createdBy: 'admin1',
+          clientName: 'Compass Group',
+          cafeteriaType: 'mixed',
+          capacity: 150,
+          expectedFootfall: 300
+        },
+        {
+          id: '2',
+          name: 'Birmingham Office Cafeteria',
+          location: {
+            address: '456 Business Park',
+            city: 'Birmingham',
+            postcode: 'B1 1BB'
+          },
+          status: {
+            study: 'completed',
+            costApproval: 'in-progress',
+            inventory: 'pending',
+            products: 'pending',
+            deployment: 'pending'
+          },
+          overallStatus: 'in-progress',
+          assignment: {
+            opsManagerId: 'user3',
+            deploymentEngineerId: 'user4',
+            assignedAt: '2024-02-01',
+            assignedBy: 'admin1'
+          },
+          createdAt: '2024-02-01',
+          updatedAt: '2024-07-29',
+          createdBy: 'admin1',
+          clientName: 'Compass Group',
+          cafeteriaType: 'staff',
+          capacity: 80,
+          expectedFootfall: 120
+        }
+      ];
+      setSites(mockSites);
+    } catch (error) {
+      toast.error('Failed to fetch sites');
+    }
+  };
 
   const fetchUsers = async () => {
     try {
-      const { data: profiles, error: profileError } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profileError) {
+      if (error) {
         toast.error('Failed to fetch users');
         return;
       }
 
-      // Fetch roles for each user
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
@@ -57,7 +147,6 @@ const Admin = () => {
         return;
       }
 
-      // Combine profile data with roles
       const usersWithRoles = profiles?.map(profile => ({
         ...profile,
         roles: userRoles?.filter(role => role.user_id === profile.user_id).map(r => r.role) || []
@@ -69,243 +158,341 @@ const Admin = () => {
     }
   };
 
-  const createUser = async (e: React.FormEvent) => {
+  const createSite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !fullName || selectedRoles.length === 0) {
-      toast.error('Please fill in all fields and select at least one role');
+    if (!newSite.name || !newSite.city || !newSite.opsManagerId || !newSite.deploymentEngineerId) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
     setLoading(true);
     try {
-      // Check if email already exists (case-insensitive)
-      const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
+      // This would be replaced with actual Supabase insert
+      const site: Site = {
+        id: crypto.randomUUID(),
+        name: newSite.name,
+        location: {
+          address: newSite.address,
+          city: newSite.city,
+          postcode: newSite.postcode
+        },
+        status: {
+          study: 'pending',
+          costApproval: 'pending',
+          inventory: 'pending',
+          products: 'pending',
+          deployment: 'pending'
+        },
+        overallStatus: 'new',
+        assignment: {
+          opsManagerId: newSite.opsManagerId,
+          deploymentEngineerId: newSite.deploymentEngineerId,
+          assignedAt: new Date().toISOString(),
+          assignedBy: profile?.user_id || ''
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: profile?.user_id || '',
+        clientName: 'Compass Group',
+        cafeteriaType: newSite.cafeteriaType,
+        capacity: newSite.capacity,
+        expectedFootfall: newSite.expectedFootfall,
+        description: newSite.description
+      };
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        toast.error('Failed to check email availability');
-        setLoading(false);
-        return;
-      }
-
-      if (existingUser) {
-        toast.error('A user with this email address already exists');
-        setLoading(false);
-        return;
-      }
-
-      const userId = crypto.randomUUID();
-      
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ 
-          user_id: userId,
-          email: email.toLowerCase(), // Will be normalized by trigger anyway
-          full_name: fullName,
-          invited_by: profile?.user_id,
-          invited_at: new Date().toISOString()
-        });
-
-      if (profileError) {
-        toast.error('Failed to create user profile');
-        setLoading(false);
-        return;
-      }
-
-      // Create user roles
-      const roleInserts = selectedRoles.map(role => ({
-        user_id: userId,
-        role: role as 'user' | 'ops_manager' | 'deployment_engineer' | 'admin',
-        assigned_at: new Date().toISOString()
-      }));
-
-      const { error: rolesError } = await supabase
-        .from('user_roles')
-        .insert(roleInserts);
-
-      if (rolesError) {
-        toast.error('Failed to assign user roles');
-        setLoading(false);
-        return;
-      }
-
-      toast.success(`User created successfully! ${email} can now sign in using OTP`);
-
-      // Reset form
-      setEmail('');
-      setFullName('');
-      setSelectedCity('');
-      setSelectedRoles(['user']);
-      
-      // Refresh users list
-      fetchUsers();
-    } catch (error: any) {
-      toast.error('An unexpected error occurred');
+      setSites(prev => [site, ...prev]);
+      toast.success('Site created successfully');
+      setIsCreatingSite(false);
+      setNewSite({
+        name: '',
+        city: '',
+        address: '',
+        postcode: '',
+        cafeteriaType: 'staff',
+        capacity: 0,
+        expectedFootfall: 0,
+        description: '',
+        opsManagerId: '',
+        deploymentEngineerId: ''
+      });
+    } catch (error) {
+      toast.error('Failed to create site');
     }
     setLoading(false);
   };
 
-  const handleRoleToggle = (roleId: string) => {
-    setSelectedRoles(prev => 
-      prev.includes(roleId) 
-        ? prev.filter(role => role !== roleId)
-        : [...prev, roleId]
-    );
-  };
-
-  if (!availableRoles?.includes('admin')) {
+  // If user doesn't have admin permissions, show access denied
+  if (currentRole && !hasPermission(currentRole, 'manage_users')) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              Access denied. Admin privileges required.
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+            <p className="text-muted-foreground">
+              You do not have permission to access the Admin panel.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const roleConfig = currentRole ? getRoleConfig(currentRole) : null;
+  const opsManagers = users.filter(user => user.roles.includes('ops_manager'));
+  const deploymentEngineers = users.filter(user => user.roles.includes('deployment_engineer'));
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
-        </div>
+      
+      <section className="py-8">
+        <div className="container mx-auto px-6">
+          <div className="mb-8">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <div className="flex items-center space-x-3 mb-2">
+                  <h2 className="text-3xl font-bold text-foreground">Site Management</h2>
+                  <RoleIndicator />
+                </div>
+                <p className="text-muted-foreground">
+                  {roleConfig?.description || 'Manage Compass Group cafeteria sites and team assignments'}
+                </p>
+              </div>
+              <Button onClick={() => setIsCreatingSite(true)} className="bg-primary hover:bg-primary-dark">
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Site
+              </Button>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New User</CardTitle>
-              <CardDescription>
-                Add a new user to the system. They can sign in immediately using email OTP.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={createUser} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="city">UK City</Label>
-                  <UKCitySelect
-                    value={selectedCity}
-                    onValueChange={setSelectedCity}
-                    placeholder="Select a UK city"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Roles</Label>
-                  <div className="space-y-2">
-                    {roleOptions.map(role => (
-                      <div key={role.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={role.id}
-                          checked={selectedRoles.includes(role.id)}
-                          onCheckedChange={() => handleRoleToggle(role.id)}
-                        />
-                        <Label htmlFor={role.id} className="text-sm font-normal">
-                          {role.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating User...' : 'Create User'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick User Overview</CardTitle>
-              <CardDescription>
-                View existing users. Use the detailed user management section below for editing.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+          {/* Sites Overview */}
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building className="mr-2 h-5 w-5" />
+                  Compass Group Cafeterias
+                </CardTitle>
+                <CardDescription>
+                  Manage all cafeteria locations and their deployment status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Roles</TableHead>
-                      <TableHead>Created</TableHead>
+                      <TableHead>Site Name</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Team</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.slice(0, 5).map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>{user.full_name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
+                    {sites.map((site) => (
+                      <TableRow key={site.id}>
+                        <TableCell className="font-medium">{site.name}</TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {user.roles?.length > 0 ? (
-                              user.roles.map((role: string) => (
-                                <Badge 
-                                  key={role} 
-                                  variant={role === 'admin' ? 'default' : 'secondary'}
-                                  className="text-xs"
-                                >
-                                  {role.replace('_', ' ').toUpperCase()}
-                                </Badge>
-                              ))
-                            ) : (
-                              <Badge variant="outline" className="text-xs">
-                                No roles assigned
-                              </Badge>
-                            )}
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {site.location.city}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {new Date(user.created_at).toLocaleDateString()}
+                          <Badge className={getStatusColor(site.overallStatus)}>
+                            {getStatusDisplayName(site.overallStatus)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>Ops: {users.find(u => u.user_id === site.assignment.opsManagerId)?.full_name || 'Unassigned'}</div>
+                            <div>Engineer: {users.find(u => u.user_id === site.assignment.deploymentEngineerId)?.full_name || 'Unassigned'}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {site.cafeteriaType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </CardContent>
+            </Card>
+
+            {/* User Management */}
+            <UserManagement />
+          </div>
+        </div>
+      </section>
+
+      {/* Create New Site Modal */}
+      {isCreatingSite && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Add New Cafeteria Site</CardTitle>
+              <CardDescription>Create a new Compass Group cafeteria location</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={createSite} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="siteName">Site Name *</Label>
+                    <Input
+                      id="siteName"
+                      value={newSite.name}
+                      onChange={(e) => setNewSite(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="e.g., Manchester Central Cafeteria"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cafeteriaType">Cafeteria Type</Label>
+                    <Select
+                      value={newSite.cafeteriaType}
+                      onValueChange={(value) => setNewSite(prev => ({ ...prev, cafeteriaType: value as any }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="staff">Staff Only</SelectItem>
+                        <SelectItem value="visitor">Visitor Only</SelectItem>
+                        <SelectItem value="mixed">Mixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city">City *</Label>
+                    <UKCitySelect
+                      value={newSite.city}
+                      onValueChange={(value) => setNewSite(prev => ({ ...prev, city: value }))}
+                      placeholder="Select a UK city"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="postcode">Postcode</Label>
+                    <Input
+                      id="postcode"
+                      value={newSite.postcode}
+                      onChange={(e) => setNewSite(prev => ({ ...prev, postcode: e.target.value }))}
+                      placeholder="e.g., M1 1AA"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={newSite.address}
+                    onChange={(e) => setNewSite(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Full address"
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="capacity">Capacity</Label>
+                    <Input
+                      id="capacity"
+                      type="number"
+                      value={newSite.capacity}
+                      onChange={(e) => setNewSite(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
+                      placeholder="Number of seats"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="footfall">Expected Daily Footfall</Label>
+                    <Input
+                      id="footfall"
+                      type="number"
+                      value={newSite.expectedFootfall}
+                      onChange={(e) => setNewSite(prev => ({ ...prev, expectedFootfall: parseInt(e.target.value) || 0 }))}
+                      placeholder="Daily visitors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="opsManager">Ops Manager *</Label>
+                    <Select
+                      value={newSite.opsManagerId}
+                      onValueChange={(value) => setNewSite(prev => ({ ...prev, opsManagerId: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Ops Manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {opsManagers.map((user) => (
+                          <SelectItem key={user.user_id} value={user.user_id}>
+                            {user.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="deploymentEngineer">Deployment Engineer *</Label>
+                    <Select
+                      value={newSite.deploymentEngineerId}
+                      onValueChange={(value) => setNewSite(prev => ({ ...prev, deploymentEngineerId: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Deployment Engineer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deploymentEngineers.map((user) => (
+                          <SelectItem key={user.user_id} value={user.user_id}>
+                            {user.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    value={newSite.description}
+                    onChange={(e) => setNewSite(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Additional notes about the site"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsCreatingSite(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Site'}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>
-        
-        {/* Full width user management section */}
-        <div className="w-full">
-          <UserManagement />
-        </div>
-      </div>
+      )}
     </div>
   );
 };

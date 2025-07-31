@@ -19,7 +19,7 @@ interface AuthContextType {
   availableRoles: UserRole[];
   switchRole: (role: UserRole) => void;
   signOut: () => Promise<void>;
-  sendMagicLink: (email: string) => Promise<{ error: any }>;
+  signInWithPassword: (email: string) => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -106,12 +106,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const sendMagicLink = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
+  const signInWithPassword = async (email: string) => {
+    // Hardcoded password for all users
+    const password = 'Role@123';
+    
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`
-      }
+      password
+    });
+    
+    return { error };
+  };
+
+  const createUserWithPassword = async (email: string) => {
+    // Hardcoded password for all users
+    const password = 'Role@123';
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password
     });
     
     return { error };
@@ -132,7 +145,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     availableRoles,
     switchRole,
     signOut,
-    sendMagicLink,
+    signInWithPassword,
     loading,
   };
 

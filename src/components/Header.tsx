@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building, Users, Settings, Bell, LogOut, User, Menu, RotateCcw } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import smartqLogo from '@/assets/smartq-icon-logo.svg';
+import { getRoleConfig, canAccessPage } from '@/lib/roles';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
 const Header = () => {
   const { profile, currentRole, availableRoles, switchRole, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleAdminClick = () => {
     navigate('/admin');
@@ -28,23 +30,52 @@ const Header = () => {
       case 'deployment_engineer':
         navigate('/deployment');
         break;
+      case 'admin':
+        navigate('/admin');
+        break;
       default:
         navigate('/dashboard');
     }
   };
 
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'ops_manager':
-        return 'OPS Manager';
-      case 'deployment_engineer':
-        return 'Deployment Engineer';
-      case 'admin':
-        return 'Admin';
-      default:
-        return 'User';
-    }
+  const getCurrentRoleConfig = () => {
+    if (!currentRole) return null;
+    return getRoleConfig(currentRole);
   };
+
+  const roleConfig = getCurrentRoleConfig();
+  const RoleIcon = roleConfig?.icon || User;
+
+  // Get accessible navigation items based on current role
+  const getAccessibleNavItems = () => {
+    if (!currentRole) return [];
+    
+    const items = [];
+    
+    // Dashboard is always accessible
+    items.push({ path: '/dashboard', label: 'Dashboard' });
+    
+    // Role-specific navigation
+    if (canAccessPage(currentRole, '/site-study')) {
+      items.push({ path: '/site-study', label: 'Site Study' });
+    }
+    
+    if (canAccessPage(currentRole, '/admin')) {
+      items.push({ path: '/admin', label: 'Admin' });
+    }
+    
+    if (canAccessPage(currentRole, '/ops-manager')) {
+      items.push({ path: '/ops-manager', label: 'Ops Manager' });
+    }
+    
+    if (canAccessPage(currentRole, '/deployment')) {
+      items.push({ path: '/deployment', label: 'Deployment' });
+    }
+    
+    return items;
+  };
+
+  const navItems = getAccessibleNavItems();
 
   return (
     <header className="bg-background border-b border-border">
@@ -59,23 +90,18 @@ const Header = () => {
             </Link>
           </div>
 
-          
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
-              Dashboard
-            </Link>
-            <Link to="/site-study" className="text-foreground hover:text-primary transition-colors">
-              Site Study
-            </Link>
-            <a href="#sites" className="text-foreground hover:text-primary transition-colors">
-              Sites
-            </a>
-            <a href="#inventory" className="text-foreground hover:text-primary transition-colors">
-              Inventory
-            </a>
-            <a href="#forecast" className="text-foreground hover:text-primary transition-colors">
-              Forecast
-            </a>
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`text-foreground hover:text-primary transition-colors ${
+                  location.pathname === item.path ? 'text-primary font-medium' : ''
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -90,14 +116,14 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary-foreground" />
+                    <RoleIcon className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div className="hidden md:block text-left">
                     <p className="text-sm font-medium text-foreground">
                       {profile?.full_name || 'User'}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {getRoleDisplayName(currentRole || 'user')}
+                    <p className={`text-xs ${roleConfig?.color || 'text-muted-foreground'}`}>
+                      {roleConfig?.displayName || 'User'}
                     </p>
                   </div>
                 </Button>
@@ -112,20 +138,31 @@ const Header = () => {
                 {/* Role Switching */}
                 {availableRoles.length > 1 && (
                   <>
-                    {availableRoles.map((role) => (
-                      <DropdownMenuItem 
-                        key={role}
-                        onClick={() => {
-                          switchRole(role);
-                          handleRoleBasedNavigation(role);
-                        }}
-                        className={currentRole === role ? "bg-muted" : ""}
-                      >
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        <span>Switch to {getRoleDisplayName(role)}</span>
-                        {currentRole === role && <span className="ml-auto text-xs">(Current)</span>}
-                      </DropdownMenuItem>
-                    ))}
+                    <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                      Switch Role
+                    </div>
+                    {availableRoles.map((role) => {
+                      const config = getRoleConfig(role);
+                      const RoleIconComponent = config.icon;
+                      return (
+                        <DropdownMenuItem 
+                          key={role}
+                          onClick={() => {
+                            switchRole(role);
+                            handleRoleBasedNavigation(role);
+                          }}
+                          className={`${currentRole === role ? "bg-muted" : ""} flex items-center`}
+                        >
+                          <RoleIconComponent className={`mr-2 h-4 w-4 ${config.color}`} />
+                          <span>{config.displayName}</span>
+                          {currentRole === role && (
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              Active
+                            </Badge>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
                     <DropdownMenuSeparator />
                   </>
                 )}

@@ -12,8 +12,25 @@ import {
   Calendar,
   TrendingUp
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { getRoleConfig, hasPermission } from "@/lib/roles";
+import { useNavigate } from "react-router-dom";
+import RoleIndicator from "@/components/RoleIndicator";
+import { toast } from "sonner";
+import React from "react";
 
 const OpsManager = () => {
+  const { currentRole } = useAuth();
+  const navigate = useNavigate();
+
+  // Check if user has ops manager access
+  React.useEffect(() => {
+    if (currentRole && !hasPermission(currentRole, 'approve_hardware_requests')) {
+      toast.error('You do not have permission to access the Ops Manager panel');
+      navigate('/dashboard');
+    }
+  }, [currentRole, navigate]);
+
   const activeProjects = [
     {
       id: 1,
@@ -66,14 +83,38 @@ const OpsManager = () => {
     }
   };
 
+  // If user doesn't have ops manager permissions, show access denied
+  if (currentRole && !hasPermission(currentRole, 'approve_hardware_requests')) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+            <p className="text-muted-foreground">
+              You do not have permission to access the Ops Manager panel.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const roleConfig = currentRole ? getRoleConfig(currentRole) : null;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Operations Manager Dashboard</h1>
-          <p className="text-muted-foreground">Monitor and manage site onboarding operations across all locations.</p>
+          <div className="flex items-center space-x-3 mb-2">
+            <h1 className="text-3xl font-bold text-foreground">Operations Manager Dashboard</h1>
+            <RoleIndicator />
+          </div>
+          <p className="text-muted-foreground">
+            {roleConfig?.description || 'Monitor and manage site onboarding operations across all locations.'}
+          </p>
         </div>
 
         {/* Key Metrics */}

@@ -14,8 +14,25 @@ import {
   Monitor,
   AlertCircle
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { getRoleConfig, hasPermission } from "@/lib/roles";
+import { useNavigate } from "react-router-dom";
+import RoleIndicator from "@/components/RoleIndicator";
+import { toast } from "sonner";
+import React from "react";
 
 const Deployment = () => {
+  const { currentRole } = useAuth();
+  const navigate = useNavigate();
+
+  // Check if user has deployment engineer access
+  React.useEffect(() => {
+    if (currentRole && !hasPermission(currentRole, 'conduct_site_studies')) {
+      toast.error('You do not have permission to access the Deployment panel');
+      navigate('/dashboard');
+    }
+  }, [currentRole, navigate]);
+
   const deployments = [
     {
       id: 1,
@@ -105,14 +122,38 @@ const Deployment = () => {
     }
   };
 
+  // If user doesn't have deployment engineer permissions, show access denied
+  if (currentRole && !hasPermission(currentRole, 'conduct_site_studies')) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+            <p className="text-muted-foreground">
+              You do not have permission to access the Deployment panel.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const roleConfig = currentRole ? getRoleConfig(currentRole) : null;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Deployment Dashboard</h1>
-          <p className="text-muted-foreground">Monitor deployments, infrastructure, and system performance across all sites.</p>
+          <div className="flex items-center space-x-3 mb-2">
+            <h1 className="text-3xl font-bold text-foreground">Deployment Dashboard</h1>
+            <RoleIndicator />
+          </div>
+          <p className="text-muted-foreground">
+            {roleConfig?.description || 'Monitor and manage deployment operations across all sites.'}
+          </p>
         </div>
 
         {/* System Health Overview */}
