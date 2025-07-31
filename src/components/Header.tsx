@@ -70,9 +70,12 @@ const Header = () => {
             <a href="#sites" className="text-foreground hover:text-primary transition-colors">
               Sites
             </a>
-            <a href="#inventory" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">
               Inventory
-            </a>
+            </Link>
+            <Link to="/license-management" className="text-foreground hover:text-primary transition-colors">
+              License Management
+            </Link>
             <a href="#forecast" className="text-foreground hover:text-primary transition-colors">
               Forecast
             </a>

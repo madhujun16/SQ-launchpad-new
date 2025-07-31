@@ -519,6 +519,145 @@ export const licenseService = {
       throw new Error('Failed to delete license');
     }
   },
+
+  // License Management specific methods
+  async getLicenseManagementSummary(): Promise<{
+    total_licenses: number;
+    active_licenses: number;
+    expiring_soon: number;
+    expired_licenses: number;
+    software_licenses: number;
+    hardware_licenses: number;
+    service_licenses: number;
+    integration_licenses: number;
+  }> {
+    const { data, error } = await supabase.rpc('get_license_management_summary');
+    
+    if (error) {
+      console.error('Error fetching license management summary:', error);
+      throw new Error('Failed to fetch license management summary');
+    }
+    
+    return data[0] || {
+      total_licenses: 0,
+      active_licenses: 0,
+      expiring_soon: 0,
+      expired_licenses: 0,
+      software_licenses: 0,
+      hardware_licenses: 0,
+      service_licenses: 0,
+      integration_licenses: 0,
+    };
+  },
+
+  async getLicenseManagementItems(filters: any = {}, page = 1, limit = 20): Promise<{
+    data: License[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    let query = supabase
+      .from('licenses')
+      .select(`
+        *,
+        site:sites(*, sector:sectors(*), city:cities(*)),
+        inventory_item:inventory_items(*)
+      `);
+
+    // Apply filters
+    if (filters.organisation_id) {
+      query = query.eq('site.sector_id', filters.organisation_id);
+    }
+    if (filters.food_court_id) {
+      query = query.eq('site.city_id', filters.food_court_id);
+    }
+    if (filters.restaurant_id) {
+      query = query.eq('site_id', filters.restaurant_id);
+    }
+    if (filters.license_type) {
+      query = query.eq('license_type', filters.license_type);
+    }
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters.vendor) {
+      query = query.ilike('vendor', `%${filters.vendor}%`);
+    }
+    if (filters.search) {
+      query = query.or(`name.ilike.%${filters.search}%,license_key.ilike.%${filters.search}%`);
+    }
+
+    // Get total count
+    const { count } = await query.count();
+    
+    // Apply pagination
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    
+    const { data, error } = await query
+      .range(from, to)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching license management items:', error);
+      throw new Error('Failed to fetch license management items');
+    }
+
+    return {
+      data: data || [],
+      total: count || 0,
+      page,
+      limit,
+    };
+  },
+
+  async getLicenseByType(): Promise<{
+    license_type: string;
+    count: number;
+    active: number;
+    expiring: number;
+    expired: number;
+  }[]> {
+    const { data, error } = await supabase.rpc('get_license_by_type');
+    
+    if (error) {
+      console.error('Error fetching license by type:', error);
+      throw new Error('Failed to fetch license by type');
+    }
+    
+    return data || [];
+  },
+
+  async getLicenseByStatus(): Promise<{
+    status: string;
+    count: number;
+  }[]> {
+    const { data, error } = await supabase.rpc('get_license_by_status');
+    
+    if (error) {
+      console.error('Error fetching license by status:', error);
+      throw new Error('Failed to fetch license by status');
+    }
+    
+    return data || [];
+  },
+
+  async getLicenseByOrganisation(): Promise<{
+    organisation: string;
+    count: number;
+    active: number;
+    expiring: number;
+    expired: number;
+  }[]> {
+    const { data, error } = await supabase.rpc('get_license_by_organisation');
+    
+    if (error) {
+      console.error('Error fetching license by organisation:', error);
+      throw new Error('Failed to fetch license by organisation');
+    }
+    
+    return data || [];
+  },
 };
 
 // Reference Data API
