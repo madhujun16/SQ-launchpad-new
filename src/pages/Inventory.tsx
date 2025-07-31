@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Filter, Download, RefreshCw, Search, Eye, Edit, Trash2, Package, Shield, Wrench, TrendingUp, BarChart3, Activity, Zap, AlertCircle, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { Plus, Filter, Download, RefreshCw, Search, Eye, Edit, Trash2, Package, Shield, Wrench, TrendingUp, BarChart3, Activity, Zap, AlertCircle, CheckCircle, Clock, MapPin, Bell, Star, Award, Target, Users, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 // UI Components
@@ -16,6 +16,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Charts
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -65,6 +66,7 @@ export default function Inventory() {
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(false);
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Queries
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -197,7 +199,7 @@ export default function Inventory() {
     },
   });
 
-  // Chart data
+  // Enhanced data for charts and analytics
   const statusChartData = inventoryByStatus?.map(item => ({
     name: item.status,
     value: item.count,
@@ -216,6 +218,40 @@ export default function Inventory() {
     deployed: item.deployed,
     maintenance: item.maintenance,
   })) || [];
+
+  // Mock data for enhanced analytics
+  const deploymentTrendData = [
+    { month: 'Jan', deployed: 12, available: 8 },
+    { month: 'Feb', deployed: 15, available: 5 },
+    { month: 'Mar', deployed: 18, available: 2 },
+    { month: 'Apr', deployed: 22, available: 1 },
+    { month: 'May', deployed: 25, available: 3 },
+    { month: 'Jun', deployed: 28, available: 2 },
+  ];
+
+  const alerts = [
+    {
+      id: 1,
+      type: 'warning',
+      title: 'Low Inventory Alert',
+      message: 'POS systems running low. Only 3 units available.',
+      time: '2 hours ago'
+    },
+    {
+      id: 2,
+      type: 'info',
+      title: 'Maintenance Due',
+      message: '5 items require scheduled maintenance this week.',
+      time: '4 hours ago'
+    },
+    {
+      id: 3,
+      type: 'success',
+      title: 'Deployment Complete',
+      message: 'Manchester Central deployment completed successfully.',
+      time: '6 hours ago'
+    }
+  ];
 
   const handleStatusChange = (itemId: string, newStatus: string) => {
     updateInventoryMutation.mutate({
@@ -250,38 +286,72 @@ export default function Inventory() {
     return typeOption?.label || type;
   };
 
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'info':
+        return <Activity className="h-4 w-4 text-blue-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const filteredInventoryData = inventoryData?.data.filter(item =>
+    searchTerm === '' || 
+    item.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.inventory_type.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto p-6 space-y-8">
-        {/* Enhanced Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Inventory & Deployment
-              </h1>
-              <p className="text-slate-600 mt-2 text-lg">
-                Manage hardware assets, track deployments, and monitor licenses
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => window.location.reload()} className="shadow-sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button onClick={() => setIsCreateModalOpen(true)} className="shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header Section */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Inventory & Deployment</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage hardware assets, track deployments, and monitor licenses
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
           </div>
         </div>
+
+        {/* Alerts Section */}
+        {alerts.length > 0 && (
+          <div className="space-y-3">
+            {alerts.map((alert) => (
+              <Alert key={alert.id} className="border-l-4 border-l-yellow-500 bg-yellow-50">
+                <div className="flex items-start space-x-3">
+                  {getAlertIcon(alert.type)}
+                  <div className="flex-1">
+                    <h4 className="font-medium text-yellow-800">{alert.title}</h4>
+                    <p className="text-sm text-yellow-700 mt-1">{alert.message}</p>
+                    <p className="text-xs text-yellow-600 mt-2">{alert.time}</p>
+                  </div>
+                </div>
+              </Alert>
+            ))}
+          </div>
+        )}
 
         {/* Enhanced Summary Cards */}
         {summaryLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="shadow-sm border-slate-200">
+              <Card key={i}>
                 <CardContent className="p-6">
                   <div className="space-y-3">
                     <Skeleton className="h-4 w-3/4" />
@@ -293,13 +363,16 @@ export default function Inventory() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Total Items</p>
-                    <p className="text-3xl font-bold text-slate-900">{summary?.total_items || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">All hardware assets</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Items</p>
+                    <p className="text-3xl font-bold">{summary?.total_items || 0}</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                      +12% from last month
+                    </div>
                   </div>
                   <div className="p-3 bg-blue-100 rounded-full">
                     <Package className="h-8 w-8 text-blue-600" />
@@ -308,13 +381,16 @@ export default function Inventory() {
               </CardContent>
             </Card>
             
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Available</p>
+                    <p className="text-sm font-medium text-muted-foreground">Available</p>
                     <p className="text-3xl font-bold text-green-600">{summary?.available_items || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">Ready for deployment</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                      Ready for deployment
+                    </div>
                   </div>
                   <div className="p-3 bg-green-100 rounded-full">
                     <CheckCircle className="h-8 w-8 text-green-600" />
@@ -323,13 +399,16 @@ export default function Inventory() {
               </CardContent>
             </Card>
             
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Deployed</p>
+                    <p className="text-sm font-medium text-muted-foreground">Deployed</p>
                     <p className="text-3xl font-bold text-blue-600">{summary?.deployed_items || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">Currently in use</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <MapPin className="h-3 w-3 mr-1 text-blue-500" />
+                      Currently in use
+                    </div>
                   </div>
                   <div className="p-3 bg-blue-100 rounded-full">
                     <MapPin className="h-8 w-8 text-blue-600" />
@@ -338,13 +417,16 @@ export default function Inventory() {
               </CardContent>
             </Card>
             
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Maintenance</p>
+                    <p className="text-sm font-medium text-muted-foreground">Maintenance</p>
                     <p className="text-3xl font-bold text-yellow-600">{summary?.maintenance_items || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">Under service</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <Wrench className="h-3 w-3 mr-1 text-yellow-500" />
+                      Under service
+                    </div>
                   </div>
                   <div className="p-3 bg-yellow-100 rounded-full">
                     <Wrench className="h-8 w-8 text-yellow-600" />
@@ -356,24 +438,24 @@ export default function Inventory() {
         )}
 
         {/* Enhanced Main Content */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <Card>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="border-b border-slate-200">
+            <div className="border-b">
               <div className="px-6 py-4">
-                <TabsList className="grid w-full grid-cols-4 bg-slate-100">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="overview">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="inventory" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="inventory">
                     <Package className="h-4 w-4 mr-2" />
                     Inventory
                   </TabsTrigger>
-                  <TabsTrigger value="licenses" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="licenses">
                     <Shield className="h-4 w-4 mr-2" />
                     Licenses
                   </TabsTrigger>
-                  <TabsTrigger value="deployment" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="deployment">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Deployment
                   </TabsTrigger>
@@ -383,12 +465,12 @@ export default function Inventory() {
 
             <div className="p-6">
               {/* Overview Tab */}
-              <TabsContent value="overview" className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Status Distribution */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                         <PieChart className="h-5 w-5 text-blue-600" />
                         Status Distribution
                       </CardTitle>
@@ -417,10 +499,34 @@ export default function Inventory() {
                     </CardContent>
                   </Card>
 
+                  {/* Deployment Trend */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        Deployment Trend
+                      </CardTitle>
+                      <CardDescription>Monthly deployment activity</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={deploymentTrendData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="deployed" stroke="#3B82F6" strokeWidth={2} />
+                          <Line type="monotone" dataKey="available" stroke="#10B981" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
                   {/* Group Type Distribution */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-green-600" />
                         Group Type Distribution
                       </CardTitle>
@@ -442,35 +548,10 @@ export default function Inventory() {
                     </CardContent>
                   </Card>
 
-                  {/* Inventory Type Distribution */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Activity className="h-5 w-5 text-purple-600" />
-                        Inventory Type Distribution
-                      </CardTitle>
-                      <CardDescription>Hardware type breakdown</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={typeChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="available" fill="#10B981" name="Available" />
-                          <Bar dataKey="deployed" fill="#3B82F6" name="Deployed" />
-                          <Bar dataKey="maintenance" fill="#F59E0B" name="Maintenance" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
                   {/* Quick Actions */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-orange-600" />
                         Quick Actions
                       </CardTitle>
@@ -478,7 +559,7 @@ export default function Inventory() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <Button 
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-sm" 
+                        className="w-full" 
                         onClick={() => setIsCreateModalOpen(true)}
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -486,7 +567,7 @@ export default function Inventory() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full"
                         onClick={() => setIsLicenseModalOpen(true)}
                       >
                         <Shield className="h-4 w-4 mr-2" />
@@ -494,7 +575,7 @@ export default function Inventory() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full"
                         onClick={() => setActiveTab('deployment')}
                       >
                         <TrendingUp className="h-4 w-4 mr-2" />
@@ -502,7 +583,7 @@ export default function Inventory() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full"
                         onClick={() => setIsMaintenanceModalOpen(true)}
                       >
                         <Wrench className="h-4 w-4 mr-2" />
@@ -524,21 +605,32 @@ export default function Inventory() {
                   sites={sites || []}
                 />
 
+                {/* Search Bar */}
+                <div className="flex gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search inventory items..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+
                 {/* Enhanced Inventory Table */}
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader className="pb-4">
+                <Card>
+                  <CardHeader>
                     <div className="flex justify-between items-center">
                       <div>
-                        <CardTitle className="text-lg">Inventory Items</CardTitle>
+                        <CardTitle>Inventory Items</CardTitle>
                         <CardDescription>
-                          {inventoryData?.total || 0} items found
+                          {filteredInventoryData.length} items found
                         </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="shadow-sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          Export
-                        </Button>
                       </div>
                     </div>
                   </CardHeader>
@@ -553,9 +645,9 @@ export default function Inventory() {
                       </div>
                     ) : (
                       <>
-                        <div className="rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="rounded-lg border overflow-hidden">
                           <Table>
-                            <TableHeader className="bg-slate-50">
+                            <TableHeader>
                               <TableRow>
                                 <TableHead className="font-semibold">Serial Number</TableHead>
                                 <TableHead className="font-semibold">Model</TableHead>
@@ -567,8 +659,8 @@ export default function Inventory() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {inventoryData?.data.map((item) => (
-                                <TableRow key={item.id} className="hover:bg-slate-50 transition-colors">
+                              {filteredInventoryData.map((item) => (
+                                <TableRow key={item.id} className="hover:bg-muted/50 transition-colors">
                                   <TableCell className="font-mono font-medium">{item.serial_number}</TableCell>
                                   <TableCell className="font-medium">{item.model}</TableCell>
                                   <TableCell>
@@ -589,7 +681,7 @@ export default function Inventory() {
                                       {getStatusLabel(item.status)}
                                     </Badge>
                                   </TableCell>
-                                  <TableCell className="text-slate-600">
+                                  <TableCell className="text-muted-foreground">
                                     {item.site?.name || 'Unassigned'}
                                   </TableCell>
                                   <TableCell>
@@ -648,7 +740,7 @@ export default function Inventory() {
                                 <PaginationItem>
                                   <PaginationPrevious 
                                     onClick={() => setPage(Math.max(1, page - 1))}
-                                    className={page === 1 ? 'pointer-events-none opacity-50' : 'hover:bg-slate-100'}
+                                    className={page === 1 ? 'pointer-events-none opacity-50' : 'hover:bg-muted'}
                                   />
                                 </PaginationItem>
                                 {Array.from({ length: Math.ceil(inventoryData.total / 20) }, (_, i) => i + 1).map((pageNum) => (
@@ -656,7 +748,7 @@ export default function Inventory() {
                                     <PaginationLink
                                       onClick={() => setPage(pageNum)}
                                       isActive={page === pageNum}
-                                      className="hover:bg-slate-100"
+                                      className="hover:bg-muted"
                                     >
                                       {pageNum}
                                     </PaginationLink>
@@ -665,7 +757,7 @@ export default function Inventory() {
                                 <PaginationItem>
                                   <PaginationNext 
                                     onClick={() => setPage(page + 1)}
-                                    className={page >= Math.ceil(inventoryData.total / 20) ? 'pointer-events-none opacity-50' : 'hover:bg-slate-100'}
+                                    className={page >= Math.ceil(inventoryData.total / 20) ? 'pointer-events-none opacity-50' : 'hover:bg-muted'}
                                   />
                                 </PaginationItem>
                               </PaginationContent>
@@ -680,16 +772,15 @@ export default function Inventory() {
 
               {/* Licenses Tab */}
               <TabsContent value="licenses" className="space-y-6">
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader className="pb-4">
+                <Card>
+                  <CardHeader>
                     <div className="flex justify-between items-center">
                       <div>
-                        <CardTitle className="text-lg">Licenses</CardTitle>
+                        <CardTitle>Licenses</CardTitle>
                         <CardDescription>Hardware, software, and service licenses</CardDescription>
                       </div>
                       <Button 
                         onClick={() => setIsLicenseModalOpen(true)}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-sm"
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add License
@@ -706,9 +797,9 @@ export default function Inventory() {
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-lg border border-slate-200 overflow-hidden">
+                      <div className="rounded-lg border overflow-hidden">
                         <Table>
-                          <TableHeader className="bg-slate-50">
+                          <TableHeader>
                             <TableRow>
                               <TableHead className="font-semibold">Name</TableHead>
                               <TableHead className="font-semibold">Type</TableHead>
@@ -721,7 +812,7 @@ export default function Inventory() {
                           </TableHeader>
                           <TableBody>
                             {licensesData?.data.map((license) => (
-                              <TableRow key={license.id} className="hover:bg-slate-50 transition-colors">
+                              <TableRow key={license.id} className="hover:bg-muted/50 transition-colors">
                                 <TableCell className="font-medium">{license.name}</TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="font-medium">
@@ -736,8 +827,8 @@ export default function Inventory() {
                                     {license.status}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-slate-600">{license.vendor}</TableCell>
-                                <TableCell className="text-slate-600">{license.expiry_date || 'N/A'}</TableCell>
+                                <TableCell className="text-muted-foreground">{license.vendor}</TableCell>
+                                <TableCell className="text-muted-foreground">{license.expiry_date || 'N/A'}</TableCell>
                                 <TableCell className="font-medium">{license.cost ? `£${license.cost}` : 'N/A'}</TableCell>
                                 <TableCell>
                                   <div className="flex gap-1">
@@ -771,13 +862,13 @@ export default function Inventory() {
 
               {/* Deployment Tab */}
               <TabsContent value="deployment" className="space-y-6">
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Deployment History</CardTitle>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Deployment History</CardTitle>
                     <CardDescription>Track inventory deployments across sites</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-slate-500">
+                    <div className="text-center py-12 text-muted-foreground">
                       <TrendingUp className="h-16 w-16 mx-auto mb-4 opacity-30" />
                       <h3 className="text-lg font-medium mb-2">Deployment History</h3>
                       <p className="text-sm">Use the Deploy action to move inventory items between sites</p>
@@ -787,13 +878,13 @@ export default function Inventory() {
               </TabsContent>
             </div>
           </Tabs>
-        </div>
+        </Card>
 
         {/* Enhanced Modals */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl">Add Inventory Item</DialogTitle>
+              <DialogTitle>Add Inventory Item</DialogTitle>
               <DialogDescription>
                 Create a new inventory item with all required details
               </DialogDescription>
@@ -811,7 +902,7 @@ export default function Inventory() {
         <Dialog open={isLicenseModalOpen} onOpenChange={setIsLicenseModalOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl">Add License</DialogTitle>
+              <DialogTitle>Add License</DialogTitle>
               <DialogDescription>
                 Create a new license for hardware, software, or service
               </DialogDescription>
@@ -828,7 +919,7 @@ export default function Inventory() {
         <Dialog open={isDeployModalOpen} onOpenChange={setIsDeployModalOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl">Deploy Inventory Item</DialogTitle>
+              <DialogTitle>Deploy Inventory Item</DialogTitle>
               <DialogDescription>
                 Move inventory item to a new site
               </DialogDescription>
@@ -845,13 +936,13 @@ export default function Inventory() {
         <Dialog open={isMaintenanceModalOpen} onOpenChange={setIsMaintenanceModalOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl">Log Maintenance</DialogTitle>
+              <DialogTitle>Log Maintenance</DialogTitle>
               <DialogDescription>
                 Record maintenance activity for inventory item
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 Maintenance logging functionality will be implemented here.
               </p>
             </div>

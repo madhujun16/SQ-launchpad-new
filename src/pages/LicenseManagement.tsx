@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Filter, Download, RefreshCw, Search, Eye, Edit, Trash2, Shield, AlertCircle, CheckCircle, Clock, Calendar, Building, MapPin, Store, Package, Zap, TrendingUp, BarChart3, Activity } from 'lucide-react';
+import { Plus, Filter, Download, RefreshCw, Search, Eye, Edit, Trash2, Shield, AlertCircle, CheckCircle, Clock, Calendar, Building, MapPin, Store, Package, Zap, TrendingUp, BarChart3, Activity, Bell, Star, Award, Target, Users, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // UI Components
@@ -16,6 +16,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Charts
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -90,6 +91,7 @@ export default function LicenseManagement() {
   const [page, setPage] = useState(1);
   const [selectedLicense, setSelectedLicense] = useState<License | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Queries
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -177,7 +179,7 @@ export default function LicenseManagement() {
     },
   });
 
-  // Chart data
+  // Enhanced data for charts and analytics
   const statusChartData = licenseByStatus?.map(item => ({
     name: item.status,
     value: item.count,
@@ -196,6 +198,40 @@ export default function LicenseManagement() {
     expiring: item.expiring,
     expired: item.expired,
   })) || [];
+
+  // Mock data for enhanced analytics
+  const renewalTrendData = [
+    { month: 'Jan', renewals: 8, expirations: 3 },
+    { month: 'Feb', renewals: 12, expirations: 5 },
+    { month: 'Mar', renewals: 15, expirations: 7 },
+    { month: 'Apr', renewals: 10, expirations: 4 },
+    { month: 'May', renewals: 18, expirations: 6 },
+    { month: 'Jun', renewals: 22, expirations: 9 },
+  ];
+
+  const alerts = [
+    {
+      id: 1,
+      type: 'warning',
+      title: 'License Expiring Soon',
+      message: '5 software licenses will expire within 30 days.',
+      time: '2 hours ago'
+    },
+    {
+      id: 2,
+      type: 'error',
+      title: 'Expired Licenses',
+      message: '3 hardware licenses have expired and need immediate attention.',
+      time: '4 hours ago'
+    },
+    {
+      id: 3,
+      type: 'success',
+      title: 'Renewal Completed',
+      message: 'ASDA Redditch software licenses renewed successfully.',
+      time: '6 hours ago'
+    }
+  ];
 
   const handleDeleteLicense = (licenseId: string) => {
     if (confirm('Are you sure you want to delete this license?')) {
@@ -253,38 +289,94 @@ export default function LicenseManagement() {
     }
   };
 
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'info':
+        return <Activity className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const filteredLicensesData = licensesData?.data.filter(license =>
+    searchTerm === '' || 
+    license.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    license.license_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    license.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto p-6 space-y-8">
-        {/* Enhanced Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                License Management
-              </h1>
-              <p className="text-slate-600 mt-2 text-lg">
-                Track, manage, and monitor all types of licenses across operational hierarchy
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => window.location.reload()} className="shadow-sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button onClick={() => setIsCreateModalOpen(true)} className="shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add License
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header Section */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">License Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Track, manage, and monitor all types of licenses across operational hierarchy
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add License
+            </Button>
           </div>
         </div>
+
+        {/* Alerts Section */}
+        {alerts.length > 0 && (
+          <div className="space-y-3">
+            {alerts.map((alert) => (
+              <Alert key={alert.id} className={`border-l-4 ${
+                alert.type === 'warning' ? 'border-l-yellow-500 bg-yellow-50' :
+                alert.type === 'error' ? 'border-l-red-500 bg-red-50' :
+                alert.type === 'success' ? 'border-l-green-500 bg-green-50' :
+                'border-l-blue-500 bg-blue-50'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  {getAlertIcon(alert.type)}
+                  <div className="flex-1">
+                    <h4 className={`font-medium ${
+                      alert.type === 'warning' ? 'text-yellow-800' :
+                      alert.type === 'error' ? 'text-red-800' :
+                      alert.type === 'success' ? 'text-green-800' :
+                      'text-blue-800'
+                    }`}>{alert.title}</h4>
+                    <p className={`text-sm mt-1 ${
+                      alert.type === 'warning' ? 'text-yellow-700' :
+                      alert.type === 'error' ? 'text-red-700' :
+                      alert.type === 'success' ? 'text-green-700' :
+                      'text-blue-700'
+                    }`}>{alert.message}</p>
+                    <p className={`text-xs mt-2 ${
+                      alert.type === 'warning' ? 'text-yellow-600' :
+                      alert.type === 'error' ? 'text-red-600' :
+                      alert.type === 'success' ? 'text-green-600' :
+                      'text-blue-600'
+                    }`}>{alert.time}</p>
+                  </div>
+                </div>
+              </Alert>
+            ))}
+          </div>
+        )}
 
         {/* Enhanced Summary Cards */}
         {summaryLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="shadow-sm border-slate-200">
+              <Card key={i}>
                 <CardContent className="p-6">
                   <div className="space-y-3">
                     <Skeleton className="h-4 w-3/4" />
@@ -296,13 +388,16 @@ export default function LicenseManagement() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Total Licenses</p>
-                    <p className="text-3xl font-bold text-slate-900">{summary?.total_licenses || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">All license types</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Licenses</p>
+                    <p className="text-3xl font-bold">{summary?.total_licenses || 0}</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                      +8% from last month
+                    </div>
                   </div>
                   <div className="p-3 bg-blue-100 rounded-full">
                     <Shield className="h-8 w-8 text-blue-600" />
@@ -311,13 +406,16 @@ export default function LicenseManagement() {
               </CardContent>
             </Card>
             
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Active</p>
+                    <p className="text-sm font-medium text-muted-foreground">Active</p>
                     <p className="text-3xl font-bold text-green-600">{summary?.active_licenses || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">Currently valid</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                      Currently valid
+                    </div>
                   </div>
                   <div className="p-3 bg-green-100 rounded-full">
                     <CheckCircle className="h-8 w-8 text-green-600" />
@@ -326,13 +424,16 @@ export default function LicenseManagement() {
               </CardContent>
             </Card>
             
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Expiring Soon</p>
+                    <p className="text-sm font-medium text-muted-foreground">Expiring Soon</p>
                     <p className="text-3xl font-bold text-yellow-600">{summary?.expiring_soon || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">Within 30 days</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <Clock className="h-3 w-3 mr-1 text-yellow-500" />
+                      Within 30 days
+                    </div>
                   </div>
                   <div className="p-3 bg-yellow-100 rounded-full">
                     <Clock className="h-8 w-8 text-yellow-600" />
@@ -341,13 +442,16 @@ export default function LicenseManagement() {
               </CardContent>
             </Card>
             
-            <Card className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
+            <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Expired</p>
+                    <p className="text-sm font-medium text-muted-foreground">Expired</p>
                     <p className="text-3xl font-bold text-red-600">{summary?.expired_licenses || 0}</p>
-                    <p className="text-xs text-slate-500 mt-1">Requires attention</p>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1">
+                      <AlertCircle className="h-3 w-3 mr-1 text-red-500" />
+                      Requires attention
+                    </div>
                   </div>
                   <div className="p-3 bg-red-100 rounded-full">
                     <AlertCircle className="h-8 w-8 text-red-600" />
@@ -360,11 +464,11 @@ export default function LicenseManagement() {
 
         {/* License Type Breakdown */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-sm border-slate-200">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Software</p>
+                  <p className="text-sm font-medium text-muted-foreground">Software</p>
                   <p className="text-2xl font-bold text-blue-600">{summary?.software_licenses || 0}</p>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-full">
@@ -374,11 +478,11 @@ export default function LicenseManagement() {
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm border-slate-200">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Hardware</p>
+                  <p className="text-sm font-medium text-muted-foreground">Hardware</p>
                   <p className="text-2xl font-bold text-green-600">{summary?.hardware_licenses || 0}</p>
                 </div>
                 <div className="p-2 bg-green-100 rounded-full">
@@ -388,11 +492,11 @@ export default function LicenseManagement() {
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm border-slate-200">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Service</p>
+                  <p className="text-sm font-medium text-muted-foreground">Service</p>
                   <p className="text-2xl font-bold text-purple-600">{summary?.service_licenses || 0}</p>
                 </div>
                 <div className="p-2 bg-purple-100 rounded-full">
@@ -402,11 +506,11 @@ export default function LicenseManagement() {
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm border-slate-200">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-600">Integration</p>
+                  <p className="text-sm font-medium text-muted-foreground">Integration</p>
                   <p className="text-2xl font-bold text-orange-600">{summary?.integration_licenses || 0}</p>
                 </div>
                 <div className="p-2 bg-orange-100 rounded-full">
@@ -418,20 +522,20 @@ export default function LicenseManagement() {
         </div>
 
         {/* Enhanced Main Content */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <Card>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="border-b border-slate-200">
+            <div className="border-b">
               <div className="px-6 py-4">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-100">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="overview">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="licenses" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="licenses">
                     <Shield className="h-4 w-4 mr-2" />
                     Licenses
                   </TabsTrigger>
-                  <TabsTrigger value="compliance" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="compliance">
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Compliance
                   </TabsTrigger>
@@ -441,12 +545,12 @@ export default function LicenseManagement() {
 
             <div className="p-6">
               {/* Overview Tab */}
-              <TabsContent value="overview" className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* License Status Distribution */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                         <PieChart className="h-5 w-5 text-blue-600" />
                         License Status Distribution
                       </CardTitle>
@@ -475,10 +579,34 @@ export default function LicenseManagement() {
                     </CardContent>
                   </Card>
 
+                  {/* Renewal Trend */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        Renewal Trend
+                      </CardTitle>
+                      <CardDescription>Monthly renewal and expiration activity</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={renewalTrendData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line type="monotone" dataKey="renewals" stroke="#10B981" strokeWidth={2} />
+                          <Line type="monotone" dataKey="expirations" stroke="#EF4444" strokeWidth={2} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
                   {/* License Type Distribution */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-green-600" />
                         License Type Distribution
                       </CardTitle>
@@ -500,35 +628,10 @@ export default function LicenseManagement() {
                     </CardContent>
                   </Card>
 
-                  {/* Organisation Distribution */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Building className="h-5 w-5 text-purple-600" />
-                        License Distribution by Organisation
-                      </CardTitle>
-                      <CardDescription>Licenses across different organisations</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={organisationChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="active" fill="#10B981" name="Active" />
-                          <Bar dataKey="expiring" fill="#F59E0B" name="Expiring" />
-                          <Bar dataKey="expired" fill="#EF4444" name="Expired" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-
                   {/* Quick Actions */}
-                  <Card className="shadow-sm border-slate-200">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="flex items-center gap-2 text-lg">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-orange-600" />
                         Quick Actions
                       </CardTitle>
@@ -536,7 +639,7 @@ export default function LicenseManagement() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <Button 
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-sm" 
+                        className="w-full" 
                         onClick={() => setIsCreateModalOpen(true)}
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -544,7 +647,7 @@ export default function LicenseManagement() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full"
                         onClick={() => setActiveTab('compliance')}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
@@ -552,14 +655,14 @@ export default function LicenseManagement() {
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full"
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Export License Data
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="w-full shadow-sm hover:shadow-md transition-shadow"
+                        className="w-full"
                       >
                         <Calendar className="h-4 w-4 mr-2" />
                         Renewal Calendar
@@ -572,15 +675,15 @@ export default function LicenseManagement() {
               {/* Licenses Tab */}
               <TabsContent value="licenses" className="space-y-6">
                 {/* Enhanced Filters */}
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">License Filters</CardTitle>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>License Filters</CardTitle>
                     <CardDescription>Filter licenses by various criteria</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-slate-700">Organisation</label>
+                        <label className="text-sm font-medium">Organisation</label>
                         <Select value={filters.organisation_id} onValueChange={(value) => setFilters({...filters, organisation_id: value})}>
                           <SelectTrigger>
                             <SelectValue placeholder="All Organisations" />
@@ -594,7 +697,7 @@ export default function LicenseManagement() {
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium text-slate-700">Food Court (Unit)</label>
+                        <label className="text-sm font-medium">Food Court (Unit)</label>
                         <Select value={filters.food_court_id} onValueChange={(value) => setFilters({...filters, food_court_id: value})}>
                           <SelectTrigger>
                             <SelectValue placeholder="All Units" />
@@ -608,7 +711,7 @@ export default function LicenseManagement() {
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium text-slate-700">License Type</label>
+                        <label className="text-sm font-medium">License Type</label>
                         <Select value={filters.license_type} onValueChange={(value) => setFilters({...filters, license_type: value})}>
                           <SelectTrigger>
                             <SelectValue placeholder="All Types" />
@@ -624,7 +727,7 @@ export default function LicenseManagement() {
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium text-slate-700">Expiry Status</label>
+                        <label className="text-sm font-medium">Expiry Status</label>
                         <Select value={filters.expiry_status} onValueChange={(value) => setFilters({...filters, expiry_status: value as any})}>
                           <SelectTrigger>
                             <SelectValue placeholder="All Status" />
@@ -641,21 +744,32 @@ export default function LicenseManagement() {
                   </CardContent>
                 </Card>
 
+                {/* Search Bar */}
+                <div className="flex gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search licenses..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+
                 {/* Enhanced License Table */}
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader className="pb-4">
+                <Card>
+                  <CardHeader>
                     <div className="flex justify-between items-center">
                       <div>
-                        <CardTitle className="text-lg">Licenses</CardTitle>
+                        <CardTitle>Licenses</CardTitle>
                         <CardDescription>
-                          {licensesData?.total || 0} licenses found
+                          {filteredLicensesData.length} licenses found
                         </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="shadow-sm">
-                          <Download className="h-4 w-4 mr-2" />
-                          Export
-                        </Button>
                       </div>
                     </div>
                   </CardHeader>
@@ -670,9 +784,9 @@ export default function LicenseManagement() {
                       </div>
                     ) : (
                       <>
-                        <div className="rounded-lg border border-slate-200 overflow-hidden">
+                        <div className="rounded-lg border overflow-hidden">
                           <Table>
-                            <TableHeader className="bg-slate-50">
+                            <TableHeader>
                               <TableRow>
                                 <TableHead className="font-semibold">License Name</TableHead>
                                 <TableHead className="font-semibold">Organisation</TableHead>
@@ -685,11 +799,11 @@ export default function LicenseManagement() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {licensesData?.data.map((license) => (
-                                <TableRow key={license.id} className="hover:bg-slate-50 transition-colors">
+                              {filteredLicensesData.map((license) => (
+                                <TableRow key={license.id} className="hover:bg-muted/50 transition-colors">
                                   <TableCell className="font-medium">{license.name}</TableCell>
-                                  <TableCell className="text-slate-600">ASDA</TableCell>
-                                  <TableCell className="text-slate-600">Redditch</TableCell>
+                                  <TableCell className="text-muted-foreground">ASDA</TableCell>
+                                  <TableCell className="text-muted-foreground">Redditch</TableCell>
                                   <TableCell>
                                     <Badge variant="outline" className="font-medium">
                                       {getLicenseTypeLabel(license.license_type)}
@@ -710,7 +824,7 @@ export default function LicenseManagement() {
                                       {getExpiryStatus(license.expiry_date)}
                                     </Badge>
                                   </TableCell>
-                                  <TableCell className="text-slate-600">{license.expiry_date || 'N/A'}</TableCell>
+                                  <TableCell className="text-muted-foreground">{license.expiry_date || 'N/A'}</TableCell>
                                   <TableCell>
                                     <div className="flex gap-1">
                                       <Button
@@ -745,7 +859,7 @@ export default function LicenseManagement() {
                                 <PaginationItem>
                                   <PaginationPrevious 
                                     onClick={() => setPage(Math.max(1, page - 1))}
-                                    className={page === 1 ? 'pointer-events-none opacity-50' : 'hover:bg-slate-100'}
+                                    className={page === 1 ? 'pointer-events-none opacity-50' : 'hover:bg-muted'}
                                   />
                                 </PaginationItem>
                                 {Array.from({ length: Math.ceil(licensesData.total / 20) }, (_, i) => i + 1).map((pageNum) => (
@@ -753,7 +867,7 @@ export default function LicenseManagement() {
                                     <PaginationLink
                                       onClick={() => setPage(pageNum)}
                                       isActive={page === pageNum}
-                                      className="hover:bg-slate-100"
+                                      className="hover:bg-muted"
                                     >
                                       {pageNum}
                                     </PaginationLink>
@@ -762,7 +876,7 @@ export default function LicenseManagement() {
                                 <PaginationItem>
                                   <PaginationNext 
                                     onClick={() => setPage(page + 1)}
-                                    className={page >= Math.ceil(licensesData.total / 20) ? 'pointer-events-none opacity-50' : 'hover:bg-slate-100'}
+                                    className={page >= Math.ceil(licensesData.total / 20) ? 'pointer-events-none opacity-50' : 'hover:bg-muted'}
                                   />
                                 </PaginationItem>
                               </PaginationContent>
@@ -777,29 +891,82 @@ export default function LicenseManagement() {
 
               {/* Compliance Tab */}
               <TabsContent value="compliance" className="space-y-6">
-                <Card className="shadow-sm border-slate-200">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Compliance Overview</CardTitle>
-                    <CardDescription>License compliance status and requirements</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12 text-slate-500">
-                      <CheckCircle className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                      <h3 className="text-lg font-medium mb-2">Compliance Dashboard</h3>
-                      <p className="text-sm">Compliance monitoring and reporting features will be implemented here</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Compliance Overview</CardTitle>
+                      <CardDescription>License compliance status and requirements</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Overall Compliance</span>
+                          <Badge className="bg-green-100 text-green-800">95%</Badge>
+                        </div>
+                        <Progress value={95} className="h-2" />
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Active Licenses</span>
+                            <span className="text-sm font-medium text-green-600">85%</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Expiring Soon</span>
+                            <span className="text-sm font-medium text-yellow-600">8%</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Expired</span>
+                            <span className="text-sm font-medium text-red-600">7%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Upcoming Renewals</CardTitle>
+                      <CardDescription>Licenses requiring attention</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-sm">ASDA Software License</p>
+                            <p className="text-xs text-yellow-600">Expires in 15 days</p>
+                          </div>
+                          <Badge className="bg-yellow-100 text-yellow-800">Urgent</Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-sm">HSBC Hardware License</p>
+                            <p className="text-xs text-blue-600">Expires in 25 days</p>
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-800">Warning</Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-sm">Integration Service License</p>
+                            <p className="text-xs text-green-600">Expires in 45 days</p>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800">Safe</Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </div>
           </Tabs>
-        </div>
+        </Card>
 
         {/* Enhanced Modals */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl">Add License</DialogTitle>
+              <DialogTitle>Add License</DialogTitle>
               <DialogDescription>
                 Create a new license with hierarchical assignment
               </DialogDescription>
