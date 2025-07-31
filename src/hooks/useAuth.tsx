@@ -19,7 +19,11 @@ interface AuthContextType {
   availableRoles: UserRole[];
   switchRole: (role: UserRole) => void;
   signOut: () => Promise<void>;
-  signInWithPassword: (email: string) => Promise<{ error: any }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ error: any }>;
+  setFirstTimePassword: (password: string) => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -106,10 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithPassword = async (email: string) => {
-    // Hardcoded password for all users
-    const password = 'Role@123';
-    
+  const signInWithPassword = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -118,16 +119,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const createUserWithPassword = async (email: string) => {
-    // Hardcoded password for all users
-    const password = 'Role@123';
-    
+  const signUpWithPassword = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password
     });
     
     return { error };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth`
+    });
+    
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: password
+    });
+    
+    return { error };
+  };
+
+  const setFirstTimePassword = async (password: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        return { error: { message: 'No active session' } };
+      }
+
+      // Call the Supabase Edge Function for first-time password setup
+      const response = await fetch(`https://ngzvoekvwgjinagdvdhf.supabase.co/functions/v1/handle-first-time-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { error: result.error || 'Failed to set password' };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: { message: error.message } };
+    }
   };
 
   const signOut = async () => {
@@ -146,6 +190,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     switchRole,
     signOut,
     signInWithPassword,
+    signUpWithPassword,
+    resetPassword,
+    updatePassword,
+    setFirstTimePassword,
     loading,
   };
 
