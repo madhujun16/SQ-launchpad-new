@@ -12,6 +12,8 @@ import Admin from "./pages/Admin";
 import OpsManager from "./pages/OpsManager";
 import Deployment from "./pages/Deployment";
 import SiteStudy from "./pages/SiteStudy";
+import Inventory from "./pages/Inventory";
+import LicenseManagement from "./pages/LicenseManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,16 @@ const App = () => (
                 <RoleBasedRoute>
                   <SiteStudy />
                 </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/inventory" element={
+              <ProtectedRoute>
+                <Inventory />
+              </ProtectedRoute>
+            } />
+            <Route path="/license-management" element={
+              <ProtectedRoute>
+                <LicenseManagement />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

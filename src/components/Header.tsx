@@ -91,6 +91,7 @@ const Header = () => {
           </div>
 
           <nav className="hidden md:flex items-center space-x-6">
+<<<<<<< HEAD
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -102,6 +103,26 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
+=======
+            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+              Dashboard
+            </Link>
+            <Link to="/site-study" className="text-foreground hover:text-primary transition-colors">
+              Site Study
+            </Link>
+            <a href="#sites" className="text-foreground hover:text-primary transition-colors">
+              Sites
+            </a>
+            <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">
+              Inventory
+            </Link>
+            <Link to="/license-management" className="text-foreground hover:text-primary transition-colors">
+              License Management
+            </Link>
+            <a href="#forecast" className="text-foreground hover:text-primary transition-colors">
+              Forecast
+            </a>
+>>>>>>> e5248822f1d97a61a0daa9c20597af22e50d7781
           </nav>
 
           <div className="flex items-center space-x-4">
