@@ -15,7 +15,7 @@
 
 #### 1. TypeScript `any` Types (32 errors)
 **Files Affected**:
-- `src/components/SiteCreationForm.tsx` (3 errors)
+- `src/pages/SiteCreation.tsx` (0 errors)
 - `src/components/inventory/InventoryFiltersPanel.tsx` (1 error)
 - `src/components/inventory/InventoryItemDetails.tsx` (1 error)
 - `src/components/inventory/InventoryItemForm.tsx` (3 errors)

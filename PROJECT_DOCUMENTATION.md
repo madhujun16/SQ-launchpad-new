@@ -373,7 +373,7 @@ sq-launchpad-cg/
 │   │   ├── Header.tsx            # Main navigation
 │   │   ├── AuthGuard.tsx         # Authentication wrapper
 │   │   ├── RoleBasedRoute.tsx    # Role-based access control
-│   │   ├── SiteCreationForm.tsx  # Site creation form
+│   │   ├── SiteCreation.tsx  # Site creation page
 │   │   └── inventory/            # Inventory components
 │   ├── pages/
 │   │   ├── Index.tsx             # Dashboard

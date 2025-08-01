@@ -24,6 +24,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'assign_users',
       'edit_site_assignments',
       'view_all_sites',
+      'view_sites',
       'manage_users',
       'edit_site_info',
       'scope_hardware',
@@ -62,6 +63,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     permissions: [
       'approve_hardware_requests',
       'view_assigned_sites',
+      'view_sites',
       'manage_approvals',
       'update_site_status',
       'view_inventory',
@@ -93,6 +95,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'upload_findings',
       'update_site_status',
       'view_assigned_sites',
+      'view_sites',
       'add_site_geolocation',
       'define_hardware_requirements',
       'create_sites',
