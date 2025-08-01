@@ -69,7 +69,8 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'conduct_site_studies',
       'upload_findings',
       'add_site_geolocation',
-      'define_hardware_requirements'
+      'define_hardware_requirements',
+      'scope_hardware'
     ],
     accessiblePages: [
       '/dashboard', 
@@ -77,7 +78,8 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/inventory',
       '/site-study',
       '/site-creation',
-      '/site'
+      '/site',
+      '/hardware-scoping'
     ],
     color: 'text-blue-600'
   },
@@ -93,14 +95,16 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'view_assigned_sites',
       'add_site_geolocation',
       'define_hardware_requirements',
-      'create_sites'
+      'create_sites',
+      'scope_hardware'
     ],
     accessiblePages: [
       '/dashboard', 
       '/deployment', 
       '/site-study', 
       '/site-creation',
-      '/site'
+      '/site',
+      '/hardware-scoping'
     ],
     color: 'text-green-600'
   }

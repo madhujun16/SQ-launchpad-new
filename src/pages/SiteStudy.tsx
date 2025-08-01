@@ -687,7 +687,7 @@ export default function SiteStudy() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-6 py-8">
+      <main className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
         {/* Header with Create Button */}
         <div className="flex justify-between items-center mb-8">
           <div>

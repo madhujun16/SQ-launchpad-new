@@ -243,7 +243,7 @@ const Index = () => {
       
       {/* Dashboard Content */}
       <section className="py-8">
-        <div className="container mx-auto px-6">
+        <div className="w-full max-w-none px-2 sm:px-4 lg:px-6">
           {/* Header Section */}
           <div className="mb-8">
             <div className="flex justify-between items-start mb-6">
