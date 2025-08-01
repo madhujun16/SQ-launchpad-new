@@ -19,10 +19,9 @@ interface AuthContextType {
   availableRoles: UserRole[];
   switchRole: (role: UserRole) => void;
   signOut: () => Promise<void>;
-  signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithOtp: (email: string) => Promise<{ error: any }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: any }>;
   createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: any }>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
-  updatePassword: (password: string) => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -109,10 +108,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithPassword = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const signInWithOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password
+      options: {
+        // Set this to false to prevent automatic user creation
+        shouldCreateUser: false,
+      },
+    });
+    
+    return { error };
+  };
+
+  const verifyOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
     });
     
     return { error };
@@ -163,22 +175,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error: null };
   };
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth`
-    });
-    
-    return { error };
-  };
-
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: password
-    });
-    
-    return { error };
-  };
-
   const signOut = async () => {
     setCurrentRole(null);
     setAvailableRoles([]);
@@ -194,10 +190,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     availableRoles,
     switchRole,
     signOut,
-    signInWithPassword,
+    signInWithOtp,
+    verifyOtp,
     createUserAsAdmin,
-    resetPassword,
-    updatePassword,
     loading,
   };
 

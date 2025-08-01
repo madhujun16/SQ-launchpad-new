@@ -34,7 +34,7 @@ const Admin = () => {
     city: '',
     address: '',
     postcode: '',
-    cafeteriaType: 'staff' as const,
+    cafeteriaType: 'staff' as 'staff' | 'visitor' | 'mixed',
     capacity: 0,
     expectedFootfall: 0,
     description: '',
@@ -45,8 +45,6 @@ const Admin = () => {
   // Form state for new user
   const [newUser, setNewUser] = useState({
     email: '',
-    password: '',
-    confirmPassword: '',
     role: 'user' as const,
     fullName: ''
   });
@@ -234,34 +232,24 @@ const Admin = () => {
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUser.email || !newUser.password || !newUser.confirmPassword || !newUser.fullName) {
+    if (!newUser.email || !newUser.fullName) {
       toast.error('Please fill in all fields');
-      return;
-    }
-
-    if (newUser.password !== newUser.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (newUser.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await createUserAsAdmin(newUser.email, newUser.password, newUser.role);
+      // For OTP-based auth, we don't need to set a password
+      // The user will authenticate via OTP
+      const { error } = await createUserAsAdmin(newUser.email, '', newUser.role);
       
       if (error) {
         toast.error(`Failed to create user: ${error.message}`);
       } else {
-        toast.success('User created successfully!');
+        toast.success('User created successfully! They can now sign in using OTP.');
         setIsCreatingUser(false);
         setNewUser({
           email: '',
-          password: '',
-          confirmPassword: '',
           role: 'user',
           fullName: ''
         });
@@ -602,7 +590,7 @@ const Admin = () => {
             <CardHeader>
               <CardTitle>Add New User</CardTitle>
               <CardDescription>
-                Create a new user account for the B2B application
+                Create a new user account for the B2B application. Users will authenticate via OTP.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -645,31 +633,6 @@ const Admin = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="password">Initial Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Set initial password"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    User can change this password later using "Forgot Password"
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={newUser.confirmPassword}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    placeholder="Confirm password"
-                  />
                 </div>
 
                 <div className="flex justify-end gap-2">
