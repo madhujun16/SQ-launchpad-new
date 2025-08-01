@@ -1,211 +1,686 @@
-import React, { useState } from 'react';
-import Header from "@/components/Header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
+  FileText, 
+  Eye, 
+  Plus, 
   Building, 
   MapPin, 
   Users, 
-  Calendar,
-  FileText,
+  Settings, 
+  Package,
   CheckCircle,
   AlertTriangle,
   Clock,
-  Target,
-  BarChart3,
-  Settings,
-  Wifi,
-  HardDrive,
-  Monitor,
-  Server,
-  Database,
-  Globe,
-  Shield,
-  Activity,
   TrendingUp,
-  Navigation
-} from "lucide-react";
-import { UKCitySelect } from "@/components/UKCitySelect";
-import { useAuth } from "@/hooks/useAuth";
-import { getRoleConfig, hasPermission } from "@/lib/roles";
-import { useNavigate } from "react-router-dom";
-import RoleIndicator from "@/components/RoleIndicator";
-import { toast } from "sonner";
-import { Site, getStatusColor, getStatusDisplayName } from "@/lib/siteTypes";
+  Calendar,
+  Search,
+  Filter,
+  Download,
+  ArrowRight,
+  User,
+  Mail,
+  Phone,
+  Wifi,
+  Zap,
+  Monitor,
+  Printer,
+  Smartphone,
+  Tv,
+  Camera,
+  Navigation,
+  Globe,
+  Map,
+  Crosshair,
+  LocateIcon
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import Header from '@/components/Header';
 
-interface SiteStudyData {
-  id: string;
-  siteId: string;
-  siteName: string;
-  location: {
-    address: string;
-    city: string;
-    postcode: string;
-    latitude?: number;
-    longitude?: number;
-  };
-  status: 'pending' | 'in-progress' | 'completed';
-  assignedTo: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  description: string;
-  findings: {
-    infrastructure: string[];
-    requirements: string[];
-    challenges: string[];
-    recommendations: string[];
-  };
-  geolocation?: {
-    latitude: number;
-    longitude: number;
-    addedBy: string;
-    addedAt: string;
-  };
-}
-
-const SiteStudy = () => {
-  const { currentRole } = useAuth();
-  const navigate = useNavigate();
-  const [selectedStudy, setSelectedStudy] = useState<SiteStudyData | null>(null);
-  const [isAddingGeolocation, setIsAddingGeolocation] = useState(false);
-  const [geolocationData, setGeolocationData] = useState({
-    latitude: '',
-    longitude: ''
+export default function SiteStudy() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    organisation: 'all',
+    status: 'all',
+    engineer: 'all'
   });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedStudy, setSelectedStudy] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
 
-  // Check if user has access to site study
-  React.useEffect(() => {
-    if (currentRole && !hasPermission(currentRole, 'conduct_site_studies') && !hasPermission(currentRole, 'create_sites')) {
-      toast.error('You do not have permission to access the Site Study panel');
-      navigate('/dashboard');
-    }
-  }, [currentRole, navigate]);
+  // Mock statistics
+  const stats = {
+    totalStudies: 24,
+    completedStudies: 18,
+    inProgressStudies: 4,
+    pendingStudies: 2,
+    upcomingGoLives: 3,
+    averageCompletionTime: '5.2 days'
+  };
 
-  const siteStudies: SiteStudyData[] = [
+  // Mock site studies data with detailed information including geolocation
+  const siteStudies = [
     {
-      id: "1",
-      siteId: "1",
-      siteName: "Manchester Central Cafeteria",
-      location: {
-        address: "123 Main Street",
-        city: "Manchester",
-        postcode: "M1 1AA"
-      },
-      status: "completed",
-      assignedTo: "Sarah Johnson",
-      dueDate: "2024-08-15",
-      priority: "high",
-      description: "Large cafeteria with high foot traffic. Requires comprehensive network infrastructure and multiple POS systems.",
-      findings: {
-        infrastructure: ["Existing WiFi network", "POS terminals", "Kitchen equipment", "Seating area"],
-        requirements: ["High-speed WiFi upgrade", "Additional POS terminals", "Digital signage", "Security cameras"],
-        challenges: ["Limited parking space", "Complex network requirements", "High security needs"],
-        recommendations: ["Extend timeline by 2 weeks", "Add additional network capacity", "Implement phased deployment"]
-      },
+      id: '1',
+      siteName: 'JLR Whitley',
+      organisation: 'Compass Eurest',
+      unitCode: '93490',
+      studyCompletionDate: '2025-10-28',
+      deploymentEngineer: 'John Smith',
+      status: 'completed',
+      goLiveDate: '2025-11-01',
+      // Geolocation data
       geolocation: {
-        latitude: 53.4808,
-        longitude: -2.2426,
-        addedBy: "Sarah Johnson",
-        addedAt: "2024-07-15"
+        latitude: 52.4068,
+        longitude: -1.5197,
+        accuracy: 15,
+        capturedAt: '2025-10-28T10:30:00Z',
+        address: 'JLR Whitley, Abbey Road, Coventry, CV3 4LF',
+        postcode: 'CV3 4LF',
+        region: 'West Midlands',
+        country: 'United Kingdom'
+      },
+      // Detailed information for report
+      generalInfo: {
+        sector: 'Eurest',
+        foodCourtName: 'JLR Whitley',
+        unitManagerName: 'Sarah Johnson',
+        jobTitle: 'Operations Manager',
+        unitManagerEmail: 'sarah.johnson@jlr.com',
+        unitManagerMobile: '+44 7700 900123',
+        additionalContactName: 'Mike Wilson',
+        additionalContactEmail: 'mike.wilson@jlr.com',
+        siteStudyDate: '2025-10-28'
+      },
+      locationInfo: {
+        addressLine1: 'JLR Whitley',
+        addressLine2: 'Abbey Road',
+        city: 'Coventry',
+        postcode: 'CV3 4LF',
+        securityRestrictions: 'Security pass required for all visitors',
+        preferredDeliveryWindow: '10:00 AM–2:00 PM',
+        floor: '2nd Floor',
+        liftAccess: true,
+        loadingBayDetails: 'Loading bay available with dock access',
+        // Enhanced location data
+        coordinates: {
+          latitude: 52.4068,
+          longitude: -1.5197
+        },
+        timezone: 'Europe/London',
+        elevation: 85, // meters above sea level
+        accessibility: {
+          wheelchairAccessible: true,
+          parkingAvailable: true,
+          publicTransportNearby: true
+        }
+      },
+      capacityInfo: {
+        employeeStrength: 2500,
+        expectedFootfall: 800,
+        seatingCapacity: 300,
+        operatingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        operatingHours: '7:00 AM - 6:00 PM'
+      },
+      serviceInfo: {
+        serviceModel: 'Self-Service',
+        billingModel: 'Per Counter',
+        centralCashCounterFinalized: true,
+        menuStyle: 'Grab & Go',
+        dayPartsServed: ['Breakfast', 'Lunch', 'Snacks'],
+        mealPrepLocation: 'On-site'
+      },
+      counterInfo: {
+        activeCounters: 4,
+        counters: [
+          { name: 'Counter 1', spaceAvailable: 'adequate', posHardwareFitment: true },
+          { name: 'Counter 2', spaceAvailable: 'spacious', posHardwareFitment: true },
+          { name: 'Counter 3', spaceAvailable: 'tight', posHardwareFitment: false },
+          { name: 'Counter 4', spaceAvailable: 'adequate', posHardwareFitment: true }
+        ]
+      },
+      infrastructureInfo: {
+        availableLanPoints: 8,
+        wifiAvailable: true,
+        bandwidthTestResult: '6 Mbps',
+        staticIpProvided: true,
+        switchRouterLocation: 'Server room, 2nd floor',
+        upsPowerPos: true,
+        upsPowerCeiling: false,
+        sockets4Pin: 6,
+        sockets3Pin: 12
+      },
+      hardwareNeeds: [
+        { deviceType: 'POS Terminals', required: true, quantity: 4, comments: 'Standard POS setup' },
+        { deviceType: 'PEDs (Card Machines)', required: true, quantity: 4, comments: 'Contactless enabled' },
+        { deviceType: 'Printers (KOT/BOH)', required: true, quantity: 2, comments: 'Kitchen and back office' },
+        { deviceType: 'Kiosks', required: false, quantity: 0, comments: '' },
+        { deviceType: 'Kitchen Display Sys', required: true, quantity: 1, comments: 'Kitchen order display' },
+        { deviceType: 'Token Display Sys', required: false, quantity: 0, comments: '' },
+        { deviceType: 'TVs (IMD/Marketing)', required: true, quantity: 2, comments: 'Wall mounted' },
+        { deviceType: 'Clamps/Fixtures', required: true, quantity: 4, comments: 'Ceiling mounted' }
+      ],
+      facilityInfo: {
+        ceilingHeight: 3.2,
+        cableRoutingFeasible: true,
+        physicalObstructions: 'None',
+        preferredImdLocation: 'Main entrance and dining area',
+        cctvPresent: true,
+        civilWorkRequired: false
+      },
+      readinessInfo: {
+        siteDeploymentReady: true,
+        keyBlockers: 'None',
+        unresolvedDependencies: false,
+        dependencyDetails: '',
+        notesForNextVisit: 'Site ready for deployment',
+        suggestedGoLiveDate: '2025-11-01'
       }
     },
     {
-      id: "2",
-      siteId: "2",
-      siteName: "Birmingham Office Cafeteria",
-      location: {
-        address: "456 Business Park",
-        city: "Birmingham",
-        postcode: "B1 1BB"
+      id: '2',
+      siteName: 'Amazon London',
+      organisation: 'Amazon',
+      unitCode: 'A123',
+      studyCompletionDate: '2025-10-25',
+      deploymentEngineer: 'Jane Doe',
+      status: 'in_progress',
+      goLiveDate: '2025-11-15',
+      geolocation: {
+        latitude: 51.5074,
+        longitude: -0.1278,
+        accuracy: 20,
+        capturedAt: '2025-10-25T14:15:00Z',
+        address: 'Amazon London, Canary Wharf, London, E14 5AB',
+        postcode: 'E14 5AB',
+        region: 'Greater London',
+        country: 'United Kingdom'
       },
-      status: "in-progress",
-      assignedTo: "Mike Thompson",
-      dueDate: "2024-09-01",
-      priority: "medium",
-      description: "Office cafeteria environment with staff dining requirements.",
-      findings: {
-        infrastructure: ["Basic kitchen setup", "Limited seating", "No existing POS"],
-        requirements: ["Complete POS system", "Kitchen equipment", "Seating expansion"],
-        challenges: ["Space constraints", "Budget limitations"],
-        recommendations: ["Phased implementation", "Space optimization"]
+      // Simplified data for in-progress study
+      generalInfo: {
+        sector: 'Amazon',
+        foodCourtName: 'Amazon London',
+        unitManagerName: 'Alex Brown',
+        jobTitle: 'Facility Manager',
+        unitManagerEmail: 'alex.brown@amazon.com',
+        unitManagerMobile: '+44 7700 900456',
+        additionalContactName: '',
+        additionalContactEmail: '',
+        siteStudyDate: '2025-10-25'
+      }
+    },
+    {
+      id: '3',
+      siteName: 'HSBC Canary Wharf',
+      organisation: 'HSBC',
+      unitCode: 'H456',
+      studyCompletionDate: '2025-10-20',
+      deploymentEngineer: 'Mike Johnson',
+      status: 'pending',
+      goLiveDate: '2025-12-01',
+      geolocation: {
+        latitude: 51.5055,
+        longitude: -0.0235,
+        accuracy: 25,
+        capturedAt: '2025-10-20T09:45:00Z',
+        address: 'HSBC Canary Wharf, London, E14 4AB',
+        postcode: 'E14 4AB',
+        region: 'Greater London',
+        country: 'United Kingdom'
+      },
+      // Simplified data for pending study
+      generalInfo: {
+        sector: 'HSBC',
+        foodCourtName: 'HSBC Canary Wharf',
+        unitManagerName: 'Emma Wilson',
+        jobTitle: 'Operations Director',
+        unitManagerEmail: 'emma.wilson@hsbc.com',
+        unitManagerMobile: '+44 7700 900789',
+        additionalContactName: '',
+        additionalContactEmail: '',
+        siteStudyDate: '2025-10-20'
       }
     }
   ];
 
-  // If user doesn't have site study permissions, show access denied
-  if (currentRole && !hasPermission(currentRole, 'conduct_site_studies') && !hasPermission(currentRole, 'create_sites')) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-6 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
-            <p className="text-muted-foreground">
-              You do not have permission to access the Site Study panel.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const roleConfig = currentRole ? getRoleConfig(currentRole) : null;
-  const isDeploymentEngineer = currentRole === 'deployment_engineer';
+  // Get current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setLocationPermission('granted');
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          setLocationPermission('denied');
+        }
+      );
+    } else {
+      setLocationPermission('denied');
+    }
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500';
-      case 'in-progress': return 'bg-blue-500';
-      case 'pending': return 'bg-gray-500';
-      default: return 'bg-gray-500';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in_progress':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'pending':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'critical': return 'bg-red-500';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'in_progress':
+        return <Clock className="h-4 w-4" />;
+      case 'pending':
+        return <AlertTriangle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
     }
   };
 
-  const addGeolocation = async (studyId: string) => {
-    if (!geolocationData.latitude || !geolocationData.longitude) {
-      toast.error('Please enter both latitude and longitude');
-      return;
-    }
+  const filteredStudies = siteStudies.filter(study =>
+    searchTerm === '' || 
+    study.siteName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    study.organisation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    study.unitCode.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    try {
-      // This would be replaced with actual Supabase update
-      const updatedStudies = siteStudies.map(study => {
-        if (study.id === studyId) {
-          return {
-            ...study,
-            geolocation: {
-              latitude: parseFloat(geolocationData.latitude),
-              longitude: parseFloat(geolocationData.longitude),
-              addedBy: "Current User",
-              addedAt: new Date().toISOString()
-            }
-          };
+  const handleViewReport = (study: any) => {
+    setSelectedStudy(study);
+    setIsReportModalOpen(true);
+  };
+
+  const handleCreateStudy = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCaptureLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setLocationPermission('granted');
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          setLocationPermission('denied');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
         }
-        return study;
-      });
-
-      toast.success('Geolocation added successfully');
-      setIsAddingGeolocation(false);
-      setGeolocationData({ latitude: '', longitude: '' });
-    } catch (error) {
-      toast.error('Failed to add geolocation');
+      );
     }
+  };
+
+  const getGoogleMapsUrl = (lat: number, lng: number) => {
+    return `https://www.google.com/maps?q=${lat},${lng}`;
+  };
+
+  const getOpenStreetMapUrl = (lat: number, lng: number) => {
+    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`;
+  };
+
+  const renderReportModal = () => {
+    if (!selectedStudy) return null;
+
+    return (
+      <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Site Study Report - {selectedStudy.siteName}
+            </DialogTitle>
+            <DialogDescription>
+              Comprehensive site study details and deployment readiness assessment
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Geolocation Information */}
+            {selectedStudy.geolocation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Location & Coordinates
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                      <p className="font-medium">{selectedStudy.geolocation.address}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Postcode</Label>
+                      <p className="font-medium">{selectedStudy.geolocation.postcode}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Region</Label>
+                      <p className="font-medium">{selectedStudy.geolocation.region}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Country</Label>
+                      <p className="font-medium">{selectedStudy.geolocation.country}</p>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Latitude</Label>
+                      <p className="font-mono text-sm">{selectedStudy.geolocation.latitude.toFixed(6)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Longitude</Label>
+                      <p className="font-mono text-sm">{selectedStudy.geolocation.longitude.toFixed(6)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Accuracy</Label>
+                      <p className="font-medium">±{selectedStudy.geolocation.accuracy}m</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(getGoogleMapsUrl(selectedStudy.geolocation.latitude, selectedStudy.geolocation.longitude), '_blank')}
+                    >
+                      <Map className="h-4 w-4 mr-2" />
+                      View on Google Maps
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(getOpenStreetMapUrl(selectedStudy.geolocation.latitude, selectedStudy.geolocation.longitude), '_blank')}
+                    >
+                      <Globe className="h-4 w-4 mr-2" />
+                      View on OpenStreetMap
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* General Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  General Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Organisation</Label>
+                  <p className="font-medium">{selectedStudy.organisation}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Sector</Label>
+                  <p className="font-medium">{selectedStudy.generalInfo?.sector}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Unit Manager</Label>
+                  <p className="font-medium">{selectedStudy.generalInfo?.unitManagerName}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Job Title</Label>
+                  <p className="font-medium">{selectedStudy.generalInfo?.jobTitle}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                  <p className="font-medium">{selectedStudy.generalInfo?.unitManagerEmail}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Mobile</Label>
+                  <p className="font-medium">{selectedStudy.generalInfo?.unitManagerMobile}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Location Information */}
+            {selectedStudy.locationInfo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Location & Delivery Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                      <p className="font-medium">
+                        {selectedStudy.locationInfo.addressLine1}<br />
+                        {selectedStudy.locationInfo.addressLine2 && (
+                          <>{selectedStudy.locationInfo.addressLine2}<br /></>
+                        )}
+                        {selectedStudy.locationInfo.city}, {selectedStudy.locationInfo.postcode}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Floor</Label>
+                      <p className="font-medium">{selectedStudy.locationInfo.floor}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Security Restrictions</Label>
+                    <p className="font-medium">{selectedStudy.locationInfo.securityRestrictions}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Delivery Window</Label>
+                      <p className="font-medium">{selectedStudy.locationInfo.preferredDeliveryWindow}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Lift Access</Label>
+                      <Badge variant={selectedStudy.locationInfo.liftAccess ? "default" : "secondary"}>
+                        {selectedStudy.locationInfo.liftAccess ? "Available" : "Not Available"}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Capacity Information */}
+            {selectedStudy.capacityInfo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Staff & Capacity Planning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Employee Strength</Label>
+                    <p className="text-2xl font-bold">{selectedStudy.capacityInfo.employeeStrength}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Expected Footfall</Label>
+                    <p className="text-2xl font-bold">{selectedStudy.capacityInfo.expectedFootfall}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Seating Capacity</Label>
+                    <p className="text-2xl font-bold">{selectedStudy.capacityInfo.seatingCapacity}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-sm font-medium text-muted-foreground">Operating Days</Label>
+                    <p className="font-medium">{selectedStudy.capacityInfo.operatingDays.join(', ')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Operating Hours</Label>
+                    <p className="font-medium">{selectedStudy.capacityInfo.operatingHours}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Infrastructure Information */}
+            {selectedStudy.infrastructureInfo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    IT & Power Infrastructure
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">LAN Points</Label>
+                    <p className="font-medium">{selectedStudy.infrastructureInfo.availableLanPoints}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Wi-Fi Available</Label>
+                    <Badge variant={selectedStudy.infrastructureInfo.wifiAvailable ? "default" : "secondary"}>
+                      {selectedStudy.infrastructureInfo.wifiAvailable ? "Yes" : "No"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Bandwidth</Label>
+                    <p className="font-medium">{selectedStudy.infrastructureInfo.bandwidthTestResult}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Static IP</Label>
+                    <Badge variant={selectedStudy.infrastructureInfo.staticIpProvided ? "default" : "secondary"}>
+                      {selectedStudy.infrastructureInfo.staticIpProvided ? "Provided" : "Not Provided"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">UPS Power (POS)</Label>
+                    <Badge variant={selectedStudy.infrastructureInfo.upsPowerPos ? "default" : "secondary"}>
+                      {selectedStudy.infrastructureInfo.upsPowerPos ? "Available" : "Not Available"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">UPS Power (Ceiling)</Label>
+                    <Badge variant={selectedStudy.infrastructureInfo.upsPowerCeiling ? "default" : "secondary"}>
+                      {selectedStudy.infrastructureInfo.upsPowerCeiling ? "Available" : "Not Available"}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Hardware Needs */}
+            {selectedStudy.hardwareNeeds && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Hardware Deployment Needs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {selectedStudy.hardwareNeeds.map((need: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Badge variant={need.required ? "default" : "secondary"}>
+                            {need.required ? "Required" : "Optional"}
+                          </Badge>
+                          <span className="font-medium">{need.deviceType}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-muted-foreground">
+                            Quantity: {need.quantity}
+                          </span>
+                          {need.comments && (
+                            <span className="text-sm text-muted-foreground">
+                              {need.comments}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Readiness Information */}
+            {selectedStudy.readinessInfo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Readiness & Risks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-muted-foreground">Site Deployment Ready</Label>
+                    <Badge variant={selectedStudy.readinessInfo.siteDeploymentReady ? "default" : "destructive"}>
+                      {selectedStudy.readinessInfo.siteDeploymentReady ? "Ready" : "Not Ready"}
+                    </Badge>
+                  </div>
+                  {selectedStudy.readinessInfo.keyBlockers && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Key Blockers</Label>
+                      <p className="font-medium">{selectedStudy.readinessInfo.keyBlockers}</p>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-muted-foreground">Unresolved Dependencies</Label>
+                    <Badge variant={selectedStudy.readinessInfo.unresolvedDependencies ? "destructive" : "default"}>
+                      {selectedStudy.readinessInfo.unresolvedDependencies ? "Yes" : "No"}
+                    </Badge>
+                  </div>
+                  {selectedStudy.readinessInfo.suggestedGoLiveDate && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Suggested Go-Live Date</Label>
+                      <p className="font-medium">{selectedStudy.readinessInfo.suggestedGoLiveDate}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setIsReportModalOpen(false)}>
+              Close
+            </Button>
+            <Button>
+              <Download className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
@@ -213,356 +688,633 @@ const SiteStudy = () => {
       <Header />
       
       <main className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
+        {/* Header with Create Button */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
             <h1 className="text-3xl font-bold text-foreground">Site Study Management</h1>
-            <RoleIndicator />
+            <p className="text-muted-foreground">
+              Comprehensive site study forms and deployment readiness tracking
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            {roleConfig?.description || 'Conduct site studies for Compass Group cafeteria deployments'}
-          </p>
+          <Button 
+            size="lg" 
+            onClick={handleCreateStudy}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create Site Study
+          </Button>
         </div>
 
-        {/* Site Studies Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {siteStudies.map((study) => (
-            <Card 
-              key={study.id} 
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setSelectedStudy(study)}
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{study.siteName}</CardTitle>
-                    <CardDescription className="flex items-center mt-1">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {study.location.city}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-1">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(study.status)} text-white`}>
-                      {study.status.replace('-', ' ')}
-                    </span>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getPriorityColor(study.priority)} text-white`}>
-                      {study.priority}
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Assigned to</span>
-                    <span className="font-medium">{study.assignedTo}</span>
-                  </div>
-                  
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Due date</span>
-                    <span className="font-medium">{study.dueDate}</span>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {study.description}
-                  </p>
-
-                  {isDeploymentEngineer && !study.geolocation && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedStudy(study);
-                        setIsAddingGeolocation(true);
-                      }}
-                    >
-                      <Navigation className="mr-1 h-3 w-3" />
-                      Add Geolocation
-                    </Button>
-                  )}
-
-                  {study.geolocation && (
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Navigation className="mr-1 h-3 w-3" />
-                      Location: {study.geolocation.latitude.toFixed(4)}, {study.geolocation.longitude.toFixed(4)}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Detailed Site Study View */}
-        {selectedStudy && (
-          <Card className="mt-8">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-2xl">{selectedStudy.siteName}</CardTitle>
-                  <CardDescription className="flex items-center mt-2">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {selectedStudy.location.address}, {selectedStudy.location.city}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Edit</Button>
-                  <Button variant="outline" size="sm">Export</Button>
-                  <Button variant="outline" size="sm">Share</Button>
-                </div>
-              </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Studies</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            
             <CardContent>
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="findings">Findings</TabsTrigger>
-                  <TabsTrigger value="geolocation">Location</TabsTrigger>
-                  <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="overview" className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <BarChart3 className="mr-2 h-5 w-5" />
-                          Study Status
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex justify-between">
-                          <span>Status</span>
-                          <Badge className={getStatusColor(selectedStudy.status)}>
-                            {selectedStudy.status.replace('-', ' ')}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Priority</span>
-                            <div className="font-medium">{selectedStudy.priority}</div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Assigned to</span>
-                            <div className="font-medium">{selectedStudy.assignedTo}</div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Due date</span>
-                            <div className="font-medium">{selectedStudy.dueDate}</div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Client</span>
-                            <div className="font-medium">Compass Group</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <FileText className="mr-2 h-5 w-5" />
-                          Description
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedStudy.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="findings" className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <HardDrive className="mr-2 h-5 w-5" />
-                          Current Infrastructure
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2">
-                          {selectedStudy.findings.infrastructure.map((item, index) => (
-                            <li key={index} className="flex items-center text-sm">
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <Target className="mr-2 h-5 w-5" />
-                          Requirements
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2">
-                          {selectedStudy.findings.requirements.map((item, index) => (
-                            <li key={index} className="flex items-center text-sm">
-                              <CheckCircle className="h-4 w-4 text-blue-500 mr-2" />
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="geolocation" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Navigation className="mr-2 h-5 w-5" />
-                        Site Location
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {selectedStudy.geolocation ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Latitude</Label>
-                              <div className="font-mono text-sm">{selectedStudy.geolocation.latitude}</div>
-                            </div>
-                            <div>
-                              <Label>Longitude</Label>
-                              <div className="font-mono text-sm">{selectedStudy.geolocation.longitude}</div>
-                            </div>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Added by {selectedStudy.geolocation.addedBy} on {new Date(selectedStudy.geolocation.addedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <p className="text-sm text-muted-foreground">
-                            No geolocation data available for this site.
-                          </p>
-                          {isDeploymentEngineer && (
-                            <Button onClick={() => setIsAddingGeolocation(true)}>
-                              <Navigation className="mr-2 h-4 w-4" />
-                              Add Geolocation
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="recommendations" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <AlertTriangle className="mr-2 h-5 w-5" />
-                        Challenges
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-3">
-                        {selectedStudy.findings.challenges.map((challenge, index) => (
-                          <li key={index} className="flex items-start text-sm">
-                            <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-0.5" />
-                            {challenge}
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Target className="mr-2 h-5 w-5" />
-                        Recommendations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-3">
-                        {selectedStudy.findings.recommendations.map((recommendation, index) => (
-                          <li key={index} className="flex items-start text-sm">
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                            {recommendation}
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <div className="text-2xl font-bold">{stats.totalStudies}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                +12% from last month
+              </div>
             </CardContent>
           </Card>
-        )}
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.completedStudies}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                Ready for deployment
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{stats.inProgressStudies}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <Clock className="h-3 w-3 mr-1 text-yellow-500" />
+                Under review
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming Go-Lives</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{stats.upcomingGoLives}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <Calendar className="h-3 w-3 mr-1 text-blue-500" />
+                Next 30 days
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Add Geolocation Modal */}
-        {isAddingGeolocation && selectedStudy && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-md mx-4">
-              <CardHeader>
-                <CardTitle>Add Geolocation</CardTitle>
-                <CardDescription>
-                  Add precise location coordinates for {selectedStudy.siteName}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  addGeolocation(selectedStudy.id);
-                }} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <Eye className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">View All Studies</h3>
+                  <p className="text-sm text-muted-foreground">Browse completed and ongoing studies</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-green-100 rounded-full">
+                  <Download className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Export Reports</h3>
+                  <p className="text-sm text-muted-foreground">Download study data and analytics</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-purple-100 rounded-full">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Go-Live Calendar</h3>
+                  <p className="text-sm text-muted-foreground">Track upcoming deployments</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Site Studies */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Recent Site Studies</CardTitle>
+                <CardDescription>Latest site studies and their status</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Search and Filters */}
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search site studies..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select value={filters.organisation} onValueChange={(value) => setFilters({...filters, organisation: value})}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All Organisations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Organisations</SelectItem>
+                  <SelectItem value="asda">ASDA</SelectItem>
+                  <SelectItem value="amazon">Amazon</SelectItem>
+                  <SelectItem value="hsbc">HSBC</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Site Studies Table */}
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Site Name</TableHead>
+                    <TableHead>Organisation</TableHead>
+                    <TableHead>Unit Code</TableHead>
+                    <TableHead>Study Completion Date</TableHead>
+                    <TableHead>Deployment Engineer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Go-Live Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStudies.map((study) => (
+                    <TableRow key={study.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="font-medium">{study.siteName}</TableCell>
+                      <TableCell>{study.organisation}</TableCell>
+                      <TableCell>{study.unitCode}</TableCell>
+                      <TableCell>{new Date(study.studyCompletionDate).toLocaleDateString()}</TableCell>
+                      <TableCell>{study.deploymentEngineer}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(study.status)}>
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(study.status)}
+                            {study.status.replace('_', ' ')}
+                          </div>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(study.goLiveDate).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewReport(study)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Create Site Study Modal */}
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Create New Site Study
+              </DialogTitle>
+              <DialogDescription>
+                Complete the comprehensive site study assessment with all required sections.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {/* Step 1: Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    Step 1: Basic Information
+                  </CardTitle>
+                  <CardDescription>Site and organisation details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="latitude">Latitude</Label>
-                      <Input
-                        id="latitude"
-                        type="number"
-                        step="any"
-                        value={geolocationData.latitude}
-                        onChange={(e) => setGeolocationData(prev => ({ ...prev, latitude: e.target.value }))}
-                        placeholder="e.g., 53.4808"
-                        required
-                      />
+                      <Label htmlFor="siteName">Site Name *</Label>
+                      <Input id="siteName" placeholder="Enter site name" />
                     </div>
                     <div>
-                      <Label htmlFor="longitude">Longitude</Label>
-                      <Input
-                        id="longitude"
-                        type="number"
-                        step="any"
-                        value={geolocationData.longitude}
-                        onChange={(e) => setGeolocationData(prev => ({ ...prev, longitude: e.target.value }))}
-                        placeholder="e.g., -2.2426"
-                        required
-                      />
+                      <Label htmlFor="organisation">Organisation *</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select organisation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="asda">ASDA</SelectItem>
+                          <SelectItem value="amazon">Amazon</SelectItem>
+                          <SelectItem value="hsbc">HSBC</SelectItem>
+                          <SelectItem value="compass">Compass Eurest</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="unitCode">Unit Code</Label>
+                      <Input id="unitCode" placeholder="Enter unit code" />
+                    </div>
+                    <div>
+                      <Label htmlFor="sector">Sector</Label>
+                      <Input id="sector" placeholder="e.g., Eurest, Corporate" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 2: Location Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Step 2: Location & Address
+                  </CardTitle>
+                  <CardDescription>Site location and delivery information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="addressLine1">Address Line 1 *</Label>
+                      <Input id="addressLine1" placeholder="Enter address" />
+                    </div>
+                    <div>
+                      <Label htmlFor="addressLine2">Address Line 2</Label>
+                      <Input id="addressLine2" placeholder="Additional address info" />
+                    </div>
+                    <div>
+                      <Label htmlFor="city">City *</Label>
+                      <Input id="city" placeholder="Enter city" />
+                    </div>
+                    <div>
+                      <Label htmlFor="postcode">Postcode *</Label>
+                      <Input id="postcode" placeholder="Enter postcode" />
+                    </div>
+                  </div>
+
+                  {/* Geolocation Capture */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>GPS Coordinates</Label>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleCaptureLocation}
+                        disabled={locationPermission === 'denied'}
+                      >
+                        <Crosshair className="h-4 w-4 mr-2" />
+                        {locationPermission === 'granted' ? 'Update Location' : 'Capture Location'}
+                      </Button>
+                    </div>
+                    
+                    {currentLocation && (
+                      <div className="p-3 bg-muted rounded-lg">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Latitude:</span>
+                            <span className="font-mono ml-2">{currentLocation.lat.toFixed(6)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Longitude:</span>
+                            <span className="font-mono ml-2">{currentLocation.lng.toFixed(6)}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.open(getGoogleMapsUrl(currentLocation.lat, currentLocation.lng), '_blank')}
+                          >
+                            <Map className="h-3 w-3 mr-1" />
+                            Google Maps
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.open(getOpenStreetMapUrl(currentLocation.lat, currentLocation.lng), '_blank')}
+                          >
+                            <Globe className="h-3 w-3 mr-1" />
+                            OpenStreetMap
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {locationPermission === 'denied' && (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          Location access denied. Please enable location permissions in your browser settings.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="floor">Floor</Label>
+                      <Input id="floor" placeholder="e.g., Ground Floor, 2nd Floor" />
+                    </div>
+                    <div>
+                      <Label htmlFor="deliveryWindow">Preferred Delivery Window</Label>
+                      <Input id="deliveryWindow" placeholder="e.g., 10:00 AM - 2:00 PM" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="securityRestrictions">Security Restrictions</Label>
+                    <Textarea id="securityRestrictions" placeholder="Describe any security requirements or restrictions" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 3: Contact Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Step 3: Contact Information
+                  </CardTitle>
+                  <CardDescription>Primary and secondary contacts</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="unitManagerName">Unit Manager Name *</Label>
+                      <Input id="unitManagerName" placeholder="Enter manager name" />
+                    </div>
+                    <div>
+                      <Label htmlFor="jobTitle">Job Title</Label>
+                      <Input id="jobTitle" placeholder="e.g., Operations Manager" />
+                    </div>
+                    <div>
+                      <Label htmlFor="unitManagerEmail">Email *</Label>
+                      <Input id="unitManagerEmail" type="email" placeholder="Enter email address" />
+                    </div>
+                    <div>
+                      <Label htmlFor="unitManagerMobile">Mobile *</Label>
+                      <Input id="unitManagerMobile" placeholder="Enter mobile number" />
                     </div>
                   </div>
                   
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsAddingGeolocation(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Add Location
-                    </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="additionalContactName">Additional Contact Name</Label>
+                      <Input id="additionalContactName" placeholder="Secondary contact name" />
+                    </div>
+                    <div>
+                      <Label htmlFor="additionalContactEmail">Additional Contact Email</Label>
+                      <Input id="additionalContactEmail" type="email" placeholder="Secondary contact email" />
+                    </div>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                </CardContent>
+              </Card>
+
+              {/* Step 4: Capacity Planning */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Step 4: Staff & Capacity Planning
+                  </CardTitle>
+                  <CardDescription>Employee and operational capacity information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="employeeStrength">Employee Strength *</Label>
+                      <Input id="employeeStrength" type="number" placeholder="e.g., 2500" />
+                    </div>
+                    <div>
+                      <Label htmlFor="expectedFootfall">Expected Footfall</Label>
+                      <Input id="expectedFootfall" type="number" placeholder="e.g., 800" />
+                    </div>
+                    <div>
+                      <Label htmlFor="seatingCapacity">Seating Capacity</Label>
+                      <Input id="seatingCapacity" type="number" placeholder="e.g., 300" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="operatingDays">Operating Days</Label>
+                      <Input id="operatingDays" placeholder="e.g., Monday-Friday" />
+                    </div>
+                    <div>
+                      <Label htmlFor="operatingHours">Operating Hours</Label>
+                      <Input id="operatingHours" placeholder="e.g., 7:00 AM - 6:00 PM" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 5: Infrastructure Assessment */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Step 5: IT & Power Infrastructure
+                  </CardTitle>
+                  <CardDescription>Network and power requirements assessment</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="lanPoints">Available LAN Points</Label>
+                      <Input id="lanPoints" type="number" placeholder="e.g., 8" />
+                    </div>
+                    <div>
+                      <Label htmlFor="bandwidth">Bandwidth Test Result</Label>
+                      <Input id="bandwidth" placeholder="e.g., 6 Mbps" />
+                    </div>
+                    <div>
+                      <Label htmlFor="switchLocation">Switch/Router Location</Label>
+                      <Input id="switchLocation" placeholder="e.g., Server room, 2nd floor" />
+                    </div>
+                    <div>
+                      <Label htmlFor="sockets4Pin">4-Pin Sockets Available</Label>
+                      <Input id="sockets4Pin" type="number" placeholder="e.g., 6" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="sockets3Pin">3-Pin Sockets Available</Label>
+                      <Input id="sockets3Pin" type="number" placeholder="e.g., 12" />
+                    </div>
+                    <div>
+                      <Label htmlFor="staticIp">Static IP Provided</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 6: Hardware Requirements */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Step 6: Hardware Deployment Needs
+                  </CardTitle>
+                  <CardDescription>Equipment and device requirements</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="posTerminals">POS Terminals</Label>
+                      <Input id="posTerminals" type="number" placeholder="Quantity" />
+                    </div>
+                    <div>
+                      <Label htmlFor="peds">PEDs (Card Machines)</Label>
+                      <Input id="peds" type="number" placeholder="Quantity" />
+                    </div>
+                    <div>
+                      <Label htmlFor="printers">Printers (KOT/BOH)</Label>
+                      <Input id="printers" type="number" placeholder="Quantity" />
+                    </div>
+                    <div>
+                      <Label htmlFor="kiosks">Kiosks</Label>
+                      <Input id="kiosks" type="number" placeholder="Quantity" />
+                    </div>
+                    <div>
+                      <Label htmlFor="kitchenDisplay">Kitchen Display System</Label>
+                      <Input id="kitchenDisplay" type="number" placeholder="Quantity" />
+                    </div>
+                    <div>
+                      <Label htmlFor="tvs">TVs (IMD/Marketing)</Label>
+                      <Input id="tvs" type="number" placeholder="Quantity" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="hardwareComments">Hardware Comments</Label>
+                    <Textarea id="hardwareComments" placeholder="Additional notes about hardware requirements" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Step 7: Readiness Assessment */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Step 7: Readiness & Risks
+                  </CardTitle>
+                  <CardDescription>Deployment readiness and risk assessment</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="siteDeploymentReady">Site Deployment Ready</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="suggestedGoLiveDate">Suggested Go-Live Date</Label>
+                      <Input id="suggestedGoLiveDate" type="date" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="keyBlockers">Key Blockers</Label>
+                    <Textarea id="keyBlockers" placeholder="Describe any blockers or issues" />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="notesForNextVisit">Notes for Next Visit</Label>
+                    <Textarea id="notesForNextVisit" placeholder="Additional notes and observations" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Submit Site Study
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Report Modal */}
+        {renderReportModal()}
       </main>
     </div>
   );
-};
-
-export default SiteStudy; 
+} 

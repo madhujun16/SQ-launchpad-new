@@ -45,6 +45,7 @@ import {
 } from '@/types/inventory';
 
 // Components
+import Header from '@/components/Header';
 import { InventoryFiltersPanel } from '../components/inventory/InventoryFiltersPanel';
 import { InventoryItemForm } from '../components/inventory/InventoryItemForm';
 import { LicenseForm } from '../components/inventory/LicenseForm';
@@ -308,30 +309,19 @@ export default function Inventory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header Section */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Inventory & Deployment</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage hardware assets, track deployments, and monitor licenses
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
-          </div>
+      <Header />
+      
+      <main className="container mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Inventory & Deployment</h1>
+          <p className="text-muted-foreground">
+            Manage hardware assets, track deployments, and monitor licenses
+          </p>
         </div>
 
         {/* Alerts Section */}
         {alerts.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 mb-8">
             {alerts.map((alert) => (
               <Alert key={alert.id} className="border-l-4 border-l-yellow-500 bg-yellow-50">
                 <div className="flex items-start space-x-3">
@@ -347,9 +337,9 @@ export default function Inventory() {
           </div>
         )}
 
-        {/* Enhanced Summary Cards */}
+        {/* Key Metrics */}
         {summaryLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
                 <CardContent className="p-6">
@@ -362,82 +352,100 @@ export default function Inventory() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Items</p>
-                    <p className="text-3xl font-bold">{summary?.total_items || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-                      +12% from last month
-                    </div>
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Package className="h-8 w-8 text-blue-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{summary?.total_items || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                  +12% from last month
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Available</p>
-                    <p className="text-3xl font-bold text-green-600">{summary?.available_items || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
-                      Ready for deployment
-                    </div>
-                  </div>
-                  <div className="p-3 bg-green-100 rounded-full">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Available</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{summary?.available_items || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                  Ready for deployment
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Deployed</p>
-                    <p className="text-3xl font-bold text-blue-600">{summary?.deployed_items || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <MapPin className="h-3 w-3 mr-1 text-blue-500" />
-                      Currently in use
-                    </div>
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <MapPin className="h-8 w-8 text-blue-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Deployed</CardTitle>
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{summary?.deployed_items || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <MapPin className="h-3 w-3 mr-1 text-blue-500" />
+                  Currently in use
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Maintenance</p>
-                    <p className="text-3xl font-bold text-yellow-600">{summary?.maintenance_items || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <Wrench className="h-3 w-3 mr-1 text-yellow-500" />
-                      Under service
-                    </div>
-                  </div>
-                  <div className="p-3 bg-yellow-100 rounded-full">
-                    <Wrench className="h-8 w-8 text-yellow-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Maintenance</CardTitle>
+                <Wrench className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{summary?.maintenance_items || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <Wrench className="h-3 w-3 mr-1 text-yellow-500" />
+                  Under service
                 </div>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Enhanced Main Content */}
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex gap-4">
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Item
+            </Button>
+            <Button variant="outline" onClick={() => setIsLicenseModalOpen(true)}>
+              <Shield className="mr-2 h-4 w-4" />
+              Add License
+            </Button>
+            <Button variant="outline">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
+          
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search inventory..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
         <Card>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b">
@@ -604,23 +612,6 @@ export default function Inventory() {
                   cities={cities || []}
                   sites={sites || []}
                 />
-
-                {/* Search Bar */}
-                <div className="flex gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search inventory items..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
 
                 {/* Enhanced Inventory Table */}
                 <Card>
@@ -961,7 +952,7 @@ export default function Inventory() {
             </DialogContent>
           </Dialog>
         )}
-      </div>
+      </main>
     </div>
   );
 } 

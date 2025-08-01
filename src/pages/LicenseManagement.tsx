@@ -36,6 +36,7 @@ import {
 } from '@/types/inventory';
 
 // Components
+import Header from '@/components/Header';
 import { LicenseForm } from '../components/inventory/LicenseForm';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
@@ -313,30 +314,19 @@ export default function LicenseManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header Section */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">License Management</h1>
-            <p className="text-muted-foreground mt-1">
-              Track, manage, and monitor all types of licenses across operational hierarchy
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add License
-            </Button>
-          </div>
+      <Header />
+      
+      <main className="container mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">License Management</h1>
+          <p className="text-muted-foreground">
+            Track, manage, and monitor all types of licenses across operational hierarchy
+          </p>
         </div>
 
         {/* Alerts Section */}
         {alerts.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 mb-8">
             {alerts.map((alert) => (
               <Alert key={alert.id} className={`border-l-4 ${
                 alert.type === 'warning' ? 'border-l-yellow-500 bg-yellow-50' :
@@ -372,9 +362,9 @@ export default function LicenseManagement() {
           </div>
         )}
 
-        {/* Enhanced Summary Cards */}
+        {/* Key Metrics */}
         {summaryLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
                 <CardContent className="p-6">
@@ -387,75 +377,59 @@ export default function LicenseManagement() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Licenses</p>
-                    <p className="text-3xl font-bold">{summary?.total_licenses || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-                      +8% from last month
-                    </div>
-                  </div>
-                  <div className="p-3 bg-blue-100 rounded-full">
-                    <Shield className="h-8 w-8 text-blue-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Licenses</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{summary?.total_licenses || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                  +8% from last month
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active</p>
-                    <p className="text-3xl font-bold text-green-600">{summary?.active_licenses || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
-                      Currently valid
-                    </div>
-                  </div>
-                  <div className="p-3 bg-green-100 rounded-full">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{summary?.active_licenses || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                  Currently valid
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Expiring Soon</p>
-                    <p className="text-3xl font-bold text-yellow-600">{summary?.expiring_soon || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <Clock className="h-3 w-3 mr-1 text-yellow-500" />
-                      Within 30 days
-                    </div>
-                  </div>
-                  <div className="p-3 bg-yellow-100 rounded-full">
-                    <Clock className="h-8 w-8 text-yellow-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{summary?.expiring_soon || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <Clock className="h-3 w-3 mr-1 text-yellow-500" />
+                  Within 30 days
                 </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Expired</p>
-                    <p className="text-3xl font-bold text-red-600">{summary?.expired_licenses || 0}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <AlertCircle className="h-3 w-3 mr-1 text-red-500" />
-                      Requires attention
-                    </div>
-                  </div>
-                  <div className="p-3 bg-red-100 rounded-full">
-                    <AlertCircle className="h-8 w-8 text-red-600" />
-                  </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Expired</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{summary?.expired_licenses || 0}</div>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <AlertCircle className="h-3 w-3 mr-1 text-red-500" />
+                  Requires attention
                 </div>
               </CardContent>
             </Card>
@@ -463,65 +437,83 @@ export default function LicenseManagement() {
         )}
 
         {/* License Type Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Software</p>
-                  <p className="text-2xl font-bold text-blue-600">{summary?.software_licenses || 0}</p>
-                </div>
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Package className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Software</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{summary?.software_licenses || 0}</div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Hardware</p>
-                  <p className="text-2xl font-bold text-green-600">{summary?.hardware_licenses || 0}</p>
-                </div>
-                <div className="p-2 bg-green-100 rounded-full">
-                  <Zap className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Hardware</CardTitle>
+              <Zap className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{summary?.hardware_licenses || 0}</div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Service</p>
-                  <p className="text-2xl font-bold text-purple-600">{summary?.service_licenses || 0}</p>
-                </div>
-                <div className="p-2 bg-purple-100 rounded-full">
-                  <Activity className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Service</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{summary?.service_licenses || 0}</div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Integration</p>
-                  <p className="text-2xl font-bold text-orange-600">{summary?.integration_licenses || 0}</p>
-                </div>
-                <div className="p-2 bg-orange-100 rounded-full">
-                  <TrendingUp className="h-6 w-6 text-orange-600" />
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Integration</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{summary?.integration_licenses || 0}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Enhanced Main Content */}
+        {/* Action Buttons */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex gap-4">
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add License
+            </Button>
+            <Button variant="outline">
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+            <Button variant="outline">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+          
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search licenses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
         <Card>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b">
@@ -744,23 +736,6 @@ export default function LicenseManagement() {
                   </CardContent>
                 </Card>
 
-                {/* Search Bar */}
-                <div className="flex gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search licenses..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
-
                 {/* Enhanced License Table */}
                 <Card>
                   <CardHeader>
@@ -979,7 +954,7 @@ export default function LicenseManagement() {
             />
           </DialogContent>
         </Dialog>
-      </div>
+      </main>
     </div>
   );
 } 
