@@ -74,6 +74,321 @@ export type Database = {
         }
         Relationships: []
       }
+      sectors: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cities: {
+        Row: {
+          id: string
+          name: string
+          region: string | null
+          country: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          region?: string | null
+          country?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          region?: string | null
+          country?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sites: {
+        Row: {
+          id: string
+          name: string
+          food_court_unit: string
+          sector_id: string | null
+          city_id: string | null
+          address: string | null
+          postcode: string | null
+          contact_person: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          status: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          cafeteria_type: Database["public"]["Enums"]["cafeteria_type"]
+          capacity: number
+          expected_footfall: number
+          description: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          food_court_unit: string
+          sector_id?: string | null
+          city_id?: string | null
+          address?: string | null
+          postcode?: string | null
+          contact_person?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          cafeteria_type?: Database["public"]["Enums"]["cafeteria_type"]
+          capacity?: number
+          expected_footfall?: number
+          description?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          food_court_unit?: string
+          sector_id?: string | null
+          city_id?: string | null
+          address?: string | null
+          postcode?: string | null
+          contact_person?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          cafeteria_type?: Database["public"]["Enums"]["cafeteria_type"]
+          capacity?: number
+          expected_footfall?: number
+          description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sites_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      site_assignments: {
+        Row: {
+          id: string
+          site_id: string
+          ops_manager_id: string | null
+          deployment_engineer_id: string | null
+          assigned_at: string
+          assigned_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          ops_manager_id?: string | null
+          deployment_engineer_id?: string | null
+          assigned_at?: string
+          assigned_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          ops_manager_id?: string | null
+          deployment_engineer_id?: string | null
+          assigned_at?: string
+          assigned_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_assignments_ops_manager_id_fkey"
+            columns: ["ops_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "site_assignments_deployment_engineer_id_fkey"
+            columns: ["deployment_engineer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "site_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      site_studies: {
+        Row: {
+          id: string
+          site_id: string
+          conducted_by: string
+          study_date: string
+          findings: string | null
+          site_map_url: string | null
+          counter_count: number | null
+          hardware_requirements: Json | null
+          geolocation_lat: number | null
+          geolocation_lng: number | null
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          conducted_by: string
+          study_date: string
+          findings?: string | null
+          site_map_url?: string | null
+          counter_count?: number | null
+          hardware_requirements?: Json | null
+          geolocation_lat?: number | null
+          geolocation_lng?: number | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          conducted_by?: string
+          study_date?: string
+          findings?: string | null
+          site_map_url?: string | null
+          counter_count?: number | null
+          hardware_requirements?: Json | null
+          geolocation_lat?: number | null
+          geolocation_lng?: number | null
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_studies_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_studies_conducted_by_fkey"
+            columns: ["conducted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      site_status_tracking: {
+        Row: {
+          id: string
+          site_id: string
+          study_status: string
+          cost_approval_status: string
+          inventory_status: string
+          products_status: string
+          deployment_status: string
+          overall_status: Database["public"]["Enums"]["site_status"]
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          study_status?: string
+          cost_approval_status?: string
+          inventory_status?: string
+          products_status?: string
+          deployment_status?: string
+          overall_status?: Database["public"]["Enums"]["site_status"]
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          study_status?: string
+          cost_approval_status?: string
+          inventory_status?: string
+          products_status?: string
+          deployment_status?: string
+          overall_status?: Database["public"]["Enums"]["site_status"]
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_status_tracking_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_status_tracking_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -94,9 +409,41 @@ export type Database = {
         Args: { _user_id?: string }
         Returns: boolean
       }
+      get_site_with_details: {
+        Args: {
+          site_uuid: string
+        }
+        Returns: {
+          id: string
+          name: string
+          food_court_unit: string
+          address: string | null
+          postcode: string | null
+          cafeteria_type: Database["public"]["Enums"]["cafeteria_type"]
+          capacity: number
+          expected_footfall: number
+          description: string | null
+          status: string
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          sector_name: string | null
+          city_name: string | null
+          ops_manager_name: string | null
+          deployment_engineer_name: string | null
+          study_status: string | null
+          cost_approval_status: string | null
+          inventory_status: string | null
+          products_status: string | null
+          deployment_status: string | null
+          overall_status: Database["public"]["Enums"]["site_status"] | null
+        }[]
+      }
     }
     Enums: {
-      app_role: "admin" | "ops_manager" | "deployment_engineer" | "user"
+      app_role: "admin" | "ops_manager" | "deployment_engineer"
+      cafeteria_type: "staff" | "visitor" | "mixed"
+      site_status: "new" | "in-progress" | "active" | "deployed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -224,7 +571,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "ops_manager", "deployment_engineer", "user"],
+      app_role: ["admin", "ops_manager", "deployment_engineer"],
+      cafeteria_type: ["staff", "visitor", "mixed"],
+      site_status: ["new", "in-progress", "active", "deployed"],
     },
   },
 } as const

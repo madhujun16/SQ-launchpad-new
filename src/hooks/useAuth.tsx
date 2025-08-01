@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('user_id', userId);
 
       if (profileData) {
-        const roles = rolesData?.map(r => r.role) || ['user'] as UserRole[];
+        const roles = rolesData?.map(r => r.role) || ['admin'] as UserRole[];
         setProfile({ 
           ...profileData, 
           user_roles: rolesData?.map(r => ({ role: r.role })) || []
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (savedRole && roles.includes(savedRole)) {
           setCurrentRole(savedRole);
         } else {
-          setCurrentRole(roles[0] || 'user');
+          setCurrentRole(roles[0] || 'admin');
         }
       }
     } catch (error) {

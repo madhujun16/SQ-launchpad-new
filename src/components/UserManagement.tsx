@@ -30,7 +30,7 @@ const UserManagement = () => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'user' as UserRole
+    role: 'deployment_engineer' as UserRole
   });
 
   const fetchUsers = async () => {
@@ -122,7 +122,7 @@ const UserManagement = () => {
 
       toast.success('User added successfully');
       setIsAddDialogOpen(false);
-      setFormData({ email: '', full_name: '', role: 'user' });
+      setFormData({ email: '', full_name: '', role: 'deployment_engineer' });
       fetchUsers();
     } catch (error) {
       console.error('Error adding user:', error);
@@ -211,7 +211,7 @@ const UserManagement = () => {
     setFormData({
       email: user.email,
       full_name: user.full_name || '',
-      role: user.user_roles[0]?.role || 'user'
+      role: user.user_roles[0]?.role || 'deployment_engineer'
     });
     setIsEditDialogOpen(true);
   };
@@ -288,9 +288,9 @@ const UserManagement = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="moderator">Moderator</SelectItem>
+                      <SelectItem value="ops_manager">Ops Manager</SelectItem>
+                      <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -393,9 +393,9 @@ const UserManagement = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
+                  <SelectItem value="ops_manager">Ops Manager</SelectItem>
+                  <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -18,60 +18,69 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     key: 'admin',
     displayName: 'Admin',
     icon: Shield,
-    description: 'Create sites, assign Ops Managers and Deployment Engineers, manage site lifecycle',
+    description: 'Create sites, assign Ops Managers and Deployment Engineers, scope hardware, manage approval workflows, export data',
     permissions: [
       'create_sites',
       'assign_users',
       'edit_site_assignments',
       'view_all_sites',
       'manage_users',
-      'edit_site_info'
+      'edit_site_info',
+      'scope_hardware',
+      'manage_approval_workflows',
+      'export_data',
+      'view_inventory',
+      'view_forecast',
+      'manage_licenses'
     ],
-    accessiblePages: ['/dashboard', '/admin', '/site-study'],
+    accessiblePages: [
+      '/dashboard', 
+      '/admin', 
+      '/site-study', 
+      '/hardware-scoping', 
+      '/control-desk', 
+      '/forecast', 
+      '/inventory', 
+      '/license-management',
+      '/site-creation'
+    ],
     color: 'text-red-600'
   },
   ops_manager: {
     key: 'ops_manager',
     displayName: 'Ops Manager',
     icon: Users,
-    description: 'Approve hardware requests and manage site approvals',
+    description: 'Approve hardware requests for assigned sites',
     permissions: [
       'approve_hardware_requests',
       'view_assigned_sites',
       'manage_approvals',
-      'update_site_status'
+      'update_site_status',
+      'view_inventory'
     ],
-    accessiblePages: ['/dashboard', '/ops-manager'],
+    accessiblePages: ['/dashboard', '/ops-manager', '/inventory'],
     color: 'text-blue-600'
   },
   deployment_engineer: {
     key: 'deployment_engineer',
     displayName: 'Deployment Engineer',
     icon: Wrench,
-    description: 'Conduct site studies, update site status, and manage deployment',
+    description: 'Conduct site studies, upload findings, define hardware requirements, update site status',
     permissions: [
       'conduct_site_studies',
       'upload_findings',
       'update_site_status',
       'view_assigned_sites',
-      'add_site_geolocation'
+      'add_site_geolocation',
+      'define_hardware_requirements'
     ],
-    accessiblePages: ['/dashboard', '/deployment', '/site-study'],
+    accessiblePages: ['/dashboard', '/deployment', '/site-study', '/site-study-form'],
     color: 'text-green-600'
-  },
-  user: {
-    key: 'user',
-    displayName: 'User',
-    icon: Users,
-    description: 'Basic user access',
-    permissions: ['view_dashboard'],
-    accessiblePages: ['/dashboard'],
-    color: 'text-gray-600'
   }
 };
 
 export const getRoleConfig = (role: UserRole): RoleConfig => {
-  return ROLES[role] || ROLES.user;
+  return ROLES[role] || ROLES.admin; // Default to admin if role not found
 };
 
 export const hasPermission = (userRole: UserRole, permission: string): boolean => {

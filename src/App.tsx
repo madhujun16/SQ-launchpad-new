@@ -71,42 +71,58 @@ const App = () => (
             } />
             <Route path="/site" element={
               <ProtectedRoute>
-                <Site />
+                <RoleBasedRoute>
+                  <Site />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/hardware-scoping" element={
               <ProtectedRoute>
-                <HardwareScoping />
+                <RoleBasedRoute>
+                  <HardwareScoping />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/control-desk" element={
               <ProtectedRoute>
-                <Integrations />
+                <RoleBasedRoute>
+                  <Integrations />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/forecast" element={
               <ProtectedRoute>
-                <Forecast />
+                <RoleBasedRoute>
+                  <Forecast />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/site-study-form" element={
               <ProtectedRoute>
-                <SiteStudyForm />
+                <RoleBasedRoute>
+                  <SiteStudyForm />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/inventory" element={
               <ProtectedRoute>
-                <Inventory />
+                <RoleBasedRoute>
+                  <Inventory />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/license-management" element={
               <ProtectedRoute>
-                <LicenseManagement />
+                <RoleBasedRoute>
+                  <LicenseManagement />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/site-creation" element={
               <ProtectedRoute>
-                <SiteCreationForm />
+                <RoleBasedRoute>
+                  <SiteCreationForm />
+                </RoleBasedRoute>
               </ProtectedRoute>
             } />
 
