@@ -19,7 +19,7 @@ import {
   Download,
   HardDrive,
   Cpu,
-  Memory,
+  HardDrive as Memory,
   Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
