@@ -29,6 +29,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'edit_site_info',
       'scope_hardware',
       'manage_approval_workflows',
+      'manage_approvals',
       'export_data',
       'view_inventory',
       'view_forecast',
@@ -43,7 +44,9 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/dashboard', 
       '/admin', 
       '/site-study', 
-      '/hardware-scoping', 
+            '/hardware-scoping',
+      '/hardware-approvals',
+      '/hardware-master',
       '/control-desk', 
       '/forecast', 
       '/inventory', 
@@ -81,7 +84,9 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/site-study',
       '/site-creation',
       '/site',
-      '/hardware-scoping'
+      '/hardware-scoping',
+      '/hardware-approvals',
+      '/hardware-master'
     ],
     color: 'text-blue-600'
   },
@@ -96,6 +101,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'update_site_status',
       'view_assigned_sites',
       'view_sites',
+      'manage_approvals',
       'add_site_geolocation',
       'define_hardware_requirements',
       'create_sites',
@@ -107,7 +113,9 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/site-study', 
       '/site-creation',
       '/site',
-      '/hardware-scoping'
+      '/hardware-scoping',
+      '/hardware-approvals',
+      '/hardware-master'
     ],
     color: 'text-green-600'
   }

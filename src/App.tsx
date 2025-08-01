@@ -15,6 +15,8 @@ import Deployment from "./pages/Deployment";
 import SiteStudy from "./pages/SiteStudy";
 import Site from "./pages/Site";
 import HardwareScoping from "./pages/HardwareScoping";
+import HardwareApprovals from "./pages/HardwareApprovals";
+import HardwareMaster from "./pages/HardwareMaster";
 import Integrations from "./pages/Integrations";
 import Forecast from "./pages/Forecast";
 import Inventory from "./pages/Inventory";
@@ -81,6 +83,20 @@ const App = () => (
               <ProtectedRoute>
                 <RoleBasedRoute>
                   <HardwareScoping />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/hardware-approvals" element={
+              <ProtectedRoute>
+                <RoleBasedRoute>
+                  <HardwareApprovals />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/hardware-master" element={
+              <ProtectedRoute>
+                <RoleBasedRoute>
+                  <HardwareMaster />
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
