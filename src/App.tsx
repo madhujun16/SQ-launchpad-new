@@ -19,7 +19,6 @@ import Forecast from "./pages/Forecast";
 import Inventory from "./pages/Inventory";
 import LicenseManagement from "./pages/LicenseManagement";
 import NotFound from "./pages/NotFound";
-import SiteStudyForm from "./components/SiteStudyForm";
 import SiteCreationForm from "./components/SiteCreationForm";
 
 const queryClient = new QueryClient();
@@ -94,13 +93,6 @@ const App = () => (
               <ProtectedRoute>
                 <RoleBasedRoute>
                   <Forecast />
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/site-study-form" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <SiteStudyForm />
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />

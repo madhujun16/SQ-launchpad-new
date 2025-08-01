@@ -31,7 +31,12 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'export_data',
       'view_inventory',
       'view_forecast',
-      'manage_licenses'
+      'manage_licenses',
+      'conduct_site_studies',
+      'upload_findings',
+      'update_site_status',
+      'add_site_geolocation',
+      'define_hardware_requirements'
     ],
     accessiblePages: [
       '/dashboard', 
@@ -42,7 +47,10 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/forecast', 
       '/inventory', 
       '/license-management',
-      '/site-creation'
+      '/site-creation',
+      '/site',
+      '/ops-manager',
+      '/deployment'
     ],
     color: 'text-red-600'
   },
@@ -50,31 +58,50 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     key: 'ops_manager',
     displayName: 'Ops Manager',
     icon: Users,
-    description: 'Approve hardware requests for assigned sites',
+    description: 'Approve hardware requests for assigned sites, create sites, conduct site studies',
     permissions: [
       'approve_hardware_requests',
       'view_assigned_sites',
       'manage_approvals',
       'update_site_status',
-      'view_inventory'
+      'view_inventory',
+      'create_sites',
+      'conduct_site_studies',
+      'upload_findings',
+      'add_site_geolocation',
+      'define_hardware_requirements'
     ],
-    accessiblePages: ['/dashboard', '/ops-manager', '/inventory'],
+    accessiblePages: [
+      '/dashboard', 
+      '/ops-manager', 
+      '/inventory',
+      '/site-study',
+      '/site-creation',
+      '/site'
+    ],
     color: 'text-blue-600'
   },
   deployment_engineer: {
     key: 'deployment_engineer',
     displayName: 'Deployment Engineer',
     icon: Wrench,
-    description: 'Conduct site studies, upload findings, define hardware requirements, update site status',
+    description: 'Conduct site studies, upload findings, define hardware requirements, update site status, create sites',
     permissions: [
       'conduct_site_studies',
       'upload_findings',
       'update_site_status',
       'view_assigned_sites',
       'add_site_geolocation',
-      'define_hardware_requirements'
+      'define_hardware_requirements',
+      'create_sites'
     ],
-    accessiblePages: ['/dashboard', '/deployment', '/site-study', '/site-study-form'],
+    accessiblePages: [
+      '/dashboard', 
+      '/deployment', 
+      '/site-study', 
+      '/site-creation',
+      '/site'
+    ],
     color: 'text-green-600'
   }
 };

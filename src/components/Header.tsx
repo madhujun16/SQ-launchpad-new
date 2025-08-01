@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building, Users, Settings, Bell, LogOut, User, Menu, RotateCcw } from "lucide-react";
+import { Building, Users, Settings, Bell, LogOut, User, Menu, RotateCcw, Plus, FileText } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import smartqLogo from '@/assets/smartq-icon-logo.svg';
@@ -55,11 +55,17 @@ const Header = () => {
     // Dashboard is always accessible
     items.push({ path: '/dashboard', label: 'Dashboard' });
     
-    // Role-specific navigation
+    // Site Study - accessible to all users
     if (canAccessPage(currentRole, '/site-study')) {
       items.push({ path: '/site-study', label: 'Site Study' });
     }
     
+    // Site Creation - accessible to all users
+    if (canAccessPage(currentRole, '/site-creation')) {
+      items.push({ path: '/site-creation', label: 'Create Site' });
+    }
+    
+    // Role-specific navigation
     if (canAccessPage(currentRole, '/admin')) {
       items.push({ path: '/admin', label: 'Admin' });
     }
@@ -94,27 +100,56 @@ const Header = () => {
             <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
-            <Link to="/site-study" className="text-foreground hover:text-primary transition-colors">
-              Site Study
-            </Link>
+            
+            {/* Site Study - accessible to all users */}
+            {canAccessPage(currentRole || 'admin', '/site-study') && (
+              <Link to="/site-study" className="text-foreground hover:text-primary transition-colors">
+                Site Study
+              </Link>
+            )}
+            
+            {/* Site Creation - accessible to all users */}
+            {canAccessPage(currentRole || 'admin', '/site-creation') && (
+              <Link to="/site-creation" className="text-foreground hover:text-primary transition-colors">
+                Create Site
+              </Link>
+            )}
+            
             <Link to="/site" className="text-foreground hover:text-primary transition-colors">
               Sites
             </Link>
-            <Link to="/hardware-scoping" className="text-foreground hover:text-primary transition-colors">
-              Hardware
-            </Link>
-            <Link to="/control-desk" className="text-foreground hover:text-primary transition-colors">
-              Control Desk
-            </Link>
-            <Link to="/forecast" className="text-foreground hover:text-primary transition-colors">
-              Forecast
-            </Link>
-            <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">
-              Inventory
-            </Link>
-            <Link to="/license-management" className="text-foreground hover:text-primary transition-colors">
-              Licenses
-            </Link>
+            
+            {canAccessPage(currentRole || 'admin', '/hardware-scoping') && (
+              <Link to="/hardware-scoping" className="text-foreground hover:text-primary transition-colors">
+                Hardware
+              </Link>
+            )}
+            
+            {canAccessPage(currentRole || 'admin', '/control-desk') && (
+              <Link to="/control-desk" className="text-foreground hover:text-primary transition-colors">
+                Control Desk
+              </Link>
+            )}
+            
+            {canAccessPage(currentRole || 'admin', '/forecast') && (
+              <Link to="/forecast" className="text-foreground hover:text-primary transition-colors">
+                Forecast
+              </Link>
+            )}
+            
+            {canAccessPage(currentRole || 'admin', '/inventory') && (
+              <Link to="/inventory" className="text-foreground hover:text-primary transition-colors">
+                Inventory
+              </Link>
+            )}
+            
+            {canAccessPage(currentRole || 'admin', '/license-management') && (
+              <Link to="/license-management" className="text-foreground hover:text-primary transition-colors">
+                Licenses
+              </Link>
+            )}
+            
+            {/* Role-specific navigation */}
             {currentRole === 'admin' && (
               <Link to="/admin" className="text-foreground hover:text-primary transition-colors">
                 Admin
@@ -161,6 +196,27 @@ const Header = () => {
                   <User className="mr-2 h-4 w-4" />
                   <span>{profile?.email}</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                
+                {/* Quick Actions */}
+                <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                  Quick Actions
+                </div>
+                
+                {canAccessPage(currentRole || 'admin', '/site-study') && (
+                  <DropdownMenuItem onClick={() => navigate('/site-study')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Site Study</span>
+                  </DropdownMenuItem>
+                )}
+                
+                {canAccessPage(currentRole || 'admin', '/site-creation') && (
+                  <DropdownMenuItem onClick={() => navigate('/site-creation')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Create Site</span>
+                  </DropdownMenuItem>
+                )}
+                
                 <DropdownMenuSeparator />
                 
                 {/* Role Switching */}

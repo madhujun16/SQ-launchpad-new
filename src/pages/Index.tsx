@@ -26,7 +26,8 @@ import {
   Target,
   Zap,
   Star,
-  Award
+  Award,
+  Plus
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -126,22 +127,35 @@ const Index = () => {
 
     const actions = [];
 
+    // Site Study - accessible to all users
     if (canAccessPage(currentRole, '/site-study')) {
       actions.push({
         label: 'Site Study',
         path: '/site-study',
         icon: Building,
-        description: 'Conduct site studies for cafeteria deployments',
+        description: 'Conduct comprehensive site studies for cafeteria deployments',
         color: 'text-blue-600'
       });
     }
 
+    // Site Creation - accessible to all users
+    if (canAccessPage(currentRole, '/site-creation')) {
+      actions.push({
+        label: 'Create Site',
+        path: '/site-creation',
+        icon: Plus,
+        description: 'Create new cafeteria sites and manage site information',
+        color: 'text-green-600'
+      });
+    }
+
+    // Role-specific actions
     if (canAccessPage(currentRole, '/admin')) {
       actions.push({
         label: 'Site Management',
         path: '/admin',
         icon: Shield,
-        description: 'Manage Compass Group cafeteria sites',
+        description: 'Manage Compass Group cafeteria sites and user assignments',
         color: 'text-red-600'
       });
     }

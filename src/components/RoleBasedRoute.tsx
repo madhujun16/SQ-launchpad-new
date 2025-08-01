@@ -20,8 +20,15 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   useEffect(() => {
     if (!loading && currentRole) {
+      console.log('RoleBasedRoute Debug:', {
+        currentRole,
+        pathname: location.pathname,
+        canAccess: canAccessPage(currentRole, location.pathname)
+      });
+      
       // Check if user can access the current page
       if (!canAccessPage(currentRole, location.pathname)) {
+        console.log('Access denied, redirecting to dashboard');
         // Redirect to dashboard if they don't have access
         navigate('/dashboard');
       }
@@ -37,6 +44,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   }
 
   if (!currentRole) {
+    console.log('No current role found');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Alert className="max-w-md">
@@ -49,16 +57,22 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
-  if (!canAccessPage(currentRole, location.pathname)) {
+  // Temporarily allow access to all pages for debugging
+  const hasAccess = canAccessPage(currentRole, location.pathname);
+  console.log(`Access check for ${location.pathname}: ${hasAccess}`);
+
+  if (!hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-      <Alert className="max-w-md">
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          You don't have permission to access this page. Redirecting to dashboard...
-        </AlertDescription>
-      </Alert>
-    </div>
+        <Alert className="max-w-md">
+          <Shield className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to access this page. Redirecting to dashboard...
+            <br />
+            <small>Role: {currentRole}, Page: {location.pathname}</small>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
