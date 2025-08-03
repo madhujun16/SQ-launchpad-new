@@ -261,18 +261,18 @@ const Index = () => {
                   </div>
                 )}
               </div>
-              {roleActions.length > 0 && (
-                <div className="flex gap-2">
-                  {roleActions.map((action) => (
-                    <Link key={action.path} to={action.path}>
-                      <Button className="bg-primary hover:bg-primary-dark shadow-soft">
-                        <action.icon className="mr-2 h-4 w-4" />
-                        {action.label}
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                             {roleActions.length > 0 && (
+                 <div className="flex gap-2">
+                   {roleActions.map((action) => (
+                     <Link key={action.path} to={action.path}>
+                       <Button className="bg-green-600 hover:bg-green-700 text-white shadow-soft rounded-lg px-4 py-2">
+                         <action.icon className="mr-2 h-4 w-4" />
+                         {action.label}
+                       </Button>
+                     </Link>
+                   ))}
+                 </div>
+               )}
             </div>
           </div>
 
@@ -399,10 +399,10 @@ const Index = () => {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="activities" className="space-y-6">
-            <TabsList className="bg-card border-primary/20">
-              <TabsTrigger value="activities" className="text-primary-dark data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recent Activities</TabsTrigger>
-              <TabsTrigger value="notifications" className="text-primary-dark data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Notifications</TabsTrigger>
-              <TabsTrigger value="quick-actions" className="text-primary-dark data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Quick Actions</TabsTrigger>
+            <TabsList className="bg-gray-100 border border-gray-300 rounded-lg p-1">
+              <TabsTrigger value="activities" className="text-gray-800 data-[state=active]:bg-green-600 data-[state=active]:text-white rounded-md px-3 py-2">Recent Activities</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-gray-800 data-[state=active]:bg-green-600 data-[state=active]:text-white rounded-md px-3 py-2">Notifications</TabsTrigger>
+              <TabsTrigger value="quick-actions" className="text-gray-800 data-[state=active]:bg-green-600 data-[state=active]:text-white rounded-md px-3 py-2">Quick Actions</TabsTrigger>
             </TabsList>
 
             <TabsContent value="activities" className="space-y-6">
@@ -487,17 +487,17 @@ const Index = () => {
             <TabsContent value="quick-actions" className="space-y-6">
               {roleActions.length > 0 ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {roleActions.map((action) => (
-                    <Link key={action.path} to={action.path}>
-                      <div className="p-6 border border-primary/20 rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 cursor-pointer group bg-card shadow-soft">
-                        <div className="flex items-center mb-3">
-                          <action.icon className={`h-6 w-6 mr-3 ${action.color} group-hover:scale-110 transition-transform`} />
-                          <h4 className="font-semibold text-primary-dark">{action.label}</h4>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{action.description}</p>
-                      </div>
-                    </Link>
-                  ))}
+                                     {roleActions.map((action) => (
+                     <Link key={action.path} to={action.path}>
+                       <div className="p-6 border border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 cursor-pointer group bg-white shadow-soft">
+                         <div className="flex items-center mb-3">
+                           <action.icon className={`h-6 w-6 mr-3 text-gray-600 group-hover:scale-110 transition-transform`} />
+                           <h4 className="font-semibold text-gray-800">{action.label}</h4>
+                         </div>
+                         <p className="text-sm text-gray-600">{action.description}</p>
+                       </div>
+                     </Link>
+                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">

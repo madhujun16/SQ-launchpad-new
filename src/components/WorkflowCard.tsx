@@ -54,7 +54,7 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
         <div className="pt-2">
           <Button 
             variant="outline" 
-            className="w-full border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-primary-dark"
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-lg px-4 py-2"
             onClick={onAction}
           >
             {actionLabel}

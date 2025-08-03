@@ -346,8 +346,8 @@ const Header = () => {
               to={item.path}
               className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActivePage(item.path)
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground hover:text-primary hover:bg-muted'
+                  ? 'bg-green-600 text-white shadow-soft'
+                  : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               <item.icon className="h-4 w-4" />
@@ -364,8 +364,8 @@ const Header = () => {
                   variant="ghost"
                   className={`flex items-center space-x-2 px-3 py-2 h-auto ${
                     item.items?.some(subItem => isActivePage(subItem.path))
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:text-primary hover:bg-muted'
+                      ? 'bg-green-600 text-white shadow-soft'
+                      : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
