@@ -483,12 +483,12 @@ const Header = () => {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-1.5 h-8 px-2">
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <RoleIcon className="h-3 w-3 text-primary-foreground" />
+                <Button variant="ghost" className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                    <RoleIcon className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div className="hidden md:block text-left">
-                    <p className="text-xs font-medium text-foreground">
+                    <p className="text-sm font-medium text-foreground">
                       {profile?.full_name || 'User'}
                     </p>
                     <p className={`text-xs ${roleConfig?.color || 'text-muted-foreground'}`}>
@@ -497,9 +497,9 @@ const Header = () => {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem disabled className="text-xs">
-                  <User className="mr-2 h-3.5 w-3.5" />
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem disabled>
+                  <User className="mr-2 h-4 w-4" />
                   <span>{profile?.email}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -557,8 +557,8 @@ const Header = () => {
                   </>
                 )}
                 
-                <DropdownMenuItem onClick={signOut} className="text-xs">
-                  <LogOut className="mr-2 h-3.5 w-3.5" />
+                <DropdownMenuItem onClick={signOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

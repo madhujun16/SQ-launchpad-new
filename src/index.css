@@ -8,33 +8,33 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* SmartQ Launchpad Design System - Dark Sage Green Theme */
-    --background: 0 0% 100%;
-    --foreground: 220 15% 20%;
+    /* SmartQ Launchpad Design System - Light Theme with Green Accents */
+    --background: 120 10% 98%; /* Soft light green background */
+    --foreground: 220 15% 20%; /* Dark gray for high readability */
 
-    --card: 0 0% 100%;
+    --card: 120 5% 99%; /* Very soft green card background */
     --card-foreground: 220 15% 20%;
 
-    --popover: 0 0% 100%;
+    --popover: 120 5% 99%; /* Very soft green popover background */
     --popover-foreground: 220 15% 20%;
 
-    /* Primary: Dark Sage Green */
-    --primary: 150 25% 35%;
+    /* Primary: Deep emerald green from hero section */
+    --primary: 150 40% 35%; /* #2F855A equivalent */
     --primary-foreground: 0 0% 98%;
-    --primary-light: 150 20% 45%;
-    --primary-dark: 150 30% 25%;
+    --primary-light: 150 35% 45%; /* #38A169 equivalent */
+    --primary-dark: 150 45% 25%; /* #276749 equivalent */
 
-    /* Secondary: Light blue tones */
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 210 20% 15%;
+    /* Secondary: Light muted green */
+    --secondary: 120 15% 95%; /* #E6F5ED equivalent */
+    --secondary-foreground: 220 15% 20%;
 
-    /* Muted: Subtle blue greys */
-    --muted: 210 20% 96%;
-    --muted-foreground: 210 15% 45%;
+    /* Muted: Soft green grays */
+    --muted: 120 10% 96%; /* #F0FDF4 equivalent */
+    --muted-foreground: 220 15% 45%; /* Medium gray for subtexts */
 
-    /* Accent: Warm blue */
-    --accent: 210 30% 90%;
-    --accent-foreground: 210 20% 15%;
+    /* Accent: Soft green accent */
+    --accent: 120 15% 94%; /* #EDFDF4 equivalent */
+    --accent-foreground: 220 15% 20%;
 
     /* Status Colors */
     --success: 142 76% 36%;
@@ -50,28 +50,30 @@ All colors MUST be HSL.
     --destructive-foreground: 0 0% 98%;
 
     /* UI Elements */
-    --border: 210 20% 89%;
-    --input: 210 20% 89%;
-    --ring: 210 85% 45%;
+    --border: 120 10% 90%; /* Soft green border */
+    --input: 120 10% 90%;
+    --ring: 150 40% 35%; /* Primary green for focus rings */
 
     --radius: 0.5rem;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-header: linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 50%, transparent 100%);
 
     /* Shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.2);
-    --shadow-glow: 0 0 40px hsl(var(--primary-light) / 0.3);
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.15);
+    --shadow-glow: 0 0 40px hsl(var(--primary-light) / 0.2);
+    --shadow-soft: 0 4px 12px hsl(var(--primary) / 0.08);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-background: 120 10% 97%; /* Slightly darker than main background */
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 150 40% 35%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 120 15% 95%;
+    --sidebar-accent-foreground: 220 15% 20%;
+    --sidebar-border: 120 10% 90%;
+    --sidebar-ring: 150 40% 35%;
   }
 
   .dark {
@@ -109,10 +111,12 @@ All colors MUST be HSL.
     /* Dark mode gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-header: linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 50%, transparent 100%);
 
     /* Dark mode shadows */
     --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.4);
     --shadow-glow: 0 0 40px hsl(var(--primary-light) / 0.5);
+    --shadow-soft: 0 4px 12px hsl(var(--primary) / 0.2);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -132,5 +136,28 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for the new theme */
+@layer utilities {
+  .bg-gradient-header {
+    background: var(--gradient-header);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .text-primary-dark {
+    color: hsl(var(--primary-dark));
+  }
+  
+  .bg-primary-light {
+    background-color: hsl(var(--primary-light));
+  }
+  
+  .border-primary-light {
+    border-color: hsl(var(--primary-light));
   }
 }

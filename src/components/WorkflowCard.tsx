@@ -26,10 +26,10 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
   actionLabel = "View Details"
 }) => {
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <Card className="hover:shadow-soft transition-all duration-200 border-primary/20 bg-card">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg font-semibold text-foreground">{title}</CardTitle>
+          <CardTitle className="text-lg font-semibold text-primary-dark">{title}</CardTitle>
           <StatusBadge status={status} />
         </div>
       </CardHeader>
@@ -37,16 +37,16 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
         <p className="text-muted-foreground text-sm">{description}</p>
         
         <div className="space-y-2 text-sm">
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <MapPin className="h-4 w-4" />
+          <div className="flex items-center space-x-2 text-primary-dark">
+            <MapPin className="h-4 w-4 text-primary" />
             <span>{location}</span>
           </div>
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <User className="h-4 w-4" />
+          <div className="flex items-center space-x-2 text-primary-dark">
+            <User className="h-4 w-4 text-primary" />
             <span>{assignee}</span>
           </div>
-          <div className="flex items-center space-x-2 text-muted-foreground">
-            <Calendar className="h-4 w-4" />
+          <div className="flex items-center space-x-2 text-primary-dark">
+            <Calendar className="h-4 w-4 text-primary" />
             <span>{dueDate}</span>
           </div>
         </div>
@@ -54,7 +54,7 @@ const WorkflowCard: React.FC<WorkflowCardProps> = ({
         <div className="pt-2">
           <Button 
             variant="outline" 
-            className="w-full"
+            className="w-full border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-primary-dark"
             onClick={onAction}
           >
             {actionLabel}

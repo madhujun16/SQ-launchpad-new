@@ -10,30 +10,30 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
   const statusConfig = {
     pending: {
       label: "Pending",
-      className: "bg-warning text-warning-foreground"
+      className: "bg-warning/10 text-warning border-warning/20 shadow-soft"
     },
     approved: {
       label: "Approved", 
-      className: "bg-success text-success-foreground"
+      className: "bg-success/10 text-success border-success/20 shadow-soft"
     },
     "in-progress": {
       label: "In Progress",
-      className: "bg-info text-info-foreground"
+      className: "bg-primary/10 text-primary-dark border-primary/20 shadow-soft"
     },
     completed: {
       label: "Completed",
-      className: "bg-primary text-primary-foreground"
+      className: "bg-success/10 text-success border-success/20 shadow-soft"
     },
     rejected: {
       label: "Rejected",
-      className: "bg-destructive text-destructive-foreground"
+      className: "bg-destructive/10 text-destructive border-destructive/20 shadow-soft"
     }
   };
 
   const config = statusConfig[status];
 
   return (
-    <Badge className={cn(config.className, className)}>
+    <Badge variant="outline" className={cn(config.className, className)}>
       {config.label}
     </Badge>
   );

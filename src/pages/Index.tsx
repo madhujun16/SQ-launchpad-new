@@ -248,7 +248,7 @@ const Index = () => {
           <div className="mb-8">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
+                <h2 className="text-3xl font-bold text-primary-dark">Dashboard</h2>
                 <p className="text-muted-foreground">
                   Welcome back! Here's your {roleConfig?.displayName.toLowerCase()} overview for Compass Group cafeterias
                 </p>
@@ -265,7 +265,7 @@ const Index = () => {
                 <div className="flex gap-2">
                   {roleActions.map((action) => (
                     <Link key={action.path} to={action.path}>
-                      <Button className="bg-primary hover:bg-primary-dark">
+                      <Button className="bg-primary hover:bg-primary-dark shadow-soft">
                         <action.icon className="mr-2 h-4 w-4" />
                         {action.label}
                       </Button>
@@ -278,57 +278,65 @@ const Index = () => {
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Cafeterias</CardTitle>
-                <Building className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-primary-dark">Total Cafeterias</CardTitle>
+                <div className="p-2 rounded-lg bg-primary/5">
+                  <Building className="h-4 w-4 text-primary-dark" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{performanceMetrics.totalSites}</div>
+                <div className="text-2xl font-bold text-primary-dark">{performanceMetrics.totalSites}</div>
                 <div className="flex items-center text-xs text-muted-foreground">
-                  <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                  <TrendingUp className="h-3 w-3 mr-1 text-success" />
                   +12% from last month
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Deployments</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-primary-dark">Active Deployments</CardTitle>
+                <div className="p-2 rounded-lg bg-success/5">
+                  <CheckCircle className="h-4 w-4 text-success" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{performanceMetrics.activeDeployments}</div>
+                <div className="text-2xl font-bold text-primary-dark">{performanceMetrics.activeDeployments}</div>
                 <div className="flex items-center text-xs text-muted-foreground">
-                  <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                  <TrendingUp className="h-3 w-3 mr-1 text-success" />
                   +8% from last month
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-primary-dark">In Progress</CardTitle>
+                <div className="p-2 rounded-lg bg-primary/5">
+                  <Clock className="h-4 w-4 text-primary-dark" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{performanceMetrics.inProgress}</div>
+                <div className="text-2xl font-bold text-primary-dark">{performanceMetrics.inProgress}</div>
                 <div className="flex items-center text-xs text-muted-foreground">
-                  <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
+                  <TrendingDown className="h-3 w-3 mr-1 text-destructive" />
                   -2 from last week
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-primary-dark">Pending Approval</CardTitle>
+                <div className="p-2 rounded-lg bg-warning/5">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{performanceMetrics.pendingApproval}</div>
+                <div className="text-2xl font-bold text-primary-dark">{performanceMetrics.pendingApproval}</div>
                 <div className="flex items-center text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3 mr-1 text-yellow-500" />
+                  <Clock className="h-3 w-3 mr-1 text-warning" />
                   Requires attention
                 </div>
               </CardContent>
@@ -337,15 +345,15 @@ const Index = () => {
 
           {/* Performance Overview */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Target className="mr-2 h-5 w-5" />
+                <CardTitle className="flex items-center text-primary-dark">
+                  <Target className="mr-2 h-5 w-5 text-primary" />
                   Completion Rate
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">{performanceMetrics.completionRate}%</div>
+                <div className="text-3xl font-bold text-success">{performanceMetrics.completionRate}%</div>
                 <Progress value={performanceMetrics.completionRate} className="mt-2" />
                 <p className="text-xs text-muted-foreground mt-2">
                   Target: 90% | Current: {performanceMetrics.completionRate}%
@@ -353,35 +361,35 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Zap className="mr-2 h-5 w-5" />
+                <CardTitle className="flex items-center text-primary-dark">
+                  <Zap className="mr-2 h-5 w-5 text-primary" />
                   Avg Deployment Time
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-600">{performanceMetrics.averageDeploymentTime} days</div>
+                <div className="text-3xl font-bold text-primary-dark">{performanceMetrics.averageDeploymentTime} days</div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Target: 10 days | Current: {performanceMetrics.averageDeploymentTime} days
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-primary/20 bg-card shadow-soft">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Star className="mr-2 h-5 w-5" />
+                <CardTitle className="flex items-center text-primary-dark">
+                  <Star className="mr-2 h-5 w-5 text-primary" />
                   Customer Satisfaction
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-yellow-600">{performanceMetrics.customerSatisfaction}/5.0</div>
+                <div className="text-3xl font-bold text-warning">{performanceMetrics.customerSatisfaction}/5.0</div>
                 <div className="flex mt-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star 
                       key={star} 
-                      className={`h-4 w-4 ${star <= performanceMetrics.customerSatisfaction ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+                      className={`h-4 w-4 ${star <= performanceMetrics.customerSatisfaction ? 'text-warning fill-current' : 'text-muted'}`} 
                     />
                   ))}
                 </div>
@@ -391,22 +399,22 @@ const Index = () => {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="activities" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="activities">Recent Activities</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              <TabsTrigger value="quick-actions">Quick Actions</TabsTrigger>
+            <TabsList className="bg-card border-primary/20">
+              <TabsTrigger value="activities" className="text-primary-dark data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recent Activities</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-primary-dark data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Notifications</TabsTrigger>
+              <TabsTrigger value="quick-actions" className="text-primary-dark data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Quick Actions</TabsTrigger>
             </TabsList>
 
             <TabsContent value="activities" className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 {recentActivities.map((activity, index) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
+                  <Card key={index} className="hover:shadow-soft transition-all duration-200 border-primary/20 bg-card">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-lg">{activity.title}</CardTitle>
-                          <CardDescription className="flex items-center mt-1">
-                            <MapPin className="h-3 w-3 mr-1" />
+                          <CardTitle className="text-lg text-primary-dark">{activity.title}</CardTitle>
+                          <CardDescription className="flex items-center mt-1 text-primary-dark">
+                            <MapPin className="h-3 w-3 mr-1 text-primary" />
                             {activity.location}
                           </CardDescription>
                         </div>
@@ -424,23 +432,23 @@ const Index = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Client</span>
-                          <span className="font-medium">{activity.client}</span>
+                          <span className="font-medium text-primary-dark">{activity.client}</span>
                         </div>
                         
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Assigned to</span>
-                          <span className="font-medium">{activity.assignee}</span>
+                          <span className="font-medium text-primary-dark">{activity.assignee}</span>
                         </div>
                         
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Due date</span>
-                          <span className="font-medium">{activity.dueDate}</span>
+                          <span className="font-medium text-primary-dark">{activity.dueDate}</span>
                         </div>
                         
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Progress</span>
-                            <span className="font-medium">{activity.progress}%</span>
+                            <span className="font-medium text-primary-dark">{activity.progress}%</span>
                           </div>
                           <Progress value={activity.progress} className="h-2" />
                         </div>
@@ -458,13 +466,13 @@ const Index = () => {
             <TabsContent value="notifications" className="space-y-4">
               <div className="space-y-4">
                 {notifications.map((notification) => (
-                  <Card key={notification.id} className="hover:shadow-md transition-shadow">
+                  <Card key={notification.id} className="hover:shadow-soft transition-all duration-200 border-primary/20 bg-card">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
                         {getNotificationIcon(notification.type)}
                         <div className="flex-1">
                           <div className="flex justify-between items-start">
-                            <h4 className="font-medium text-foreground">{notification.title}</h4>
+                            <h4 className="font-medium text-primary-dark">{notification.title}</h4>
                             <span className="text-xs text-muted-foreground">{notification.time}</span>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
@@ -481,10 +489,10 @@ const Index = () => {
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {roleActions.map((action) => (
                     <Link key={action.path} to={action.path}>
-                      <div className="p-6 border border-border rounded-lg hover:border-primary transition-colors cursor-pointer group">
+                      <div className="p-6 border border-primary/20 rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 cursor-pointer group bg-card shadow-soft">
                         <div className="flex items-center mb-3">
                           <action.icon className={`h-6 w-6 mr-3 ${action.color} group-hover:scale-110 transition-transform`} />
-                          <h4 className="font-semibold text-foreground">{action.label}</h4>
+                          <h4 className="font-semibold text-primary-dark">{action.label}</h4>
                         </div>
                         <p className="text-sm text-muted-foreground">{action.description}</p>
                       </div>
