@@ -311,7 +311,7 @@ export default function Inventory() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-6 py-8">
+      <main className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Inventory & Deployment</h1>
           <p className="text-muted-foreground">

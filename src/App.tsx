@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, ProtectedRoute } from "@/components/AuthGuard";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
+import { SiteProvider } from "@/contexts/SiteContext";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -14,12 +15,14 @@ import Deployment from "./pages/Deployment";
 import SiteStudy from "./pages/SiteStudy";
 import Site from "./pages/Site";
 import HardwareScoping from "./pages/HardwareScoping";
+import HardwareApprovals from "./pages/HardwareApprovals";
+import HardwareMaster from "./pages/HardwareMaster";
 import Integrations from "./pages/Integrations";
 import Forecast from "./pages/Forecast";
 import Inventory from "./pages/Inventory";
 import LicenseManagement from "./pages/LicenseManagement";
 import NotFound from "./pages/NotFound";
-import SiteCreationForm from "./components/SiteCreationForm";
+import SiteCreation from "./pages/SiteCreation";
 
 const queryClient = new QueryClient();
 
@@ -30,7 +33,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
+          <SiteProvider>
+            <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={
@@ -82,6 +86,20 @@ const App = () => (
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
+            <Route path="/hardware-approvals" element={
+              <ProtectedRoute>
+                <RoleBasedRoute>
+                  <HardwareApprovals />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/hardware-master" element={
+              <ProtectedRoute>
+                <RoleBasedRoute>
+                  <HardwareMaster />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
             <Route path="/control-desk" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
@@ -113,7 +131,7 @@ const App = () => (
             <Route path="/site-creation" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <SiteCreationForm />
+                  <SiteCreation />
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
@@ -121,6 +139,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </SiteProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

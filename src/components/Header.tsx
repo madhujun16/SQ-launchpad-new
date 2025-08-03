@@ -94,7 +94,7 @@ const Header = () => {
   const roleConfig = getCurrentRoleConfig();
   const RoleIcon = roleConfig?.icon || User;
 
-  // Navigation structure with dropdowns
+  // Navigation structure with dropdowns as specified
   const getNavigationStructure = () => {
     if (!currentRole) return [];
 
@@ -337,20 +337,20 @@ const Header = () => {
   };
 
   const renderDesktopNavigation = () => (
-    <nav className="hidden lg:flex items-center space-x-0.5">
+    <nav className="hidden lg:flex items-center space-x-1">
       {navigationStructure.map((item) => {
         if (item.type === 'link') {
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActivePage(item.path)
                   ? 'bg-primary text-primary-foreground'
                   : 'text-foreground hover:text-primary hover:bg-muted'
               }`}
             >
-              <item.icon className="h-3.5 w-3.5" />
+              <item.icon className="h-4 w-4" />
               <span>{item.label}</span>
             </Link>
           );
@@ -362,19 +362,19 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={`flex items-center space-x-1.5 px-2.5 py-1.5 h-auto text-xs font-medium ${
+                  className={`flex items-center space-x-2 px-3 py-2 h-auto ${
                     item.items?.some(subItem => isActivePage(subItem.path))
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground hover:text-primary hover:bg-muted'
                   }`}
                 >
-                  <item.icon className="h-3.5 w-3.5" />
-                  <span>{item.label}</span>
+                  <item.icon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{item.label}</span>
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="font-semibold text-sm">
+              <DropdownMenuContent align="start" className="w-64">
+                <DropdownMenuLabel className="font-semibold">
                   {item.label}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -382,11 +382,11 @@ const Header = () => {
                   <DropdownMenuItem
                     key={subItem.path}
                     onClick={() => navigate(subItem.path)}
-                    className="flex items-start space-x-2.5 p-2.5"
+                    className="flex items-start space-x-3 p-3"
                   >
-                    <subItem.icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground" />
+                    <subItem.icon className="h-4 w-4 mt-0.5 text-muted-foreground" />
                     <div className="flex-1">
-                      <div className="font-medium text-sm">{subItem.label}</div>
+                      <div className="font-medium">{subItem.label}</div>
                       <div className="text-xs text-muted-foreground">
                         {subItem.description}
                       </div>
@@ -404,19 +404,19 @@ const Header = () => {
   );
 
   const renderMobileNavigation = () => (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {navigationStructure.map((item) => {
         if (item.type === 'link') {
           return (
             <Button
               key={item.path}
               variant={isActivePage(item.path) ? "default" : "ghost"}
-              className="w-full justify-start h-9"
+              className="w-full justify-start"
               onClick={() => handleMobileNavigation(item.path)}
             >
-              <item.icon className="mr-2.5 h-4 w-4" />
+              <item.icon className="mr-3 h-4 w-4" />
               <div className="text-left">
-                <div className="font-medium text-sm">{item.label}</div>
+                <div className="font-medium">{item.label}</div>
               </div>
             </Button>
           );
@@ -424,20 +424,20 @@ const Header = () => {
 
         if (item.type === 'dropdown') {
           return (
-            <div key={item.label} className="space-y-1.5">
-              <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b">
+            <div key={item.label} className="space-y-2">
+              <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
                 {item.label}
               </div>
               {item.items?.map((subItem) => (
                 <Button
                   key={subItem.path}
                   variant={isActivePage(subItem.path) ? "default" : "ghost"}
-                  className="w-full justify-start ml-3 h-8"
+                  className="w-full justify-start ml-4"
                   onClick={() => handleMobileNavigation(subItem.path)}
                 >
-                  <subItem.icon className="mr-2.5 h-3.5 w-3.5" />
+                  <subItem.icon className="mr-3 h-4 w-4" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">{subItem.label}</div>
+                    <div className="font-medium">{subItem.label}</div>
                     <div className="text-xs text-muted-foreground">
                       {subItem.description}
                     </div>
@@ -455,90 +455,27 @@ const Header = () => {
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-3 py-2">
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-3">
         <div className="flex items-center justify-between">
-          {/* Logo and Brand */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <Link to="/dashboard" className="flex items-center space-x-2">
-              <img src={smartqLogo} alt="SmartQ Launchpad" className="h-7 w-7 sm:h-8 sm:w-8" />
+          {/* Logo and Brand - Left side */}
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <Link to="/dashboard" className="flex items-center space-x-3">
+              <img src={smartqLogo} alt="SmartQ Launchpad" className="h-8 w-8 sm:h-10 sm:w-10" />
               <div className="hidden sm:block">
-                <h1 className="text-base sm:text-lg font-bold text-foreground">SmartQ Launchpad</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-foreground">SmartQ Launchpad</h1>
               </div>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-0.5 flex-1 justify-center">
-            {navigationStructure.map((item) => {
-              if (item.type === 'link') {
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      isActivePage(item.path)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-foreground hover:text-primary hover:bg-muted'
-                    }`}
-                  >
-                    <item.icon className="h-3.5 w-3.5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              }
+          {/* Right Side - Navigation and Actions (ChatGPT style) */}
+          <div className="flex items-center space-x-2">
+            {/* Desktop Navigation - Right side */}
+            {renderDesktopNavigation()}
 
-              if (item.type === 'dropdown') {
-                return (
-                  <DropdownMenu key={item.label}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className={`flex items-center space-x-1.5 px-2.5 py-1.5 h-auto text-xs font-medium ${
-                          item.items?.some(subItem => isActivePage(subItem.path))
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-foreground hover:text-primary hover:bg-muted'
-                        }`}
-                      >
-                        <item.icon className="h-3.5 w-3.5" />
-                        <span>{item.label}</span>
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56">
-                      <DropdownMenuLabel className="font-semibold text-sm">
-                        {item.label}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {item.items?.map((subItem) => (
-                        <DropdownMenuItem
-                          key={subItem.path}
-                          onClick={() => navigate(subItem.path)}
-                          className="flex items-start space-x-2.5 p-2.5"
-                        >
-                          <subItem.icon className="h-3.5 w-3.5 mt-0.5 text-muted-foreground" />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{subItem.label}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {subItem.description}
-                            </div>
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                );
-              }
-
-              return null;
-            })}
-          </div>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-1 flex-shrink-0">
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative h-8 w-8">
-              <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-warning text-warning-foreground text-xs flex items-center justify-center p-0">
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-warning text-warning-foreground text-xs flex items-center justify-center p-0">
                 3
               </Badge>
             </Button>
@@ -569,18 +506,18 @@ const Header = () => {
                 
                 {/* Quick Actions */}
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-xs">Quick Actions</DropdownMenuLabel>
+                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
                   
                   {canAccessPage(currentRole || 'admin', '/site-study') && (
-                    <DropdownMenuItem onClick={() => navigate('/site-study')} className="text-xs">
-                      <FileText className="mr-2 h-3.5 w-3.5" />
+                    <DropdownMenuItem onClick={() => navigate('/site-study')}>
+                      <FileText className="mr-2 h-4 w-4" />
                       <span>Site Study</span>
                     </DropdownMenuItem>
                   )}
                   
                   {canAccessPage(currentRole || 'admin', '/site-creation') && (
-                    <DropdownMenuItem onClick={() => navigate('/site-creation')} className="text-xs">
-                      <Plus className="mr-2 h-3.5 w-3.5" />
+                    <DropdownMenuItem onClick={() => navigate('/site-creation')}>
+                      <Plus className="mr-2 h-4 w-4" />
                       <span>Create Site</span>
                     </DropdownMenuItem>
                   )}
@@ -592,7 +529,7 @@ const Header = () => {
                 {availableRoles.length > 1 && (
                   <>
                     <DropdownMenuGroup>
-                      <DropdownMenuLabel className="text-xs">Switch Role</DropdownMenuLabel>
+                      <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
                       {availableRoles.map((role) => {
                         const config = getRoleConfig(role);
                         const RoleIconComponent = config.icon;
@@ -603,9 +540,9 @@ const Header = () => {
                               switchRole(role);
                               handleRoleBasedNavigation(role);
                             }}
-                            className={`${currentRole === role ? "bg-muted" : ""} flex items-center text-xs`}
+                            className={`${currentRole === role ? "bg-muted" : ""} flex items-center`}
                           >
-                            <RoleIconComponent className={`mr-2 h-3.5 w-3.5 ${config.color}`} />
+                            <RoleIconComponent className={`mr-2 h-4 w-4 ${config.color}`} />
                             <span>{config.displayName}</span>
                             {currentRole === role && (
                               <Badge variant="secondary" className="ml-auto text-xs">
@@ -627,63 +564,67 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - ChatGPT style hamburger */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8">
-                  <Menu className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="lg:hidden">
+                  <div className="flex flex-col space-y-1">
+                    <div className="w-5 h-0.5 bg-current"></div>
+                    <div className="w-5 h-0.5 bg-current"></div>
+                    <div className="w-5 h-0.5 bg-current"></div>
+                  </div>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-80">
                 <SheetHeader>
                   <SheetTitle className="flex items-center space-x-2">
-                    <img src={smartqLogo} alt="SmartQ Launchpad" className="h-5 w-5" />
-                    <span className="text-sm">Navigation</span>
+                    <img src={smartqLogo} alt="SmartQ Launchpad" className="h-6 w-6" />
+                    <span>Navigation</span>
                   </SheetTitle>
-                  <SheetDescription className="text-xs">
+                  <SheetDescription>
                     Access all available features and pages
                   </SheetDescription>
                 </SheetHeader>
                 
-                <div className="mt-4">
+                <div className="mt-6">
                   {renderMobileNavigation()}
                 </div>
 
                 {/* Mobile User Info */}
-                <div className="mt-6 pt-4 border-t">
-                  <div className="flex items-center space-x-2.5 mb-3">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <RoleIcon className="h-4 w-4 text-primary-foreground" />
+                <div className="mt-8 pt-6 border-t">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                      <RoleIcon className="h-5 w-5 text-primary-foreground" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{profile?.full_name || 'User'}</p>
-                      <p className={`text-xs ${roleConfig?.color || 'text-muted-foreground'}`}>
+                      <p className="font-medium">{profile?.full_name || 'User'}</p>
+                      <p className={`text-sm ${roleConfig?.color || 'text-muted-foreground'}`}>
                         {roleConfig?.displayName || 'User'}
                       </p>
                     </div>
                   </div>
                   
                   {/* Mobile Quick Actions */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Button
                       variant="outline"
-                      className="w-full justify-start h-8 text-xs"
+                      className="w-full justify-start"
                       onClick={() => {
                         handleMobileNavigation('/site-study');
                       }}
                     >
-                      <FileText className="mr-2.5 h-3.5 w-3.5" />
+                      <FileText className="mr-3 h-4 w-4" />
                       Site Study
                     </Button>
                     
                     <Button
                       variant="outline"
-                      className="w-full justify-start h-8 text-xs"
+                      className="w-full justify-start"
                       onClick={() => {
                         handleMobileNavigation('/site-creation');
                       }}
                     >
-                      <Plus className="mr-2.5 h-3.5 w-3.5" />
+                      <Plus className="mr-3 h-4 w-4" />
                       Create Site
                     </Button>
                   </div>

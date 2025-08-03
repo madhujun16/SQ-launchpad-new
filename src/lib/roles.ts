@@ -24,10 +24,12 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'assign_users',
       'edit_site_assignments',
       'view_all_sites',
+      'view_sites',
       'manage_users',
       'edit_site_info',
       'scope_hardware',
       'manage_approval_workflows',
+      'manage_approvals',
       'export_data',
       'view_inventory',
       'view_forecast',
@@ -42,7 +44,9 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/dashboard', 
       '/admin', 
       '/site-study', 
-      '/hardware-scoping', 
+            '/hardware-scoping',
+      '/hardware-approvals',
+      '/hardware-master',
       '/control-desk', 
       '/forecast', 
       '/inventory', 
@@ -62,6 +66,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     permissions: [
       'approve_hardware_requests',
       'view_assigned_sites',
+      'view_sites',
       'manage_approvals',
       'update_site_status',
       'view_inventory',
@@ -69,7 +74,8 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'conduct_site_studies',
       'upload_findings',
       'add_site_geolocation',
-      'define_hardware_requirements'
+      'define_hardware_requirements',
+      'scope_hardware'
     ],
     accessiblePages: [
       '/dashboard', 
@@ -77,7 +83,10 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/inventory',
       '/site-study',
       '/site-creation',
-      '/site'
+      '/site',
+      '/hardware-scoping',
+      '/hardware-approvals',
+      '/hardware-master'
     ],
     color: 'text-blue-600'
   },
@@ -91,16 +100,22 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'upload_findings',
       'update_site_status',
       'view_assigned_sites',
+      'view_sites',
+      'manage_approvals',
       'add_site_geolocation',
       'define_hardware_requirements',
-      'create_sites'
+      'create_sites',
+      'scope_hardware'
     ],
     accessiblePages: [
       '/dashboard', 
       '/deployment', 
       '/site-study', 
       '/site-creation',
-      '/site'
+      '/site',
+      '/hardware-scoping',
+      '/hardware-approvals',
+      '/hardware-master'
     ],
     color: 'text-green-600'
   }

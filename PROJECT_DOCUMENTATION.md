@@ -373,7 +373,7 @@ sq-launchpad-cg/
 │   │   ├── Header.tsx            # Main navigation
 │   │   ├── AuthGuard.tsx         # Authentication wrapper
 │   │   ├── RoleBasedRoute.tsx    # Role-based access control
-│   │   ├── SiteCreationForm.tsx  # Site creation form
+│   │   ├── SiteCreation.tsx  # Site creation page
 │   │   └── inventory/            # Inventory components
 │   ├── pages/
 │   │   ├── Index.tsx             # Dashboard
@@ -383,6 +383,8 @@ sq-launchpad-cg/
 │   │   ├── Inventory.tsx         # Inventory management
 │   │   ├── LicenseManagement.tsx # License management
 │   │   ├── HardwareScoping.tsx   # Hardware planning
+│   │   ├── HardwareApprovals.tsx # Hardware approvals
+│   │   ├── HardwareMaster.tsx # Hardware master inventory
 │   │   ├── Forecast.tsx          # Project forecasting
 │   │   ├── OpsManager.tsx        # Operations management
 │   │   ├── Deployment.tsx        # Deployment management
