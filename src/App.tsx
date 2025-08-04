@@ -10,7 +10,6 @@ import { Suspense, lazy } from "react";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { testDatabase } from "@/utils/test-db";
 
 // Make test function available globally for debugging
@@ -30,148 +29,180 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
 const SiteCreation = lazy(() => import("./pages/SiteCreation"));
 
-// Loading component
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p className="text-muted-foreground">Loading...</p>
-    </div>
-  </div>
-);
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <SiteProvider>
-            <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Index />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Admin />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-
-            <Route path="/site-study" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <SiteStudy />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/site" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Site />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/hardware-scoping" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <HardwareScoping />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/hardware-approvals" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <HardwareApprovals />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/hardware-master" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <HardwareMaster />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/control-desk" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Integrations />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/forecast" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Forecast />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/inventory" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <Inventory />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/license-management" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <LicenseManagement />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/site-creation" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Suspense fallback={<PageLoader />}>
-                    <SiteCreation />
-                  </Suspense>
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <PerformanceMonitor />
-          </SiteProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <SiteProvider>
+              <div className="min-h-screen bg-background">
+                <Routes>
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Suspense fallback={<div>Loading...</div>}>
+                          <Index />
+                        </Suspense>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Admin />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/site-study"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <SiteStudy />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/site"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Site />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/hardware-scoping"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <HardwareScoping />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/hardware-approvals"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <HardwareApprovals />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/hardware-master"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <HardwareMaster />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/integrations"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Integrations />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/forecast"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Forecast />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/inventory"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Inventory />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/license-management"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <LicenseManagement />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/site-creation"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <SiteCreation />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+              <Toaster />
+              <Sonner />
+            </SiteProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
