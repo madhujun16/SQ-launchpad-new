@@ -52,9 +52,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/inventory', 
       '/license-management',
       '/site-creation',
-      '/site',
-      '/ops-manager',
-      '/deployment'
+      '/site'
     ],
     color: 'text-red-600'
   },
@@ -79,7 +77,6 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     ],
     accessiblePages: [
       '/dashboard', 
-      '/ops-manager', 
       '/inventory',
       '/site-study',
       '/site-creation',
@@ -109,7 +106,6 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     ],
     accessiblePages: [
       '/dashboard', 
-      '/deployment', 
       '/site-study', 
       '/site-creation',
       '/site',

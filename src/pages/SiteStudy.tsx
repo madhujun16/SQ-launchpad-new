@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { 
   FileText, 
   Eye, 
-  Plus, 
   Building, 
   MapPin, 
   Users, 
@@ -33,16 +32,10 @@ import {
   Camera,
   Navigation,
   Globe,
-  Map,
-  Crosshair,
-  LocateIcon
+  Map
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import Header from '@/components/Header';
 
 export default function SiteStudy() {
@@ -52,11 +45,10 @@ export default function SiteStudy() {
     status: 'all',
     engineer: 'all'
   });
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedStudy, setSelectedStudy] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'pending'>('pending');
+
 
   // Mock statistics
   const stats = {
@@ -312,32 +304,9 @@ export default function SiteStudy() {
     setIsReportModalOpen(true);
   };
 
-  const handleCreateStudy = () => {
-    setIsCreateModalOpen(true);
-  };
 
-  const handleCaptureLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCurrentLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setLocationPermission('granted');
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setLocationPermission('denied');
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      );
-    }
-  };
+
+
 
   const getGoogleMapsUrl = (lat: number, lng: number) => {
     return `https://www.google.com/maps?q=${lat},${lng}`;
@@ -688,22 +657,14 @@ export default function SiteStudy() {
       <Header />
       
       <main className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
-        {/* Header with Create Button */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Site Study Management</h1>
             <p className="text-muted-foreground">
-              Comprehensive site study forms and deployment readiness tracking
+              View and manage site study progress across all locations
             </p>
           </div>
-          <Button 
-            size="lg" 
-            onClick={handleCreateStudy}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Create Site Study
-          </Button>
         </div>
 
         {/* Statistics Cards */}
@@ -925,392 +886,7 @@ export default function SiteStudy() {
           </CardContent>
         </Card>
 
-        {/* Create Site Study Modal */}
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Create New Site Study
-              </DialogTitle>
-              <DialogDescription>
-                Complete the comprehensive site study assessment with all required sections.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-6">
-              {/* Step 1: Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building className="h-5 w-5" />
-                    Step 1: Basic Information
-                  </CardTitle>
-                  <CardDescription>Site and organisation details</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="siteName">Site Name *</Label>
-                      <Input id="siteName" placeholder="Enter site name" />
-                    </div>
-                    <div>
-                      <Label htmlFor="organisation">Organisation *</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select organisation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="asda">ASDA</SelectItem>
-                          <SelectItem value="amazon">Amazon</SelectItem>
-                          <SelectItem value="hsbc">HSBC</SelectItem>
-                          <SelectItem value="compass">Compass Eurest</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="unitCode">Unit Code</Label>
-                      <Input id="unitCode" placeholder="Enter unit code" />
-                    </div>
-                    <div>
-                      <Label htmlFor="sector">Sector</Label>
-                      <Input id="sector" placeholder="e.g., Eurest, Corporate" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Step 2: Location Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    Step 2: Location & Address
-                  </CardTitle>
-                  <CardDescription>Site location and delivery information</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="addressLine1">Address Line 1 *</Label>
-                      <Input id="addressLine1" placeholder="Enter address" />
-                    </div>
-                    <div>
-                      <Label htmlFor="addressLine2">Address Line 2</Label>
-                      <Input id="addressLine2" placeholder="Additional address info" />
-                    </div>
-                    <div>
-                      <Label htmlFor="city">City *</Label>
-                      <Input id="city" placeholder="Enter city" />
-                    </div>
-                    <div>
-                      <Label htmlFor="postcode">Postcode *</Label>
-                      <Input id="postcode" placeholder="Enter postcode" />
-                    </div>
-                  </div>
-
-                  {/* Geolocation Capture */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>GPS Coordinates</Label>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleCaptureLocation}
-                        disabled={locationPermission === 'denied'}
-                      >
-                        <Crosshair className="h-4 w-4 mr-2" />
-                        {locationPermission === 'granted' ? 'Update Location' : 'Capture Location'}
-                      </Button>
-                    </div>
-                    
-                    {currentLocation && (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Latitude:</span>
-                            <span className="font-mono ml-2">{currentLocation.lat.toFixed(6)}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Longitude:</span>
-                            <span className="font-mono ml-2">{currentLocation.lng.toFixed(6)}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => window.open(getGoogleMapsUrl(currentLocation.lat, currentLocation.lng), '_blank')}
-                          >
-                            <Map className="h-3 w-3 mr-1" />
-                            Google Maps
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => window.open(getOpenStreetMapUrl(currentLocation.lat, currentLocation.lng), '_blank')}
-                          >
-                            <Globe className="h-3 w-3 mr-1" />
-                            OpenStreetMap
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {locationPermission === 'denied' && (
-                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm text-yellow-800">
-                          Location access denied. Please enable location permissions in your browser settings.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="floor">Floor</Label>
-                      <Input id="floor" placeholder="e.g., Ground Floor, 2nd Floor" />
-                    </div>
-                    <div>
-                      <Label htmlFor="deliveryWindow">Preferred Delivery Window</Label>
-                      <Input id="deliveryWindow" placeholder="e.g., 10:00 AM - 2:00 PM" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="securityRestrictions">Security Restrictions</Label>
-                    <Textarea id="securityRestrictions" placeholder="Describe any security requirements or restrictions" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Step 3: Contact Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Step 3: Contact Information
-                  </CardTitle>
-                  <CardDescription>Primary and secondary contacts</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="unitManagerName">Unit Manager Name *</Label>
-                      <Input id="unitManagerName" placeholder="Enter manager name" />
-                    </div>
-                    <div>
-                      <Label htmlFor="jobTitle">Job Title</Label>
-                      <Input id="jobTitle" placeholder="e.g., Operations Manager" />
-                    </div>
-                    <div>
-                      <Label htmlFor="unitManagerEmail">Email *</Label>
-                      <Input id="unitManagerEmail" type="email" placeholder="Enter email address" />
-                    </div>
-                    <div>
-                      <Label htmlFor="unitManagerMobile">Mobile *</Label>
-                      <Input id="unitManagerMobile" placeholder="Enter mobile number" />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="additionalContactName">Additional Contact Name</Label>
-                      <Input id="additionalContactName" placeholder="Secondary contact name" />
-                    </div>
-                    <div>
-                      <Label htmlFor="additionalContactEmail">Additional Contact Email</Label>
-                      <Input id="additionalContactEmail" type="email" placeholder="Secondary contact email" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Step 4: Capacity Planning */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Step 4: Staff & Capacity Planning
-                  </CardTitle>
-                  <CardDescription>Employee and operational capacity information</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="employeeStrength">Employee Strength *</Label>
-                      <Input id="employeeStrength" type="number" placeholder="e.g., 2500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="expectedFootfall">Expected Footfall</Label>
-                      <Input id="expectedFootfall" type="number" placeholder="e.g., 800" />
-                    </div>
-                    <div>
-                      <Label htmlFor="seatingCapacity">Seating Capacity</Label>
-                      <Input id="seatingCapacity" type="number" placeholder="e.g., 300" />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="operatingDays">Operating Days</Label>
-                      <Input id="operatingDays" placeholder="e.g., Monday-Friday" />
-                    </div>
-                    <div>
-                      <Label htmlFor="operatingHours">Operating Hours</Label>
-                      <Input id="operatingHours" placeholder="e.g., 7:00 AM - 6:00 PM" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Step 5: Infrastructure Assessment */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Step 5: IT & Power Infrastructure
-                  </CardTitle>
-                  <CardDescription>Network and power requirements assessment</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="lanPoints">Available LAN Points</Label>
-                      <Input id="lanPoints" type="number" placeholder="e.g., 8" />
-                    </div>
-                    <div>
-                      <Label htmlFor="bandwidth">Bandwidth Test Result</Label>
-                      <Input id="bandwidth" placeholder="e.g., 6 Mbps" />
-                    </div>
-                    <div>
-                      <Label htmlFor="switchLocation">Switch/Router Location</Label>
-                      <Input id="switchLocation" placeholder="e.g., Server room, 2nd floor" />
-                    </div>
-                    <div>
-                      <Label htmlFor="sockets4Pin">4-Pin Sockets Available</Label>
-                      <Input id="sockets4Pin" type="number" placeholder="e.g., 6" />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="sockets3Pin">3-Pin Sockets Available</Label>
-                      <Input id="sockets3Pin" type="number" placeholder="e.g., 12" />
-                    </div>
-                    <div>
-                      <Label htmlFor="staticIp">Static IP Provided</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select option" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Step 6: Hardware Requirements */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    Step 6: Hardware Deployment Needs
-                  </CardTitle>
-                  <CardDescription>Equipment and device requirements</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="posTerminals">POS Terminals</Label>
-                      <Input id="posTerminals" type="number" placeholder="Quantity" />
-                    </div>
-                    <div>
-                      <Label htmlFor="peds">PEDs (Card Machines)</Label>
-                      <Input id="peds" type="number" placeholder="Quantity" />
-                    </div>
-                    <div>
-                      <Label htmlFor="printers">Printers (KOT/BOH)</Label>
-                      <Input id="printers" type="number" placeholder="Quantity" />
-                    </div>
-                    <div>
-                      <Label htmlFor="kiosks">Kiosks</Label>
-                      <Input id="kiosks" type="number" placeholder="Quantity" />
-                    </div>
-                    <div>
-                      <Label htmlFor="kitchenDisplay">Kitchen Display System</Label>
-                      <Input id="kitchenDisplay" type="number" placeholder="Quantity" />
-                    </div>
-                    <div>
-                      <Label htmlFor="tvs">TVs (IMD/Marketing)</Label>
-                      <Input id="tvs" type="number" placeholder="Quantity" />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="hardwareComments">Hardware Comments</Label>
-                    <Textarea id="hardwareComments" placeholder="Additional notes about hardware requirements" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Step 7: Readiness Assessment */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    Step 7: Readiness & Risks
-                  </CardTitle>
-                  <CardDescription>Deployment readiness and risk assessment</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="siteDeploymentReady">Site Deployment Ready</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select option" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="suggestedGoLiveDate">Suggested Go-Live Date</Label>
-                      <Input id="suggestedGoLiveDate" type="date" />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="keyBlockers">Key Blockers</Label>
-                    <Textarea id="keyBlockers" placeholder="Describe any blockers or issues" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="notesForNextVisit">Notes for Next Visit</Label>
-                    <Textarea id="notesForNextVisit" placeholder="Additional notes and observations" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Submit Site Study
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Report Modal */}
         {renderReportModal()}

@@ -73,6 +73,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (availableRoles.includes(role)) {
       setCurrentRole(role);
       localStorage.setItem('currentRole', role);
+      
+      // Redirect to appropriate dashboard based on new role
+      // This will be handled by the AuthGuard component
+      // We'll trigger a navigation by updating the role
     }
   };
 

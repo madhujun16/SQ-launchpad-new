@@ -73,10 +73,10 @@ const Header = () => {
   const handleRoleBasedNavigation = (role: string) => {
     switch (role) {
       case 'ops_manager':
-        navigate('/ops-manager');
+        navigate('/dashboard');
         break;
       case 'deployment_engineer':
-        navigate('/deployment');
+        navigate('/dashboard');
         break;
       case 'admin':
         navigate('/admin');

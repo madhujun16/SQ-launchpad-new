@@ -10,8 +10,7 @@ import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import OpsManager from "./pages/OpsManager";
-import Deployment from "./pages/Deployment";
+
 import SiteStudy from "./pages/SiteStudy";
 import Site from "./pages/Site";
 import HardwareScoping from "./pages/HardwareScoping";
@@ -51,20 +50,7 @@ const App = () => (
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
-            <Route path="/ops-manager" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <OpsManager />
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
-            <Route path="/deployment" element={
-              <ProtectedRoute>
-                <RoleBasedRoute>
-                  <Deployment />
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            } />
+
             <Route path="/site-study" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
