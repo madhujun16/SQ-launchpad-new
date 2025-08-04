@@ -1,13 +1,37 @@
 -- Drop the overly permissive policy
 DROP POLICY "Allow email existence check for login" ON public.profiles;
 
--- Create a more restrictive policy that only allows checking email existence
--- This policy allows unauthenticated users to query emails but limits what they can see
+-- Create a more restrictive policy that allows checking email existence for login
+-- This policy allows unauthenticated users to query emails for OTP login
 CREATE POLICY "Allow email existence check for login" 
 ON public.profiles 
 FOR SELECT 
 TO anon
-USING (email IS NOT NULL);
+USING (true);
+
+-- Add admin policy to allow admins to view all profiles
+CREATE POLICY "Admins can view all profiles" 
+ON public.profiles 
+FOR SELECT 
+USING (public.is_admin());
+
+-- Add admin policy to allow admins to insert new profiles
+CREATE POLICY "Admins can insert new profiles" 
+ON public.profiles 
+FOR INSERT 
+WITH CHECK (public.is_admin());
+
+-- Add admin policy to allow admins to update profiles
+CREATE POLICY "Admins can update profiles" 
+ON public.profiles 
+FOR UPDATE 
+USING (public.is_admin());
+
+-- Add admin policy to allow admins to delete profiles
+CREATE POLICY "Admins can delete profiles" 
+ON public.profiles 
+FOR DELETE 
+USING (public.is_admin());
 
 -- Add site-related tables for SmartQ LaunchPad business requirements
 

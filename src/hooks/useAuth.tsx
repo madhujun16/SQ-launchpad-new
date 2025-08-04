@@ -113,14 +113,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signInWithOtp = async (email: string) => {
+    console.log('Starting OTP process for email:', email); // Debug log
+    
+    // First, check if the user exists in the profiles table
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('email', email)
+      .single();
+
+    console.log('Profile check result:', { profileData, profileError }); // Debug log
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      // PGRST116 is "not found" error, which is expected for new users
+      console.error('Profile check error:', profileError); // Debug log
+      return { error: profileError };
+    }
+
+    // If user doesn't exist in profiles table, they shouldn't be able to login
+    if (!profileData) {
+      console.log('User not found in profiles table'); // Debug log
+      return { 
+        error: { 
+          message: 'User not found. Please contact your administrator for access.' 
+        } 
+      };
+    }
+
+    console.log('User found in profiles, proceeding with OTP'); // Debug log
+
+    // User exists, proceed with OTP
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // Set this to false to prevent automatic user creation
-        shouldCreateUser: false,
+        // Allow user creation since we've verified they exist in our profiles table
+        shouldCreateUser: true,
       },
     });
     
+    console.log('OTP result:', { error }); // Debug log
     return { error };
   };
 

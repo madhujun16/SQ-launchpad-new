@@ -1,248 +1,297 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { CreateInventoryItemForm, Sector, City, Site, INVENTORY_STATUS_OPTIONS, INVENTORY_TYPE_OPTIONS, GROUP_TYPE_OPTIONS } from '@/types/inventory';
-
-const inventoryItemSchema = z.object({
-  serial_number: z.string().min(1, 'Serial number is required'),
-  model: z.string().min(1, 'Model is required'),
-  manufacturer: z.string().optional(),
-  inventory_type: z.enum(['pos_machine', 'ped', 'kiosk', 'cash_drawer', 'printer', 'kds_screen', 'kitchen_printer']),
-  group_type: z.enum(['POS', 'KMS', 'KIOSK']),
-  status: z.enum(['available', 'deployed', 'maintenance', 'retired', 'lost', 'damaged']),
-  site_id: z.string().optional(),
-  assigned_to: z.string().optional(),
-  purchase_date: z.string().optional(),
-  warranty_expiry: z.string().optional(),
-  notes: z.string().optional(),
-});
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import type { InventoryItem, InventoryType, GroupType, InventoryStatus } from '@/types/inventory';
+import { INVENTORY_TYPES, GROUP_TYPES, INVENTORY_STATUSES } from '@/types/inventory';
 
 interface InventoryItemFormProps {
-  onSubmit: (data: CreateInventoryItemForm) => void;
-  isLoading?: boolean;
-  sectors: Sector[];
-  cities: City[];
-  sites: Site[];
-  initialData?: Partial<CreateInventoryItemForm>;
+  item?: InventoryItem;
+  onSave: (item: InventoryItem) => void;
+  onCancel: () => void;
 }
 
-export function InventoryItemForm({
-  onSubmit,
-  isLoading = false,
-  sectors,
-  cities,
-  sites,
-  initialData,
-}: InventoryItemFormProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-    setValue,
-  } = useForm<CreateInventoryItemForm>({
-    resolver: zodResolver(inventoryItemSchema),
-    defaultValues: initialData || {
-      status: 'available',
-      group_type: 'POS',
-      inventory_type: 'pos_machine',
-    },
+const InventoryItemForm: React.FC<InventoryItemFormProps> = ({ item, onSave, onCancel }) => {
+  const { profile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [sites, setSites] = useState<Array<{ id: string; name: string }>>([]);
+  const [users, setUsers] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
+
+  const [formData, setFormData] = useState({
+    serial_number: item?.serial_number || '',
+    model: item?.model || '',
+    inventory_type: (item?.inventory_type || 'counter') as InventoryType,
+    group_type: (item?.group_type || 'hardware') as GroupType,
+    status: (item?.status || 'available') as InventoryStatus,
+    site_id: item?.site_id || '',
+    assigned_to: item?.assigned_to || '',
+    notes: item?.notes || '',
+    purchase_date: item?.purchase_date || '',
+    warranty_expiry: item?.warranty_expiry || '',
   });
 
-  const watchedGroupType = watch('group_type');
-  const watchedInventoryType = watch('inventory_type');
+  useEffect(() => {
+    fetchSites();
+    fetchUsers();
+  }, []);
 
-  // Filter inventory types based on group type
-  const filteredInventoryTypes = INVENTORY_TYPE_OPTIONS.filter(
-    option => option.group === watchedGroupType
-  );
+  const fetchSites = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sites')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setSites(data || []);
+    } catch (error) {
+      console.error('Error fetching sites:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name');
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.serial_number || !formData.model) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const inventoryData = {
+        ...formData,
+        created_by: profile?.user_id || '',
+      };
+
+      if (item) {
+        // Update existing item
+        const { data, error } = await supabase
+          .from('inventory_items')
+          .update(inventoryData)
+          .eq('id', item.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        onSave(data);
+        toast.success('Inventory item updated successfully');
+      } else {
+        // Create new item
+        const { data, error } = await supabase
+          .from('inventory_items')
+          .insert(inventoryData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        onSave(data);
+        toast.success('Inventory item created successfully');
+      }
+    } catch (error) {
+      console.error('Error saving inventory item:', error);
+      toast.error('Failed to save inventory item');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="serial_number">Serial Number *</Label>
-                <Input
-                  id="serial_number"
-                  {...register('serial_number')}
-                  placeholder="Enter serial number"
-                  className={errors.serial_number ? 'border-red-500' : ''}
-                />
-                {errors.serial_number && (
-                  <p className="text-sm text-red-500 mt-1">{errors.serial_number.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="model">Model *</Label>
-                <Input
-                  id="model"
-                  {...register('model')}
-                  placeholder="Enter model name"
-                  className={errors.model ? 'border-red-500' : ''}
-                />
-                {errors.model && (
-                  <p className="text-sm text-red-500 mt-1">{errors.model.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="manufacturer">Manufacturer</Label>
-                <Input
-                  id="manufacturer"
-                  {...register('manufacturer')}
-                  placeholder="Enter manufacturer"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="group_type">Group Type *</Label>
-                <Select
-                  value={watchedGroupType}
-                  onValueChange={(value) => setValue('group_type', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select group type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GROUP_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div>
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-sm text-muted-foreground">{option.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="inventory_type">Inventory Type *</Label>
-                <Select
-                  value={watchedInventoryType}
-                  onValueChange={(value) => setValue('inventory_type', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select inventory type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredInventoryTypes.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status *</Label>
-                <Select
-                  value={watch('status')}
-                  onValueChange={(value) => setValue('status', value as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INVENTORY_STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full bg-${option.color}-500`}></div>
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>{item ? 'Edit Inventory Item' : 'Add New Inventory Item'}</CardTitle>
+        <CardDescription>
+          {item ? 'Update the inventory item details' : 'Add a new item to the inventory'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="serial_number">Serial Number *</Label>
+              <Input
+                id="serial_number"
+                value={formData.serial_number}
+                onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                placeholder="Enter serial number"
+                required
+              />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Assignment & Dates */}
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-4">Assignment & Dates</h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="site_id">Site</Label>
-                <Select
-                  value={watch('site_id') || ''}
-                  onValueChange={(value) => setValue('site_id', value || undefined)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select site" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No site assigned</SelectItem>
-                    {sites.map((site) => (
-                      <SelectItem key={site.id} value={site.id}>
-                        <div>
-                          <div className="font-medium">{site.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {site.food_court_unit}
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="purchase_date">Purchase Date</Label>
-                <Input
-                  id="purchase_date"
-                  type="date"
-                  {...register('purchase_date')}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="warranty_expiry">Warranty Expiry Date</Label>
-                <Input
-                  id="warranty_expiry"
-                  type="date"
-                  {...register('warranty_expiry')}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  {...register('notes')}
-                  placeholder="Enter any additional notes"
-                  rows={3}
-                />
-              </div>
+            <div>
+              <Label htmlFor="model">Model *</Label>
+              <Input
+                id="model"
+                value={formData.model}
+                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                placeholder="Enter model name"
+                required
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating...' : 'Create Item'}
-        </Button>
-      </div>
-    </form>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="inventory_type">Inventory Type *</Label>
+              <Select
+                value={formData.inventory_type}
+                onValueChange={(value: InventoryType) => setFormData({ ...formData, inventory_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVENTORY_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="group_type">Group Type *</Label>
+              <Select
+                value={formData.group_type}
+                onValueChange={(value: GroupType) => setFormData({ ...formData, group_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROUP_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="status">Status *</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value: InventoryStatus) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVENTORY_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="site_id">Assigned Site</Label>
+              <Select
+                value={formData.site_id}
+                onValueChange={(value) => setFormData({ ...formData, site_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a site" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No site assigned</SelectItem>
+                  {sites.map((site) => (
+                    <SelectItem key={site.id} value={site.id}>
+                      {site.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="assigned_to">Assigned To</Label>
+              <Select
+                value={formData.assigned_to}
+                onValueChange={(value) => setFormData({ ...formData, assigned_to: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a user" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No user assigned</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.full_name} ({user.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="purchase_date">Purchase Date</Label>
+              <Input
+                id="purchase_date"
+                type="date"
+                value={formData.purchase_date}
+                onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="warranty_expiry">Warranty Expiry Date</Label>
+            <Input
+              id="warranty_expiry"
+              type="date"
+              value={formData.warranty_expiry}
+              onChange={(e) => setFormData({ ...formData, warranty_expiry: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Additional notes about this inventory item"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : (item ? 'Update Item' : 'Create Item')}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
-} 
+};
+
+export default InventoryItemForm; 

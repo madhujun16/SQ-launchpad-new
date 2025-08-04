@@ -80,6 +80,10 @@ const Admin = () => {
 
   // Check if user has admin permissions
   React.useEffect(() => {
+    console.log('Admin: Current role:', currentRole); // Debug log
+    console.log('Admin: Profile:', profile); // Debug log
+    console.log('Admin: Has permission to manage users:', hasPermission(currentRole || 'admin', 'manage_users')); // Debug log
+    
     if (currentRole && !hasPermission(currentRole, 'manage_users')) {
       toast.error('You do not have permission to access the Admin panel');
       navigate('/dashboard');
@@ -152,6 +156,8 @@ const Admin = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log('Fetching users...'); // Debug log
+      
       const { data: usersData, error } = await supabase
         .from('profiles')
         .select(`
@@ -161,12 +167,15 @@ const Admin = () => {
           )
         `);
 
+      console.log('Users query result:', { usersData, error }); // Debug log
+
       if (error) {
         console.error('Error fetching users:', error);
         toast.error('Failed to fetch users');
         return;
       }
 
+      console.log('Setting users:', usersData); // Debug log
       setUsers(usersData || []);
     } catch (error) {
       console.error('Error fetching users:', error);

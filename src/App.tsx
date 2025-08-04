@@ -11,6 +11,10 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import { testDatabase } from "@/utils/test-db";
+
+// Make test function available globally for debugging
+(window as any).testDatabase = testDatabase;
 
 // Lazy load heavy components
 const Index = lazy(() => import("./pages/Index"));

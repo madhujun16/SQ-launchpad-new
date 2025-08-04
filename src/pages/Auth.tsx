@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import smartqLogo from '@/assets/smartq-icon-logo.svg';
 import { Mail, Key, ArrowLeft } from 'lucide-react';
+import { debugAuth } from '@/utils/debug-auth';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,11 @@ const Auth = () => {
     }
   }, [countdown]);
 
+  // Debug function - remove this in production
+  const handleDebug = () => {
+    debugAuth();
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
@@ -41,9 +47,12 @@ const Auth = () => {
     }
 
     setLoading(true);
+    console.log('Sending OTP to:', email); // Debug log
+    
     const { error } = await signInWithOtp(email);
     
     if (error) {
+      console.error('OTP Error:', error); // Debug log
       if (error.message.includes('User not found')) {
         toast.error('No account found with this email. Please contact your administrator.');
       } else {
@@ -209,6 +218,18 @@ const Auth = () => {
                   {loading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
               </form>
+              
+              {/* Debug button - remove in production */}
+              <div className="text-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDebug}
+                  className="text-xs text-gray-500"
+                >
+                  Debug Auth
+                </Button>
+              </div>
               
               <div className="text-center text-sm text-muted-foreground">
                 <p>

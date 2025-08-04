@@ -3,450 +3,486 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Building,
-  Shield,
-  Users,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
+import { 
+  Users, 
+  Building2, 
+  Package, 
+  FileText, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
   TrendingUp,
-  TrendingDown,
-  Activity,
-  Bell,
-  FileText,
-  BarChart3,
-  PieChart,
-  Target,
-  Zap,
-  Star,
-  Award,
-  Plus,
-  Settings,
-  Eye,
-  Calendar,
-  DollarSign,
-  Package,
-  Wrench,
-  UserCheck,
-  AlertCircle,
-  Info
-} from '@/lib/icons';
-import { getAdminDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
+  MapPin,
+  Settings
+} from 'lucide-react';
+import { dashboardService } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
-const AdminDashboard = () => {
+interface DashboardStats {
+  totalUsers: number;
+  totalSites: number;
+  activeSites: number;
+  totalInventory: number;
+  availableInventory: number;
+  deployedInventory: number;
+  totalLicenses: number;
+  activeLicenses: number;
+  expiringLicenses: number;
+}
+
+interface Alert {
+  type: 'warning' | 'info' | 'error';
+  title: string;
+  message: string;
+  count: number;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in_progress' | 'completed';
+  type: string;
+  siteId?: string;
+}
+
+interface Site {
+  id: string;
+  name: string;
+  food_court_unit: string;
+  status: string;
+  created_at: string;
+  sector: { name: string };
+  city: { name: string };
+}
+
+interface InventoryItem {
+  id: string;
+  serial_number: string;
+  model: string;
+  inventory_type: string;
+  group_type: string;
+  status: string;
+  created_at: string;
+  site: { name: string };
+}
+
+interface License {
+  id: string;
+  name: string;
+  license_type: string;
+  vendor: string;
+  status: string;
+  expiry_date: string;
+  created_at: string;
+}
+
+const AdminDashboard: React.FC = () => {
   const { profile } = useAuth();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({});
-  const [taskQueue, setTaskQueue] = useState<TaskQueueItem[]>([]);
-  const [exceptionAlerts, setExceptionAlerts] = useState<ExceptionAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [recentSites, setRecentSites] = useState<Site[]>([]);
+  const [recentInventory, setRecentInventory] = useState<InventoryItem[]>([]);
+  const [recentLicenses, setRecentLicenses] = useState<License[]>([]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const [metricsData, taskQueueData, alertsData] = await Promise.all([
-          getAdminDashboardMetrics(),
-          getTaskQueueItems('admin'),
-          getExceptionAlerts('admin')
-        ]);
-
-        setMetrics(metricsData);
-        setTaskQueue(taskQueueData);
-        setExceptionAlerts(alertsData);
-      } catch (error) {
-        console.error('Error fetching admin dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
   }, []);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all data in parallel
+      const [
+        statsData,
+        alertsData,
+        tasksData,
+        sitesData,
+        inventoryData,
+        licensesData
+      ] = await Promise.all([
+        dashboardService.getDashboardStats(),
+        dashboardService.getAlerts(),
+        dashboardService.getUserTasks(profile?.user_id || ''),
+        dashboardService.getRecentSites(5),
+        dashboardService.getRecentInventoryItems(5),
+        dashboardService.getRecentLicenses(5)
+      ]);
+
+      setStats(statsData);
+      setAlerts(alertsData);
+      setTasks(tasksData);
+      setRecentSites(sitesData);
+      setRecentInventory(inventoryData);
+      setRecentLicenses(licensesData);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in-progress':
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">Full visibility and control across all sites, users, and operations</p>
-          </div>
-          <div className="flex gap-2">
-            <Link to="/admin">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Settings className="mr-2 h-4 w-4" />
-                Site Management
-              </Button>
-            </Link>
-            <Link to="/site-creation">
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Site
-              </Button>
-            </Link>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {profile?.full_name}</p>
         </div>
+        <Button onClick={fetchDashboardData} variant="outline">
+          <Settings className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      <div className="p-6">
-        {/* Core Metrics Panels */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Total Sites Created */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Total Sites Created</CardTitle>
-              <div className="p-2 rounded-lg bg-primary/5">
-                <Building className="h-4 w-4 text-primary-dark" />
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <div className="space-y-2">
+          {alerts.map((alert, index) => (
+            <div
+              key={index}
+              className={`p-4 rounded-lg border ${
+                alert.type === 'warning'
+                  ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                  : alert.type === 'error'
+                  ? 'bg-red-50 border-red-200 text-red-800'
+                  : 'bg-blue-50 border-blue-200 text-blue-800'
+              }`}
+            >
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                <div>
+                  <h3 className="font-semibold">{alert.title}</h3>
+                  <p className="text-sm">{alert.message}</p>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.totalSites || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 mr-1 text-success" />
-                +12% from last month
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Site Studies In Progress */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Site Studies In Progress</CardTitle>
-              <div className="p-2 rounded-lg bg-blue-500/5">
-                <FileText className="h-4 w-4 text-blue-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.sitesInProgress || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Clock className="h-3 w-3 mr-1 text-blue-500" />
-                Active studies
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending Approvals */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Pending Approvals</CardTitle>
-              <div className="p-2 rounded-lg bg-warning/5">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.pendingApprovals || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <AlertCircle className="h-3 w-3 mr-1 text-warning" />
-                Requires attention
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Total Active Sites */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Total Active Sites</CardTitle>
-              <div className="p-2 rounded-lg bg-success/5">
-                <CheckCircle className="h-4 w-4 text-success" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.totalActiveSites || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 mr-1 text-success" />
-                +8% from last month
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
+      )}
 
-        {/* Additional Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Total Active Licenses */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Shield className="mr-2 h-5 w-5 text-primary" />
-                Total Active Licenses
-              </CardTitle>
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-success">{metrics.totalActiveLicenses || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Active software and hardware licenses
+              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                Registered users in the system
               </p>
             </CardContent>
           </Card>
 
-          {/* Average Deployment Time */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Zap className="mr-2 h-5 w-5 text-primary" />
-                Average Deployment Time
-              </CardTitle>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary-dark">{metrics.averageDeploymentTime || 0} days</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                From site study start to activation
+              <div className="text-2xl font-bold">{stats.totalSites}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.activeSites} active sites
               </p>
             </CardContent>
           </Card>
 
-          {/* Procurement Spend */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <DollarSign className="mr-2 h-5 w-5 text-primary" />
-                Procurement Spend
-              </CardTitle>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inventory</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-warning">£{metrics.procurementSpend?.toLocaleString() || '0'}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Total asset procurement cost
+              <div className="text-2xl font-bold">{stats.totalInventory}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.availableInventory} available, {stats.deployedInventory} deployed
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Licenses</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalLicenses}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.activeLicenses} active, {stats.expiringLicenses} expiring soon
               </p>
             </CardContent>
           </Card>
         </div>
+      )}
 
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="sites">Recent Sites</TabsTrigger>
+          <TabsTrigger value="inventory">Recent Inventory</TabsTrigger>
+          <TabsTrigger value="licenses">Recent Licenses</TabsTrigger>
+        </TabsList>
 
-
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="task-queue" className="space-y-6">
-          <TabsList className="bg-gray-100 border border-gray-300 rounded-lg p-1">
-            <TabsTrigger value="task-queue" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Task Queue
-            </TabsTrigger>
-            <TabsTrigger value="audit-oversight" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Audit & Oversight
-            </TabsTrigger>
-            <TabsTrigger value="exception-alerts" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Exception Alerts
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Task Queue Tab */}
-          <TabsContent value="task-queue" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Pending Tasks */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Clock className="mr-2 h-5 w-5 text-primary" />
-                    Pending Tasks
-                  </CardTitle>
-                  <CardDescription>
-                    Tasks requiring immediate attention
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {taskQueue.length > 0 ? (
-                      taskQueue.map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{task.title}</h4>
-                            <p className="text-sm text-gray-600">{task.description}</p>
-                            <div className="flex items-center mt-2">
-                              <Badge className={getPriorityColor(task.priority)}>
-                                {task.priority}
-                              </Badge>
-                              <span className="text-xs text-gray-500 ml-2">
-                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
-                              </span>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pending Tasks</h3>
-                        <p className="text-gray-600">All tasks are up to date!</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Activity className="mr-2 h-5 w-5 text-primary" />
-                    Quick Actions
-                  </CardTitle>
-                  <CardDescription>
-                    Common administrative tasks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Tasks */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Tasks</CardTitle>
+                <CardDescription>Tasks assigned to you</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {tasks.length > 0 ? (
                   <div className="space-y-3">
-                    <Link to="/site-creation">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add New Site
-                      </Button>
-                    </Link>
-                    <Link to="/admin">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Users className="mr-2 h-4 w-4" />
-                        Manage Users
-                      </Button>
-                    </Link>
-                    <Link to="/inventory">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Package className="mr-2 h-4 w-4" />
-                        Inventory Management
-                      </Button>
-                    </Link>
-                    <Link to="/license-management">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Shield className="mr-2 h-4 w-4" />
-                        License Management
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Audit & Oversight Tab */}
-          <TabsContent value="audit-oversight" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Recent Audit Trail */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <FileText className="mr-2 h-5 w-5 text-primary" />
-                    Recent Audit Trail
-                  </CardTitle>
-                  <CardDescription>
-                    Last 7 days of system activity
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center py-8">
-                      <Info className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Audit Trail</h3>
-                      <p className="text-gray-600">Audit logging will be implemented in the next phase</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* System Overview */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <BarChart3 className="mr-2 h-5 w-5 text-primary" />
-                    System Overview
-                  </CardTitle>
-                  <CardDescription>
-                    Key system metrics and health
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Active Users</span>
-                      <span className="font-medium">24</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">System Uptime</span>
-                      <span className="font-medium text-green-600">99.9%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Data Sync Status</span>
-                      <span className="font-medium text-green-600">Synced</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Last Backup</span>
-                      <span className="font-medium">2 hours ago</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Exception Alerts Tab */}
-          <TabsContent value="exception-alerts" className="space-y-6">
-            <div className="space-y-4">
-              {exceptionAlerts.length > 0 ? (
-                exceptionAlerts.map((alert) => (
-                  <Alert key={alert.id} className="border-l-4 border-l-red-500">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{alert.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{alert.description}</p>
+                    {tasks.slice(0, 5).map((task) => (
+                      <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{task.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={getPriorityColor(task.priority)}>
+                              {task.priority}
+                            </Badge>
+                            <Badge className={getStatusColor(task.status)}>
+                              {task.status}
+                            </Badge>
+                          </div>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No tasks assigned</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common administrative tasks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center">
+                    <Users className="h-5 w-5 mb-2" />
+                    <span className="text-sm">Manage Users</span>
+                  </Button>
+                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center">
+                    <Building2 className="h-5 w-5 mb-2" />
+                    <span className="text-sm">View Sites</span>
+                  </Button>
+                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center">
+                    <Package className="h-5 w-5 mb-2" />
+                    <span className="text-sm">Inventory</span>
+                  </Button>
+                  <Button variant="outline" className="h-auto p-3 flex flex-col items-center">
+                    <FileText className="h-5 w-5 mb-2" />
+                    <span className="text-sm">Licenses</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="tasks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Tasks</CardTitle>
+              <CardDescription>Complete list of your assigned tasks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tasks.length > 0 ? (
+                <div className="space-y-3">
+                  {tasks.map((task) => (
+                    <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{task.title}</p>
+                        <p className="text-sm text-gray-600">Type: {task.type}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className={getPriorityColor(task.priority)}>
+                            {task.priority}
+                          </Badge>
+                          <Badge className={getStatusColor(task.status)}>
+                            {task.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        View Details
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No tasks assigned</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sites" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Sites</CardTitle>
+              <CardDescription>Latest sites added to the system</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentSites.length > 0 ? (
+                <div className="space-y-3">
+                  {recentSites.map((site) => (
+                    <div key={site.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Badge className={getSeverityColor(alert.severity)}>
-                            {alert.severity}
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          <p className="font-medium">{site.name}</p>
+                        </div>
+                        <p className="text-sm text-gray-600">{site.food_court_unit}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className={getStatusColor(site.status)}>
+                            {site.status}
                           </Badge>
                           <span className="text-xs text-gray-500">
-                            {new Date(alert.timestamp).toLocaleDateString()}
+                            {site.sector?.name} • {site.city?.name}
                           </span>
                         </div>
                       </div>
-                    </AlertDescription>
-                  </Alert>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Exception Alerts</h3>
-                  <p className="text-gray-600">All systems are operating normally!</p>
+                      <Button size="sm" variant="outline">
+                        View Details
+                      </Button>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No sites found</p>
               )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="inventory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Inventory Items</CardTitle>
+              <CardDescription>Latest inventory items added to the system</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentInventory.length > 0 ? (
+                <div className="space-y-3">
+                  {recentInventory.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.model}</p>
+                        <p className="text-sm text-gray-600">SN: {item.serial_number}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className={getStatusColor(item.status)}>
+                            {item.status}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {item.inventory_type} • {item.group_type}
+                          </span>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        View Details
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No inventory items found</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="licenses" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Licenses</CardTitle>
+              <CardDescription>Latest licenses added to the system</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentLicenses.length > 0 ? (
+                <div className="space-y-3">
+                  {recentLicenses.map((license) => (
+                    <div key={license.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{license.name}</p>
+                        <p className="text-sm text-gray-600">{license.vendor}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge className={getStatusColor(license.status)}>
+                            {license.status}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {license.license_type}
+                          </span>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        View Details
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No licenses found</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

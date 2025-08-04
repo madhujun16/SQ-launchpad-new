@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Building, 
@@ -10,488 +13,511 @@ import {
   Clock, 
   AlertTriangle,
   CheckCircle,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Bell,
-  FileText,
-  BarChart3,
-  Target,
-  Zap,
-  Star,
-  Award,
-  Plus,
-  Settings,
   Eye,
-  Calendar,
-  Package,
-  Wrench,
-  UserCheck,
+  Download,
+  Upload,
+  List,
+  Search,
+  SettingsIcon,
+  Mail,
+  Activity,
+  ClipboardList,
+  Truck,
   AlertCircle,
   Info,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Wrench,
+  UserCheck,
+  PieChart,
+  BarChart3,
+  Calendar,
   MapPin,
-  ActivitySquare
-} from 'lucide-react';
+  Shield
+} from '@/lib/icons';
 import { getOpsManagerDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { WorkflowStatusBadge } from '@/components/ui/WorkflowStatusBadge';
+import { TaskQueueCard } from '@/components/ui/TaskQueueCard';
+import { AlertBanner } from '@/components/ui/AlertBanner';
+import { Site, Alert as AlertType, TaskQueue } from '@/types/workflow';
+
+// Mock data for Ops Manager
+const mockOpsManagerAlerts: AlertType[] = [
+  {
+    id: '1',
+    type: 'approval_overdue',
+    severity: 'high',
+    title: 'Hardware Approval Overdue',
+    message: 'Hardware request for Tesco Birmingham has been pending for 5 days',
+    entityType: 'hardware_request',
+    entityId: 'hw-001',
+    assignedTo: 'ops_manager',
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    type: 'deployment_delay',
+    severity: 'medium',
+    title: 'Site Study Delayed',
+    message: 'Site study for ASDA Coventry is 2 days behind schedule',
+    entityType: 'site_study',
+    entityId: 'study-001',
+    assignedTo: 'ops_manager',
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const mockOpsManagerTasks: TaskQueue[] = [
+  {
+    id: '1',
+    title: 'Approve Hardware Request',
+    description: 'Review and approve hardware specifications for Tesco Birmingham',
+    type: 'approval',
+    priority: 'high',
+    status: 'pending',
+    assignedTo: 'ops_manager',
+    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    siteId: 'site-001',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Review Site Study',
+    description: 'Review completed site study for ASDA Coventry',
+    type: 'approval',
+    priority: 'medium',
+    status: 'in_progress',
+    assignedTo: 'ops_manager',
+    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    siteId: 'site-002',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+const mockAssignedSites: Site[] = [
+  {
+    id: 'site-001',
+    name: 'Tesco Birmingham',
+    type: 'supermarket',
+    location: 'Birmingham, UK',
+    status: 'in_progress',
+    createdBy: 'admin',
+    assignedTo: 'ops_manager',
+    workflowStatus: {
+      siteId: 'site-001',
+      deploymentStage: 'approval_pending',
+      approvalStatus: 'pending',
+      assetStage: 'scoped',
+      goLiveStatus: 'not_ready',
+      lastUpdated: new Date().toISOString(),
+      updatedBy: 'deployment_engineer',
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'site-002',
+    name: 'ASDA Coventry',
+    type: 'supermarket',
+    location: 'Coventry, UK',
+    status: 'study_completed',
+    createdBy: 'admin',
+    assignedTo: 'ops_manager',
+    workflowStatus: {
+      siteId: 'site-002',
+      deploymentStage: 'study_completed',
+      approvalStatus: 'approved',
+      assetStage: 'scoped',
+      goLiveStatus: 'not_ready',
+      lastUpdated: new Date().toISOString(),
+      updatedBy: 'ops_manager',
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 const OpsManagerDashboard = () => {
-  const { profile } = useAuth();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({});
-  const [taskQueue, setTaskQueue] = useState<TaskQueueItem[]>([]);
-  const [exceptionAlerts, setExceptionAlerts] = useState<ExceptionAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { currentRole } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        if (profile?.user_id) {
-          const [metricsData, taskQueueData, alertsData] = await Promise.all([
-            getOpsManagerDashboardMetrics(profile.user_id),
-            getTaskQueueItems('ops_manager', profile.user_id),
-            getExceptionAlerts('ops_manager', profile.user_id)
-          ]);
+  // Queries
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['ops-manager-dashboard-metrics'],
+    queryFn: getOpsManagerDashboardMetrics,
+  });
 
-          setMetrics(metricsData);
-          setTaskQueue(taskQueueData);
-          setExceptionAlerts(alertsData);
-        }
-      } catch (error) {
-        console.error('Error fetching ops manager dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: taskQueue, isLoading: taskQueueLoading } = useQuery({
+    queryKey: ['ops-manager-task-queue'],
+    queryFn: getTaskQueueItems,
+  });
 
-    fetchDashboardData();
-  }, [profile?.user_id]);
+  const { data: exceptionAlerts, isLoading: alertsLoading } = useQuery({
+    queryKey: ['ops-manager-exception-alerts'],
+    queryFn: getExceptionAlerts,
+  });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
+  const handleAlertDismiss = (alertId: string) => {
+    setDismissedAlerts(prev => [...prev, alertId]);
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
-    }
+  const handleAlertAction = (alertId: string, action: string) => {
+    console.log(`Alert ${alertId} action: ${action}`);
+    // Implement alert action handling
   };
 
-  if (loading) {
+  const handleTaskAction = (taskId: string, action: 'start' | 'complete' | 'cancel') => {
+    console.log(`Task ${taskId} action: ${action}`);
+    // Implement task action handling
+  };
+
+  const activeAlerts = mockOpsManagerAlerts.filter(alert => !dismissedAlerts.includes(alert.id));
+
+  if (metricsLoading || taskQueueLoading || alertsLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-muted-foreground">Loading ops manager dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ops Manager Dashboard</h1>
-            <p className="text-gray-600 mt-1">Efficient review and approval of hardware requests and deployment monitoring</p>
-          </div>
-          <div className="flex gap-2">
-            <Link to="/ops-manager">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Settings className="mr-2 h-4 w-4" />
-                Manage Approvals
-              </Button>
-            </Link>
-            <Link to="/inventory">
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Package className="mr-2 h-4 w-4" />
-                Inventory Management
-              </Button>
-            </Link>
-          </div>
+    <div className="space-y-6">
+      {/* Alerts Section */}
+      {activeAlerts.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold flex items-center space-x-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            <span>Active Alerts</span>
+            <Badge variant="secondary">{activeAlerts.length}</Badge>
+          </h3>
+          {activeAlerts.map((alert) => (
+            <AlertBanner
+              key={alert.id}
+              alert={alert}
+              onDismiss={handleAlertDismiss}
+              onAction={handleAlertAction}
+              showActions={true}
+            />
+          ))}
         </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Review Approvals</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Review pending hardware requests</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <Building className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-lg">My Sites</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">View assigned sites</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-purple-600" />
+              <CardTitle className="text-lg">Calendar View</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Schedule overview</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-lg">Site Studies</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Conduct site studies</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="p-6">
-        {/* Core Metrics Panels */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Sites Under Management */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Sites Under Management</CardTitle>
-              <div className="p-2 rounded-lg bg-primary/5">
-                <Building className="h-4 w-4 text-primary-dark" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.sitesUnderManagement || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1 text-primary" />
-                Assigned sites
-              </div>
-            </CardContent>
-          </Card>
+      {/* Main Dashboard Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="approvals">Approvals</TabsTrigger>
+          <TabsTrigger value="sites">My Sites</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+        </TabsList>
 
-          {/* Hardware Requests Pending Approval */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Hardware Requests Pending</CardTitle>
-              <div className="p-2 rounded-lg bg-warning/5">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.hardwareRequestsPending || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <AlertCircle className="h-3 w-3 mr-1 text-warning" />
-                Awaiting approval
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Assigned Sites</CardTitle>
+                <Building className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.assignedSites || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.activeSites || 0} active
+                </p>
+              </CardContent>
+            </Card>
 
-          {/* Inventory Assignment Pending */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Inventory Assignment Pending</CardTitle>
-              <div className="p-2 rounded-lg bg-blue-500/5">
-                <Package className="h-4 w-4 text-blue-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.inventoryAssignmentPending || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Clock className="h-3 w-3 mr-1 text-blue-500" />
-                Needs assignment
-              </div>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.pendingApprovals || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.overdueApprovals || 0} overdue
+                </p>
+              </CardContent>
+            </Card>
 
-          {/* Average Approval Time */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Average Approval Time</CardTitle>
-              <div className="p-2 rounded-lg bg-success/5">
-                <Zap className="h-4 w-4 text-success" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.averageApprovalTime || 0} days</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <TrendingDown className="h-3 w-3 mr-1 text-success" />
-                Improving efficiency
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Site Studies</CardTitle>
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.siteStudies || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.completedStudies || 0} completed
+                </p>
+              </CardContent>
+            </Card>
 
-        {/* Deployment Progress Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-primary/20 bg-card shadow-soft">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.approvalRate || 0}%</div>
+                <p className="text-xs text-muted-foreground">
+                  Last 30 days
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Calendar className="mr-2 h-5 w-5 text-primary" />
-                Sites Scheduled
-              </CardTitle>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Latest approvals and site updates</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{metrics.sitesScheduled || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Deployments scheduled
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <ActivitySquare className="mr-2 h-5 w-5 text-primary" />
-                Sites In Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{metrics.sitesInProgress || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Currently deploying
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-                              <CardTitle className="flex items-center text-primary-dark">
-                  <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                  Sites Live
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                              <div className="text-3xl font-bold text-green-600">{metrics.sitesLive || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Successfully deployed
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Inventory Health */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Package className="mr-2 h-5 w-5 text-primary" />
-                Assets In Stock
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success">{metrics.assetsInStock || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Available for deployment
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Wrench className="mr-2 h-5 w-5 text-primary" />
-                Assets In Maintenance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{metrics.assetsInMaintenance || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Under maintenance
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <AlertTriangle className="mr-2 h-5 w-5 text-primary" />
-                Assets Retired
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-600">{metrics.assetsRetired || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                End of lifecycle
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="task-queue" className="space-y-6">
-          <TabsList className="bg-gray-100 border border-gray-300 rounded-lg p-1">
-            <TabsTrigger value="task-queue" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Task Queue
-            </TabsTrigger>
-            <TabsTrigger value="deployment-overview" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Deployment Overview
-            </TabsTrigger>
-            <TabsTrigger value="exception-alerts" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Exception Alerts
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Task Queue Tab */}
-          <TabsContent value="task-queue" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Pending Tasks */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Clock className="mr-2 h-5 w-5 text-primary" />
-                    Pending Tasks
-                  </CardTitle>
-                  <CardDescription>
-                    Tasks requiring immediate attention
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {taskQueue.length > 0 ? (
-                      taskQueue.map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{task.title}</h4>
-                            <p className="text-sm text-gray-600">{task.description}</p>
-                            <div className="flex items-center mt-2">
-                              <Badge className={getPriorityColor(task.priority)}>
-                                {task.priority}
-                              </Badge>
-                              <span className="text-xs text-gray-500 ml-2">
-                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
-                              </span>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pending Tasks</h3>
-                        <p className="text-gray-600">All tasks are up to date!</p>
-                      </div>
-                    )}
+              <div className="space-y-4">
+                {exceptionAlerts?.slice(0, 5).map((alert) => (
+                  <div key={alert.id} className="flex items-center space-x-4">
+                    <div className={`w-2 h-2 rounded-full bg-${alert.severity === 'high' ? 'red' : 'yellow'}-500`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{alert.title}</p>
+                      <p className="text-xs text-muted-foreground">{alert.description}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {alert.severity}
+                    </Badge>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {/* Quick Actions */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Activity className="mr-2 h-5 w-5 text-primary" />
-                    Quick Actions
-                  </CardTitle>
-                  <CardDescription>
-                    Common operational tasks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <Link to="/ops-manager">
-                      <Button className="w-full justify-start" variant="outline">
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Review Approvals
-                      </Button>
-                    </Link>
-                    <Link to="/inventory">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Package className="mr-2 h-4 w-4" />
-                        Manage Inventory
-                      </Button>
-                    </Link>
-                    <Link to="/hardware-approvals">
-                      <Button className="w-full justify-start" variant="outline">
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        Hardware Approvals
-                      </Button>
-                    </Link>
-                    <Link to="/deployment">
-                      <Button className="w-full justify-start" variant="outline">
-                                                 <ActivitySquare className="mr-2 h-4 w-4" />
-                         Deployment Status
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+        <TabsContent value="approvals" className="space-y-6">
+          {/* Approval Queue */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Approval Queue</h3>
+              <Button variant="outline" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                View All
+              </Button>
             </div>
-          </TabsContent>
-
-          {/* Deployment Overview Tab */}
-          <TabsContent value="deployment-overview" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Deployment Status */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <BarChart3 className="mr-2 h-5 w-5 text-primary" />
-                    Deployment Status Overview
-                  </CardTitle>
-                  <CardDescription>
-                    Current deployment progress across assigned sites
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Scheduled</span>
-                      <span className="font-medium text-blue-600">{metrics.sitesScheduled || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">In Progress</span>
-                      <span className="font-medium text-yellow-600">{metrics.sitesInProgress || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                                              <span className="text-sm text-gray-600">Live</span>
-                                              <span className="font-medium text-green-600">{metrics.sitesLive || 0}</span>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-900">Total Sites</span>
-                        <span className="font-bold text-gray-900">{metrics.sitesUnderManagement || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Sites with Deployment Delays */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <AlertTriangle className="mr-2 h-5 w-5 text-primary" />
-                    Sites with Deployment Delays
-                  </CardTitle>
-                  <CardDescription>
-                    Sites that are overdue for deployment
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center py-8">
-                      <Info className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Deployment Delays</h3>
-                      <p className="text-gray-600">No overdue deployments detected</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {mockOpsManagerTasks.map((task) => (
+                <TaskQueueCard
+                  key={task.id}
+                  task={task}
+                  onAction={handleTaskAction}
+                  showActions={true}
+                />
+              ))}
             </div>
-          </TabsContent>
+          </div>
+        </TabsContent>
 
-          {/* Exception Alerts Tab */}
-          <TabsContent value="exception-alerts" className="space-y-6">
-            <div className="space-y-4">
-              {exceptionAlerts.length > 0 ? (
-                exceptionAlerts.map((alert) => (
-                  <Alert key={alert.id} className="border-l-4 border-l-red-500">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{alert.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{alert.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getSeverityColor(alert.severity)}>
-                            {alert.severity}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            {new Date(alert.timestamp).toLocaleDateString()}
-                          </span>
-                        </div>
+        <TabsContent value="sites" className="space-y-6">
+          {/* Assigned Sites */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">My Assigned Sites</h3>
+              <Button variant="outline" size="sm">
+                <MapPin className="h-4 w-4 mr-2" />
+                View All
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {mockAssignedSites.map((site) => (
+                <Card key={site.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{site.name}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {site.location} • {site.type}
+                        </CardDescription>
                       </div>
-                    </AlertDescription>
-                  </Alert>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Exception Alerts</h3>
-                  <p className="text-gray-600">All systems are operating normally!</p>
+                      <WorkflowStatusBadge 
+                        stage={site.workflowStatus.deploymentStage}
+                        showIcon={true}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span>Status:</span>
+                        <Badge variant="outline">{site.status}</Badge>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Last Updated:</span>
+                        <span>{new Date(site.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex space-x-2 pt-2">
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Activity className="h-4 w-4 mr-1" />
+                          Update Status
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-6">
+          {/* Calendar View */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">This Week</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Approvals Due</span>
+                    <span>{metrics?.approvalsThisWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Site Studies</span>
+                    <span>{metrics?.studiesThisWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Deployments</span>
+                    <span>{metrics?.deploymentsThisWeek || 0}</span>
+                  </div>
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Next Week</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Approvals Due</span>
+                    <span>{metrics?.approvalsNextWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Site Studies</span>
+                    <span>{metrics?.studiesNextWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Deployments</span>
+                    <span>{metrics?.deploymentsNextWeek || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Upcoming Deadlines</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Today</span>
+                    <span>{metrics?.deadlinesToday || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>This Week</span>
+                    <span>{metrics?.deadlinesThisWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Overdue</span>
+                    <span className="text-red-600">{metrics?.overdueDeadlines || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Calendar Placeholder */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Calendar View</CardTitle>
+              <CardDescription>Schedule overview and important dates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Calendar component placeholder - Monthly view with deadlines and events
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

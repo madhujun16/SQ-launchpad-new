@@ -1,506 +1,576 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Building, 
-  Users, 
+  Wrench, 
   Clock, 
   AlertTriangle,
   CheckCircle,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Bell,
-  FileText,
-  BarChart3,
-  Target,
-  Zap,
-  Star,
-  Award,
-  Plus,
-  Settings,
   Eye,
-  Calendar,
-  Package,
-  Wrench,
-  UserCheck,
+  Download,
+  Upload,
+  List,
+  Search,
+  SettingsIcon,
+  Mail,
+  Activity,
+  ClipboardList,
+  Truck,
   AlertCircle,
   Info,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  UserCheck,
+  PieChart,
+  BarChart3,
+  Calendar,
   MapPin,
-  ActivitySquare,
-  Search,
-  Truck
-} from 'lucide-react';
+  Shield,
+  FileText,
+  Plus
+} from '@/lib/icons';
 import { getDeploymentEngineerDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { WorkflowStatusBadge } from '@/components/ui/WorkflowStatusBadge';
+import { TaskQueueCard } from '@/components/ui/TaskQueueCard';
+import { AlertBanner } from '@/components/ui/AlertBanner';
+import { Site, Alert as AlertType, TaskQueue } from '@/types/workflow';
+
+// Mock data for Deployment Engineer
+const mockDeploymentEngineerAlerts: AlertType[] = [
+  {
+    id: '1',
+    type: 'deployment_delay',
+    severity: 'high',
+    title: 'Deployment Overdue',
+    message: 'Hardware deployment for Tesco Birmingham is 3 days overdue',
+    entityType: 'deployment',
+    entityId: 'deployment-001',
+    assignedTo: 'deployment_engineer',
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    type: 'service_due',
+    severity: 'medium',
+    title: 'Site Study Due',
+    message: 'Site study for ASDA Coventry needs to be completed by tomorrow',
+    entityType: 'site_study',
+    entityId: 'study-001',
+    assignedTo: 'deployment_engineer',
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const mockDeploymentEngineerTasks: TaskQueue[] = [
+  {
+    id: '1',
+    title: 'Complete Site Study',
+    description: 'Conduct site study for Tesco Birmingham and upload findings',
+    type: 'study',
+    priority: 'high',
+    status: 'in_progress',
+    assignedTo: 'deployment_engineer',
+    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    siteId: 'site-001',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Deploy Hardware',
+    description: 'Deploy POS systems and networking equipment for ASDA Coventry',
+    type: 'deployment',
+    priority: 'medium',
+    status: 'pending',
+    assignedTo: 'deployment_engineer',
+    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    siteId: 'site-002',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+const mockAssignedSites: Site[] = [
+  {
+    id: 'site-001',
+    name: 'Tesco Birmingham',
+    type: 'supermarket',
+    location: 'Birmingham, UK',
+    status: 'study_in_progress',
+    createdBy: 'admin',
+    assignedTo: 'deployment_engineer',
+    workflowStatus: {
+      siteId: 'site-001',
+      deploymentStage: 'study_in_progress',
+      approvalStatus: 'pending',
+      assetStage: 'not_required',
+      goLiveStatus: 'not_ready',
+      lastUpdated: new Date().toISOString(),
+      updatedBy: 'deployment_engineer',
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'site-002',
+    name: 'ASDA Coventry',
+    type: 'supermarket',
+    location: 'Coventry, UK',
+    status: 'deployment_scheduled',
+    createdBy: 'admin',
+    assignedTo: 'deployment_engineer',
+    workflowStatus: {
+      siteId: 'site-002',
+      deploymentStage: 'deployment_scheduled',
+      approvalStatus: 'approved',
+      assetStage: 'ordered',
+      goLiveStatus: 'not_ready',
+      lastUpdated: new Date().toISOString(),
+      updatedBy: 'ops_manager',
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 const DeploymentEngineerDashboard = () => {
-  const { profile } = useAuth();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({});
-  const [taskQueue, setTaskQueue] = useState<TaskQueueItem[]>([]);
-  const [exceptionAlerts, setExceptionAlerts] = useState<ExceptionAlert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { currentRole } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        if (profile?.user_id) {
-          const [metricsData, taskQueueData, alertsData] = await Promise.all([
-            getDeploymentEngineerDashboardMetrics(profile.user_id),
-            getTaskQueueItems('deployment_engineer', profile.user_id),
-            getExceptionAlerts('deployment_engineer', profile.user_id)
-          ]);
+  // Queries
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['deployment-engineer-dashboard-metrics'],
+    queryFn: getDeploymentEngineerDashboardMetrics,
+  });
 
-          setMetrics(metricsData);
-          setTaskQueue(taskQueueData);
-          setExceptionAlerts(alertsData);
-        }
-      } catch (error) {
-        console.error('Error fetching deployment engineer dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: taskQueue, isLoading: taskQueueLoading } = useQuery({
+    queryKey: ['deployment-engineer-task-queue'],
+    queryFn: getTaskQueueItems,
+  });
 
-    fetchDashboardData();
-  }, [profile?.user_id]);
+  const { data: exceptionAlerts, isLoading: alertsLoading } = useQuery({
+    queryKey: ['deployment-engineer-exception-alerts'],
+    queryFn: getExceptionAlerts,
+  });
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
+  const handleAlertDismiss = (alertId: string) => {
+    setDismissedAlerts(prev => [...prev, alertId]);
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
-    }
+  const handleAlertAction = (alertId: string, action: string) => {
+    console.log(`Alert ${alertId} action: ${action}`);
+    // Implement alert action handling
   };
 
-  if (loading) {
+  const handleTaskAction = (taskId: string, action: 'start' | 'complete' | 'cancel') => {
+    console.log(`Task ${taskId} action: ${action}`);
+    // Implement task action handling
+  };
+
+  const activeAlerts = mockDeploymentEngineerAlerts.filter(alert => !dismissedAlerts.includes(alert.id));
+
+  if (metricsLoading || taskQueueLoading || alertsLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-muted-foreground">Loading deployment engineer dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Deployment Engineer Dashboard</h1>
-            <p className="text-gray-600 mt-1">Manage site studies, hardware scoping, and deployment execution</p>
-          </div>
-          <div className="flex gap-2">
-            <Link to="/deployment">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Settings className="mr-2 h-4 w-4" />
-                Deployment Management
-              </Button>
-            </Link>
-            <Link to="/site-study">
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Search className="mr-2 h-4 w-4" />
-                Site Studies
-              </Button>
-            </Link>
-          </div>
+    <div className="space-y-6">
+      {/* Alerts Section */}
+      {activeAlerts.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold flex items-center space-x-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            <span>Active Alerts</span>
+            <Badge variant="secondary">{activeAlerts.length}</Badge>
+          </h3>
+          {activeAlerts.map((alert) => (
+            <AlertBanner
+              key={alert.id}
+              alert={alert}
+              onDismiss={handleAlertDismiss}
+              onAction={handleAlertAction}
+              showActions={true}
+            />
+          ))}
         </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Start Study</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Begin new site study</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <Wrench className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-lg">Deploy Hardware</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Deploy equipment to site</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <Upload className="h-5 w-5 text-purple-600" />
+              <CardTitle className="text-lg">Upload Reports</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Submit status reports</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center space-x-2">
+              <ClipboardList className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-lg">Checklist</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">View deployment checklist</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="p-6">
-        {/* Core Metrics Panels */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Assigned Sites */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Assigned Sites</CardTitle>
-              <div className="p-2 rounded-lg bg-primary/5">
-                <Building className="h-4 w-4 text-primary-dark" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.assignedSites || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1 text-primary" />
-                Your sites
-              </div>
-            </CardContent>
-          </Card>
+      {/* Main Dashboard Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="tasks">My Tasks</TabsTrigger>
+          <TabsTrigger value="sites">Assigned Sites</TabsTrigger>
+          <TabsTrigger value="deployments">Deployments</TabsTrigger>
+        </TabsList>
 
-          {/* Site Studies In Progress */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Site Studies In Progress</CardTitle>
-              <div className="p-2 rounded-lg bg-blue-500/5">
-                <Search className="h-4 w-4 text-blue-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.siteStudiesInProgress || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Clock className="h-3 w-3 mr-1 text-blue-500" />
-                Active studies
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Assigned Sites</CardTitle>
+                <Building className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.assignedSites || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.activeSites || 0} active
+                </p>
+              </CardContent>
+            </Card>
 
-          {/* Hardware Scoping Completed */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Hardware Scoping Completed</CardTitle>
-              <div className="p-2 rounded-lg bg-success/5">
-                <Wrench className="h-4 w-4 text-success" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.hardwareScopingCompleted || 0}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <CheckCircle className="h-3 w-3 mr-1 text-success" />
-                Scoping done
-              </div>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.pendingTasks || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.overdueTasks || 0} overdue
+                </p>
+              </CardContent>
+            </Card>
 
-          {/* Average Deployment Time */}
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-primary-dark">Avg Deployment Time</CardTitle>
-              <div className="p-2 rounded-lg bg-warning/5">
-                <Zap className="h-4 w-4 text-warning" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{metrics.averageDeploymentTimePerSite || 0} days</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <TrendingDown className="h-3 w-3 mr-1 text-success" />
-                From study start to activation
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Site Studies</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.siteStudies || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.completedStudies || 0} completed
+                </p>
+              </CardContent>
+            </Card>
 
-        {/* Procurement Status */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Package className="mr-2 h-5 w-5 text-primary" />
-                Requested
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{metrics.procurementRequested || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Procurement requests
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Deployments</CardTitle>
+                <Truck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.deployments || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.completedDeployments || 0} completed
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                Approved
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">{metrics.procurementApproved || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Approved requests
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Truck className="mr-2 h-5 w-5 text-primary" />
-                Dispatched
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{metrics.procurementDispatched || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Items dispatched
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Deployment Status */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <Calendar className="mr-2 h-5 w-5 text-primary" />
-                Scheduled
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{metrics.deploymentScheduled || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Deployments scheduled
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary-dark">
-                <ActivitySquare className="mr-2 h-5 w-5 text-primary" />
-                In Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{metrics.deploymentInProgress || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Currently deploying
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 bg-card shadow-soft">
-            <CardHeader>
-                              <CardTitle className="flex items-center text-primary-dark">
-                  <CheckCircle className="mr-2 h-5 w-5 text-primary" />
-                  Live
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                              <div className="text-3xl font-bold text-green-600">{metrics.deploymentLive || 0}</div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Successfully deployed
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="task-queue" className="space-y-6">
-          <TabsList className="bg-gray-100 border border-gray-300 rounded-lg p-1">
-            <TabsTrigger value="task-queue" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Task Queue
-            </TabsTrigger>
-            <TabsTrigger value="deployment-status" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Deployment Status
-            </TabsTrigger>
-            <TabsTrigger value="exception-alerts" className="text-gray-800 data-[state=active]:bg-blue-600 data-[state=active]:text-white rounded-md px-3 py-2">
-              Exception Alerts
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Task Queue Tab */}
-          <TabsContent value="task-queue" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Pending Tasks */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Clock className="mr-2 h-5 w-5 text-primary" />
-                    Pending Tasks
-                  </CardTitle>
-                  <CardDescription>
-                    Tasks requiring immediate attention
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {taskQueue.length > 0 ? (
-                      taskQueue.map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{task.title}</h4>
-                            <p className="text-sm text-gray-600">{task.description}</p>
-                            <div className="flex items-center mt-2">
-                              <Badge className={getPriorityColor(task.priority)}>
-                                {task.priority}
-                              </Badge>
-                              <span className="text-xs text-gray-500 ml-2">
-                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
-                              </span>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pending Tasks</h3>
-                        <p className="text-gray-600">All tasks are up to date!</p>
-                      </div>
-                    )}
+          {/* Progress Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Task Completion Rate</CardTitle>
+                <CardDescription>This month's task completion progress</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span>Completed</span>
+                    <span>{metrics?.completedTasks || 0}</span>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Activity className="mr-2 h-5 w-5 text-primary" />
-                    Quick Actions
-                  </CardTitle>
-                  <CardDescription>
-                    Common deployment tasks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <Link to="/site-study">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Search className="mr-2 h-4 w-4" />
-                        Conduct Site Study
-                      </Button>
-                    </Link>
-                    <Link to="/hardware-scoping">
-                      <Button className="w-full justify-start" variant="outline">
-                                                 <Wrench className="mr-2 h-4 w-4" />
-                         Hardware Scoping
-                      </Button>
-                    </Link>
-                    <Link to="/deployment">
-                      <Button className="w-full justify-start" variant="outline">
-                                                 <ActivitySquare className="mr-2 h-4 w-4" />
-                         Deployment Status
-                      </Button>
-                    </Link>
-                    <Link to="/inventory">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Package className="mr-2 h-4 w-4" />
-                        Inventory Check
-                      </Button>
-                    </Link>
+                  <Progress value={metrics?.taskCompletionRate || 0} className="h-2" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Target: 90%</span>
+                    <span>{metrics?.taskCompletionRate || 0}%</span>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Deployment Status Tab */}
-          <TabsContent value="deployment-status" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Deployment Overview */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <BarChart3 className="mr-2 h-5 w-5 text-primary" />
-                    Deployment Overview
-                  </CardTitle>
-                  <CardDescription>
-                    Current deployment progress across assigned sites
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Scheduled</span>
-                      <span className="font-medium text-blue-600">{metrics.deploymentScheduled || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">In Progress</span>
-                      <span className="font-medium text-yellow-600">{metrics.deploymentInProgress || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                                              <span className="text-sm text-gray-600">Live</span>
-                                              <span className="font-medium text-green-600">{metrics.deploymentLive || 0}</span>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-900">Total Sites</span>
-                        <span className="font-bold text-gray-900">{metrics.assignedSites || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Procurement Status */}
-              <Card className="border-primary/20 bg-card shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-primary-dark">
-                    <Package className="mr-2 h-5 w-5 text-primary" />
-                    Procurement Status
-                  </CardTitle>
-                  <CardDescription>
-                    Current procurement progress
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Requested</span>
-                      <span className="font-medium text-blue-600">{metrics.procurementRequested || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Approved</span>
-                      <span className="font-medium text-green-600">{metrics.procurementApproved || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Dispatched</span>
-                      <span className="font-medium text-yellow-600">{metrics.procurementDispatched || 0}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Exception Alerts Tab */}
-          <TabsContent value="exception-alerts" className="space-y-6">
-            <div className="space-y-4">
-              {exceptionAlerts.length > 0 ? (
-                exceptionAlerts.map((alert) => (
-                  <Alert key={alert.id} className="border-l-4 border-l-red-500">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{alert.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{alert.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getSeverityColor(alert.severity)}>
-                            {alert.severity}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            {new Date(alert.timestamp).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Exception Alerts</h3>
-                  <p className="text-gray-600">All systems are operating normally!</p>
                 </div>
-              )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Deployment Success Rate</CardTitle>
+                <CardDescription>Successful deployments this month</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span>Successful</span>
+                    <span>{metrics?.successfulDeployments || 0}</span>
+                  </div>
+                  <Progress value={metrics?.deploymentSuccessRate || 0} className="h-2" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Target: 95%</span>
+                    <span>{metrics?.deploymentSuccessRate || 0}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="tasks" className="space-y-6">
+          {/* Task Queue */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">My Task Queue</h3>
+              <Button variant="outline" size="sm">
+                <Eye className="h-4 w-4 mr-2" />
+                View All
+              </Button>
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {mockDeploymentEngineerTasks.map((task) => (
+                <TaskQueueCard
+                  key={task.id}
+                  task={task}
+                  onAction={handleTaskAction}
+                  showActions={true}
+                />
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="sites" className="space-y-6">
+          {/* Assigned Sites */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">My Assigned Sites</h3>
+              <Button variant="outline" size="sm">
+                <MapPin className="h-4 w-4 mr-2" />
+                View All
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {mockAssignedSites.map((site) => (
+                <Card key={site.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{site.name}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {site.location} • {site.type}
+                        </CardDescription>
+                      </div>
+                      <WorkflowStatusBadge 
+                        stage={site.workflowStatus.deploymentStage}
+                        showIcon={true}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span>Status:</span>
+                        <Badge variant="outline">{site.status}</Badge>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Last Updated:</span>
+                        <span>{new Date(site.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex space-x-2 pt-2">
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Activity className="h-4 w-4 mr-1" />
+                          Update Status
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="deployments" className="space-y-6">
+          {/* Deployment Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Deployment Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Scheduled</span>
+                    <span>{metrics?.deploymentsScheduled || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>In Progress</span>
+                    <span>{metrics?.deploymentsInProgress || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Completed</span>
+                    <span>{metrics?.deploymentsCompleted || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Deployment Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>This Week</span>
+                    <span>{metrics?.deploymentsThisWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Next Week</span>
+                    <span>{metrics?.deploymentsNextWeek || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>This Month</span>
+                    <span>{metrics?.deploymentsThisMonth || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Success Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Overall</span>
+                    <span>{metrics?.deploymentSuccessRate || 0}%</span>
+                  </div>
+                  <Progress value={metrics?.deploymentSuccessRate || 0} className="h-2" />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Last 30 days</span>
+                    <span>{metrics?.deploymentSuccessRateLastMonth || 0}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Deployment Checklist */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Deployment Checklist</CardTitle>
+              <CardDescription>Standard deployment procedures and quality checks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Pre-Deployment</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Site study completed</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Hardware approved</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm">Equipment delivered</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Deployment</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm">Install POS systems</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm">Configure networking</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm">Test connectivity</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
