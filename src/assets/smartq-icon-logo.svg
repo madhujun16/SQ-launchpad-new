@@ -10,7 +10,7 @@
     <!-- Right flip solid -->
     <path d="M15.87,11C17.7,11.5,19,14,20,17H16" fill="#88AA55"/>
 
-    <!-- Bottom petal -->
-    <path d="M12,21 C9.5,24 9.5,30 12,33 C14.5,30 14.5,24 12,21 Z" fill="#FFD700"/>
+    <!-- Bottom petal (moved upward to connect to rocket) -->
+    <path d="M12,18 C9.5,21 9.5,27 12,30 C14.5,27 14.5,21 12,18 Z" fill="#FFD700"/>
   </g>
 </svg>
