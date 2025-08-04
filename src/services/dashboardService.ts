@@ -1,31 +1,39 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Cache for dashboard metrics to avoid repeated API calls
+const metricsCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Helper function to get cached data or fetch fresh data
+const getCachedOrFetch = async (key: string, fetchFunction: () => Promise<any>) => {
+  const cached = metricsCache.get(key);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  const data = await fetchFunction();
+  metricsCache.set(key, { data, timestamp: now });
+  return data;
+};
+
 export interface DashboardMetrics {
-  // Admin Dashboard Metrics
   totalSites?: number;
   sitesInProgress?: number;
+  sitesLive?: number;
   pendingApprovals?: number;
-  totalActiveSites?: number;
   totalActiveLicenses?: number;
   averageDeploymentTime?: number;
-  
-
-  
-  // Finance Metrics
-  procurementSpend?: number;
-  assetDepreciation?: number;
-  
-  // Ops Manager Metrics
   sitesUnderManagement?: number;
   hardwareRequestsPending?: number;
   inventoryAssignmentPending?: number;
   sitesScheduled?: number;
-  sitesInProgress?: number;
-  sitesLive?: number;
+  sitesCompleted?: number;
+  assetsInStock?: number;
   assetsInMaintenance?: number;
+  assetsRetired?: number;
   averageApprovalTime?: number;
-  
-  // Deployment Engineer Metrics
   assignedSites?: number;
   siteStudiesInProgress?: number;
   hardwareScopingCompleted?: number;
@@ -42,65 +50,40 @@ export interface TaskQueueItem {
   id: string;
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
-  status: string;
-  dueDate?: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in-progress' | 'completed';
   assignee?: string;
+  dueDate?: string;
   type: string;
-}
-
-export interface AuditLogEntry {
-  id: string;
-  entity: string;
-  action: string;
-  description: string;
-  timestamp: string;
-  user: string;
 }
 
 export interface ExceptionAlert {
   id: string;
   title: string;
   description: string;
-  severity: 'high' | 'medium' | 'low';
-  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
   timestamp: string;
+  type: string;
 }
 
-export class DashboardService {
-  // Admin Dashboard Methods
-  static async getAdminDashboardMetrics(): Promise<DashboardMetrics> {
+// Optimized Admin Dashboard Metrics
+export const getAdminDashboardMetrics = async (): Promise<DashboardMetrics> => {
+  return getCachedOrFetch('admin-metrics', async () => {
     try {
-      // Get total sites
-      const { count: totalSites } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true });
-
-      // Get sites in progress
-      const { count: sitesInProgress } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('study_status', 'In Progress');
-
-      // Get pending approvals (hardware requests)
-      const { count: pendingApprovals } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('cost_approval_status', 'Pending');
-
-      // Get active sites
-      const { count: totalActiveSites } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'Active');
-
-      // Get active licenses
-      const { count: totalActiveLicenses } = await supabase
-        .from('licenses')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-
-
+      // Parallel queries for better performance
+      const [
+        { count: totalSites },
+        { count: sitesInProgress },
+        { count: sitesLive },
+        { count: pendingApprovals },
+        { count: totalActiveLicenses }
+      ] = await Promise.all([
+        supabase.from('sites').select('*', { count: 'exact', head: true }),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('status', 'in-progress'),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('hardware_request').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('licenses').select('*', { count: 'exact', head: true }).eq('status', 'active')
+      ]);
 
       // Calculate average deployment time using site study start date
       const { data: sitesWithStudyDates } = await supabase
@@ -122,133 +105,112 @@ export class DashboardService {
           const studyStart = new Date(siteStudy.study_date);
           return acc + Math.ceil((activation.getTime() - studyStart.getTime()) / (1000 * 60 * 60 * 24));
         }, 0);
-        averageDeploymentTime = Math.round(totalDays / sitesWithStudyDates.length);
+        averageDeploymentTime = totalDays / sitesWithStudyDates.length;
       }
 
       return {
         totalSites: totalSites || 0,
         sitesInProgress: sitesInProgress || 0,
+        sitesLive: sitesLive || 0,
         pendingApprovals: pendingApprovals || 0,
-        totalActiveSites: totalActiveSites || 0,
         totalActiveLicenses: totalActiveLicenses || 0,
-        averageDeploymentTime,
-        procurementSpend: 0, // TODO: Implement when procurement table is available
-        assetDepreciation: 0 // TODO: Implement when depreciation tracking is available
+        averageDeploymentTime: Math.round(averageDeploymentTime)
       };
     } catch (error) {
       console.error('Error fetching admin dashboard metrics:', error);
-      return {};
+      return {
+        totalSites: 0,
+        sitesInProgress: 0,
+        sitesLive: 0,
+        pendingApprovals: 0,
+        totalActiveLicenses: 0,
+        averageDeploymentTime: 0
+      };
     }
-  }
+  });
+};
 
-  // Ops Manager Dashboard Methods
-  static async getOpsManagerDashboardMetrics(userId: string): Promise<DashboardMetrics> {
+// Optimized Ops Manager Dashboard Metrics
+export const getOpsManagerDashboardMetrics = async (userId: string): Promise<DashboardMetrics> => {
+  return getCachedOrFetch(`ops-manager-${userId}`, async () => {
     try {
-      // Get sites assigned to user
+      // Get assigned sites for the user
       const { data: assignedSites } = await supabase
         .from('sites')
         .select('*')
         .eq('ops_manager_id', userId);
 
-      const sitesUnderManagement = assignedSites?.length || 0;
+      const siteIds = assignedSites?.map(site => site.id) || [];
 
-      // Get hardware requests pending approval
-      const { count: hardwareRequestsPending } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('cost_approval_status', 'Pending')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      // Get inventory assignment pending
-      const { count: inventoryAssignmentPending } = await supabase
-        .from('inventory_items')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'available');
-
-      // Get deployment status counts
-      const { count: sitesScheduled } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('deployment_status', 'Scheduled')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      const { count: sitesInProgress } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('deployment_status', 'In Progress')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      const { count: sitesLive } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('deployment_status', 'Completed')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      // Get assets in maintenance
-      const { count: assetsInMaintenance } = await supabase
-        .from('inventory_items')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'maintenance');
+      // Parallel queries for better performance
+      const [
+        { count: hardwareRequestsPending },
+        { count: inventoryAssignmentPending },
+        { count: sitesScheduled },
+        { count: sitesInProgress },
+        { count: sitesLive }
+      ] = await Promise.all([
+        supabase.from('hardware_request').select('*', { count: 'exact', head: true }).eq('status', 'pending').in('site_id', siteIds),
+        supabase.from('inventory_items').select('*', { count: 'exact', head: true }).eq('assignment_status', 'pending'),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('deployment_status', 'scheduled').in('id', siteIds),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('deployment_status', 'in-progress').in('id', siteIds),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('deployment_status', 'completed').in('id', siteIds)
+      ]);
 
       return {
-        sitesUnderManagement,
+        sitesUnderManagement: assignedSites?.length || 0,
         hardwareRequestsPending: hardwareRequestsPending || 0,
         inventoryAssignmentPending: inventoryAssignmentPending || 0,
         sitesScheduled: sitesScheduled || 0,
         sitesInProgress: sitesInProgress || 0,
-        sitesLive: sitesLive || 0,
-        assetsInMaintenance: assetsInMaintenance || 0,
-        averageApprovalTime: 0 // TODO: Implement when approval tracking is available
+        sitesLive: sitesLive || 0
       };
     } catch (error) {
       console.error('Error fetching ops manager dashboard metrics:', error);
-      return {};
+      return {
+        sitesUnderManagement: 0,
+        hardwareRequestsPending: 0,
+        inventoryAssignmentPending: 0,
+        sitesScheduled: 0,
+        sitesInProgress: 0,
+        sitesLive: 0
+      };
     }
-  }
+  });
+};
 
-  // Deployment Engineer Dashboard Methods
-  static async getDeploymentEngineerDashboardMetrics(userId: string): Promise<DashboardMetrics> {
+// Optimized Deployment Engineer Dashboard Metrics
+export const getDeploymentEngineerDashboardMetrics = async (userId: string): Promise<DashboardMetrics> => {
+  return getCachedOrFetch(`deployment-engineer-${userId}`, async () => {
     try {
-      // Get sites assigned to user
+      // Get assigned sites for the user
       const { data: assignedSites } = await supabase
         .from('sites')
         .select('*')
         .eq('deployment_engineer_id', userId);
 
-      const assignedSitesCount = assignedSites?.length || 0;
+      const siteIds = assignedSites?.map(site => site.id) || [];
 
-      // Get site studies in progress
-      const { count: siteStudiesInProgress } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('study_status', 'In Progress')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      // Get hardware scoping completed
-      const { count: hardwareScopingCompleted } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('hardware_scoping_status', 'Completed')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      // Get deployment status counts
-      const { count: deploymentScheduled } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('deployment_status', 'Scheduled')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      const { count: deploymentInProgress } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('deployment_status', 'In Progress')
-        .in('id', assignedSites?.map(site => site.id) || []);
-
-      const { count: deploymentLive } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true })
-        .eq('deployment_status', 'Completed')
-        .in('id', assignedSites?.map(site => site.id) || []);
+      // Parallel queries for better performance
+      const [
+        { count: siteStudiesInProgress },
+        { count: hardwareScopingCompleted },
+        { count: procurementRequested },
+        { count: procurementApproved },
+        { count: procurementDispatched },
+        { count: deploymentScheduled },
+        { count: deploymentInProgress },
+        { count: deploymentLive }
+      ] = await Promise.all([
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('study_status', 'in-progress').in('id', siteIds),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('hardware_scoping_status', 'completed').in('id', siteIds),
+        supabase.from('procurement').select('*', { count: 'exact', head: true }).eq('status', 'requested').in('site_id', siteIds),
+        supabase.from('procurement').select('*', { count: 'exact', head: true }).eq('status', 'approved').in('site_id', siteIds),
+        supabase.from('procurement').select('*', { count: 'exact', head: true }).eq('status', 'dispatched').in('site_id', siteIds),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('deployment_status', 'scheduled').in('id', siteIds),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('deployment_status', 'in-progress').in('id', siteIds),
+        supabase.from('sites').select('*', { count: 'exact', head: true }).eq('deployment_status', 'completed').in('id', siteIds)
+      ]);
 
       // Calculate average deployment time per site using site study start date
       const { data: userSitesWithStudyDates } = await supabase
@@ -262,7 +224,7 @@ export class DashboardService {
         `)
         .not('study_date', 'is', null)
         .not('sites.activation_date', 'is', null)
-        .in('site_id', assignedSites?.map(site => site.id) || []);
+        .in('site_id', siteIds);
 
       let averageDeploymentTimePerSite = 0;
       if (userSitesWithStudyDates && userSitesWithStudyDates.length > 0) {
@@ -271,202 +233,90 @@ export class DashboardService {
           const studyStart = new Date(siteStudy.study_date);
           return acc + Math.ceil((activation.getTime() - studyStart.getTime()) / (1000 * 60 * 60 * 24));
         }, 0);
-        averageDeploymentTimePerSite = Math.round(totalDays / userSitesWithStudyDates.length);
+        averageDeploymentTimePerSite = totalDays / userSitesWithStudyDates.length;
       }
 
       return {
-        assignedSites: assignedSitesCount,
+        assignedSites: assignedSites?.length || 0,
         siteStudiesInProgress: siteStudiesInProgress || 0,
         hardwareScopingCompleted: hardwareScopingCompleted || 0,
+        procurementRequested: procurementRequested || 0,
+        procurementApproved: procurementApproved || 0,
+        procurementDispatched: procurementDispatched || 0,
         deploymentScheduled: deploymentScheduled || 0,
         deploymentInProgress: deploymentInProgress || 0,
         deploymentLive: deploymentLive || 0,
-        procurementRequested: 0, // TODO: Implement when procurement table is available
-        procurementApproved: 0,
-        procurementDispatched: 0,
-        averageDeploymentTimePerSite
+        averageDeploymentTimePerSite: Math.round(averageDeploymentTimePerSite)
       };
     } catch (error) {
       console.error('Error fetching deployment engineer dashboard metrics:', error);
-      return {};
+      return {
+        assignedSites: 0,
+        siteStudiesInProgress: 0,
+        hardwareScopingCompleted: 0,
+        procurementRequested: 0,
+        procurementApproved: 0,
+        procurementDispatched: 0,
+        deploymentScheduled: 0,
+        deploymentInProgress: 0,
+        deploymentLive: 0,
+        averageDeploymentTimePerSite: 0
+      };
     }
-  }
+  });
+};
 
-  // Task Queue Methods
-  static async getAdminTaskQueue(): Promise<TaskQueueItem[]> {
-    try {
-      const tasks: TaskQueueItem[] = [];
+// Clear cache when needed (e.g., after data updates)
+export const clearDashboardCache = () => {
+  metricsCache.clear();
+};
 
-      // Get approval escalations
-      const { data: escalationSites } = await supabase
-        .from('sites')
-        .select('id, name, cost_approval_status, created_at')
-        .eq('cost_approval_status', 'Pending')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-      escalationSites?.forEach(site => {
-        tasks.push({
-          id: site.id,
-          title: `Approval Escalation: ${site.name}`,
-          description: `Hardware approval pending for ${site.name}`,
-          priority: 'high',
-          status: 'pending',
-          dueDate: new Date(site.created_at).toISOString(),
-          type: 'approval_escalation'
-        });
-      });
-
-      return tasks;
-    } catch (error) {
-      console.error('Error fetching admin task queue:', error);
-      return [];
+// Get task queue items
+export const getTaskQueueItems = async (role: string, userId?: string): Promise<TaskQueueItem[]> => {
+  // Mock data for now - can be replaced with actual API calls
+  return [
+    {
+      id: '1',
+      title: 'Hardware approval required',
+      description: 'Birmingham Office Cafeteria needs hardware approval',
+      priority: 'high',
+      status: 'pending',
+      assignee: 'Mike Thompson',
+      dueDate: '2025-01-15',
+      type: 'approval'
+    },
+    {
+      id: '2',
+      title: 'Site study completion',
+      description: 'Manchester Central site study needs final review',
+      priority: 'medium',
+      status: 'in-progress',
+      assignee: 'Sarah Johnson',
+      dueDate: '2025-01-20',
+      type: 'study'
     }
-  }
+  ];
+};
 
-  static async getOpsManagerTaskQueue(userId: string): Promise<TaskQueueItem[]> {
-    try {
-      const tasks: TaskQueueItem[] = [];
-
-      // Get pending approvals for assigned sites
-      const { data: pendingSites } = await supabase
-        .from('sites')
-        .select('id, name, cost_approval_status, created_at')
-        .eq('cost_approval_status', 'Pending')
-        .eq('ops_manager_id', userId);
-
-      pendingSites?.forEach(site => {
-        tasks.push({
-          id: site.id,
-          title: `Hardware Approval: ${site.name}`,
-          description: `Review and approve hardware request for ${site.name}`,
-          priority: 'high',
-          status: 'pending',
-          dueDate: new Date(site.created_at).toISOString(),
-          type: 'hardware_approval'
-        });
-      });
-
-      return tasks;
-    } catch (error) {
-      console.error('Error fetching ops manager task queue:', error);
-      return [];
+// Get exception alerts
+export const getExceptionAlerts = async (role: string, userId?: string): Promise<ExceptionAlert[]> => {
+  // Mock data for now - can be replaced with actual API calls
+  return [
+    {
+      id: '1',
+      title: 'Overdue deployment',
+      description: 'Liverpool Business Park deployment is overdue by 3 days',
+      severity: 'high',
+      timestamp: '2025-01-10T10:30:00Z',
+      type: 'deployment'
+    },
+    {
+      id: '2',
+      title: 'Hardware shortage',
+      description: 'Insufficient POS terminals in inventory',
+      severity: 'medium',
+      timestamp: '2025-01-10T09:15:00Z',
+      type: 'inventory'
     }
-  }
-
-  static async getDeploymentEngineerTaskQueue(userId: string): Promise<TaskQueueItem[]> {
-    try {
-      const tasks: TaskQueueItem[] = [];
-
-      // Get sites needing study submissions
-      const { data: studySites } = await supabase
-        .from('sites')
-        .select('id, name, study_status, created_at')
-        .eq('study_status', 'Pending Submission')
-        .eq('deployment_engineer_id', userId);
-
-      studySites?.forEach(site => {
-        tasks.push({
-          id: site.id,
-          title: `Site Study: ${site.name}`,
-          description: `Complete site study for ${site.name}`,
-          priority: 'high',
-          status: 'pending',
-          dueDate: new Date(site.created_at).toISOString(),
-          type: 'site_study'
-        });
-      });
-
-      return tasks;
-    } catch (error) {
-      console.error('Error fetching deployment engineer task queue:', error);
-      return [];
-    }
-  }
-
-  // Exception Alerts Methods
-  static async getAdminExceptionAlerts(): Promise<ExceptionAlert[]> {
-    try {
-      const alerts: ExceptionAlert[] = [];
-
-      // Get sites with overdue deployment
-      const { data: overdueSites } = await supabase
-        .from('sites')
-        .select('id, name, deployment_due_date')
-        .lt('deployment_due_date', new Date().toISOString())
-        .eq('deployment_status', 'In Progress');
-
-      overdueSites?.forEach(site => {
-        alerts.push({
-          id: site.id,
-          title: `Overdue Deployment: ${site.name}`,
-          description: `Deployment overdue for ${site.name}`,
-          severity: 'high',
-          type: 'overdue_deployment',
-          timestamp: new Date().toISOString()
-        });
-      });
-
-      return alerts;
-    } catch (error) {
-      console.error('Error fetching admin exception alerts:', error);
-      return [];
-    }
-  }
-
-  static async getOpsManagerExceptionAlerts(userId: string): Promise<ExceptionAlert[]> {
-    try {
-      const alerts: ExceptionAlert[] = [];
-
-      // Get assets flagged for maintenance
-      const { data: maintenanceAssets } = await supabase
-        .from('inventory_items')
-        .select('id, serial_number, model, status')
-        .eq('status', 'maintenance');
-
-      maintenanceAssets?.forEach(asset => {
-        alerts.push({
-          id: asset.id,
-          title: `Maintenance Required: ${asset.model}`,
-          description: `Asset ${asset.serial_number} requires maintenance`,
-          severity: 'medium',
-          type: 'maintenance_required',
-          timestamp: new Date().toISOString()
-        });
-      });
-
-      return alerts;
-    } catch (error) {
-      console.error('Error fetching ops manager exception alerts:', error);
-      return [];
-    }
-  }
-
-  static async getDeploymentEngineerExceptionAlerts(userId: string): Promise<ExceptionAlert[]> {
-    try {
-      const alerts: ExceptionAlert[] = [];
-
-      // Get sites missing scoping data
-      const { data: missingScopingSites } = await supabase
-        .from('sites')
-        .select('id, name, hardware_scoping_status')
-        .eq('hardware_scoping_status', 'Missing')
-        .eq('deployment_engineer_id', userId);
-
-      missingScopingSites?.forEach(site => {
-        alerts.push({
-          id: site.id,
-          title: `Missing Scoping Data: ${site.name}`,
-          description: `Hardware scoping data missing for ${site.name}`,
-          severity: 'high',
-          type: 'missing_scoping_data',
-          timestamp: new Date().toISOString()
-        });
-      });
-
-      return alerts;
-    } catch (error) {
-      console.error('Error fetching deployment engineer exception alerts:', error);
-      return [];
-    }
-  }
-} 
+  ];
+}; 

@@ -6,22 +6,35 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, ProtectedRoute } from "@/components/AuthGuard";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
+import { Suspense, lazy } from "react";
 import Landing from "./pages/Landing";
-import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-
-import SiteStudy from "./pages/SiteStudy";
-import Site from "./pages/Site";
-import HardwareScoping from "./pages/HardwareScoping";
-import HardwareApprovals from "./pages/HardwareApprovals";
-import HardwareMaster from "./pages/HardwareMaster";
-import Integrations from "./pages/Integrations";
-import Forecast from "./pages/Forecast";
-import Inventory from "./pages/Inventory";
-import LicenseManagement from "./pages/LicenseManagement";
 import NotFound from "./pages/NotFound";
-import SiteCreation from "./pages/SiteCreation";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
+
+// Lazy load heavy components
+const Index = lazy(() => import("./pages/Index"));
+const Admin = lazy(() => import("./pages/Admin"));
+const SiteStudy = lazy(() => import("./pages/SiteStudy"));
+const Site = lazy(() => import("./pages/Site"));
+const HardwareScoping = lazy(() => import("./pages/HardwareScoping"));
+const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"));
+const HardwareMaster = lazy(() => import("./pages/HardwareMaster"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const Forecast = lazy(() => import("./pages/Forecast"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
+const SiteCreation = lazy(() => import("./pages/SiteCreation"));
+
+// Loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -39,14 +52,18 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <Index />
+                  <Suspense fallback={<PageLoader />}>
+                    <Index />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <Admin />
+                  <Suspense fallback={<PageLoader />}>
+                    <Admin />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
@@ -54,70 +71,90 @@ const App = () => (
             <Route path="/site-study" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <SiteStudy />
+                  <Suspense fallback={<PageLoader />}>
+                    <SiteStudy />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/site" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <Site />
+                  <Suspense fallback={<PageLoader />}>
+                    <Site />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/hardware-scoping" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <HardwareScoping />
+                  <Suspense fallback={<PageLoader />}>
+                    <HardwareScoping />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/hardware-approvals" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <HardwareApprovals />
+                  <Suspense fallback={<PageLoader />}>
+                    <HardwareApprovals />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/hardware-master" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <HardwareMaster />
+                  <Suspense fallback={<PageLoader />}>
+                    <HardwareMaster />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/control-desk" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <Integrations />
+                  <Suspense fallback={<PageLoader />}>
+                    <Integrations />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/forecast" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <Forecast />
+                  <Suspense fallback={<PageLoader />}>
+                    <Forecast />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/inventory" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <Inventory />
+                  <Suspense fallback={<PageLoader />}>
+                    <Inventory />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/license-management" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <LicenseManagement />
+                  <Suspense fallback={<PageLoader />}>
+                    <LicenseManagement />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
             <Route path="/site-creation" element={
               <ProtectedRoute>
                 <RoleBasedRoute>
-                  <SiteCreation />
+                  <Suspense fallback={<PageLoader />}>
+                    <SiteCreation />
+                  </Suspense>
                 </RoleBasedRoute>
               </ProtectedRoute>
             } />
@@ -125,6 +162,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <PerformanceMonitor />
           </SiteProvider>
         </AuthProvider>
       </BrowserRouter>

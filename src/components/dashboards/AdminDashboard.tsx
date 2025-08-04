@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Building, 
-  Shield, 
-  Users, 
-  Clock, 
+import {
+  Building,
+  Shield,
+  Users,
+  Clock,
   AlertTriangle,
   CheckCircle,
   TrendingUp,
@@ -33,8 +33,8 @@ import {
   UserCheck,
   AlertCircle,
   Info
-} from 'lucide-react';
-import { DashboardService, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
+} from '@/lib/icons';
+import { getAdminDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 
@@ -50,9 +50,9 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
         const [metricsData, taskQueueData, alertsData] = await Promise.all([
-          DashboardService.getAdminDashboardMetrics(),
-          DashboardService.getAdminTaskQueue(),
-          DashboardService.getAdminExceptionAlerts()
+          getAdminDashboardMetrics(),
+          getTaskQueueItems('admin'),
+          getExceptionAlerts('admin')
         ]);
 
         setMetrics(metricsData);

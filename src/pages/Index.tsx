@@ -1,40 +1,74 @@
-import Header from "@/components/Header";
-import DashboardStats from "@/components/DashboardStats";
-import WorkflowCard from "@/components/WorkflowCard";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Building, 
-  Shield, 
-  Users, 
-  Wrench, 
-  MapPin, 
-  Calendar, 
-  CheckCircle, 
-  Clock, 
+import React, { Suspense, lazy } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { canAccessPage } from '@/lib/roles';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Building,
+  Users,
+  Settings,
+  Bell,
+  LogOut,
+  User,
+  Menu,
+  X,
+  Plus,
+  FileText,
+  Home,
+  MapPin,
+  Package,
+  Shield,
+  BarChart3,
+  Database,
+  CreditCard,
+  Monitor,
+  Zap,
+  ChevronDown,
+  Calendar,
+  CheckCircle,
+  Eye,
+  Download,
+  Upload,
+  List,
+  Search,
+  SettingsIcon,
+  Mail,
+  Activity,
+  ClipboardList,
+  Truck,
+  Clock,
+  AlertCircle,
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Activity,
-  Bell,
-  FileText,
-  BarChart3,
-  PieChart,
   Target,
-  Zap,
   Star,
   Award,
-  Plus
-} from "lucide-react";
+  PieChart
+} from '@/lib/icons';
+import Header from '@/components/Header';
+import DashboardStats from "@/components/DashboardStats";
+import WorkflowCard from "@/components/WorkflowCard";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { getRoleConfig, canAccessPage } from "@/lib/roles";
-import AdminDashboard from "@/components/dashboards/AdminDashboard";
-import OpsManagerDashboard from "@/components/dashboards/OpsManagerDashboard";
-import DeploymentEngineerDashboard from "@/components/dashboards/DeploymentEngineerDashboard";
+import { getRoleConfig } from "@/lib/roles";
+
+// Lazy load dashboard components
+const AdminDashboard = lazy(() => import('@/components/dashboards/AdminDashboard'));
+const OpsManagerDashboard = lazy(() => import('@/components/dashboards/OpsManagerDashboard'));
+const DeploymentEngineerDashboard = lazy(() => import('@/components/dashboards/DeploymentEngineerDashboard'));
+
+// Loading component for dashboard
+const DashboardLoader = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p className="text-muted-foreground">Loading dashboard...</p>
+    </div>
+  </div>
+);
 
 const Index = () => {
   const { currentRole } = useAuth();
@@ -44,11 +78,23 @@ const Index = () => {
   const renderRoleBasedDashboard = () => {
     switch (currentRole) {
       case 'admin':
-        return <AdminDashboard />;
+        return (
+          <Suspense fallback={<DashboardLoader />}>
+            <AdminDashboard />
+          </Suspense>
+        );
       case 'ops_manager':
-        return <OpsManagerDashboard />;
+        return (
+          <Suspense fallback={<DashboardLoader />}>
+            <OpsManagerDashboard />
+          </Suspense>
+        );
       case 'deployment_engineer':
-        return <DeploymentEngineerDashboard />;
+        return (
+          <Suspense fallback={<DashboardLoader />}>
+            <DeploymentEngineerDashboard />
+          </Suspense>
+        );
       default:
         return <DefaultDashboard />;
     }

@@ -7,7 +7,9 @@ export default {
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+		"./index.html",
 	],
+	mode: 'jit',
 	prefix: "",
 	theme: {
 		container: {

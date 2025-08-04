@@ -34,7 +34,7 @@ import {
   Search,
   Truck
 } from 'lucide-react';
-import { DashboardService, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
+import { getDeploymentEngineerDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 
@@ -51,9 +51,9 @@ const DeploymentEngineerDashboard = () => {
         setLoading(true);
         if (profile?.user_id) {
           const [metricsData, taskQueueData, alertsData] = await Promise.all([
-            DashboardService.getDeploymentEngineerDashboardMetrics(profile.user_id),
-            DashboardService.getDeploymentEngineerTaskQueue(profile.user_id),
-            DashboardService.getDeploymentEngineerExceptionAlerts(profile.user_id)
+            getDeploymentEngineerDashboardMetrics(profile.user_id),
+            getTaskQueueItems('deployment_engineer', profile.user_id),
+            getExceptionAlerts('deployment_engineer', profile.user_id)
           ]);
 
           setMetrics(metricsData);
