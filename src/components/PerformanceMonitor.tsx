@@ -25,7 +25,7 @@ const PerformanceMonitor = () => {
         const timeToLargestContentfulPaint = paint.find(entry => entry.name === 'largest-contentful-paint')?.startTime || 0;
         
         // Estimate bundle size (this is a rough estimate)
-        const totalBundleSize = performance.memory?.usedJSHeapSize || 0;
+        const totalBundleSize = (performance as any).memory?.usedJSHeapSize || 0;
         
         setMetrics({
           timeToFirstByte,

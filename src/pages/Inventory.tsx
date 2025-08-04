@@ -23,7 +23,7 @@ import {
   Trash2,
   Eye
 } from 'lucide-react';
-import InventoryItemForm from '@/components/inventory/InventoryItemForm';
+import { SimpleInventoryItemForm } from '@/components/inventory/SimpleInventoryItemForm';
 import type { InventoryItem, InventoryFilters } from '@/types/inventory';
 import { INVENTORY_TYPES, GROUP_TYPES, INVENTORY_STATUSES } from '@/types/inventory';
 
@@ -158,7 +158,7 @@ const Inventory: React.FC = () => {
                   Add a new hardware or equipment item to the inventory.
                 </DialogDescription>
               </DialogHeader>
-              <InventoryItemForm
+              <SimpleInventoryItemForm
                 onSave={handleCreateItem}
                 onCancel={() => setShowCreateDialog(false)}
               />
@@ -390,7 +390,7 @@ const Inventory: React.FC = () => {
                 Update the inventory item details.
               </DialogDescription>
             </DialogHeader>
-            <InventoryItemForm
+            <SimpleInventoryItemForm
               item={editingItem}
               onSave={handleUpdateItem}
               onCancel={() => setEditingItem(null)}
