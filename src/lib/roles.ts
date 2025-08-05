@@ -1,4 +1,4 @@
-import { Shield, Users, Wrench } from 'lucide-react';
+import { Shield, Users, Wrench, User } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 export type UserRole = Database['public']['Enums']['app_role'];
@@ -114,7 +114,8 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/hardware-master'
     ],
     color: 'text-green-600'
-  }
+  },
+
 };
 
 export const getRoleConfig = (role: UserRole): RoleConfig => {

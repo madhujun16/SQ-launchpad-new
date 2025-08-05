@@ -74,6 +74,33 @@ export type Database = {
         }
         Relationships: []
       }
+      organizations: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          sector: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          sector?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          sector?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sectors: {
         Row: {
           id: string
@@ -440,8 +467,8 @@ export type Database = {
         }[]
       }
     }
-    Enums: {
-      app_role: "admin" | "ops_manager" | "deployment_engineer"
+          Enums: {
+        app_role: "admin" | "ops_manager" | "deployment_engineer"
       cafeteria_type: "staff" | "visitor" | "mixed"
       site_status: "new" | "in-progress" | "active" | "deployed"
     }
