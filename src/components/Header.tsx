@@ -234,33 +234,21 @@ const Header = () => {
     // Role-specific dropdowns
     if (canAccessPage(currentRole, '/admin')) {
       structure.push({
-        label: 'Admin',
+        label: 'Admin Utilities',
         icon: Shield,
         type: 'dropdown',
         items: [
           {
-            label: 'Users & Roles',
-            path: '/admin/users',
+            label: 'User Management',
+            path: '/admin',
             icon: Users,
-            description: 'Manage users and permissions'
+            description: 'Manage users and roles'
           },
           {
-            label: 'Master Settings',
-            path: '/admin/settings',
-            icon: SettingsIcon,
-            description: 'System configuration'
-          },
-          {
-            label: 'Email Templates',
-            path: '/admin/email-templates',
-            icon: Mail,
-            description: 'Manage email templates'
-          },
-          {
-            label: 'System Logs',
-            path: '/admin/logs',
-            icon: Activity,
-            description: 'View system activity'
+            label: 'Organization Management',
+            path: '/admin',
+            icon: Building,
+            description: 'Manage organizations'
           }
         ]
       });

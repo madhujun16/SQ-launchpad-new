@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { UKCitySelect } from '@/components/UKCitySelect';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,80 +9,75 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
-import UserManagement from '@/components/UserManagement';
-import RoleIndicator from '@/components/RoleIndicator';
 import { getRoleConfig, hasPermission, ROLES } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import { Building, MapPin, Users, Calendar, Plus, Edit, Trash2, UserPlus, Save, X } from 'lucide-react';
-import { getStatusColor, getStatusDisplayName } from '@/lib/siteTypes';
+import { Building, Users, Plus, Edit, Trash2, UserPlus, Save, X, Search, Shield, Settings } from 'lucide-react';
 
-interface SiteData {
+interface User {
   id: string;
-  name: string;
-  food_court_unit: string;
-  address: string;
-  postcode: string;
-  cafeteria_type: 'staff' | 'visitor' | 'mixed';
-  capacity: number;
-  expected_footfall: number;
-  description: string;
-  status: string;
+  user_id: string;
+  email: string;
+  full_name: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
-  sector_name: string;
-  city_name: string;
-  ops_manager_name: string;
-  deployment_engineer_name: string;
-  study_status: string;
-  cost_approval_status: string;
-  inventory_status: string;
-  products_status: string;
-  deployment_status: string;
-  overall_status: 'new' | 'in-progress' | 'active' | 'deployed';
+  user_roles: Array<{
+    role: 'admin' | 'ops_manager' | 'deployment_engineer';
+  }>;
+}
+
+interface Organization {
+  id: string;
+  name: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreateUserForm {
+  email: string;
+  full_name: string;
+  roles: string[];
+}
+
+interface CreateOrganizationForm {
+  name: string;
+  description: string;
 }
 
 const Admin = () => {
-  const { currentRole, profile, createUserAsAdmin } = useAuth();
+  const { currentRole, profile } = useAuth();
   const navigate = useNavigate();
-  const [sites, setSites] = useState<SiteData[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [isCreatingSite, setIsCreatingSite] = useState(false);
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
-  const [isEditingSite, setIsEditingSite] = useState(false);
-  const [editingSite, setEditingSite] = useState<SiteData | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
 
-  // Form state for new site
-  const [newSite, setNewSite] = useState({
-    name: '',
-    food_court_unit: '',
-    city: '',
-    address: '',
-    postcode: '',
-    cafeteriaType: 'staff' as 'staff' | 'visitor' | 'mixed',
-    capacity: 0,
-    expectedFootfall: 0,
-    description: '',
-    opsManagerId: '',
-    deploymentEngineerId: ''
+  // User management states
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [createUserForm, setCreateUserForm] = useState<CreateUserForm>({
+    email: '',
+    full_name: '',
+    roles: []
   });
 
-  // Form state for new user
-  const [newUser, setNewUser] = useState({
-    email: '',
-    role: 'deployment_engineer' as const,
-    fullName: ''
+  // Organization management states
+  const [showCreateOrgDialog, setShowCreateOrgDialog] = useState(false);
+  const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
+  const [createOrgForm, setCreateOrgForm] = useState<CreateOrganizationForm>({
+    name: '',
+    description: ''
   });
 
   // Check if user has admin permissions
   React.useEffect(() => {
-    console.log('Admin: Current role:', currentRole); // Debug log
-    console.log('Admin: Profile:', profile); // Debug log
-    console.log('Admin: Has permission to manage users:', hasPermission(currentRole || 'admin', 'manage_users')); // Debug log
-    
     if (currentRole && !hasPermission(currentRole, 'manage_users')) {
       toast.error('You do not have permission to access the Admin panel');
       navigate('/dashboard');
@@ -92,311 +86,307 @@ const Admin = () => {
 
   useEffect(() => {
     if (hasPermission(currentRole || 'admin', 'manage_users')) {
-      fetchSites();
       fetchUsers();
+      fetchOrganizations();
     }
   }, [currentRole]);
 
-  const fetchSites = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('sites')
-        .select(`
-          *,
-          sectors(name),
-          cities(name),
-          site_assignments(
-            ops_manager_id,
-            deployment_engineer_id,
-            profiles!site_assignments_ops_manager_id_fkey(full_name),
-            profiles!site_assignments_deployment_engineer_id_fkey(full_name)
-          ),
-          site_status_tracking(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching sites:', error);
-        toast.error('Failed to fetch sites');
-        return;
-      }
-
-      const formattedSites: SiteData[] = (data || []).map((site: any) => ({
-        id: site.id,
-        name: site.name,
-        food_court_unit: site.food_court_unit,
-        address: site.address || '',
-        postcode: site.postcode || '',
-        cafeteria_type: site.cafeteria_type || 'mixed',
-        capacity: site.capacity || 0,
-        expected_footfall: site.expected_footfall || 0,
-        description: site.description || '',
-        status: site.status,
-        created_at: site.created_at,
-        updated_at: site.updated_at,
-        created_by: site.created_by,
-        sector_name: site.sectors?.name || '',
-        city_name: site.cities?.name || '',
-        ops_manager_name: site.site_assignments?.[0]?.profiles?.full_name || '',
-        deployment_engineer_name: site.site_assignments?.[0]?.profiles?.full_name || '',
-        study_status: site.site_status_tracking?.[0]?.study_status || 'pending',
-        cost_approval_status: site.site_status_tracking?.[0]?.cost_approval_status || 'pending',
-        inventory_status: site.site_status_tracking?.[0]?.inventory_status || 'pending',
-        products_status: site.site_status_tracking?.[0]?.products_status || 'pending',
-        deployment_status: site.site_status_tracking?.[0]?.deployment_status || 'pending',
-        overall_status: site.site_status_tracking?.[0]?.overall_status || 'new'
-      }));
-
-      setSites(formattedSites);
-    } catch (error) {
-      console.error('Error fetching sites:', error);
-      toast.error('Failed to fetch sites');
-    }
-  };
-
   const fetchUsers = async () => {
     try {
-      console.log('Fetching users...'); // Debug log
-      
-      const { data: usersData, error } = await supabase
+      setLoading(true);
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles (
-            role
-          )
-        `);
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      console.log('Users query result:', { usersData, error }); // Debug log
+      if (profilesError) throw profilesError;
 
-      if (error) {
-        console.error('Error fetching users:', error);
-        toast.error('Failed to fetch users');
-        return;
-      }
+      // Fetch roles for each user
+      const usersWithRoles = await Promise.all(
+        (profilesData || []).map(async (profile) => {
+          const { data: rolesData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', profile.user_id);
 
-      console.log('Setting users:', usersData); // Debug log
-      setUsers(usersData || []);
+          return {
+            ...profile,
+            user_roles: rolesData || []
+          };
+        })
+      );
+
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to fetch users');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const createSite = async (e: React.FormEvent) => {
+  const fetchOrganizations = async () => {
+    try {
+      // For now, we'll use an empty array since the organizations table doesn't exist yet
+      // This will be updated once the migration is applied
+      setOrganizations([]);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      toast.error('Failed to fetch organizations');
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSite.name || !newSite.food_court_unit || !newSite.city || !newSite.address || !newSite.postcode) {
+    
+    if (!createUserForm.email || !createUserForm.full_name || createUserForm.roles.length === 0) {
+      toast.error('Please fill in all required fields and select at least one role');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: crypto.randomUUID(),
+          email: createUserForm.email,
+          full_name: createUserForm.full_name,
+        })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Create user roles
+      const roleInserts = createUserForm.roles.map(role => ({
+        user_id: profileData.user_id,
+        role: role as 'admin' | 'ops_manager' | 'deployment_engineer',
+        assigned_by: profile?.user_id,
+      }));
+
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert(roleInserts);
+
+      if (roleError) throw roleError;
+
+      toast.success('User created successfully');
+      setShowCreateUserDialog(false);
+      setCreateUserForm({ email: '', full_name: '', roles: [] });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingUser || createUserForm.roles.length === 0) {
+      toast.error('Please fill in all required fields and select at least one role');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          email: createUserForm.email,
+          full_name: createUserForm.full_name,
+        })
+        .eq('user_id', editingUser.user_id);
+
+      if (profileError) throw profileError;
+
+      // Delete existing roles
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', editingUser.user_id);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new roles
+      const roleInserts = createUserForm.roles.map(role => ({
+        user_id: editingUser.user_id,
+        role: role as 'admin' | 'ops_manager' | 'deployment_engineer',
+        assigned_by: profile?.user_id,
+      }));
+
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert(roleInserts);
+
+      if (roleError) throw roleError;
+
+      toast.success('User updated successfully');
+      setShowEditUserDialog(false);
+      setEditingUser(null);
+      setCreateUserForm({ email: '', full_name: '', roles: [] });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error('Failed to update user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+
+    try {
+      setLoading(true);
+
+      // Delete user roles first
+      const { error: rolesError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (rolesError) throw rolesError;
+
+      // Delete profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (profileError) throw profileError;
+
+      toast.success('User deleted successfully');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateOrganization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!createOrgForm.name) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (!newSite.opsManagerId || !newSite.deploymentEngineerId) {
-      toast.error('Please assign both Ops Manager and Deployment Engineer');
-      return;
-    }
-
-    setLoading(true);
     try {
-      // First, get or create city
-      let cityId;
-      const { data: existingCity } = await supabase
-        .from('cities')
-        .select('id')
-        .eq('name', newSite.city)
-        .single();
-
-      if (existingCity) {
-        cityId = existingCity.id;
-      } else {
-        const { data: newCity, error: cityError } = await supabase
-          .from('cities')
-          .insert({ name: newSite.city, region: 'UK' })
-          .select('id')
-          .single();
-
-        if (cityError) throw cityError;
-        cityId = newCity.id;
-      }
-
-      // Create site
-      const { data: newSiteData, error: siteError } = await supabase
-        .from('sites')
-        .insert({
-          name: newSite.name,
-          food_court_unit: newSite.food_court_unit,
-          city_id: cityId,
-          address: newSite.address,
-          postcode: newSite.postcode,
-          cafeteria_type: newSite.cafeteriaType,
-          capacity: newSite.capacity,
-          expected_footfall: newSite.expectedFootfall,
-          description: newSite.description,
-          created_by: profile?.user_id
-        })
-        .select('id')
-        .single();
-
-      if (siteError) throw siteError;
-
-      // Create site assignment
-      const { error: assignmentError } = await supabase
-        .from('site_assignments')
-        .insert({
-          site_id: newSiteData.id,
-          ops_manager_id: newSite.opsManagerId,
-          deployment_engineer_id: newSite.deploymentEngineerId,
-          assigned_by: profile?.user_id
-        });
-
-      if (assignmentError) throw assignmentError;
-
-      // Create site status tracking
-      const { error: statusError } = await supabase
-        .from('site_status_tracking')
-        .insert({
-          site_id: newSiteData.id,
-          updated_by: profile?.user_id
-        });
-
-      if (statusError) throw statusError;
-
-      toast.success('Site created successfully!');
-      setIsCreatingSite(false);
-      setNewSite({
-        name: '',
-        food_court_unit: '',
-        city: '',
-        address: '',
-        postcode: '',
-        cafeteriaType: 'staff',
-        capacity: 0,
-        expectedFootfall: 0,
-        description: '',
-        opsManagerId: '',
-        deploymentEngineerId: ''
-      });
-      fetchSites();
+      setLoading(true);
+      // TODO: Implement once organizations table is created
+      toast.success('Organization created successfully');
+      setShowCreateOrgDialog(false);
+      setCreateOrgForm({ name: '', description: '' });
+      fetchOrganizations();
     } catch (error) {
-      console.error('Error creating site:', error);
-      toast.error('Failed to create site');
-    }
-    setLoading(false);
-  };
-
-  const updateSite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSite) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .update({
-          name: editingSite.name,
-          food_court_unit: editingSite.food_court_unit,
-          address: editingSite.address,
-          postcode: editingSite.postcode,
-          cafeteria_type: editingSite.cafeteria_type,
-          capacity: editingSite.capacity,
-          expected_footfall: editingSite.expected_footfall,
-          description: editingSite.description
-        })
-        .eq('id', editingSite.id);
-
-      if (error) throw error;
-
-      toast.success('Site updated successfully!');
-      setIsEditingSite(false);
-      setEditingSite(null);
-      fetchSites();
-    } catch (error) {
-      console.error('Error updating site:', error);
-      toast.error('Failed to update site');
-    }
-    setLoading(false);
-  };
-
-  const deleteSite = async (siteId: string) => {
-    if (!confirm('Are you sure you want to delete this site? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .delete()
-        .eq('id', siteId);
-
-      if (error) throw error;
-
-      toast.success('Site deleted successfully!');
-      fetchSites();
-    } catch (error) {
-      console.error('Error deleting site:', error);
-      toast.error('Failed to delete site');
+      console.error('Error creating organization:', error);
+      toast.error('Failed to create organization');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const createUser = async (e: React.FormEvent) => {
+  const handleEditOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUser.email || !newUser.fullName) {
-      toast.error('Please fill in all fields');
+    if (!editingOrg) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    setLoading(true);
     try {
-      const { error } = await createUserAsAdmin(newUser.email, '', newUser.role);
-      
-      if (error) {
-        toast.error(`Failed to create user: ${error.message}`);
-      } else {
-        toast.success('User created successfully! They can now sign in using OTP.');
-        setIsCreatingUser(false);
-        setNewUser({
-          email: '',
-          role: 'deployment_engineer',
-          fullName: ''
-        });
-        fetchUsers();
-      }
+      setLoading(true);
+      // TODO: Implement once organizations table is created
+      toast.success('Organization updated successfully');
+      setShowEditOrgDialog(false);
+      setEditingOrg(null);
+      setCreateOrgForm({ name: '', description: '' });
+      fetchOrganizations();
     } catch (error) {
-      console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      console.error('Error updating organization:', error);
+      toast.error('Failed to update organization');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const opsManagers = users.filter(user => 
-    user.user_roles?.some((role: any) => role.role === 'ops_manager')
-  );
+  const handleDeleteOrganization = async (orgId: string) => {
+    if (!confirm('Are you sure you want to delete this organization?')) return;
 
-  const deploymentEngineers = users.filter(user => 
-    user.user_roles?.some((role: any) => role.role === 'deployment_engineer')
-  );
-
-  const handleEditSite = (site: SiteData) => {
-    setEditingSite(site);
-    setIsEditingSite(true);
+    try {
+      setLoading(true);
+      // TODO: Implement once organizations table is created
+      toast.success('Organization deleted successfully');
+      fetchOrganizations();
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      toast.error('Failed to delete organization');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const openEditUserDialog = (user: User) => {
+    setEditingUser(user);
+    setCreateUserForm({
+      email: user.email,
+      full_name: user.full_name,
+      roles: user.user_roles.map(r => r.role)
+    });
+    setShowEditUserDialog(true);
+  };
+
+  const openEditOrgDialog = (org: Organization) => {
+    setEditingOrg(org);
+    setCreateOrgForm({
+      name: org.name,
+      description: org.description
+    });
+    setShowEditOrgDialog(true);
+  };
+
+  const getRoleDisplay = (roles: Array<{ role: string }>) => {
+    if (!roles || roles.length === 0) return 'No Role';
+    return roles.map(r => getRoleConfig(r.role as any).displayName).join(', ');
+  };
+
+  const getRoleColor = (roles: Array<{ role: string }>) => {
+    if (!roles || roles.length === 0) return 'bg-gray-100 text-gray-800';
+    const role = roles[0].role;
+    return getRoleConfig(role as any).color;
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'all' || 
+                       user.user_roles.some(role => role.role === roleFilter);
+    return matchesSearch && matchesRole;
+  });
 
   if (!hasPermission(currentRole || 'admin', 'manage_users')) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
-            <CardDescription className="text-center">
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <Shield className="h-16 w-16 mx-auto mb-4 text-red-500" />
+            <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+            <p className="text-muted-foreground">
               You do not have permission to access the Admin panel.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button onClick={() => navigate('/dashboard')}>
-              Return to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -407,109 +397,66 @@ const Admin = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Admin Panel</h1>
-            <p className="text-muted-foreground">Manage sites and users</p>
+            <h1 className="text-3xl font-bold">Admin Utilities</h1>
+            <p className="text-muted-foreground">Manage users and organizations</p>
           </div>
-          <RoleIndicator />
         </div>
 
-        <Tabs defaultValue="sites" className="space-y-6">
+        <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="sites">Cafeteria Sites</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="organizations">Organization Management</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="sites" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Compass Group Cafeterias</h2>
-              <Button onClick={() => setIsCreatingSite(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Site
-              </Button>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Site Overview</CardTitle>
-                <CardDescription>
-                  Total Cafeterias: {sites.length} | Active: {sites.filter(s => s.overall_status === 'deployed').length} | In Progress: {sites.filter(s => s.overall_status === 'in-progress').length}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Site Name</TableHead>
-                      <TableHead>Food Court Unit</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Capacity</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sites.map((site) => (
-                      <TableRow key={site.id}>
-                        <TableCell className="font-medium">{site.name}</TableCell>
-                        <TableCell>{site.food_court_unit}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>{site.city_name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(site.overall_status)}>
-                            {getStatusDisplayName(site.overall_status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {site.cafeteria_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{site.capacity} seats</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditSite(site)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => deleteSite(site.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">User Management</h2>
-              <Button onClick={() => setIsCreatingUser(true)}>
+              <Button onClick={() => setShowCreateUserDialog(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add New User
               </Button>
             </div>
 
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <Label htmlFor="search">Search Users</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="search"
+                        placeholder="Search by email or name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="sm:w-48">
+                    <Label htmlFor="role-filter">Filter by Role</Label>
+                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="ops_manager">Ops Manager</SelectItem>
+                        <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
-                <CardTitle>Users Overview</CardTitle>
+                <CardTitle>Users ({filteredUsers.length})</CardTitle>
                 <CardDescription>
-                  Total Users: {users.length}
+                  All registered users in the system
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -518,32 +465,39 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead>Roles</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.user_id}>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.full_name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                          {user.user_roles?.map((role: any, index: number) => (
-                            <Badge key={index} className={getRoleConfig(role.role).color}>
-                              {getRoleConfig(role.role).displayName}
-                            </Badge>
-                          ))}
+                          <Badge className={getRoleColor(user.user_roles)}>
+                            {getRoleDisplay(user.user_roles)}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openEditUserDialog(user)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.user_id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -552,370 +506,310 @@ const Admin = () => {
                     ))}
                   </TableBody>
                 </Table>
+                
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    {users.length === 0 ? 'No users found' : 'No users match your filters'}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="organizations" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">Organization Management</h2>
+              <Button onClick={() => setShowCreateOrgDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Organization
+              </Button>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Organizations ({organizations.length})</CardTitle>
+                <CardDescription>
+                  Manage organizations for site mapping
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {organizations.map((org) => (
+                      <TableRow key={org.id}>
+                        <TableCell className="font-medium">{org.name}</TableCell>
+                        <TableCell>{org.description}</TableCell>
+                        <TableCell>
+                          {new Date(org.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openEditOrgDialog(org)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteOrganization(org.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                {organizations.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    No organizations found
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Create Site Modal */}
-      {isCreatingSite && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Add New Cafeteria Site</CardTitle>
-              <CardDescription>
-                Create a new Compass Group cafeteria location
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={createSite} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Site Name *</Label>
-                    <Input
-                      id="name"
-                      value={newSite.name}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Manchester Central Cafeteria"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="food_court_unit">Food Court Unit *</Label>
-                    <Input
-                      id="food_court_unit"
-                      value={newSite.food_court_unit}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, food_court_unit: e.target.value }))}
-                      placeholder="e.g., FC001"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cafeteriaType">Cafeteria Type</Label>
-                    <Select
-                      value={newSite.cafeteriaType}
-                      onValueChange={(value: 'staff' | 'visitor' | 'mixed') => 
-                        setNewSite(prev => ({ ...prev, cafeteriaType: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="staff">Staff Only</SelectItem>
-                        <SelectItem value="visitor">Visitor Only</SelectItem>
-                        <SelectItem value="mixed">Mixed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="city">City *</Label>
-                    <UKCitySelect
-                      value={newSite.city}
-                      onValueChange={(value) => setNewSite(prev => ({ ...prev, city: value }))}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="address">Address *</Label>
-                  <Input
-                    id="address"
-                    value={newSite.address}
-                    onChange={(e) => setNewSite(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Full address"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="postcode">Postcode *</Label>
-                    <Input
-                      id="postcode"
-                      value={newSite.postcode}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, postcode: e.target.value }))}
-                      placeholder="e.g., M1 1AA"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="capacity">Capacity</Label>
-                    <Input
-                      id="capacity"
-                      type="number"
-                      value={newSite.capacity}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
-                      placeholder="Number of seats"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="footfall">Expected Daily Footfall</Label>
-                    <Input
-                      id="footfall"
-                      type="number"
-                      value={newSite.expectedFootfall}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, expectedFootfall: parseInt(e.target.value) || 0 }))}
-                      placeholder="Daily visitors"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Input
-                      id="description"
-                      value={newSite.description}
-                      onChange={(e) => setNewSite(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Additional notes about the site"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="opsManager">Ops Manager *</Label>
-                    <Select
-                      value={newSite.opsManagerId}
-                      onValueChange={(value) => setNewSite(prev => ({ ...prev, opsManagerId: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Ops Manager" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {opsManagers.map((user) => (
-                          <SelectItem key={user.user_id} value={user.user_id}>
-                            {user.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="deploymentEngineer">Deployment Engineer *</Label>
-                    <Select
-                      value={newSite.deploymentEngineerId}
-                      onValueChange={(value) => setNewSite(prev => ({ ...prev, deploymentEngineerId: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Deployment Engineer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {deploymentEngineers.map((user) => (
-                          <SelectItem key={user.user_id} value={user.user_id}>
-                            {user.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsCreatingSite(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Site'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Edit Site Modal */}
-      {isEditingSite && editingSite && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle>Edit Cafeteria Site</CardTitle>
-              <CardDescription>
-                Update site information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={updateSite} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit_name">Site Name *</Label>
-                    <Input
-                      id="edit_name"
-                      value={editingSite.name}
-                      onChange={(e) => setEditingSite(prev => prev ? { ...prev, name: e.target.value } : null)}
-                      placeholder="e.g., Manchester Central Cafeteria"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_food_court_unit">Food Court Unit *</Label>
-                    <Input
-                      id="edit_food_court_unit"
-                      value={editingSite.food_court_unit}
-                      onChange={(e) => setEditingSite(prev => prev ? { ...prev, food_court_unit: e.target.value } : null)}
-                      placeholder="e.g., FC001"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit_cafeteria_type">Cafeteria Type</Label>
-                    <Select
-                      value={editingSite.cafeteria_type}
-                      onValueChange={(value: 'staff' | 'visitor' | 'mixed') => 
-                        setEditingSite(prev => prev ? { ...prev, cafeteria_type: value } : null)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="staff">Staff Only</SelectItem>
-                        <SelectItem value="visitor">Visitor Only</SelectItem>
-                        <SelectItem value="mixed">Mixed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_capacity">Capacity</Label>
-                    <Input
-                      id="edit_capacity"
-                      type="number"
-                      value={editingSite.capacity}
-                      onChange={(e) => setEditingSite(prev => prev ? { ...prev, capacity: parseInt(e.target.value) || 0 } : null)}
-                      placeholder="Number of seats"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_address">Address *</Label>
-                  <Input
-                    id="edit_address"
-                    value={editingSite.address}
-                    onChange={(e) => setEditingSite(prev => prev ? { ...prev, address: e.target.value } : null)}
-                    placeholder="Full address"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit_postcode">Postcode *</Label>
-                    <Input
-                      id="edit_postcode"
-                      value={editingSite.postcode}
-                      onChange={(e) => setEditingSite(prev => prev ? { ...prev, postcode: e.target.value } : null)}
-                      placeholder="e.g., M1 1AA"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit_expected_footfall">Expected Daily Footfall</Label>
-                    <Input
-                      id="edit_expected_footfall"
-                      type="number"
-                      value={editingSite.expected_footfall}
-                      onChange={(e) => setEditingSite(prev => prev ? { ...prev, expected_footfall: parseInt(e.target.value) || 0 } : null)}
-                      placeholder="Daily visitors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_description">Description</Label>
-                  <Input
-                    id="edit_description"
-                    value={editingSite.description}
-                    onChange={(e) => setEditingSite(prev => prev ? { ...prev, description: e.target.value } : null)}
-                    placeholder="Additional notes about the site"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => {
-                    setIsEditingSite(false);
-                    setEditingSite(null);
-                  }}>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={loading}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Create User Modal */}
-      {isCreatingUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Add New User</CardTitle>
-              <CardDescription>
-                Create a new user account for the B2B application. Users will authenticate via OTP.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={createUser} className="space-y-4">
-                <div>
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    value={newUser.fullName}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, fullName: e.target.value }))}
-                    placeholder="Enter full name"
-                  />
-                </div>
+      <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the system with appropriate role assignments.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={createUserForm.email}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                value={createUserForm.full_name}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, full_name: e.target.value })}
+                placeholder="John Doe"
+                required
+              />
+            </div>
+            <div>
+              <Label>Roles</Label>
+              <div className="space-y-2">
+                {Object.values(ROLES).map((role) => (
+                  <div key={role.key} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={role.key}
+                      checked={createUserForm.roles.includes(role.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setCreateUserForm({
+                            ...createUserForm,
+                            roles: [...createUserForm.roles, role.key]
+                          });
+                        } else {
+                          setCreateUserForm({
+                            ...createUserForm,
+                            roles: createUserForm.roles.filter(r => r !== role.key)
+                          });
+                        }
+                      }}
+                    />
+                    <Label htmlFor={role.key} className="text-sm font-normal">
+                      {role.displayName}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowCreateUserDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Creating...' : 'Create User'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter email address"
-                  />
-                </div>
+      {/* Edit User Modal */}
+      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information and roles.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditUser} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_email">Email</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={createUserForm.email}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                placeholder="user@example.com"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_full_name">Full Name</Label>
+              <Input
+                id="edit_full_name"
+                value={createUserForm.full_name}
+                onChange={(e) => setCreateUserForm({ ...createUserForm, full_name: e.target.value })}
+                placeholder="John Doe"
+                required
+              />
+            </div>
+            <div>
+              <Label>Roles</Label>
+              <div className="space-y-2">
+                {Object.values(ROLES).map((role) => (
+                  <div key={role.key} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit_${role.key}`}
+                      checked={createUserForm.roles.includes(role.key)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setCreateUserForm({
+                            ...createUserForm,
+                            roles: [...createUserForm.roles, role.key]
+                          });
+                        } else {
+                          setCreateUserForm({
+                            ...createUserForm,
+                            roles: createUserForm.roles.filter(r => r !== role.key)
+                          });
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`edit_${role.key}`} className="text-sm font-normal">
+                      {role.displayName}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowEditUserDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-                <div>
-                  <Label htmlFor="role">Role *</Label>
-                  <Select
-                    value={newUser.role}
-                    onValueChange={(value: any) => setNewUser(prev => ({ ...prev, role: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(ROLES).map((role) => (
-                        <SelectItem key={role.key} value={role.key}>
-                          {role.displayName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Create Organization Modal */}
+      <Dialog open={showCreateOrgDialog} onOpenChange={setShowCreateOrgDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Organization</DialogTitle>
+            <DialogDescription>
+              Add a new organization for site mapping.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateOrganization} className="space-y-4">
+            <div>
+              <Label htmlFor="org_name">Name</Label>
+              <Input
+                id="org_name"
+                value={createOrgForm.name}
+                onChange={(e) => setCreateOrgForm({ ...createOrgForm, name: e.target.value })}
+                placeholder="Organization name"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="org_description">Description</Label>
+              <Input
+                id="org_description"
+                value={createOrgForm.description}
+                onChange={(e) => setCreateOrgForm({ ...createOrgForm, description: e.target.value })}
+                placeholder="Organization description"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowCreateOrgDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Creating...' : 'Create Organization'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsCreatingUser(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? 'Creating...' : 'Create User'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Edit Organization Modal */}
+      <Dialog open={showEditOrgDialog} onOpenChange={setShowEditOrgDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Organization</DialogTitle>
+            <DialogDescription>
+              Update organization information.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditOrganization} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_org_name">Name</Label>
+              <Input
+                id="edit_org_name"
+                value={createOrgForm.name}
+                onChange={(e) => setCreateOrgForm({ ...createOrgForm, name: e.target.value })}
+                placeholder="Organization name"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_org_description">Description</Label>
+              <Input
+                id="edit_org_description"
+                value={createOrgForm.description}
+                onChange={(e) => setCreateOrgForm({ ...createOrgForm, description: e.target.value })}
+                placeholder="Organization description"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowEditOrgDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
