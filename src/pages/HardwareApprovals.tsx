@@ -262,7 +262,7 @@ const HardwareApprovals = () => {
       {
         id: '4',
         siteName: 'London Bridge Hub Implementation',
-        organization: 'Compass Group UK',
+        organization: 'Sodexo UK',
         requestType: 'upgrade',
         status: 'rejected',
         priority: 'low',
@@ -297,7 +297,7 @@ const HardwareApprovals = () => {
       {
         id: '5',
         siteName: 'Birmingham Office Complex',
-        organization: 'Compass Group UK',
+        organization: 'Aramark UK',
         requestType: 'hardware_scoping',
         status: 'pending',
         priority: 'medium',
@@ -531,7 +531,7 @@ const HardwareApprovals = () => {
     {
       id: '4',
       siteName: 'London Bridge Hub Implementation',
-      organization: 'Compass Group UK',
+      organization: 'Sodexo UK',
       requestType: 'upgrade',
       status: 'rejected',
       priority: 'low',
@@ -566,7 +566,7 @@ const HardwareApprovals = () => {
     {
       id: '5',
       siteName: 'Birmingham Office Complex',
-      organization: 'Compass Group UK',
+      organization: 'Aramark UK',
       requestType: 'hardware_scoping',
       status: 'pending',
       priority: 'medium',
