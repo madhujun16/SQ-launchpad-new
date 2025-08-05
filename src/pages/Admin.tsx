@@ -147,6 +147,12 @@ const Admin = () => {
     try {
       setLoading(true);
 
+      console.log('Creating user:', {
+        email: createUserForm.email,
+        full_name: createUserForm.full_name,
+        roles: createUserForm.roles
+      });
+
       // Create profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -158,7 +164,12 @@ const Admin = () => {
         .select()
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+      }
+
+      console.log('Profile created successfully:', profileData);
 
       // Create user roles
       const roleInserts = createUserForm.roles.map(role => ({
@@ -167,11 +178,19 @@ const Admin = () => {
         assigned_by: profile?.user_id,
       }));
 
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert(roleInserts);
+      console.log('Inserting roles:', roleInserts);
 
-      if (roleError) throw roleError;
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .insert(roleInserts)
+        .select();
+
+      if (roleError) {
+        console.error('Role creation error:', roleError);
+        throw new Error(`Role creation failed: ${roleError.message}`);
+      }
+
+      console.log('Roles created successfully:', roleData);
 
       toast.success('User created successfully');
       setShowCreateUserDialog(false);
@@ -179,7 +198,8 @@ const Admin = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -196,16 +216,29 @@ const Admin = () => {
     try {
       setLoading(true);
 
+      console.log('Updating user:', {
+        user_id: editingUser.user_id,
+        email: createUserForm.email,
+        full_name: createUserForm.full_name,
+        roles: createUserForm.roles
+      });
+
       // Update profile
-      const { error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .update({
           email: createUserForm.email,
           full_name: createUserForm.full_name,
         })
-        .eq('user_id', editingUser.user_id);
+        .eq('user_id', editingUser.user_id)
+        .select();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw new Error(`Profile update failed: ${profileError.message}`);
+      }
+
+      console.log('Profile updated successfully:', profileData);
 
       // Delete existing roles
       const { error: deleteError } = await supabase
@@ -213,7 +246,12 @@ const Admin = () => {
         .delete()
         .eq('user_id', editingUser.user_id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Role deletion error:', deleteError);
+        throw new Error(`Role deletion failed: ${deleteError.message}`);
+      }
+
+      console.log('Existing roles deleted successfully');
 
       // Insert new roles
       const roleInserts = createUserForm.roles.map(role => ({
@@ -222,11 +260,19 @@ const Admin = () => {
         assigned_by: profile?.user_id,
       }));
 
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert(roleInserts);
+      console.log('Inserting roles:', roleInserts);
 
-      if (roleError) throw roleError;
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .insert(roleInserts)
+        .select();
+
+      if (roleError) {
+        console.error('Role insertion error:', roleError);
+        throw new Error(`Role insertion failed: ${roleError.message}`);
+      }
+
+      console.log('Roles inserted successfully:', roleData);
 
       toast.success('User updated successfully');
       setShowEditUserDialog(false);
@@ -235,7 +281,8 @@ const Admin = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error updating user:', error);
-      toast.error('Failed to update user');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update user';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
