@@ -37,7 +37,7 @@ import {
   FileText,
   Plus
 } from '@/lib/icons';
-import { getDeploymentEngineerDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
+import { dashboardService, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkflowStatusBadge } from '@/components/ui/WorkflowStatusBadge';
 import { TaskQueueCard } from '@/components/ui/TaskQueueCard';
@@ -152,17 +152,17 @@ const DeploymentEngineerDashboard = () => {
   // Queries
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ['deployment-engineer-dashboard-metrics'],
-    queryFn: getDeploymentEngineerDashboardMetrics,
+          queryFn: () => dashboardService.getDeploymentEngineerDashboardMetrics(),
   });
 
   const { data: taskQueue, isLoading: taskQueueLoading } = useQuery({
     queryKey: ['deployment-engineer-task-queue'],
-    queryFn: getTaskQueueItems,
+          queryFn: () => dashboardService.getTaskQueueItems(),
   });
 
   const { data: exceptionAlerts, isLoading: alertsLoading } = useQuery({
     queryKey: ['deployment-engineer-exception-alerts'],
-    queryFn: getExceptionAlerts,
+          queryFn: () => dashboardService.getExceptionAlerts(),
   });
 
   const handleAlertDismiss = (alertId: string) => {

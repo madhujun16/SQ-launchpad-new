@@ -36,7 +36,7 @@ import {
   MapPin,
   Shield
 } from '@/lib/icons';
-import { getOpsManagerDashboardMetrics, getTaskQueueItems, getExceptionAlerts, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
+import { dashboardService, DashboardMetrics, TaskQueueItem, ExceptionAlert } from '@/services/dashboardService';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkflowStatusBadge } from '@/components/ui/WorkflowStatusBadge';
 import { TaskQueueCard } from '@/components/ui/TaskQueueCard';
@@ -151,17 +151,17 @@ const OpsManagerDashboard = () => {
   // Queries
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ['ops-manager-dashboard-metrics'],
-    queryFn: getOpsManagerDashboardMetrics,
+          queryFn: () => dashboardService.getOpsManagerDashboardMetrics(),
   });
 
   const { data: taskQueue, isLoading: taskQueueLoading } = useQuery({
     queryKey: ['ops-manager-task-queue'],
-    queryFn: getTaskQueueItems,
+          queryFn: () => dashboardService.getTaskQueueItems(),
   });
 
   const { data: exceptionAlerts, isLoading: alertsLoading } = useQuery({
     queryKey: ['ops-manager-exception-alerts'],
-    queryFn: getExceptionAlerts,
+          queryFn: () => dashboardService.getExceptionAlerts(),
   });
 
   const handleAlertDismiss = (alertId: string) => {
