@@ -23,7 +23,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 // Services
 import { inventoryService } from '@/services/inventoryService';
-import { referenceDataService } from '@/services/referenceDataService';
 import { licenseService } from '@/services/licenseService';
 
 // Types
@@ -126,10 +125,7 @@ export default function LicenseManagement() {
     { license_type: 'Integration', count: mockSummary.integration_licenses, active: mockSummary.integration_licenses, expiring: 0, expired: 0 },
   ];
 
-  const { data: sites = [] } = useQuery({
-    queryKey: ['sites'],
-    queryFn: referenceDataService.getSites,
-  });
+
 
   const { data: licenseByType } = useQuery({
     queryKey: ['license-by-type'],
@@ -327,23 +323,7 @@ export default function LicenseManagement() {
     }
   };
 
-  // Mock alerts for demonstration
-  const alerts = [
-    {
-      id: 1,
-      type: 'warning',
-      title: 'Licenses Expiring Soon',
-      message: '5 software licenses will expire within 30 days',
-      time: '2 hours ago'
-    },
-    {
-      id: 2,
-      type: 'error',
-      title: 'Expired Licenses',
-      message: '3 hardware licenses have expired and need renewal',
-      time: '4 hours ago'
-    }
-  ];
+
 
   if (summaryLoading || licensesLoading) {
     return (
