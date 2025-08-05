@@ -65,15 +65,15 @@ export default defineConfig(({ mode }) => ({
           
           // Feature chunks - split by functionality
           'dashboard': [
-            './src/components/dashboards/AdminDashboard.tsx',
-            './src/components/dashboards/OpsManagerDashboard.tsx',
-            './src/components/dashboards/DeploymentEngineerDashboard.tsx'
+            './src/components/dashboards/SimpleAdminDashboard.tsx',
+            './src/components/dashboards/SimpleOpsManagerDashboard.tsx',
+            './src/components/dashboards/SimpleDeploymentEngineerDashboard.tsx'
           ],
           'inventory': [
             './src/components/inventory/DeployInventoryForm.tsx',
-            './src/components/inventory/InventoryFiltersPanel.tsx',
-            './src/components/inventory/InventoryItemDetails.tsx',
-            './src/components/inventory/InventoryItemForm.tsx',
+            './src/components/inventory/SimpleInventoryFiltersPanel.tsx',
+            './src/components/inventory/SimpleInventoryItemDetails.tsx',
+            './src/components/inventory/SimpleInventoryItemForm.tsx',
             './src/components/inventory/LicenseForm.tsx'
           ],
           'services': [
