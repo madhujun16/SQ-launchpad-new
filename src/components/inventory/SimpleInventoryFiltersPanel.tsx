@@ -56,7 +56,7 @@ export const SimpleInventoryFiltersPanel: React.FC<SimpleInventoryFiltersProps> 
           </Select>
         </div>
 
-        <Button className="w-full">Apply Filters</Button>
+        <Button className="w-full" variant="gradient">Apply Filters</Button>
       </CardContent>
     </Card>
   );

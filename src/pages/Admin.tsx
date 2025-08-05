@@ -70,11 +70,51 @@ interface CreateOrganizationForm {
   sector: string;
 }
 
+interface SoftwareModule {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface HardwareItem {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  model: string | null;
+  manufacturer: string | null;
+  estimated_cost: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CreateSoftwareForm {
+  name: string;
+  description: string;
+  category: string;
+}
+
+interface CreateHardwareForm {
+  name: string;
+  description: string;
+  category: string;
+  model: string;
+  manufacturer: string;
+  estimated_cost: number;
+}
+
 const Admin = () => {
   const { currentRole, profile } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [softwareModules, setSoftwareModules] = useState<SoftwareModule[]>([]);
+  const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -99,6 +139,29 @@ const Admin = () => {
     sector: ''
   });
 
+  // Software management states
+  const [showCreateSoftwareDialog, setShowCreateSoftwareDialog] = useState(false);
+  const [showEditSoftwareDialog, setShowEditSoftwareDialog] = useState(false);
+  const [editingSoftware, setEditingSoftware] = useState<SoftwareModule | null>(null);
+  const [createSoftwareForm, setCreateSoftwareForm] = useState<CreateSoftwareForm>({
+    name: '',
+    description: '',
+    category: ''
+  });
+
+  // Hardware management states
+  const [showCreateHardwareDialog, setShowCreateHardwareDialog] = useState(false);
+  const [showEditHardwareDialog, setShowEditHardwareDialog] = useState(false);
+  const [editingHardware, setEditingHardware] = useState<HardwareItem | null>(null);
+  const [createHardwareForm, setCreateHardwareForm] = useState<CreateHardwareForm>({
+    name: '',
+    description: '',
+    category: '',
+    model: '',
+    manufacturer: '',
+    estimated_cost: 0
+  });
+
   // Predefined sector options
   const sectorOptions = [
     'Business & Industry',
@@ -121,6 +184,8 @@ const Admin = () => {
     if (hasPermission(currentRole || 'admin', 'manage_users')) {
       fetchUsers();
       fetchOrganizations();
+      fetchSoftwareModules();
+      fetchHardwareItems();
     }
   }, [currentRole]);
 
@@ -172,6 +237,36 @@ const Admin = () => {
     } catch (error) {
       console.error('Error fetching organizations:', error);
       toast.error('Failed to load organizations');
+    }
+  };
+
+  const fetchSoftwareModules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('software_modules')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSoftwareModules(data || []);
+    } catch (error) {
+      console.error('Error fetching software modules:', error);
+      toast.error('Failed to load software modules');
+    }
+  };
+
+  const fetchHardwareItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hardware_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setHardwareItems(data || []);
+    } catch (error) {
+      console.error('Error fetching hardware items:', error);
+      toast.error('Failed to load hardware items');
     }
   };
 
@@ -414,6 +509,209 @@ const Admin = () => {
     setShowEditOrgDialog(true);
   };
 
+  // Software management functions
+  const handleCreateSoftware = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!createSoftwareForm.name || !createSoftwareForm.category) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('software_modules')
+        .insert([createSoftwareForm]);
+
+      if (error) throw error;
+
+      toast.success('Software module created successfully');
+      setShowCreateSoftwareDialog(false);
+      setCreateSoftwareForm({ name: '', description: '', category: '' });
+      fetchSoftwareModules();
+    } catch (error) {
+      console.error('Error creating software module:', error);
+      toast.error('Failed to create software module');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditSoftware = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingSoftware || !createSoftwareForm.name || !createSoftwareForm.category) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('software_modules')
+        .update(createSoftwareForm)
+        .eq('id', editingSoftware.id);
+
+      if (error) throw error;
+
+      toast.success('Software module updated successfully');
+      setShowEditSoftwareDialog(false);
+      setEditingSoftware(null);
+      setCreateSoftwareForm({ name: '', description: '', category: '' });
+      fetchSoftwareModules();
+    } catch (error) {
+      console.error('Error updating software module:', error);
+      toast.error('Failed to update software module');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSoftware = async (softwareId: string) => {
+    if (!confirm('Are you sure you want to delete this software module? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('software_modules')
+        .delete()
+        .eq('id', softwareId);
+
+      if (error) throw error;
+
+      toast.success('Software module deleted successfully');
+      fetchSoftwareModules();
+    } catch (error) {
+      console.error('Error deleting software module:', error);
+      toast.error('Failed to delete software module');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditSoftwareDialog = (software: SoftwareModule) => {
+    setEditingSoftware(software);
+    setCreateSoftwareForm({
+      name: software.name,
+      description: software.description || '',
+      category: software.category
+    });
+    setShowEditSoftwareDialog(true);
+  };
+
+  // Hardware management functions
+  const handleCreateHardware = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!createHardwareForm.name || !createHardwareForm.category) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('hardware_items')
+        .insert([createHardwareForm]);
+
+      if (error) throw error;
+
+      toast.success('Hardware item created successfully');
+      setShowCreateHardwareDialog(false);
+      setCreateHardwareForm({ 
+        name: '', 
+        description: '', 
+        category: '', 
+        model: '', 
+        manufacturer: '', 
+        estimated_cost: 0 
+      });
+      fetchHardwareItems();
+    } catch (error) {
+      console.error('Error creating hardware item:', error);
+      toast.error('Failed to create hardware item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditHardware = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingHardware || !createHardwareForm.name || !createHardwareForm.category) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('hardware_items')
+        .update(createHardwareForm)
+        .eq('id', editingHardware.id);
+
+      if (error) throw error;
+
+      toast.success('Hardware item updated successfully');
+      setShowEditHardwareDialog(false);
+      setEditingHardware(null);
+      setCreateHardwareForm({ 
+        name: '', 
+        description: '', 
+        category: '', 
+        model: '', 
+        manufacturer: '', 
+        estimated_cost: 0 
+      });
+      fetchHardwareItems();
+    } catch (error) {
+      console.error('Error updating hardware item:', error);
+      toast.error('Failed to update hardware item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteHardware = async (hardwareId: string) => {
+    if (!confirm('Are you sure you want to delete this hardware item? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('hardware_items')
+        .delete()
+        .eq('id', hardwareId);
+
+      if (error) throw error;
+
+      toast.success('Hardware item deleted successfully');
+      fetchHardwareItems();
+    } catch (error) {
+      console.error('Error deleting hardware item:', error);
+      toast.error('Failed to delete hardware item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditHardwareDialog = (hardware: HardwareItem) => {
+    setEditingHardware(hardware);
+    setCreateHardwareForm({
+      name: hardware.name,
+      description: hardware.description || '',
+      category: hardware.category,
+      model: hardware.model || '',
+      manufacturer: hardware.manufacturer || '',
+      estimated_cost: hardware.estimated_cost || 0
+    });
+    setShowEditHardwareDialog(true);
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
@@ -488,7 +786,7 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 User Management
@@ -496,6 +794,14 @@ const Admin = () => {
               <TabsTrigger value="organizations" className="flex items-center gap-2">
                 <Building className="h-4 w-4" />
                 Organization Management
+              </TabsTrigger>
+              <TabsTrigger value="software" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Software Management
+              </TabsTrigger>
+              <TabsTrigger value="hardware" className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Hardware Management
               </TabsTrigger>
             </TabsList>
 
@@ -571,7 +877,7 @@ const Admin = () => {
               {/* Actions */}
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold">User Management</h2>
-                <Button onClick={() => setShowCreateUserDialog(true)}>
+                <Button onClick={() => setShowCreateUserDialog(true)} variant="gradient">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add New User
                 </Button>
@@ -714,7 +1020,7 @@ const Admin = () => {
             <TabsContent value="organizations" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold">Organization Management</h2>
-                <Button onClick={() => setShowCreateOrgDialog(true)}>
+                <Button onClick={() => setShowCreateOrgDialog(true)} variant="gradient">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Organization
                 </Button>
@@ -789,6 +1095,189 @@ const Admin = () => {
                     {organizations.length === 0 && (
                       <div className="text-center py-8 text-gray-500">
                         No organizations found
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="software" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-semibold">Software Management</h2>
+                <Button onClick={() => setShowCreateSoftwareDialog(true)} variant="gradient">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Software Module
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Software Modules ({softwareModules.length})</CardTitle>
+                  <CardDescription>
+                    Manage SmartQ software modules for site deployment
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {softwareModules.map((software) => (
+                          <TableRow key={software.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <Settings className="h-4 w-4 text-gray-400" />
+                                {software.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{software.description || 'No description'}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-sm">
+                                {software.category}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={software.is_active ? "default" : "secondary"}>
+                                {software.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-gray-400" />
+                                {new Date(software.created_at).toLocaleDateString()}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => openEditSoftwareDialog(software)}
+                                  aria-label={`Edit software module ${software.name}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleDeleteSoftware(software.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  aria-label={`Delete software module ${software.name}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    {softwareModules.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        No software modules found
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="hardware" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-semibold">Hardware Management</h2>
+                <Button onClick={() => setShowCreateHardwareDialog(true)} variant="gradient">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Hardware Item
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Hardware Items ({hardwareItems.length})</CardTitle>
+                  <CardDescription>
+                    Manage hardware items for site deployment
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Model</TableHead>
+                          <TableHead>Manufacturer</TableHead>
+                          <TableHead>Estimated Cost</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {hardwareItems.map((hardware) => (
+                          <TableRow key={hardware.id}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <Wrench className="h-4 w-4 text-gray-400" />
+                                {hardware.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{hardware.description || 'No description'}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-sm">
+                                {hardware.category}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{hardware.model || 'N/A'}</TableCell>
+                            <TableCell>{hardware.manufacturer || 'N/A'}</TableCell>
+                            <TableCell>
+                              {hardware.estimated_cost ? `£${hardware.estimated_cost.toFixed(2)}` : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={hardware.is_active ? "default" : "secondary"}>
+                                {hardware.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => openEditHardwareDialog(hardware)}
+                                  aria-label={`Edit hardware item ${hardware.name}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleDeleteHardware(hardware.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  aria-label={`Delete hardware item ${hardware.name}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    {hardwareItems.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        No hardware items found
                       </div>
                     )}
                   </div>
@@ -870,7 +1359,7 @@ const Admin = () => {
               <Button type="button" variant="outline" onClick={() => setShowCreateUserDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="gradient">
                 {loading ? 'Creating...' : 'Create User'}
               </Button>
             </div>
@@ -946,7 +1435,7 @@ const Admin = () => {
               <Button type="button" variant="outline" onClick={() => setShowEditUserDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="gradient">
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
@@ -1005,7 +1494,7 @@ const Admin = () => {
               <Button type="button" variant="outline" onClick={() => setShowCreateOrgDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="gradient">
                 {loading ? 'Creating...' : 'Create Organization'}
               </Button>
             </div>
@@ -1064,7 +1553,269 @@ const Admin = () => {
               <Button type="button" variant="outline" onClick={() => setShowEditOrgDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} variant="gradient">
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Software Modal */}
+      <Dialog open={showCreateSoftwareDialog} onOpenChange={setShowCreateSoftwareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Software Module</DialogTitle>
+            <DialogDescription>
+              Add a new SmartQ software module for site deployment.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateSoftware} className="space-y-4">
+            <div>
+              <Label htmlFor="software_name">Name</Label>
+              <Input
+                id="software_name"
+                value={createSoftwareForm.name}
+                onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, name: e.target.value })}
+                placeholder="e.g., SmartQ POS System"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="software_description">Description</Label>
+              <Input
+                id="software_description"
+                value={createSoftwareForm.description}
+                onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, description: e.target.value })}
+                placeholder="Software module description"
+              />
+            </div>
+            <div>
+              <Label htmlFor="software_category">Category</Label>
+              <Input
+                id="software_category"
+                value={createSoftwareForm.category}
+                onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, category: e.target.value })}
+                placeholder="e.g., POS, KMS, QR, Kiosk"
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowCreateSoftwareDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} variant="gradient">
+                {loading ? 'Creating...' : 'Create Software Module'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Software Modal */}
+      <Dialog open={showEditSoftwareDialog} onOpenChange={setShowEditSoftwareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Software Module</DialogTitle>
+            <DialogDescription>
+              Update software module information.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSoftware} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_software_name">Name</Label>
+              <Input
+                id="edit_software_name"
+                value={createSoftwareForm.name}
+                onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, name: e.target.value })}
+                placeholder="e.g., SmartQ POS System"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_software_description">Description</Label>
+              <Input
+                id="edit_software_description"
+                value={createSoftwareForm.description}
+                onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, description: e.target.value })}
+                placeholder="Software module description"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_software_category">Category</Label>
+              <Input
+                id="edit_software_category"
+                value={createSoftwareForm.category}
+                onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, category: e.target.value })}
+                placeholder="e.g., POS, KMS, QR, Kiosk"
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowEditSoftwareDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} variant="gradient">
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Hardware Modal */}
+      <Dialog open={showCreateHardwareDialog} onOpenChange={setShowCreateHardwareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Hardware Item</DialogTitle>
+            <DialogDescription>
+              Add a new hardware item for site deployment.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateHardware} className="space-y-4">
+            <div>
+              <Label htmlFor="hardware_name">Name</Label>
+              <Input
+                id="hardware_name"
+                value={createHardwareForm.name}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, name: e.target.value })}
+                placeholder="e.g., Android Tablet"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="hardware_description">Description</Label>
+              <Input
+                id="hardware_description"
+                value={createHardwareForm.description}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, description: e.target.value })}
+                placeholder="Hardware item description"
+              />
+            </div>
+            <div>
+              <Label htmlFor="hardware_category">Category</Label>
+              <Input
+                id="hardware_category"
+                value={createHardwareForm.category}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, category: e.target.value })}
+                placeholder="e.g., Tablet, POS Terminal, Printer"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="hardware_model">Model</Label>
+              <Input
+                id="hardware_model"
+                value={createHardwareForm.model}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, model: e.target.value })}
+                placeholder="e.g., Samsung Galaxy Tab A"
+              />
+            </div>
+            <div>
+              <Label htmlFor="hardware_manufacturer">Manufacturer</Label>
+              <Input
+                id="hardware_manufacturer"
+                value={createHardwareForm.manufacturer}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, manufacturer: e.target.value })}
+                placeholder="e.g., Samsung, Apple, HP"
+              />
+            </div>
+            <div>
+              <Label htmlFor="hardware_cost">Estimated Cost (£)</Label>
+              <Input
+                id="hardware_cost"
+                type="number"
+                step="0.01"
+                value={createHardwareForm.estimated_cost}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, estimated_cost: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowCreateHardwareDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} variant="gradient">
+                {loading ? 'Creating...' : 'Create Hardware Item'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Hardware Modal */}
+      <Dialog open={showEditHardwareDialog} onOpenChange={setShowEditHardwareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Hardware Item</DialogTitle>
+            <DialogDescription>
+              Update hardware item information.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditHardware} className="space-y-4">
+            <div>
+              <Label htmlFor="edit_hardware_name">Name</Label>
+              <Input
+                id="edit_hardware_name"
+                value={createHardwareForm.name}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, name: e.target.value })}
+                placeholder="e.g., Android Tablet"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_hardware_description">Description</Label>
+              <Input
+                id="edit_hardware_description"
+                value={createHardwareForm.description}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, description: e.target.value })}
+                placeholder="Hardware item description"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_hardware_category">Category</Label>
+              <Input
+                id="edit_hardware_category"
+                value={createHardwareForm.category}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, category: e.target.value })}
+                placeholder="e.g., Tablet, POS Terminal, Printer"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_hardware_model">Model</Label>
+              <Input
+                id="edit_hardware_model"
+                value={createHardwareForm.model}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, model: e.target.value })}
+                placeholder="e.g., Samsung Galaxy Tab A"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_hardware_manufacturer">Manufacturer</Label>
+              <Input
+                id="edit_hardware_manufacturer"
+                value={createHardwareForm.manufacturer}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, manufacturer: e.target.value })}
+                placeholder="e.g., Samsung, Apple, HP"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_hardware_cost">Estimated Cost (£)</Label>
+              <Input
+                id="edit_hardware_cost"
+                type="number"
+                step="0.01"
+                value={createHardwareForm.estimated_cost}
+                onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, estimated_cost: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowEditHardwareDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} variant="gradient">
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>

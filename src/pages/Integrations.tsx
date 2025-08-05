@@ -227,7 +227,7 @@ const Integrations = () => {
         {/* Action Buttons */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex gap-4">
-            <Button className="bg-primary hover:bg-primary-dark">
+            <Button variant="gradient">
               <Plus className="mr-2 h-4 w-4" />
               Add Integration
             </Button>

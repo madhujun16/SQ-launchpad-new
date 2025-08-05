@@ -107,7 +107,7 @@ export const SimpleInventoryItemForm: React.FC<SimpleInventoryItemFormProps> = (
           </div>
 
           <div className="flex space-x-2">
-            <Button type="submit" className="flex-1">
+            <Button type="submit" className="flex-1" variant="gradient">
               {item ? 'Update' : 'Create'} Item
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>

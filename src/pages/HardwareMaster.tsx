@@ -662,7 +662,7 @@ const HardwareMaster = () => {
                   <CardDescription>Hardware deployment by site</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button onClick={() => handleDownloadReport('deployment')} className="w-full">
+                  <Button onClick={() => handleDownloadReport('deployment')} className="w-full" variant="gradient">
                     <Download className="h-4 w-4 mr-2" />
                     Download Report
                   </Button>
@@ -678,7 +678,7 @@ const HardwareMaster = () => {
                   <CardDescription>Upcoming maintenance schedule</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button onClick={() => handleDownloadReport('maintenance')} className="w-full">
+                  <Button onClick={() => handleDownloadReport('maintenance')} className="w-full" variant="gradient">
                     <Download className="h-4 w-4 mr-2" />
                     Download Report
                   </Button>
@@ -694,7 +694,7 @@ const HardwareMaster = () => {
                   <CardDescription>Hardware cost analysis</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button onClick={() => handleDownloadReport('cost')} className="w-full">
+                  <Button onClick={() => handleDownloadReport('cost')} className="w-full" variant="gradient">
                     <Download className="h-4 w-4 mr-2" />
                     Download Report
                   </Button>

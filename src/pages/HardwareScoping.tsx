@@ -1036,7 +1036,7 @@ const HardwareScoping = () => {
                   </div>
                 </div>
                 <div className="mt-6">
-                  <Button onClick={handleSubmitForApproval} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg shadow-lg">
+                  <Button onClick={handleSubmitForApproval} variant="gradient" className="w-full">
                     Submit for D&T Approval
                   </Button>
                 </div>

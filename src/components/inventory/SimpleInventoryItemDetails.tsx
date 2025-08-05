@@ -62,7 +62,7 @@ export const SimpleInventoryItemDetails: React.FC<SimpleInventoryItemDetailsProp
         </div>
 
         <div className="pt-4">
-          <Button className="w-full">Edit Item</Button>
+          <Button className="w-full" variant="gradient">Edit Item</Button>
         </div>
       </CardContent>
     </Card>

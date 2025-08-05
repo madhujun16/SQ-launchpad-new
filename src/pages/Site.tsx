@@ -339,7 +339,7 @@ const Site = () => {
                 >
                   Table
                 </Button>
-                <Button onClick={() => navigate('/site-creation')} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <Button onClick={() => navigate('/site-creation')} variant="gradient">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Site
                 </Button>
@@ -564,7 +564,7 @@ const Site = () => {
                   : 'Get started by creating your first site project'
                 }
               </p>
-              <Button onClick={() => navigate('/site-creation')} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Button onClick={() => navigate('/site-creation')} variant="gradient">
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Site
               </Button>

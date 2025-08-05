@@ -529,7 +529,7 @@ const SiteCreation = () => {
 
         {/* Submit Button */}
         <div className="mt-6 flex justify-end">
-          <Button onClick={handleSubmit} className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg">
+          <Button onClick={handleSubmit} variant="gradient" size="lg">
             <Save className="h-4 w-4 mr-2" />
             Create Project
           </Button>

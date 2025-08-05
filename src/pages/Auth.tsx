@@ -123,7 +123,8 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-soft rounded-lg px-4 py-2"
+                className="w-full shadow-soft rounded-lg px-4 py-2"
+                variant="gradient"
                 disabled={loading}
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
@@ -174,7 +175,8 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white shadow-soft rounded-lg px-4 py-2"
+                className="w-full shadow-soft rounded-lg px-4 py-2"
+                variant="gradient"
                 disabled={loading}
               >
                 {loading ? 'Sending OTP...' : 'Send OTP'}

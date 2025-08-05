@@ -416,6 +416,312 @@ export type Database = {
           }
         ]
       }
+      software_modules: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          category: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          category: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          category?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hardware_items: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          category: string
+          model: string | null
+          manufacturer: string | null
+          estimated_cost: number | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          category: string
+          model?: string | null
+          manufacturer?: string | null
+          estimated_cost?: number | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          category?: string
+          model?: string | null
+          manufacturer?: string | null
+          estimated_cost?: number | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      software_hardware_mapping: {
+        Row: {
+          id: string
+          software_module_id: string
+          hardware_item_id: string
+          is_required: boolean
+          quantity: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          software_module_id: string
+          hardware_item_id: string
+          is_required?: boolean
+          quantity?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          software_module_id?: string
+          hardware_item_id?: string
+          is_required?: boolean
+          quantity?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "software_hardware_mapping_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "software_hardware_mapping_hardware_item_id_fkey"
+            columns: ["hardware_item_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_items"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      site_workflow_stages: {
+        Row: {
+          id: string
+          site_id: string
+          stage_name: string
+          status: string
+          started_at: string | null
+          completed_at: string | null
+          assigned_to: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          stage_name: string
+          status?: string
+          started_at?: string | null
+          completed_at?: string | null
+          assigned_to?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          stage_name?: string
+          status?: string
+          started_at?: string | null
+          completed_at?: string | null
+          assigned_to?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_workflow_stages_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_workflow_stages_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      site_software_scoping: {
+        Row: {
+          id: string
+          site_id: string
+          software_module_id: string
+          is_selected: boolean
+          quantity: number
+          notes: string | null
+          scoped_by: string | null
+          scoped_at: string
+          is_frozen: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          software_module_id: string
+          is_selected?: boolean
+          quantity?: number
+          notes?: string | null
+          scoped_by?: string | null
+          scoped_at?: string
+          is_frozen?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          software_module_id?: string
+          is_selected?: boolean
+          quantity?: number
+          notes?: string | null
+          scoped_by?: string | null
+          scoped_at?: string
+          is_frozen?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_software_scoping_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_software_scoping_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_software_scoping_scoped_by_fkey"
+            columns: ["scoped_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      site_hardware_scoping: {
+        Row: {
+          id: string
+          site_id: string
+          hardware_item_id: string
+          software_module_id: string | null
+          quantity: number
+          is_auto_suggested: boolean
+          is_custom: boolean
+          custom_name: string | null
+          notes: string | null
+          scoped_by: string | null
+          scoped_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_id: string
+          hardware_item_id: string
+          software_module_id?: string | null
+          quantity?: number
+          is_auto_suggested?: boolean
+          is_custom?: boolean
+          custom_name?: string | null
+          notes?: string | null
+          scoped_by?: string | null
+          scoped_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          site_id?: string
+          hardware_item_id?: string
+          software_module_id?: string | null
+          quantity?: number
+          is_auto_suggested?: boolean
+          is_custom?: boolean
+          custom_name?: string | null
+          notes?: string | null
+          scoped_by?: string | null
+          scoped_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_hardware_scoping_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hardware_scoping_hardware_item_id_fkey"
+            columns: ["hardware_item_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hardware_scoping_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hardware_scoping_scoped_by_fkey"
+            columns: ["scoped_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

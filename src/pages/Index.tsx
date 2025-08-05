@@ -320,7 +320,7 @@ const Index = () => {
                   <div className="flex gap-2">
                     {roleActions.map((action) => (
                       <Link key={action.path} to={action.path}>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white shadow-soft rounded-lg px-4 py-2">
+                        <Button variant="gradient" className="shadow-soft rounded-lg px-4 py-2">
                           <action.icon className="mr-2 h-4 w-4" />
                           {action.label}
                         </Button>
