@@ -23,6 +23,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 // Services
 import { inventoryService } from '@/services/inventoryService';
+import { referenceDataService } from '@/services/referenceDataService';
+import { licenseService } from '@/services/licenseService';
 
 // Types
 import {
@@ -124,11 +126,25 @@ export default function LicenseManagement() {
     { license_type: 'Integration', count: mockSummary.integration_licenses, active: mockSummary.integration_licenses, expiring: 0, expired: 0 },
   ];
 
-  const mockLicensesByStatus: LicenseByStatus[] = [
-    { status: 'Active', count: mockSummary.active_licenses },
-    { status: 'Expired', count: mockSummary.expired_licenses },
-    { status: 'Expiring Soon', count: mockSummary.expiring_soon },
-  ];
+  const { data: sites = [] } = useQuery({
+    queryKey: ['sites'],
+    queryFn: referenceDataService.getSites,
+  });
+
+  const { data: licenseByType } = useQuery({
+    queryKey: ['license-by-type'],
+    queryFn: licenseService.getLicenseByType,
+  });
+
+  const { data: licenseByStatus } = useQuery({
+    queryKey: ['license-by-status'],
+    queryFn: licenseService.getLicenseByStatus,
+  });
+
+  const { data: licenseByOrganisation } = useQuery({
+    queryKey: ['license-by-organisation'],
+    queryFn: licenseService.getLicenseByOrganisation,
+  });
 
   // Mutations
   const createLicenseMutation = useMutation({
@@ -172,6 +188,59 @@ export default function LicenseManagement() {
     },
   });
 
+  // Enhanced data for charts and analytics
+  const statusChartData = (licenseByStatus as any)?.map?.((item: any) => ({
+    name: item.status,
+    value: item.count,
+  })) || [];
+
+  const typeChartData = (licenseByType as any)?.map?.((item: any) => ({
+    name: item.license_type,
+    active: item.active,
+    expiring: item.expiring,
+    expired: item.expired,
+  })) || [];
+
+  const organisationChartData = (licenseByOrganisation as any)?.map?.((item: any) => ({
+    name: item.organisation,
+    active: item.active,
+    expiring: item.expiring,
+    expired: item.expired,
+  })) || [];
+
+  // Mock data for enhanced analytics
+  const renewalTrendData = [
+    { month: 'Jan', renewals: 8, expirations: 3 },
+    { month: 'Feb', renewals: 12, expirations: 5 },
+    { month: 'Mar', renewals: 15, expirations: 7 },
+    { month: 'Apr', renewals: 10, expirations: 4 },
+    { month: 'May', renewals: 18, expirations: 6 },
+    { month: 'Jun', renewals: 22, expirations: 9 },
+  ];
+
+  const alerts = [
+    {
+      id: 1,
+      type: 'warning',
+      title: 'License Expiring Soon',
+      message: '5 software licenses will expire within 30 days.',
+      time: '2 hours ago'
+    },
+    {
+      id: 2,
+      type: 'error',
+      title: 'Expired Licenses',
+      message: '3 hardware licenses have expired and need immediate attention.',
+      time: '4 hours ago'
+    },
+    {
+      id: 3,
+      type: 'success',
+      title: 'Renewal Completed',
+      message: 'ASDA Redditch software licenses renewed successfully.',
+      time: '6 hours ago'
+    }
+  ];
   const handleDeleteLicense = (licenseId: string) => {
     if (confirm('Are you sure you want to delete this license?')) {
       deleteLicenseMutation.mutate(licenseId);

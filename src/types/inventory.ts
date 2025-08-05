@@ -334,6 +334,11 @@ export const INVENTORY_STATUSES: { value: InventoryStatus; label: string; color:
   { value: 'retired', label: 'Retired', color: 'bg-gray-100 text-gray-800' },
 ];
 
+// Backwards compatibility aliases
+export const INVENTORY_STATUS_OPTIONS = INVENTORY_STATUSES;
+export const INVENTORY_TYPE_OPTIONS = INVENTORY_TYPES;
+export const GROUP_TYPE_OPTIONS = GROUP_TYPES;
+
 export const getInventoryTypeLabel = (type: InventoryType): string => {
   return INVENTORY_TYPES.find(t => t.value === type)?.label || type;
 };

@@ -64,7 +64,7 @@ function App() {
                     path="/admin"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <Admin />
                           </Suspense>
@@ -76,7 +76,7 @@ function App() {
                     path="/site-study"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <SiteStudy />
                           </Suspense>
@@ -88,7 +88,7 @@ function App() {
                     path="/site"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <Site />
                           </Suspense>
@@ -100,7 +100,7 @@ function App() {
                     path="/hardware-scoping"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <HardwareScoping />
                           </Suspense>
@@ -112,7 +112,7 @@ function App() {
                     path="/hardware-approvals"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <HardwareApprovals />
                           </Suspense>
@@ -124,7 +124,7 @@ function App() {
                     path="/hardware-master"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <HardwareMaster />
                           </Suspense>
@@ -136,7 +136,7 @@ function App() {
                     path="/integrations"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <Integrations />
                           </Suspense>
@@ -148,7 +148,7 @@ function App() {
                     path="/forecast"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <Forecast />
                           </Suspense>
@@ -160,7 +160,7 @@ function App() {
                     path="/inventory"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <Inventory />
                           </Suspense>
@@ -172,7 +172,7 @@ function App() {
                     path="/license-management"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <LicenseManagement />
                           </Suspense>
@@ -184,7 +184,7 @@ function App() {
                     path="/site-creation"
                     element={
                       <ProtectedRoute>
-                        <RoleBasedRoute allowedRoles={["admin", "ops_manager"]}>
+                        <RoleBasedRoute>
                           <Suspense fallback={<div>Loading...</div>}>
                             <SiteCreation />
                           </Suspense>

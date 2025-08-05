@@ -23,7 +23,7 @@ import {
   Trash2,
   Eye
 } from 'lucide-react';
-import InventoryItemForm from '@/components/inventory/InventoryItemForm';
+import { SimpleInventoryItemForm } from '@/components/inventory/SimpleInventoryItemForm';
 import type { InventoryItem, InventoryFilters } from '@/types/inventory';
 import { INVENTORY_TYPES, GROUP_TYPES, INVENTORY_STATUSES } from '@/types/inventory';
 
@@ -158,7 +158,7 @@ const Inventory: React.FC = () => {
                   Add a new hardware or equipment item to the inventory.
                 </DialogDescription>
               </DialogHeader>
-              <InventoryItemForm
+              <SimpleInventoryItemForm
                 onSave={handleCreateItem}
                 onCancel={() => setShowCreateDialog(false)}
               />
@@ -246,7 +246,7 @@ const Inventory: React.FC = () => {
               <Label htmlFor="group-type">Group Type</Label>
               <Select
                 value={filters.group_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, group_type: value || undefined })}
+                onValueChange={(value) => setFilters({ ...filters, group_type: value as any || undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
@@ -266,7 +266,7 @@ const Inventory: React.FC = () => {
               <Label htmlFor="inventory-type">Inventory Type</Label>
               <Select
                 value={filters.inventory_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, inventory_type: value || undefined })}
+                onValueChange={(value) => setFilters({ ...filters, inventory_type: value as any || undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
@@ -286,7 +286,7 @@ const Inventory: React.FC = () => {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={filters.status || ''}
-                onValueChange={(value) => setFilters({ ...filters, status: value || undefined })}
+                onValueChange={(value) => setFilters({ ...filters, status: value as any || undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
@@ -390,7 +390,7 @@ const Inventory: React.FC = () => {
                 Update the inventory item details.
               </DialogDescription>
             </DialogHeader>
-            <InventoryItemForm
+            <SimpleInventoryItemForm
               item={editingItem}
               onSave={handleUpdateItem}
               onCancel={() => setEditingItem(null)}

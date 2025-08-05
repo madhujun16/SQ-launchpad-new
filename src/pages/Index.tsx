@@ -56,9 +56,9 @@ import { Link } from "react-router-dom";
 import { getRoleConfig } from "@/lib/roles";
 
 // Lazy load dashboard components
-const AdminDashboard = lazy(() => import('@/components/dashboards/AdminDashboard'));
-const OpsManagerDashboard = lazy(() => import('@/components/dashboards/OpsManagerDashboard'));
-const DeploymentEngineerDashboard = lazy(() => import('@/components/dashboards/DeploymentEngineerDashboard'));
+const SimpleAdminDashboard = lazy(() => import('@/components/dashboards/SimpleAdminDashboard'));
+const SimpleOpsManagerDashboard = lazy(() => import('@/components/dashboards/SimpleOpsManagerDashboard'));
+const SimpleDeploymentEngineerDashboard = lazy(() => import('@/components/dashboards/SimpleDeploymentEngineerDashboard'));
 
 // Loading component for dashboard
 const DashboardLoader = () => (
@@ -80,19 +80,19 @@ const Index = () => {
       case 'admin':
         return (
           <Suspense fallback={<DashboardLoader />}>
-            <AdminDashboard />
+            <SimpleAdminDashboard />
           </Suspense>
         );
       case 'ops_manager':
         return (
           <Suspense fallback={<DashboardLoader />}>
-            <OpsManagerDashboard />
+            <SimpleOpsManagerDashboard />
           </Suspense>
         );
       case 'deployment_engineer':
         return (
           <Suspense fallback={<DashboardLoader />}>
-            <DeploymentEngineerDashboard />
+            <SimpleDeploymentEngineerDashboard />
           </Suspense>
         );
       default:
