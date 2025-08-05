@@ -241,6 +241,7 @@ const Admin = () => {
       console.log('Profile updated successfully:', profileData);
 
       // Delete existing roles
+      console.log('Deleting existing roles for user_id:', editingUser.user_id);
       const { error: deleteError } = await supabase
         .from('user_roles')
         .delete()
@@ -384,11 +385,12 @@ const Admin = () => {
   };
 
   const openEditUserDialog = (user: User) => {
+    console.log('Opening edit dialog for user:', user);
     setEditingUser(user);
     setCreateUserForm({
-      email: user.email,
-      full_name: user.full_name,
-      roles: user.user_roles.map(r => r.role)
+      email: user.email || '',
+      full_name: user.full_name || '',
+      roles: user.user_roles?.map(r => r.role) || []
     });
     setShowEditUserDialog(true);
   };
