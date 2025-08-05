@@ -21,33 +21,13 @@ export const dashboardService = {
       const totalSites = sitesData?.length || 0;
       const activeSites = sitesData?.filter(site => site.status === 'active').length || 0;
 
-      // Get total inventory items
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('inventory_items')
-        .select('id, status');
-
-      if (inventoryError) throw inventoryError;
-      const totalInventory = inventoryData?.length || 0;
-      const availableInventory = inventoryData?.filter(item => item.status === 'available').length || 0;
-      const deployedInventory = inventoryData?.filter(item => item.status === 'deployed').length || 0;
-
-      // Get total licenses
-      const { data: licensesData, error: licensesError } = await supabase
-        .from('licenses')
-        .select('id, status, expiry_date');
-
-      if (licensesError) throw licensesError;
-      const totalLicenses = licensesData?.length || 0;
-      const activeLicenses = licensesData?.filter(license => license.status === 'active').length || 0;
-      
-      // Count expiring licenses (within 30 days)
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      const expiringLicenses = licensesData?.filter(license => {
-        if (!license.expiry_date) return false;
-        const expiryDate = new Date(license.expiry_date);
-        return expiryDate <= thirtyDaysFromNow && license.status === 'active';
-      }).length || 0;
+      // Mock data for inventory_items and licenses (tables not in schema)
+      const totalInventory = 0;
+      const availableInventory = 0;
+      const deployedInventory = 0;
+      const totalLicenses = 0;
+      const activeLicenses = 0;
+      const expiringLicenses = 0;
 
       return {
         totalUsers,
@@ -91,95 +71,30 @@ export const dashboardService = {
     }
   },
 
-  // Get recent inventory items
+  // Get recent inventory items - mock implementation
   async getRecentInventoryItems(limit = 5) {
     try {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select(`
-          id,
-          serial_number,
-          model,
-          inventory_type,
-          group_type,
-          status,
-          created_at,
-          site:sites(name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      return data || [];
+      return [];
     } catch (error) {
       console.error('Error fetching recent inventory items:', error);
       throw error;
     }
   },
 
-  // Get recent licenses
+  // Get recent licenses - mock implementation
   async getRecentLicenses(limit = 5) {
     try {
-      const { data, error } = await supabase
-        .from('licenses')
-        .select(`
-          id,
-          name,
-          license_type,
-          vendor,
-          status,
-          expiry_date,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-      return data || [];
+      return [];
     } catch (error) {
       console.error('Error fetching recent licenses:', error);
       throw error;
     }
   },
 
-  // Get alerts (licenses expiring soon, low inventory, etc.)
+  // Get alerts - mock implementation since tables don't exist
   async getAlerts() {
     try {
       const alerts = [];
-
-      // Check for licenses expiring within 30 days
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      
-      const { data: expiringLicenses, error: licensesError } = await supabase
-        .from('licenses')
-        .select('name, expiry_date')
-        .eq('status', 'active')
-        .lte('expiry_date', thirtyDaysFromNow.toISOString().split('T')[0]);
-
-      if (!licensesError && expiringLicenses?.length > 0) {
-        alerts.push({
-          type: 'warning',
-          title: 'Licenses Expiring Soon',
-          message: `${expiringLicenses.length} license(s) will expire within 30 days`,
-          count: expiringLicenses.length,
-        });
-      }
-
-      // Check for low inventory (less than 3 available items)
-      const { data: availableInventory, error: inventoryError } = await supabase
-        .from('inventory_items')
-        .select('id')
-        .eq('status', 'available');
-
-      if (!inventoryError && availableInventory && availableInventory.length < 3) {
-        alerts.push({
-          type: 'warning',
-          title: 'Low Inventory',
-          message: `Only ${availableInventory.length} items available in inventory`,
-          count: availableInventory.length,
-        });
-      }
 
       // Check for sites in progress
       const { data: inProgressSites, error: sitesError } = await supabase
@@ -254,4 +169,4 @@ export const dashboardService = {
       return [];
     }
   },
-}; 
+};

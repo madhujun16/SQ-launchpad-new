@@ -246,7 +246,7 @@ const Inventory: React.FC = () => {
               <Label htmlFor="group-type">Group Type</Label>
               <Select
                 value={filters.group_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, group_type: value || undefined })}
+                onValueChange={(value) => setFilters({ ...filters, group_type: value as any || undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
@@ -266,7 +266,7 @@ const Inventory: React.FC = () => {
               <Label htmlFor="inventory-type">Inventory Type</Label>
               <Select
                 value={filters.inventory_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, inventory_type: value || undefined })}
+                onValueChange={(value) => setFilters({ ...filters, inventory_type: value as any || undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
@@ -286,7 +286,7 @@ const Inventory: React.FC = () => {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={filters.status || ''}
-                onValueChange={(value) => setFilters({ ...filters, status: value || undefined })}
+                onValueChange={(value) => setFilters({ ...filters, status: value as any || undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />

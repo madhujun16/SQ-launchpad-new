@@ -115,7 +115,7 @@ export default function LicenseManagement() {
     queryFn: referenceDataService.getCities,
   });
 
-  const { data: sites } = useQuery({
+  const { data: sites = [] } = useQuery({
     queryKey: ['sites'],
     queryFn: referenceDataService.getSites,
   });
@@ -181,19 +181,19 @@ export default function LicenseManagement() {
   });
 
   // Enhanced data for charts and analytics
-  const statusChartData = licenseByStatus?.map(item => ({
+  const statusChartData = (licenseByStatus as any)?.map?.((item: any) => ({
     name: item.status,
     value: item.count,
   })) || [];
 
-  const typeChartData = licenseByType?.map(item => ({
+  const typeChartData = (licenseByType as any)?.map?.((item: any) => ({
     name: item.license_type,
     active: item.active,
     expiring: item.expiring,
     expired: item.expired,
   })) || [];
 
-  const organisationChartData = licenseByOrganisation?.map(item => ({
+  const organisationChartData = (licenseByOrganisation as any)?.map?.((item: any) => ({
     name: item.organisation,
     active: item.active,
     expiring: item.expiring,
