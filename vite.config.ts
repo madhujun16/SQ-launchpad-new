@@ -1,32 +1,54 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
-import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Optimize dev server performance
+    hmr: {
+      overlay: false
+    }
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
-    // Add bundle analyzer in development
-    mode === 'development' && visualizer({
-      filename: 'dist/stats.html',
-      open: true,
-      gzipSize: true,
-      brotliSize: true,
-    }),
-  ].filter(Boolean),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Optimize development performance
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-tooltip',
+      'clsx',
+      'class-variance-authority',
+      'tailwind-merge'
+    ],
+    // Exclude heavy libraries from pre-bundling
+    exclude: ['recharts', 'embla-carousel-react']
+  },
+  // Enable CSS code splitting
+  css: {
+    devSourcemap: false
+  },
+  // Optimize development performance
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  },
+  // Development-specific optimizations
   build: {
     rollupOptions: {
       output: {
@@ -101,28 +123,5 @@ export default defineConfig(({ mode }) => ({
     },
     // Optimize asset handling
     assetsInlineLimit: 4096, // 4kb - inline small assets
-  },
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'lucide-react',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-toast',
-      '@radix-ui/react-tooltip',
-      'clsx',
-      'class-variance-authority',
-      'tailwind-merge'
-    ],
-    // Exclude heavy libraries from pre-bundling
-    exclude: ['recharts', 'embla-carousel-react']
-  },
-  // Enable CSS code splitting
-  css: {
-    devSourcemap: false
   }
 }));

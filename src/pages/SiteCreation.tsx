@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -231,8 +230,6 @@ const SiteCreation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Header />
-      
       <div className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">

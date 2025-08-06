@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import Header from '@/components/Header';
 import { getRoleConfig, hasPermission, ROLES } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -758,7 +757,6 @@ const Admin = () => {
   if (!hasPermission(currentRole || 'admin', 'manage_users')) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <Shield className="h-16 w-16 mx-auto mb-4 text-red-500" />
@@ -774,7 +772,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           {/* Header */}

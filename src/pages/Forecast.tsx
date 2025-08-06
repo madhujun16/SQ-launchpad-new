@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { hasPermission } from '@/lib/roles';
+import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +59,7 @@ const Forecast = () => {
 
   // Check if user has permission to access forecast
   useEffect(() => {
-    if (currentRole && !hasPermission(currentRole, 'view_dashboard')) {
+    if (currentRole && !getRoleConfig(currentRole).permissions.includes('view_dashboard')) {
       toast.error('You do not have permission to access the Forecast panel');
       navigate('/dashboard');
     }
@@ -201,10 +200,9 @@ const Forecast = () => {
   const metrics = getKeyMetrics();
 
   // If user doesn't have permission, show access denied
-  if (currentRole && !hasPermission(currentRole, 'view_dashboard')) {
+  if (currentRole && !getRoleConfig(currentRole).permissions.includes('view_dashboard')) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-6 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
@@ -219,8 +217,6 @@ const Forecast = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Project Forecast</h1>

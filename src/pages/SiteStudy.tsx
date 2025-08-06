@@ -39,7 +39,6 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import Header from '@/components/Header';
 
 export default function SiteStudy() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -659,8 +658,6 @@ export default function SiteStudy() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">

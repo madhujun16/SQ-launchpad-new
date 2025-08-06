@@ -1,19 +1,85 @@
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Building, 
+  Package, 
+  Settings, 
+  Users, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle, 
+  Search, 
+  Filter,
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  Download,
+  Upload,
+  FileText,
+  BarChart3,
+  TrendingUp,
+  Activity,
+  Zap,
+  Monitor,
+  Printer,
+  Smartphone,
+  Tv,
+  Camera,
+  Wifi,
+  Globe,
+  Navigation,
+  Map,
+  Truck,
+  Wrench,
+  Shield,
+  Database,
+  CreditCard,
+  Bell,
+  User,
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  Calendar as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  Eye as EyeIcon,
+  Download as DownloadIcon,
+  Upload as UploadIcon,
+  List,
+  Search as SearchIcon,
+  Settings as SettingsIcon,
+  Mail,
+  Activity as ActivityIcon,
+  ClipboardList,
+  Truck as TruckIcon,
+  Clock as ClockIcon,
+  AlertCircle as AlertCircleIcon,
+  TrendingUp as TrendingUpIcon
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { getRoleConfig, canAccessPage } from '@/lib/roles';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -24,45 +90,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Building,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Plus,
-  Upload,
-  Download,
-  Eye,
-  Edit,
-  Trash2,
-  FileText,
-  Package,
-  Truck,
-  Wrench,
-  Settings,
-  Calendar,
-  User,
-  MapPin,
-  Monitor,
-  Printer,
-  CreditCard,
-  Smartphone,
-  Tablet,
-  Server,
-  Wifi,
-  Zap,
-  Shield,
   FileImage
 } from "lucide-react";
-import { useAuth } from '@/hooks/useAuth';
-import Header from '@/components/Header';
 
 interface HardwareItem {
   id: string;
@@ -453,7 +482,7 @@ const HardwareScoping = () => {
       case 'dispatched':
         return <Package className="h-4 w-4" />;
       case 'rejected':
-        return <AlertTriangle className="h-4 w-4" />;
+        return <AlertCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
@@ -471,7 +500,6 @@ const HardwareScoping = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Header />
       <div className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Hardware Scoping & Approval</h1>

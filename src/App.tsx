@@ -10,10 +10,7 @@ import { Suspense, lazy } from "react";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { testDatabase } from "@/utils/test-db";
-
-// Make test function available globally for debugging
-(window as any).testDatabase = testDatabase;
+import Layout from "./components/Layout";
 
 // Lazy load heavy components
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -59,9 +56,11 @@ function App() {
                     path="/dashboard"
                     element={
                       <ProtectedRoute>
-                        <Suspense fallback={<div>Loading...</div>}>
-                          <Dashboard />
-                        </Suspense>
+                        <Layout>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Dashboard />
+                          </Suspense>
+                        </Layout>
                       </ProtectedRoute>
                     }
                   />
@@ -70,9 +69,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Sites />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Sites />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -82,9 +83,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <ApprovalsProcurement />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <ApprovalsProcurement />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -94,9 +97,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Deployment />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Deployment />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -106,9 +111,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Assets />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Assets />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -118,9 +125,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <PlatformConfiguration />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <PlatformConfiguration />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -130,9 +139,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Admin />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Admin />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -142,21 +153,25 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <SiteStudy />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <SiteStudy />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
                   />
                   <Route
-                    path="/site"
+                    path="/site/:id"
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Site />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Site />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -166,9 +181,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <HardwareScoping />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <HardwareScoping />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -178,9 +195,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <HardwareApprovals />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <HardwareApprovals />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -190,9 +209,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <HardwareMaster />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <HardwareMaster />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -202,9 +223,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Integrations />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Integrations />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -214,9 +237,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Forecast />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Forecast />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -226,9 +251,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Inventory />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <Inventory />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -238,9 +265,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <LicenseManagement />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <LicenseManagement />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }
@@ -250,9 +279,11 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <RoleBasedRoute>
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <SiteCreation />
-                          </Suspense>
+                          <Layout>
+                            <Suspense fallback={<div>Loading...</div>}>
+                              <SiteCreation />
+                            </Suspense>
+                          </Layout>
                         </RoleBasedRoute>
                       </ProtectedRoute>
                     }

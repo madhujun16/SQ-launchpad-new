@@ -15,7 +15,6 @@ import {
   MapPin,
   Package,
   Shield,
-  Wrench,
   BarChart3,
   Database,
   CreditCard,
@@ -35,7 +34,8 @@ import {
   ClipboardList,
   Truck,
   Clock,
-  AlertCircle
+  AlertCircle,
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -61,7 +61,7 @@ import {
 import { useState } from 'react';
 
 const Header = () => {
-  const { profile, currentRole, availableRoles, switchRole, signOut } = useAuth();
+  const { profile, currentRole, availableRoles, switchRole, signOut, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -96,134 +96,151 @@ const Header = () => {
 
   // Navigation structure with new 6 main tabs
   const getNavigationStructure = () => {
-    if (!currentRole) return [];
+    if (!currentRole) {
+      return [];
+    }
 
-    const structure = [
+    const baseNavigation = [
       {
-        label: 'Dashboard',
+        type: 'link' as const,
         path: '/dashboard',
+        label: 'Dashboard',
         icon: Home,
-        type: 'link'
+        description: 'Overview and analytics'
       },
       {
+        type: 'dropdown' as const,
         label: 'Sites',
-        path: '/sites',
         icon: Building,
-        type: 'link'
+        items: [
+          {
+            path: '/sites',
+            label: 'All Sites',
+            icon: Building,
+            description: 'View and manage all sites'
+          },
+          {
+            path: '/site-study',
+            label: 'Site Studies',
+            icon: FileText,
+            description: 'Site analysis and planning'
+          },
+          {
+            path: '/site-creation',
+            label: 'Create Site',
+            icon: Plus,
+            description: 'Add new site to the system'
+          }
+        ]
       },
       {
-        label: 'Approvals & Procurement',
-        path: '/approvals-procurement',
-        icon: AlertCircle,
-        type: 'link'
+        type: 'dropdown' as const,
+        label: 'Hardware',
+        icon: Package,
+        items: [
+          {
+            path: '/hardware-scoping',
+            label: 'Hardware Scoping',
+            icon: Package,
+            description: 'Define hardware requirements'
+          },
+          {
+            path: '/hardware-approvals',
+            label: 'Hardware Approvals',
+            icon: Shield,
+            description: 'Review and approve hardware'
+          },
+          {
+            path: '/hardware-master',
+            label: 'Hardware Master',
+            icon: Database,
+            description: 'Master hardware inventory'
+          }
+        ]
       },
       {
-        label: 'Deployment',
-        path: '/deployment',
-        icon: Wrench,
-        type: 'link'
+        type: 'dropdown' as const,
+        label: 'Operations',
+        icon: Settings,
+        items: [
+          {
+            path: '/deployment',
+            label: 'Deployment',
+            icon: Truck,
+            description: 'Track deployment progress'
+          },
+          {
+            path: '/approvals-procurement',
+            label: 'Approvals & Procurement',
+            icon: CreditCard,
+            description: 'Manage approvals and purchases'
+          },
+          {
+            path: '/assets',
+            label: 'Assets',
+            icon: Monitor,
+            description: 'Asset management and tracking'
+          }
+        ]
       },
       {
-        label: 'Assets',
-        path: '/assets',
-        icon: Database,
-        type: 'link'
+        type: 'dropdown' as const,
+        label: 'Management',
+        icon: BarChart3,
+        items: [
+          {
+            path: '/inventory',
+            label: 'Inventory',
+            icon: Package,
+            description: 'Inventory management'
+          },
+          {
+            path: '/license-management',
+            label: 'License Management',
+            icon: Shield,
+            description: 'Software license tracking'
+          },
+          {
+            path: '/forecast',
+            label: 'Forecast',
+            icon: TrendingUp,
+            description: 'Future planning and predictions'
+          }
+        ]
+      },
+      {
+        type: 'dropdown' as const,
+        label: 'System',
+        icon: Settings,
+        items: [
+          {
+            path: '/platform-configuration',
+            label: 'Platform Configuration',
+            icon: Settings,
+            description: 'System settings and configuration'
+          },
+          {
+            path: '/integrations',
+            label: 'Integrations',
+            icon: Zap,
+            description: 'Third-party integrations'
+          }
+        ]
       }
     ];
 
-    // Add Platform Configuration only for Admin
+    // Add admin-specific navigation
     if (currentRole === 'admin') {
-      structure.push({
-        label: 'Platform Configuration',
-        path: '/platform-configuration',
-        icon: Settings,
-        type: 'link'
-      });
-    }
-
-    return structure;
-  };
-
-    // Role-specific dropdowns
-    if (canAccessPage(currentRole, '/admin')) {
-      structure.push({
-        label: 'Admin Utilities',
+      baseNavigation.push({
+        type: 'link' as const,
+        path: '/admin',
+        label: 'Admin',
         icon: Shield,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'User Management',
-            path: '/admin',
-            icon: Users,
-            description: 'Manage users and roles'
-          },
-          {
-            label: 'Organization Management',
-            path: '/admin',
-            icon: Building,
-            description: 'Manage organizations'
-          }
-        ]
+        description: 'Administrative functions'
       });
     }
 
-    if (canAccessPage(currentRole, '/ops-manager')) {
-      structure.push({
-        label: 'Ops Manager',
-        icon: Users,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'My Approvals',
-            path: '/ops-manager/approvals',
-            icon: CheckCircle,
-            description: 'Pending approvals'
-          },
-          {
-            label: 'My Sites',
-            path: '/ops-manager/sites',
-            icon: Building,
-            description: 'Managed sites'
-          },
-          {
-            label: 'Calendar View',
-            path: '/ops-manager/calendar',
-            icon: Calendar,
-            description: 'Schedule overview'
-          }
-        ]
-      });
-    }
-
-    if (canAccessPage(currentRole, '/deployment')) {
-      structure.push({
-        label: 'Deployment',
-        icon: Wrench,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'Assigned Sites',
-            path: '/deployment/assigned',
-            icon: MapPin,
-            description: 'Your assigned sites'
-          },
-          {
-            label: 'Deployment Checklist',
-            path: '/deployment/checklist',
-            icon: ClipboardList,
-            description: 'Deployment tasks'
-          },
-          {
-            label: 'Upload Status Reports',
-            path: '/deployment/reports',
-            icon: Upload,
-            description: 'Submit reports'
-          }
-        ]
-      });
-    }
-
-    return structure;
+    return baseNavigation;
   };
 
   const navigationStructure = getNavigationStructure();
@@ -355,11 +372,11 @@ const Header = () => {
   );
 
   return (
-    <header className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="w-full px-2 sm:px-4 lg:px-6 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo and Brand - Left side */}
-          <div className="flex items-center space-x-3 flex-shrink-0">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Left Side - Logo */}
+          <div className="flex items-center">
             <Link to="/dashboard" className="flex items-center space-x-3">
               <img src={smartqLogo} alt="SmartQ Launchpad" className="h-8 w-8 sm:h-10 sm:w-10" />
               <div className="hidden sm:block">
@@ -368,10 +385,10 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Right Side - Navigation and Actions (ChatGPT style) */}
+          {/* Right Side - Navigation and Actions */}
           <div className="flex items-center space-x-2">
-            {/* Desktop Navigation - Right side */}
-            {renderDesktopNavigation()}
+            {/* Desktop Navigation */}
+            {!loading && currentRole && renderDesktopNavigation()}
 
             {/* Notifications */}
             <Button variant="ghost" size="icon" className="relative">
@@ -380,99 +397,101 @@ const Header = () => {
                 3
               </Badge>
             </Button>
-            
-            {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                    <RoleIcon className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-foreground">
-                      {profile?.full_name || 'User'}
-                    </p>
-                    <p className={`text-xs ${roleConfig?.color || 'text-muted-foreground'}`}>
-                      {roleConfig?.displayName || 'User'}
-                    </p>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem disabled>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>{profile?.email}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                
-                {/* Quick Actions */}
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                  
-                  {canAccessPage(currentRole || 'admin', '/site-study') && (
-                    <DropdownMenuItem onClick={() => navigate('/site-study')}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      <span>Site Study</span>
-                    </DropdownMenuItem>
-                  )}
-                  
-                  {canAccessPage(currentRole || 'admin', '/site-creation') && (
-                    <DropdownMenuItem onClick={() => navigate('/site-creation')}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      <span>Create Site</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuGroup>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Role Switching */}
-                {availableRoles.length > 1 && (
-                  <>
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
-                      {availableRoles.map((role) => {
-                        const config = getRoleConfig(role);
-                        const RoleIconComponent = config.icon;
-                        return (
-                          <DropdownMenuItem 
-                            key={role}
-                            onClick={() => {
-                              switchRole(role);
-                              handleRoleBasedNavigation(role);
-                            }}
-                            className={`${currentRole === role ? "bg-muted" : ""} flex items-center`}
-                          >
-                            <RoleIconComponent className={`mr-2 h-4 w-4 ${config.color}`} />
-                            <span>{config.displayName}</span>
-                            {currentRole === role && (
-                              <Badge variant="secondary" className="ml-auto text-xs">
-                                Active
-                              </Badge>
-                            )}
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                
-                <DropdownMenuItem onClick={signOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
 
-            {/* Mobile Menu Button - ChatGPT style hamburger */}
+            {/* User Menu */}
+            {!loading && profile && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <RoleIcon className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="hidden md:block text-left">        
+                      <p className="text-sm font-medium text-foreground">
+                        {profile?.full_name || 'User'}
+                      </p>
+                      <p className={`text-xs ${roleConfig?.color || 'text-muted-foreground'}`}>
+                        {roleConfig?.displayName || 'User'}
+                      </p>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">     
+                  <DropdownMenuItem disabled>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>{profile?.email}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+
+                  {/* Quick Actions */}
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+
+                    {canAccessPage(currentRole || 'admin', '/site-study') && (
+                      <DropdownMenuItem onClick={() => navigate('/site-study')}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Site Study</span>
+                      </DropdownMenuItem>
+                    )}
+
+                    {canAccessPage(currentRole || 'admin', '/site-creation') && (
+                      <DropdownMenuItem onClick={() => navigate('/site-creation')}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        <span>Create Site</span>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuGroup>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Role Switching */}
+                  {availableRoles.length > 1 && (
+                    <>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
+                        {availableRoles.map((role) => {
+                          const config = getRoleConfig(role);
+                          const RoleIconComponent = config.icon;       
+                          return (
+                            <DropdownMenuItem
+                              key={role}
+                              onClick={() => {
+                                switchRole(role);
+                                handleRoleBasedNavigation(role);       
+                              }}
+                              className={`${currentRole === role ? "bg-muted" : ""} flex items-center`}
+                            >
+                              <RoleIconComponent className={`mr-2 h-4 w-4 ${config.color}`} />
+                              <span>{config.displayName}</span>        
+                              {currentRole === role && (
+                                <Badge variant="secondary" className="ml-auto text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
+                  <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Mobile Menu Button */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden">
                   <div className="flex flex-col space-y-1">
-                    <div className="w-5 h-0.5 bg-current"></div>
-                    <div className="w-5 h-0.5 bg-current"></div>
-                    <div className="w-5 h-0.5 bg-current"></div>
+                    <div className="w-5 h-0.5 bg-current"></div>     
+                    <div className="w-5 h-0.5 bg-current"></div>     
+                    <div className="w-5 h-0.5 bg-current"></div>     
                   </div>
                 </Button>
               </SheetTrigger>
@@ -488,48 +507,50 @@ const Header = () => {
                 </SheetHeader>
                 
                 <div className="mt-6">
-                  {renderMobileNavigation()}
+                  {!loading && currentRole && renderMobileNavigation()}
                 </div>
 
                 {/* Mobile User Info */}
-                <div className="mt-8 pt-6 border-t">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                      <RoleIcon className="h-5 w-5 text-primary-foreground" />
+                {!loading && profile && (
+                  <div className="mt-8 pt-6 border-t">
+                    <div className="flex items-center space-x-3 mb-4"> 
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <RoleIcon className="h-5 w-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{profile?.full_name || 'User'}</p>
+                        <p className={`text-sm ${roleConfig?.color || 'text-muted-foreground'}`}>
+                          {roleConfig?.displayName || 'User'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{profile?.full_name || 'User'}</p>
-                      <p className={`text-sm ${roleConfig?.color || 'text-muted-foreground'}`}>
-                        {roleConfig?.displayName || 'User'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Mobile Quick Actions */}
-                  <div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        handleMobileNavigation('/site-study');
-                      }}
-                    >
-                      <FileText className="mr-3 h-4 w-4" />
-                      Site Study
-                    </Button>
                     
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        handleMobileNavigation('/site-creation');
-                      }}
-                    >
-                      <Plus className="mr-3 h-4 w-4" />
-                      Create Site
-                    </Button>
+                    {/* Mobile Quick Actions */}
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          handleMobileNavigation('/site-study');       
+                        }}
+                      >
+                        <FileText className="mr-3 h-4 w-4" />
+                        Site Study
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          handleMobileNavigation('/site-creation');    
+                        }}
+                      >
+                        <Plus className="mr-3 h-4 w-4" />
+                        Create Site
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </SheetContent>
             </Sheet>
           </div>

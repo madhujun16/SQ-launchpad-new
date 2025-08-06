@@ -560,7 +560,7 @@ const Deployment = () => {
                         <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
                       </div>
                       <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
-                        <getStatusConfig(deployment.status).icon className="h-3 w-3" />
+                        {React.createElement(getStatusConfig(deployment.status).icon, { className: "h-3 w-3" })}
                         <span>{getStatusConfig(deployment.status).label}</span>
                       </Badge>
                     </div>
