@@ -264,8 +264,8 @@ const Header = () => {
               to={item.path}
               className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActivePage(item.path)
-                  ? 'bg-green-600 text-white shadow-soft'
-                  : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
               }`}
             >
               <item.icon className="h-4 w-4" />
@@ -282,8 +282,8 @@ const Header = () => {
                   variant="ghost"
                   className={`flex items-center space-x-2 px-3 py-2 h-auto ${
                     item.items?.some(subItem => isActivePage(subItem.path))
-                      ? 'bg-green-600 text-white shadow-soft'
-                      : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <item.icon className="h-4 w-4" />
@@ -372,28 +372,50 @@ const Header = () => {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-green-600 via-green-700 to-black shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Left Side - Logo */}
-          <div className="flex items-center">
+          {/* Left Side - Logo and Search */}
+          <div className="flex items-center space-x-6">
             <Link to="/dashboard" className="flex items-center space-x-3">
               <img src={smartqLogo} alt="SmartQ Launchpad" className="h-8 w-8 sm:h-10 sm:w-10" />
               <div className="hidden sm:block">
-                <h1 className="text-lg sm:text-2xl font-bold text-foreground">SmartQ Launchpad</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-white">SmartQ Launchpad</h1>
               </div>
             </Link>
+            
+            {/* Search Bar */}
+            <div className="hidden md:flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+              <Search className="h-4 w-4 text-white/70" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="bg-transparent text-white placeholder-white/70 text-sm outline-none w-48"
+              />
+            </div>
           </div>
 
-          {/* Right Side - Navigation and Actions */}
-          <div className="flex items-center space-x-2">
-            {/* Desktop Navigation */}
+          {/* Center - Navigation */}
+          <div className="hidden lg:flex items-center space-x-1">
             {!loading && currentRole && renderDesktopNavigation()}
+          </div>
+
+          {/* Right Side - Actions and User */}
+          <div className="flex items-center space-x-3">
+            {/* Mobile Search Button */}
+            <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
+              <Search className="h-5 w-5" />
+            </Button>
+
+            {/* Messages */}
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+              <Mail className="h-5 w-5" />
+            </Button>
 
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
               <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-warning text-warning-foreground text-xs flex items-center justify-center p-0">
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
                 3
               </Badge>
             </Button>
@@ -402,15 +424,15 @@ const Header = () => {
             {!loading && profile && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                      <RoleIcon className="h-4 w-4 text-primary-foreground" />
+                  <Button variant="ghost" className="flex items-center space-x-2 text-white hover:bg-white/10">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <RoleIcon className="h-4 w-4 text-white" />
                     </div>
                     <div className="hidden md:block text-left">        
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-sm font-medium text-white">
                         {profile?.full_name || 'User'}
                       </p>
-                      <p className={`text-xs ${roleConfig?.color || 'text-muted-foreground'}`}>
+                      <p className="text-xs text-white/80">
                         {roleConfig?.displayName || 'User'}
                       </p>
                     </div>
@@ -487,11 +509,11 @@ const Header = () => {
             {/* Mobile Menu Button */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="lg:hidden text-white hover:bg-white/10">
                   <div className="flex flex-col space-y-1">
-                    <div className="w-5 h-0.5 bg-current"></div>     
-                    <div className="w-5 h-0.5 bg-current"></div>     
-                    <div className="w-5 h-0.5 bg-current"></div>     
+                    <div className="w-5 h-0.5 bg-white"></div>     
+                    <div className="w-5 h-0.5 bg-white"></div>     
+                    <div className="w-5 h-0.5 bg-white"></div>     
                   </div>
                 </Button>
               </SheetTrigger>
@@ -505,6 +527,16 @@ const Header = () => {
                     Access all available features and pages
                   </SheetDescription>
                 </SheetHeader>
+                
+                {/* Mobile Search */}
+                <div className="mt-4 flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2">
+                  <Search className="h-4 w-4 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="bg-transparent text-gray-900 placeholder-gray-500 text-sm outline-none flex-1"
+                  />
+                </div>
                 
                 <div className="mt-6">
                   {!loading && currentRole && renderMobileNavigation()}
