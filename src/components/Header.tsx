@@ -94,7 +94,7 @@ const Header = () => {
   const roleConfig = getCurrentRoleConfig();
   const RoleIcon = roleConfig?.icon || User;
 
-  // Navigation structure with dropdowns as specified
+  // Navigation structure with new 6 main tabs
   const getNavigationStructure = () => {
     if (!currentRole) return [];
 
@@ -107,129 +107,42 @@ const Header = () => {
       },
       {
         label: 'Sites',
+        path: '/sites',
         icon: Building,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'Create Site',
-            path: '/site-creation',
-            icon: Plus,
-            description: 'Create new site'
-          },
-          {
-            label: 'Site Management',
-            path: '/site',
-            icon: Settings,
-            description: 'Manage existing sites'
-          },
-          {
-            label: 'Completed Sites',
-            path: '/completed-sites',
-            icon: CheckCircle,
-            description: 'View completed sites'
-          },
-          {
-            label: 'Forecast (Timeline View)',
-            path: '/forecast',
-            icon: BarChart3,
-            description: 'Project timeline view'
-          }
-        ]
+        type: 'link'
       },
       {
-        label: 'Site Study',
-        icon: FileText,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'Start New Study',
-            path: '/site-study',
-            icon: Plus,
-            description: 'Begin new site study'
-          },
-          {
-            label: 'Completed Studies',
-            path: '/completed-studies',
-            icon: CheckCircle,
-            description: 'View completed studies'
-          },
-          {
-            label: 'View / Edit Studies',
-            path: '/edit-studies',
-            icon: Eye,
-            description: 'Edit existing studies'
-          },
-          {
-            label: 'Export Site Study (PDF)',
-            path: '/export-studies',
-            icon: Download,
-            description: 'Export to PDF'
-          }
-        ]
+        label: 'Approvals & Procurement',
+        path: '/approvals-procurement',
+        icon: AlertCircle,
+        type: 'link'
       },
       {
-        label: 'Hardware',
-        icon: Package,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'Scope Hardware',
-            path: '/hardware-scoping',
-            icon: Search,
-            description: 'Plan hardware requirements'
-          },
-          {
-            label: 'Approvals (Pending / Approved)',
-            path: '/hardware-approvals',
-            icon: AlertCircle,
-            description: 'Manage approvals'
-          },
-          {
-            label: 'Hardware Master List',
-            path: '/hardware-master',
-            icon: List,
-            description: 'Complete hardware catalog'
-          },
-          {
-            label: 'Vendor Dispatch Status',
-            path: '/vendor-dispatch',
-            icon: Truck,
-            description: 'Track vendor shipments'
-          }
-        ]
+        label: 'Deployment',
+        path: '/deployment',
+        icon: Wrench,
+        type: 'link'
       },
       {
-        label: 'Inventory',
+        label: 'Assets',
+        path: '/assets',
         icon: Database,
-        type: 'dropdown',
-        items: [
-          {
-            label: 'View All Inventory',
-            path: '/inventory',
-            icon: Eye,
-            description: 'Browse all inventory'
-          },
-          {
-            label: 'Filter by Site / Type',
-            path: '/inventory-filters',
-            icon: Search,
-            description: 'Advanced filtering'
-          },
-          {
-            label: 'Add Asset',
-            path: '/add-asset',
-            icon: Plus,
-            description: 'Add new asset'
-          },
-          {
-            label: 'License & Warranty Tracker',
-            path: '/license-management',
-            icon: CreditCard,
-            description: 'Track licenses & warranties'
-          }
-        ]
+        type: 'link'
       }
     ];
+
+    // Add Platform Configuration only for Admin
+    if (currentRole === 'admin') {
+      structure.push({
+        label: 'Platform Configuration',
+        path: '/platform-configuration',
+        icon: Settings,
+        type: 'link'
+      });
+    }
+
+    return structure;
+  };
 
     // Role-specific dropdowns
     if (canAccessPage(currentRole, '/admin')) {

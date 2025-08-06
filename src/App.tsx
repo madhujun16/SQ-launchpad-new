@@ -16,7 +16,12 @@ import { testDatabase } from "@/utils/test-db";
 (window as any).testDatabase = testDatabase;
 
 // Lazy load heavy components
-const Index = lazy(() => import("./pages/Index"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Sites = lazy(() => import("./pages/Sites"));
+const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"));
+const Deployment = lazy(() => import("./pages/Deployment"));
+const Assets = lazy(() => import("./pages/Assets"));
+const PlatformConfiguration = lazy(() => import("./pages/PlatformConfiguration"));
 const Admin = lazy(() => import("./pages/Admin"));
 const SiteStudy = lazy(() => import("./pages/SiteStudy"));
 const Site = lazy(() => import("./pages/Site"));
@@ -55,8 +60,68 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Suspense fallback={<div>Loading...</div>}>
-                          <Index />
+                          <Dashboard />
                         </Suspense>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/sites"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Sites />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/approvals-procurement"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <ApprovalsProcurement />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/deployment"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Deployment />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/assets"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <Assets />
+                          </Suspense>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/platform-configuration"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute>
+                          <Suspense fallback={<div>Loading...</div>}>
+                            <PlatformConfiguration />
+                          </Suspense>
+                        </RoleBasedRoute>
                       </ProtectedRoute>
                     }
                   />
