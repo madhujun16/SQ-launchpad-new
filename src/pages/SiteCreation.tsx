@@ -95,8 +95,8 @@ const SiteCreation = () => {
   // Mock data
   const organizations: Organization[] = [
     { id: '1', name: 'Compass Group UK', type: 'Food Service', industry: 'Hospitality' },
-    { id: '2', name: 'Compass Group UK - Healthcare', type: 'Food Service', industry: 'Healthcare' },
-    { id: '3', name: 'Compass Group UK - Education', type: 'Food Service', industry: 'Education' },
+    { id: '2', name: 'Sodexo UK', type: 'Facility Management', industry: 'Services' },
+    { id: '3', name: 'Aramark UK', type: 'Food Service', industry: 'Hospitality' },
     { id: '4', name: 'ASDA', type: 'Retail', industry: 'Retail' },
     { id: '5', name: 'HSBC', type: 'Banking', industry: 'Finance' }
   ];

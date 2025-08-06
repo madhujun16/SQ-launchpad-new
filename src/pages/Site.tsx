@@ -134,7 +134,7 @@ const Site = () => {
       {
         id: '4',
         name: 'London Bridge Hub Implementation',
-        organization: 'Compass Group UK',
+        organization: 'Sodexo UK',
         foodCourt: 'London Bridge Hub',
         unitCode: 'LB002',
         goLiveDate: '2024-09-30',
@@ -151,7 +151,7 @@ const Site = () => {
       {
         id: '5',
         name: 'Birmingham Office Complex',
-        organization: 'Compass Group UK',
+        organization: 'Aramark UK',
         foodCourt: 'Birmingham Office Complex',
         unitCode: 'BO003',
         goLiveDate: '2024-11-30',
