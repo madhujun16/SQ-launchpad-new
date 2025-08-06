@@ -29,7 +29,6 @@ import {
   List,
   Search,
   Settings as SettingsIcon,
-  Mail,
   Activity,
   ClipboardList,
   Truck,
@@ -402,11 +401,6 @@ const Header = () => {
               {/* Mobile Search Button */}
               <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
                 <Search className="h-5 w-5" />
-              </Button>
-
-              {/* Messages */}
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
-                <Mail className="h-5 w-5" />
               </Button>
 
               {/* Notifications */}
