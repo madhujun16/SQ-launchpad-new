@@ -589,7 +589,7 @@ const Header = () => {
 
       {/* Navigation Tabs - Second Level */}
       {!loading && currentRole && (
-        <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
+        <div className="sticky top-16 z-40 bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center lg:justify-start overflow-x-auto">
               <div className="flex items-center space-x-1 py-3">

@@ -9,7 +9,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="pt-24">
+      <main className="pt-32">
         {children}
       </main>
     </div>
