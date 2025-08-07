@@ -276,7 +276,7 @@ const Deployment = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Deployment</h1>
           <p className="text-gray-600 mt-1">
-            Real-time deployment control and status tracking
+            Track deployment progress and manage installation workflows
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -323,10 +323,10 @@ const Deployment = () => {
       {/* Main Content */}
       <Tabs defaultValue="schedule" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="schedule">Deployment Schedule</TabsTrigger>
-          <TabsTrigger value="tracking">Dispatch Tracking</TabsTrigger>
-          <TabsTrigger value="checklists">Installation Checklists</TabsTrigger>
-          <TabsTrigger value="progress">Deployment Progress</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="tracking">Tracking</TabsTrigger>
+          <TabsTrigger value="checklists">Checklists</TabsTrigger>
+          <TabsTrigger value="progress">Progress</TabsTrigger>
         </TabsList>
 
         <TabsContent value="schedule" className="space-y-6">

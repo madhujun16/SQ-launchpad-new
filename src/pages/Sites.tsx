@@ -219,7 +219,7 @@ const Sites = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Sites</h1>
           <p className="text-gray-600 mt-1">
-            Manage cafeteria sites and track deployment progress
+            Manage client sites and track deployment progress
           </p>
         </div>
         {canCreateSites && (
@@ -234,7 +234,7 @@ const Sites = () => {
               <DialogHeader>
                 <DialogTitle>Create New Site</DialogTitle>
                 <DialogDescription>
-                  Add a new cafeteria site to the deployment pipeline
+                  Add a new client site to the deployment pipeline
                 </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4">

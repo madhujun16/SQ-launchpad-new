@@ -284,7 +284,7 @@ const ApprovalsProcurement = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Approvals & Procurement</h1>
           <p className="text-gray-600 mt-1">
-            Review hardware requests and track procurement progress
+            Review hardware requests and manage procurement workflow
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -343,9 +343,9 @@ const ApprovalsProcurement = () => {
       {/* Main Content */}
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending">Pending Requests</TabsTrigger>
-          <TabsTrigger value="procurement">Procurement Tracker</TabsTrigger>
-          <TabsTrigger value="resubmission">Resubmission Requests</TabsTrigger>
+          <TabsTrigger value="pending">Pending Review</TabsTrigger>
+          <TabsTrigger value="procurement">Procurement Status</TabsTrigger>
+          <TabsTrigger value="resubmission">Resubmissions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="space-y-6">

@@ -777,8 +777,8 @@ const Admin = () => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Utilities</h1>
-              <p className="text-gray-600">Manage users and organizations</p>
+              <h1 className="text-3xl font-bold text-gray-900">System Administration</h1>
+              <p className="text-gray-600">Manage users, organizations, software modules, and hardware inventory</p>
             </div>
           </div>
 
@@ -786,19 +786,19 @@ const Admin = () => {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                User Management
+                User Accounts
               </TabsTrigger>
               <TabsTrigger value="organizations" className="flex items-center gap-2">
                 <Building className="h-4 w-4" />
-                Organization Management
+                Organizations
               </TabsTrigger>
               <TabsTrigger value="software" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Software Management
+                Software Modules
               </TabsTrigger>
               <TabsTrigger value="hardware" className="flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
-                Hardware Management
+                Hardware Catalog
               </TabsTrigger>
             </TabsList>
 
@@ -873,7 +873,7 @@ const Admin = () => {
 
               {/* Actions */}
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">User Management</h2>
+                <h2 className="text-2xl font-semibold">User Accounts</h2>
                 <Button onClick={() => setShowCreateUserDialog(true)} variant="gradient">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add New User

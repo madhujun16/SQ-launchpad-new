@@ -211,7 +211,7 @@ const Assets = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Assets</h1>
           <p className="text-gray-600 mt-1">
-            Post-live asset lifecycle management and monitoring
+            Manage hardware assets and track lifecycle status
           </p>
         </div>
         {canManageAssets && (

@@ -319,7 +319,7 @@ const PlatformConfiguration = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Platform Configuration</h1>
           <p className="text-gray-600 mt-1">
-            Global setup: organizations, users, software/hardware, notifications, audit logs
+            System settings, user management, and platform administration
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -334,10 +334,10 @@ const PlatformConfiguration = () => {
       <Tabs defaultValue="organizations" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="organizations">Organizations</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="software">Software Management</TabsTrigger>
-          <TabsTrigger value="hardware">Hardware Management</TabsTrigger>
-          <TabsTrigger value="audit">Audit Log</TabsTrigger>
+          <TabsTrigger value="users">User Accounts</TabsTrigger>
+          <TabsTrigger value="software">Software Modules</TabsTrigger>
+          <TabsTrigger value="hardware">Hardware Catalog</TabsTrigger>
+          <TabsTrigger value="audit">System Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
@@ -345,9 +345,9 @@ const PlatformConfiguration = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Organization Management</CardTitle>
+                  <CardTitle>Organizations</CardTitle>
                   <CardDescription>
-                    Create and manage organizations with their sectors and linked sites
+                    Manage client organizations and their associated sites
                   </CardDescription>
                 </div>
                 <Button variant="gradient" className="flex items-center space-x-2">
@@ -416,9 +416,9 @@ const PlatformConfiguration = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>User Management</CardTitle>
+                  <CardTitle>User Accounts</CardTitle>
                   <CardDescription>
-                    Manage users, roles, and access permissions
+                    Manage user accounts, roles, and access permissions
                   </CardDescription>
                 </div>
                 <Button variant="gradient" className="flex items-center space-x-2">
@@ -495,7 +495,7 @@ const PlatformConfiguration = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Software Management</CardTitle>
+                  <CardTitle>Software Modules</CardTitle>
                   <CardDescription>
                     Manage software modules, versions, and deployment status
                   </CardDescription>
