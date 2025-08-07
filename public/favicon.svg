@@ -1,26 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="96" height="96" fill="#FFFFFF"/>
+  <!-- Background - transparent -->
+  <rect width="96" height="96" fill="transparent"/>
   
-  <!-- Rocket body (vibrant light olive green, smooth rounded shape) -->
-  <ellipse cx="48" cy="40" rx="10" ry="22" fill="#9ACD32"/>
+  <!-- Rocket body - 3D glossy olive green with gradients -->
+  <defs>
+    <linearGradient id="rocketBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9ACD32;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8FBC8F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6B8E23;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="noseCone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9ACD32;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#556B2F;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="flameOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF8C00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6347;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="flameInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
   
-  <!-- Rocket nose cone (rounded top) -->
-  <ellipse cx="48" cy="18" rx="7" ry="10" fill="#6B8E23"/>
+  <!-- Rocket body - elongated oval with 3D effect -->
+  <ellipse cx="48" cy="42" rx="12" ry="24" fill="url(#rocketBody)"/>
   
-  <!-- Left fin (triangular, integrated with body, rounded edges) -->
-  <path d="M38 45 Q28 58 32 62 Q38 58 38 50 Z" fill="#9ACD32"/>
+  <!-- Rocket nose cone - rounded top with gradient -->
+  <ellipse cx="48" cy="18" rx="8" ry="12" fill="url(#noseCone)"/>
   
-  <!-- Right fin (triangular, integrated with body, rounded edges) -->
-  <path d="M58 45 Q68 58 64 62 Q58 58 58 50 Z" fill="#9ACD32"/>
+  <!-- Left fin - triangular, integrated with body -->
+  <path d="M36 48 Q24 62 28 68 Q36 64 36 54 Z" fill="url(#rocketBody)"/>
   
-  <!-- Rocket base (rounded bottom) -->
-  <ellipse cx="48" cy="62" rx="7" ry="5" fill="#6B8E23"/>
+  <!-- Right fin - triangular, integrated with body -->
+  <path d="M60 48 Q72 62 68 68 Q60 64 60 54 Z" fill="url(#rocketBody)"/>
   
-  <!-- Outer flame (vibrant orange, soft rounded V-shape) -->
-  <path d="M48 67 Q40 85 48 92 Q56 85 48 67 Z" fill="#FF8C00"/>
+  <!-- Rocket base - rounded bottom -->
+  <ellipse cx="48" cy="66" rx="8" ry="6" fill="url(#noseCone)"/>
   
-  <!-- Inner flame (bright sunny yellow, rounded teardrop) -->
-  <ellipse cx="48" cy="80" rx="4" ry="10" fill="#FFD700"/>
+  <!-- Outer flame - vibrant orange, dynamic shape -->
+  <path d="M48 72 Q38 88 48 96 Q58 88 48 72 Z" fill="url(#flameOuter)"/>
+  
+  <!-- Inner flame - bright yellow, triangular core -->
+  <path d="M48 76 L44 88 L48 84 L52 88 Z" fill="url(#flameInner)"/>
+  
+  <!-- 3D highlights for glossy effect -->
+  <ellipse cx="44" cy="38" rx="4" ry="8" fill="rgba(255,255,255,0.3)"/>
+  <ellipse cx="52" cy="18" rx="2" ry="4" fill="rgba(255,255,255,0.4)"/>
 </svg>
