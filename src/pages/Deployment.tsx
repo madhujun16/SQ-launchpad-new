@@ -3,55 +3,55 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
-  Wrench, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
   Search, 
-  Filter,
+  Filter, 
+  Clock, 
+  AlertCircle, 
+  CheckCircle, 
+  XCircle, 
+  Package, 
+  Truck, 
+  Calendar,
+  User,
+  Building,
+  DollarSign,
   Eye,
-  Truck,
-  MapPin,
-  Users,
+  Edit,
+  Trash2,
+  Plus,
+  Download,
+  Upload,
   FileText,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
   Activity,
+  Wrench,
+  Shield,
+  Zap,
   Play,
   Pause,
-  Square,
-  CheckSquare
+  Stop,
+  Settings,
+  List,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { AccessDenied } from '@/components/AccessDenied';
+import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
 
 interface Deployment {
   id: string;
@@ -84,6 +84,7 @@ interface ChecklistItem {
 
 const Deployment = () => {
   const { currentRole, profile } = useAuth();
+  const { getTabAccess } = useRoleAccess();
   const roleConfig = getRoleConfig(currentRole || 'admin');
   
   const [deployments, setDeployments] = useState<Deployment[]>([]);
@@ -93,6 +94,18 @@ const Deployment = () => {
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
   const [showChecklistDialog, setShowChecklistDialog] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Check access permissions
+  const tabAccess = getTabAccess('/deployment');
+  
+  if (!tabAccess.canAccess) {
+    return (
+      <AccessDenied 
+        pageName="Deployment"
+        customMessage="You don't have permission to access the Deployment page."
+      />
+    );
+  }
 
   // Mock data - in real app, this would come from API
   useEffect(() => {
@@ -174,10 +187,23 @@ const Deployment = () => {
       }
     ];
 
-    setDeployments(mockDeployments);
-    setFilteredDeployments(mockDeployments);
+    // Filter deployments based on user role and access level
+    let filteredDeploymentsData = mockDeployments;
+    
+    if (currentRole === 'ops_manager' || currentRole === 'deployment_engineer') {
+      // For non-admin users, only show assigned deployments
+      const currentUserName = profile?.full_name || profile?.email || '';
+      filteredDeploymentsData = mockDeployments.filter(deployment => 
+        deployment.assigned_ops_manager === currentUserName || 
+        deployment.assigned_deployment_engineer === currentUserName
+      );
+    }
+    // Admin sees all deployments
+
+    setDeployments(filteredDeploymentsData);
+    setFilteredDeployments(filteredDeploymentsData);
     setLoading(false);
-  }, []);
+  }, [currentRole, profile]);
 
   useEffect(() => {
     let filtered = deployments;
@@ -258,14 +284,7 @@ const Deployment = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading deployments...</p>
-          </div>
-        </div>
-      </div>
+      <ContentLoader />
     );
   }
 
@@ -277,6 +296,11 @@ const Deployment = () => {
           <h1 className="text-3xl font-bold text-gray-900">Deployment</h1>
           <p className="text-gray-600 mt-1">
             Track deployment progress and manage installation workflows
+            {tabAccess.message && (
+              <span className="block text-sm text-blue-600 mt-1">
+                {tabAccess.message}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center space-x-2">

@@ -38,15 +38,29 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'upload_findings',
       'update_site_status',
       'add_site_geolocation',
-      'define_hardware_requirements'
+      'define_hardware_requirements',
+      'view_all_deployments',
+      'view_all_assets',
+      'manage_platform_configuration'
     ],
     accessiblePages: [
       '/dashboard', 
       '/sites',
+      '/sites/create',
+      '/sites/:id',
+      '/sites/:id/study',
       '/approvals-procurement',
+      '/approvals-procurement/hardware-approvals',
+      '/approvals-procurement/hardware-scoping',
+      '/approvals-procurement/hardware-master',
       '/deployment',
       '/assets',
+      '/assets/inventory',
+      '/assets/license-management',
       '/platform-configuration',
+      '/platform-configuration/admin',
+      '/platform-configuration/integrations',
+      '/platform-configuration/forecast',
       '/admin', 
       '/site-study', 
       '/hardware-scoping',
@@ -78,14 +92,24 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'upload_findings',
       'add_site_geolocation',
       'define_hardware_requirements',
-      'scope_hardware'
+      'scope_hardware',
+      'view_assigned_deployments',
+      'view_all_assets'
     ],
     accessiblePages: [
       '/dashboard', 
       '/sites',
+      '/sites/create',
+      '/sites/:id',
+      '/sites/:id/study',
       '/approvals-procurement',
+      '/approvals-procurement/hardware-approvals',
+      '/approvals-procurement/hardware-scoping',
+      '/approvals-procurement/hardware-master',
       '/deployment',
       '/assets',
+      '/assets/inventory',
+      '/assets/license-management',
       '/inventory',
       '/site-study',
       '/site-creation',
@@ -107,18 +131,28 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       'update_site_status',
       'view_assigned_sites',
       'view_sites',
-      'manage_approvals',
+      'manage_own_approvals',
       'add_site_geolocation',
       'define_hardware_requirements',
       'create_sites',
-      'scope_hardware'
+      'scope_hardware',
+      'view_assigned_deployments',
+      'view_assigned_assets'
     ],
     accessiblePages: [
       '/dashboard', 
       '/sites',
+      '/sites/create',
+      '/sites/:id',
+      '/sites/:id/study',
       '/approvals-procurement',
+      '/approvals-procurement/hardware-approvals',
+      '/approvals-procurement/hardware-scoping',
+      '/approvals-procurement/hardware-master',
       '/deployment',
       '/assets',
+      '/assets/inventory',
+      '/assets/license-management',
       '/site-study', 
       '/site-creation',
       '/site',
@@ -128,7 +162,6 @@ export const ROLES: Record<UserRole, RoleConfig> = {
     ],
     color: 'text-green-600'
   },
-
 };
 
 export const getRoleConfig = (role: UserRole): RoleConfig => {
@@ -142,7 +175,58 @@ export const hasPermission = (userRole: UserRole, permission: string): boolean =
 
 export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => {
   const roleConfig = getRoleConfig(userRole);
-  return roleConfig.accessiblePages.includes(pagePath);
+  
+  // First check for exact matches
+  if (roleConfig.accessiblePages.includes(pagePath)) {
+    console.log(`Exact match found for ${pagePath}`);
+    return true;
+  }
+  
+  // Check for dynamic routes (routes with parameters like :id)
+  for (const accessiblePage of roleConfig.accessiblePages) {
+    if (accessiblePage.includes(':')) {
+      // Convert the accessible page pattern to a regex
+      const pattern = accessiblePage
+        .replace(/:[^/]+/g, '[^/]+') // Replace :id with [^/]+
+        .replace(/\//g, '\\/'); // Escape forward slashes
+      
+      const regex = new RegExp(`^${pattern}$`);
+      if (regex.test(pagePath)) {
+        console.log(`Pattern match found: ${accessiblePage} matches ${pagePath}`);
+        return true;
+      }
+    }
+  }
+  
+  // Also check for legacy routes that might still be in use
+  const legacyRoutes = [
+    '/site-study',
+    '/site-creation', 
+    '/hardware-approvals',
+    '/hardware-scoping',
+    '/hardware-master',
+    '/inventory',
+    '/license-management',
+    '/admin',
+    '/integrations',
+    '/forecast'
+  ];
+  
+  if (legacyRoutes.includes(pagePath)) {
+    console.log(`Legacy route match found for ${pagePath}`);
+    return true;
+  }
+  
+  // Check if the page path starts with any of the accessible pages (for nested routes)
+  for (const accessiblePage of roleConfig.accessiblePages) {
+    if (pagePath.startsWith(accessiblePage) && accessiblePage !== '/dashboard') {
+      console.log(`Nested route match found: ${pagePath} starts with ${accessiblePage}`);
+      return true;
+    }
+  }
+  
+  console.log(`No access found for ${pagePath}. Available pages:`, roleConfig.accessiblePages);
+  return false;
 };
 
 export const getAccessiblePages = (userRole: UserRole): string[] => {

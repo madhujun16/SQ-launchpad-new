@@ -50,7 +50,7 @@ interface User {
   email: string;
 }
 
-interface SiteProject {
+interface SiteData {
   name: string;
   organization: string;
   foodCourt: string;
@@ -69,7 +69,7 @@ const SiteCreation = () => {
   const navigate = useNavigate();
   const { createSite, setSelectedSite } = useSiteContext();
   
-  const [formData, setFormData] = useState<SiteProject>({
+  const [formData, setFormData] = useState<SiteData>({
     name: '',
     organization: '',
     foodCourt: '',
@@ -87,7 +87,7 @@ const SiteCreation = () => {
   React.useEffect(() => {
     if (currentRole && !hasPermission(currentRole, 'create_sites')) {
       toast.error('You do not have permission to create sites');
-      navigate('/site');
+      navigate('/sites');
     }
   }, [currentRole, navigate]);
 
@@ -120,7 +120,7 @@ const SiteCreation = () => {
     { id: '3', name: 'David Brown', role: 'deployment_engineer', email: 'david.brown@smartq.com' }
   ];
 
-  const handleInputChange = (field: keyof SiteProject, value: any) => {
+  const handleInputChange = (field: keyof SiteData, value: any) => {
     setFormData({ ...formData, [field]: value });
   };
 
@@ -199,10 +199,10 @@ const SiteCreation = () => {
     };
 
     setSelectedSite(createdSite);
-    toast.success('Site project created successfully!');
+    toast.success('Site created successfully!');
     
     // Navigate to site management
-    navigate('/site');
+    navigate('/sites');
   };
 
   const getRiskColor = (level: string) => {
@@ -235,16 +235,16 @@ const SiteCreation = () => {
           <div className="flex items-center gap-4 mb-4">
             <Button
               variant="ghost"
-              onClick={() => navigate('/site')}
+              onClick={() => navigate('/sites')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Sites
             </Button>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create New Site Project</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create New Site</h1>
           <p className="text-gray-600 text-sm sm:text-base">
-            Create a new site project with organization and stakeholder details
+            Create a new site with organization and stakeholder details
           </p>
         </div>
 
@@ -257,16 +257,16 @@ const SiteCreation = () => {
                 Basic Information
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Essential project details and organization information
+                Essential site details and organization information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="project-name">Project Name *</Label>
+                  <Label htmlFor="site-name">Site Name *</Label>
                   <Input
-                    id="project-name"
-                    placeholder="Enter project name"
+                    id="site-name"
+                    placeholder="Enter site name"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                   />
@@ -340,12 +340,12 @@ const SiteCreation = () => {
             </CardContent>
           </Card>
 
-          {/* Project Summary */}
+          {/* Site Summary */}
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Project Summary</CardTitle>
+              <CardTitle className="text-lg">Site Summary</CardTitle>
               <CardDescription className="text-gray-600">
-                Overview of the project details
+                Overview of the site details
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -436,7 +436,7 @@ const SiteCreation = () => {
                 Stakeholders
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Add key stakeholders and project contacts
+                Add key stakeholders and site contacts
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -465,7 +465,7 @@ const SiteCreation = () => {
                       <div className="space-y-1">
                         <Label>Role</Label>
                         <Input
-                          placeholder="e.g., Project Manager"
+                          placeholder="e.g., Site Manager"
                           value={stakeholder.role}
                           onChange={(e) => updateStakeholder(stakeholder.id, 'role', e.target.value)}
                         />
@@ -507,15 +507,15 @@ const SiteCreation = () => {
               Additional Information
             </CardTitle>
             <CardDescription className="text-gray-600">
-              Notes and additional project details
+              Notes and additional site details
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label htmlFor="project-notes">Project Notes</Label>
+              <Label htmlFor="site-notes">Site Notes</Label>
               <Textarea
-                id="project-notes"
-                placeholder="Enter project notes and additional information..."
+                id="site-notes"
+                placeholder="Enter site notes and additional information..."
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 rows={4}
@@ -528,7 +528,7 @@ const SiteCreation = () => {
         <div className="mt-6 flex justify-end">
           <Button onClick={handleSubmit} variant="gradient" size="lg">
             <Save className="h-4 w-4 mr-2" />
-            Create Project
+            Create Site
           </Button>
         </div>
       </div>

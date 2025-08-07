@@ -3,28 +3,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { inventoryService } from '@/services/inventoryService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Package, 
-  Plus, 
   Search, 
   Filter, 
-  Download, 
-  Upload,
+  Clock, 
+  AlertCircle, 
+  CheckCircle, 
+  XCircle, 
+  Package, 
+  Truck, 
+  Calendar,
+  User,
+  Building,
+  DollarSign,
+  Eye,
   Edit,
   Trash2,
-  Eye
+  Plus,
+  Download,
+  Upload,
+  FileText,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Wrench,
+  Shield,
+  Zap
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { ContentLoader } from '@/components/ui/loader';
 import { SimpleInventoryItemForm } from '@/components/inventory/SimpleInventoryItemForm';
-import type { InventoryItem, InventoryFilters } from '@/types/inventory';
+import { SimpleInventoryItemDetails } from '@/components/inventory/SimpleInventoryItemDetails';
+import { SimpleInventoryFiltersPanel } from '@/components/inventory/SimpleInventoryFiltersPanel';
+import { InventoryItem } from '@/types/inventory';
+import { inventoryService } from '@/services/inventoryService';
 import { INVENTORY_TYPES, GROUP_TYPES, INVENTORY_STATUSES } from '@/types/inventory';
 
 const Inventory: React.FC = () => {
@@ -33,7 +52,7 @@ const Inventory: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [filters, setFilters] = useState<InventoryFilters>({});
+  const [filters, setFilters] = useState<any>({}); // Changed to any for simplicity, adjust type if needed
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
@@ -54,7 +73,7 @@ const Inventory: React.FC = () => {
       setStats(statsData);
     } catch (error) {
       console.error('Error fetching inventory data:', error);
-      toast.error('Failed to load inventory data');
+      // toast.error('Failed to load inventory data'); // Removed toast as per new_code
     } finally {
       setLoading(false);
     }
@@ -66,24 +85,24 @@ const Inventory: React.FC = () => {
         ...item,
         created_by: profile?.user_id || '',
       });
-      toast.success('Inventory item created successfully');
+      // toast.success('Inventory item created successfully'); // Removed toast as per new_code
       setShowCreateDialog(false);
       fetchInventoryData();
     } catch (error) {
       console.error('Error creating inventory item:', error);
-      toast.error('Failed to create inventory item');
+      // toast.error('Failed to create inventory item'); // Removed toast as per new_code
     }
   };
 
   const handleUpdateItem = async (item: InventoryItem) => {
     try {
       await inventoryService.updateInventoryItem(item.id, item);
-      toast.success('Inventory item updated successfully');
+      // toast.success('Inventory item updated successfully'); // Removed toast as per new_code
       setEditingItem(null);
       fetchInventoryData();
     } catch (error) {
       console.error('Error updating inventory item:', error);
-      toast.error('Failed to update inventory item');
+      // toast.error('Failed to update inventory item'); // Removed toast as per new_code
     }
   };
 
@@ -92,11 +111,11 @@ const Inventory: React.FC = () => {
 
     try {
       await inventoryService.deleteInventoryItem(itemId);
-      toast.success('Inventory item deleted successfully');
+      // toast.success('Inventory item deleted successfully'); // Removed toast as per new_code
       fetchInventoryData();
     } catch (error) {
       console.error('Error deleting inventory item:', error);
-      toast.error('Failed to delete inventory item');
+      // toast.error('Failed to delete inventory item'); // Removed toast as per new_code
     }
   };
 
@@ -116,14 +135,7 @@ const Inventory: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading inventory...</p>
-        </div>
-      </div>
-    );
+    return <ContentLoader />;
   }
 
   return (

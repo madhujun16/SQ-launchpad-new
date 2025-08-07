@@ -40,6 +40,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import smartqLogo from '@/assets/smartq-icon-logo.svg';
 import { getRoleConfig, canAccessPage } from '@/lib/roles';
+import { Loader } from '@/components/ui/loader';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +94,7 @@ const Header = () => {
   const roleConfig = getCurrentRoleConfig();
   const RoleIcon = roleConfig?.icon || User;
 
-  // Navigation structure with 6 primary tabs
+  // Navigation structure with 6 primary tabs - role-based visibility
   const getNavigationStructure = () => {
     if (!currentRole) {
       return [];
@@ -105,46 +106,57 @@ const Header = () => {
         path: '/dashboard',
         label: 'Dashboard',
         icon: Home,
-        description: 'Overview and analytics'
+        description: 'Overview and analytics',
+        roles: ['admin', 'ops_manager', 'deployment_engineer']
       },
       {
         type: 'link' as const,
         path: '/sites',
         label: 'Sites',
         icon: Building,
-        description: 'View and manage all sites'
+        description: 'View and manage sites',
+        roles: ['admin', 'ops_manager', 'deployment_engineer']
       },
       {
         type: 'link' as const,
         path: '/approvals-procurement',
         label: 'Approvals & Procurement',
         icon: CreditCard,
-        description: 'Manage approvals and purchases'
+        description: 'Manage approvals and purchases',
+        roles: ['admin', 'ops_manager', 'deployment_engineer']
       },
       {
         type: 'link' as const,
         path: '/deployment',
         label: 'Deployment',
         icon: Package,
-        description: 'Track deployment progress'
+        description: 'Track deployment progress',
+        roles: ['admin', 'ops_manager', 'deployment_engineer']
       },
       {
         type: 'link' as const,
         path: '/assets',
         label: 'Assets',
         icon: Monitor,
-        description: 'Asset management and tracking'
+        description: 'Asset management and tracking',
+        roles: ['admin', 'ops_manager', 'deployment_engineer']
       },
       {
         type: 'link' as const,
         path: currentRole === 'admin' ? '/admin' : '/platform-configuration',
         label: 'Platform Configuration',
         icon: Settings,
-        description: 'System settings and configuration'
+        description: 'System settings and configuration',
+        roles: ['admin']
       }
     ];
 
-    return baseNavigation;
+    // Filter navigation items based on user role and access permissions
+    return baseNavigation.filter(item => {
+      const hasRoleAccess = item.roles.includes(currentRole);
+      const hasTabAccess = canAccessPage(currentRole || 'admin', item.path);
+      return hasRoleAccess && hasTabAccess;
+    });
   };
 
   const navigationStructure = getNavigationStructure();
@@ -176,7 +188,7 @@ const Header = () => {
           </Link>
         ))
       ) : (
-        <div className="text-gray-600 text-sm">Loading navigation...</div>
+        <Loader />
       )}
     </nav>
   );
@@ -273,15 +285,15 @@ const Header = () => {
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
 
-                      {canAccessPage(currentRole || 'admin', '/site-study') && (
-                        <DropdownMenuItem onClick={() => navigate('/site-study')}>
+                      {canAccessPage(currentRole || 'admin', '/sites') && (
+                        <DropdownMenuItem onClick={() => navigate('/sites')}>
                           <FileText className="mr-2 h-4 w-4" />
                           <span>Site Study</span>
                         </DropdownMenuItem>
                       )}
 
-                      {canAccessPage(currentRole || 'admin', '/site-creation') && (
-                        <DropdownMenuItem onClick={() => navigate('/site-creation')}>
+                      {canAccessPage(currentRole || 'admin', '/sites/create') && (
+                        <DropdownMenuItem onClick={() => navigate('/sites/create')}>
                           <Plus className="mr-2 h-4 w-4" />
                           <span>Create Site</span>
                         </DropdownMenuItem>
@@ -387,7 +399,7 @@ const Header = () => {
                           variant="outline"
                           className="w-full justify-start"
                           onClick={() => {
-                            handleMobileNavigation('/site-study');       
+                            handleMobileNavigation('/sites');       
                           }}
                         >
                           <FileText className="mr-3 h-4 w-4" />
@@ -398,7 +410,7 @@ const Header = () => {
                           variant="outline"
                           className="w-full justify-start"
                           onClick={() => {
-                            handleMobileNavigation('/site-creation');    
+                            handleMobileNavigation('/sites/create');    
                           }}
                         >
                           <Plus className="mr-3 h-4 w-4" />
@@ -418,7 +430,7 @@ const Header = () => {
       {!loading && currentRole && navigationStructure.length > 0 && (
         <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center lg:justify-start overflow-x-auto">
+            <div className="flex items-center justify-center lg:justify-start">
               <div className="flex items-center space-x-1 py-3">
                 {renderDesktopNavigation()}
               </div>

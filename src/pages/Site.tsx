@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/roles';
 import { useSiteContext, type Site } from '@/contexts/SiteContext';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Building, 
   MapPin, 
@@ -28,7 +29,27 @@ import {
   Clock,
   AlertTriangle,
   Play,
-  Pause
+  Pause,
+  Settings,
+  Info,
+  BarChart3,
+  Wrench,
+  Shield,
+  ArrowLeft,
+  ChevronRight,
+  Home,
+  User,
+  Phone,
+  Mail,
+  Globe,
+  Wifi,
+  Zap,
+  Monitor,
+  Printer,
+  Smartphone,
+  Tv,
+  Camera,
+  Navigation
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -54,19 +75,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 
-// Using the Site interface from context instead of local definition
-
-const Site = () => {
+const SiteDetail = () => {
+  const { id } = useParams<{ id: string }>();
   const { currentRole } = useAuth();
   const navigate = useNavigate();
   const { sites, setSites, setSelectedSite } = useSiteContext();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [site, setSite] = useState<Site | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Check if user has permission to access sites
   useEffect(() => {
@@ -76,501 +94,570 @@ const Site = () => {
     }
   }, [currentRole, navigate]);
 
-  // Mock data for sites
+  // Load site data
   useEffect(() => {
-    const mockSites: Site[] = [
-      {
-        id: '1',
-        name: 'ASDA Redditch SmartQ Implementation',
-        organization: 'ASDA',
-        foodCourt: 'ASDA Redditch',
-        unitCode: 'AR004',
-        goLiveDate: '2024-11-15',
-        priority: 'high',
-        riskLevel: 'medium',
-        status: 'hardware_scoped',
-        assignedOpsManager: 'Jessica Cleaver',
-        assignedDeploymentEngineer: 'John Smith',
-        stakeholders: [],
-        notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
-        lastUpdated: '2024-07-30',
-        description: 'Full POS and Kiosk implementation for ASDA Redditch location'
-      },
-      {
-        id: '2',
-        name: 'HSBC Canary Wharf Food Court',
-        organization: 'HSBC',
-        foodCourt: 'HSBC Canary Wharf',
-        unitCode: 'HC005',
-        goLiveDate: '2024-12-01',
-        priority: 'medium',
-        riskLevel: 'low',
-        status: 'in_study',
-        assignedOpsManager: 'Mike Thompson',
-        assignedDeploymentEngineer: 'Emma Wilson',
-        stakeholders: [],
-        notes: 'Multi-vendor food court with various cuisines',
-        lastUpdated: '2024-07-29',
-        description: 'Multi-vendor food court with various cuisines'
-      },
-      {
-        id: '3',
-        name: 'Manchester Central Food Court',
-        organization: 'Compass Group UK',
-        foodCourt: 'Manchester Central Food Court',
-        unitCode: 'MC001',
-        goLiveDate: '2024-10-20',
-        priority: 'high',
-        riskLevel: 'high',
-        status: 'live',
-        assignedOpsManager: 'Sarah Johnson',
-        assignedDeploymentEngineer: 'David Brown',
-        stakeholders: [],
-        notes: 'Executive restaurant for senior staff',
-        lastUpdated: '2024-07-28',
-        description: 'Executive restaurant for senior staff'
-      },
-      {
-        id: '4',
-        name: 'London Bridge Hub Implementation',
-        organization: 'Sodexo UK',
-        foodCourt: 'London Bridge Hub',
-        unitCode: 'LB002',
-        goLiveDate: '2024-09-30',
-        priority: 'medium',
-        riskLevel: 'medium',
-        status: 'draft',
-        assignedOpsManager: 'Jessica Cleaver',
-        assignedDeploymentEngineer: 'John Smith',
-        stakeholders: [],
-        notes: 'New food service implementation at London Bridge',
-        lastUpdated: '2024-07-27',
-        description: 'New food service implementation at London Bridge'
-      },
-      {
-        id: '5',
-        name: 'Birmingham Office Complex',
-        organization: 'Aramark UK',
-        foodCourt: 'Birmingham Office Complex',
-        unitCode: 'BO003',
-        goLiveDate: '2024-11-30',
-        priority: 'low',
-        riskLevel: 'low',
-        status: 'draft',
-        assignedOpsManager: 'Mike Thompson',
-        assignedDeploymentEngineer: 'Emma Wilson',
-        stakeholders: [],
-        notes: 'Standard cafeteria implementation',
-        lastUpdated: '2024-07-26',
-        description: 'Standard cafeteria implementation'
+    if (id) {
+      // First try to get site from context
+      const existingSite = sites.find(s => s.id === id);
+      
+      if (existingSite) {
+        setSite(existingSite);
+        setLoading(false);
+      } else {
+        // If not found in context, load from mock data (in real app, this would be an API call)
+        const mockSite: Site = {
+          id: id,
+          name: `Site ${id}`, // This will be overridden by actual data
+          organization: 'ASDA',
+          foodCourt: 'ASDA Redditch',
+          unitCode: 'AR004',
+          goLiveDate: '2024-11-15',
+          priority: 'high',
+          riskLevel: 'medium',
+          status: 'hardware_scoped',
+          assignedOpsManager: 'Jessica Cleaver',
+          assignedDeploymentEngineer: 'John Smith',
+          stakeholders: [
+            { name: 'Sarah Johnson', role: 'Operations Manager', email: 'sarah.johnson@asda.com', phone: '+44 7700 900123' },
+            { name: 'Mike Wilson', role: 'IT Manager', email: 'mike.wilson@asda.com', phone: '+44 7700 900456' }
+          ],
+          notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
+          lastUpdated: '2024-07-30',
+          description: 'Full POS and Kiosk implementation for ASDA Redditch location'
+        };
+        
+        // Try to find site in mock data based on ID
+        const mockSites = [
+          {
+            id: '1',
+            name: 'London Central',
+            organization: 'Compass Group UK',
+            foodCourt: 'London Central',
+            unitCode: 'LC001',
+            goLiveDate: '2024-01-15',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'go_live' as const,
+            assignedOpsManager: 'John Smith',
+            assignedDeploymentEngineer: 'Mike Johnson',
+            stakeholders: [],
+            notes: 'London Central site implementation',
+            description: 'London Central site implementation',
+            lastUpdated: '2024-01-15'
+          },
+          {
+            id: '2',
+            name: 'Manchester North',
+            organization: 'Compass Group UK',
+            foodCourt: 'Manchester North',
+            unitCode: 'MN002',
+            goLiveDate: '2024-01-20',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'deployment' as const,
+            assignedOpsManager: 'Sarah Wilson',
+            assignedDeploymentEngineer: 'David Brown',
+            stakeholders: [],
+            notes: 'Manchester North site implementation',
+            description: 'Manchester North site implementation',
+            lastUpdated: '2024-01-18'
+          },
+          {
+            id: '3',
+            name: 'Birmingham South',
+            organization: 'Compass Group UK',
+            foodCourt: 'Birmingham South',
+            unitCode: 'BS003',
+            goLiveDate: '2024-01-25',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'approved' as const,
+            assignedOpsManager: 'Emma Davis',
+            assignedDeploymentEngineer: 'Tom Wilson',
+            stakeholders: [],
+            notes: 'Birmingham South site implementation',
+            description: 'Birmingham South site implementation',
+            lastUpdated: '2024-01-19'
+          }
+        ];
+        
+        const foundSite = mockSites.find(s => s.id === id);
+        if (foundSite) {
+          setSite(foundSite);
+        } else {
+          setSite(mockSite);
+        }
+        setLoading(false);
       }
-    ];
-    setSites(mockSites);
-  }, []);
+    }
+  }, [id, sites]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!site) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="text-center">
+          <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Site Not Found</h1>
+          <p className="text-gray-600 mb-4">The requested site could not be found.</p>
+          <Button onClick={() => navigate('/sites')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Sites
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'in_study': return 'bg-blue-100 text-blue-800';
-      case 'hardware_scoped': return 'bg-yellow-100 text-yellow-800';
-      case 'live': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'draft':
+        return 'bg-gray-100 text-gray-800';
+      case 'in_study':
+        return 'bg-blue-100 text-blue-800';
+      case 'hardware_scoped':
+        return 'bg-purple-100 text-purple-800';
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'live':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'draft': return <FileText className="h-4 w-4" />;
-      case 'in_study': return <Clock className="h-4 w-4" />;
-      case 'hardware_scoped': return <Package className="h-4 w-4" />;
-      case 'live': return <CheckCircle className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
+      case 'draft':
+        return <FileText className="h-4 w-4" />;
+      case 'in_study':
+        return <Clock className="h-4 w-4" />;
+      case 'hardware_scoped':
+        return <Settings className="h-4 w-4" />;
+      case 'approved':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'live':
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': return 'bg-blue-100 text-blue-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleViewSite = (site: Site) => {
-    navigate(`/site/${site.id}`);
-  };
-
-  const handleEditSite = (site: Site) => {
-    navigate(`/site/${site.id}/edit`);
-  };
-
-  const handleDeleteSite = (site: Site) => {
-    if (confirm(`Are you sure you want to delete ${site.name}?`)) {
-      setSites(sites.filter(s => s.id !== site.id));
-      toast.success('Site deleted successfully');
-    }
-  };
-
-  const handleDownloadPDF = (site: Site) => {
-    toast.success(`Downloading PDF for ${site.name}`);
-  };
-
-  const handleDuplicateSite = (site: Site) => {
-    const newSite = {
-      ...site,
-      id: Date.now().toString(),
-      name: `${site.name} (Copy)`,
-      status: 'draft' as const,
-      lastUpdated: new Date().toISOString().split('T')[0]
-    };
-    setSites([...sites, newSite]);
-    toast.success('Site duplicated successfully');
-  };
-
-  const filteredSites = sites.filter(site => {
-    const matchesSearch = site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         site.foodCourt.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || site.status === filterStatus;
-    const matchesPriority = filterPriority === 'all' || site.priority === filterPriority;
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
-
-  const sortedSites = [...filteredSites].sort((a, b) => {
-    let aValue = a[sortBy as keyof Site];
-    let bValue = b[sortBy as keyof Site];
-    
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
-    
-    if (sortOrder === 'asc') {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
-      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-    }
-  });
-
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'urgent':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Site Management</h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            View and manage all site projects across organizations
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Breadcrumb Navigation */}
+      <nav className="flex items-center space-x-2 text-sm text-gray-600">
+        <Link to="/sites" className="flex items-center space-x-1 hover:text-gray-900">
+          <Home className="h-4 w-4" />
+          <span>Sites</span>
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="text-gray-900 font-medium">{site.name}</span>
+      </nav>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+          <p className="text-gray-600 mt-1">
+            {site.organization} • {site.foodCourt} ({site.unitCode})
           </p>
         </div>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/sites')}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Sites</span>
+          </Button>
+          <Button variant="gradient" className="flex items-center space-x-2">
+            <Edit className="h-4 w-4" />
+            <span>Edit Site</span>
+          </Button>
+        </div>
+      </div>
 
-        {/* Filters and Actions */}
-        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search sites..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="in_study">In Study</SelectItem>
-                      <SelectItem value="hardware_scoped">Hardware Scoped</SelectItem>
-                      <SelectItem value="live">Live</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterPriority} onValueChange={setFilterPriority}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Priority</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Site Status Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className={`p-2 rounded-full ${getStatusColor(site.status)}`}>
+                {getStatusIcon(site.status)}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                >
-                  Cards
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                >
-                  Table
-                </Button>
-                <Button onClick={() => navigate('/site-creation')} variant="gradient">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Site
-                </Button>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Status</p>
+                <p className="text-lg font-semibold">{site.status.replace('_', ' ').toUpperCase()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Go Live Date</p>
+                <p className="text-lg font-semibold">{new Date(site.goLiveDate).toLocaleDateString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Users className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ops Manager</p>
+                <p className="text-lg font-semibold">{site.assignedOpsManager}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Wrench className="h-8 w-8 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-600">Deployment Engineer</p>
+                <p className="text-lg font-semibold">{site.assignedDeploymentEngineer}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Sites Display */}
-        {viewMode === 'cards' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedSites.map((site) => (
-              <Card key={site.id} className="shadow-lg border-0 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-semibold text-gray-900 mb-2">{site.name}</CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                        <Building className="h-4 w-4" />
-                        <span>{site.organization}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="h-4 w-4" />
-                        <span>{site.foodCourt} ({site.unitCode})</span>
-                      </div>
+      {/* Site Detail Navigation */}
+      <Tabs defaultValue="info" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="info" className="flex items-center space-x-2">
+            <Info className="h-4 w-4" />
+            <span>Site Info</span>
+          </TabsTrigger>
+          <TabsTrigger value="study" className="flex items-center space-x-2">
+            <FileText className="h-4 w-4" />
+            <span>Study Status</span>
+          </TabsTrigger>
+          <TabsTrigger value="activation" className="flex items-center space-x-2">
+            <Zap className="h-4 w-4" />
+            <span>Activation Status</span>
+          </TabsTrigger>
+          <TabsTrigger value="stakeholders" className="flex items-center space-x-2">
+            <Users className="h-4 w-4" />
+            <span>Stakeholders</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Site Info Tab */}
+        <TabsContent value="info" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Information</CardTitle>
+              <CardDescription>
+                Basic information about the site
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">General Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Organization:</span>
+                      <span className="font-medium">{site.organization}</span>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleViewSite(site)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditSite(site)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDownloadPDF(site)}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicateSite(site)}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDeleteSite(site)} className="text-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Food Court:</span>
+                      <span className="font-medium">{site.foodCourt}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Unit Code:</span>
+                      <span className="font-medium">{site.unitCode}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Go Live Date:</span>
+                      <span className="font-medium">{new Date(site.goLiveDate).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(site.status)}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Status & Priority</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
                       <Badge className={getStatusColor(site.status)}>
-                        {site.status.replace('_', ' ')}
+                        {site.status.replace('_', ' ').toUpperCase()}
                       </Badge>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Priority:</span>
                       <Badge className={getPriorityColor(site.priority)}>
-                        {site.priority}
-                      </Badge>
-                      <Badge className={getRiskColor(site.riskLevel)}>
-                        {site.riskLevel}
+                        {site.priority.toUpperCase()}
                       </Badge>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Go-Live:</span>
-                      <span className="font-medium">{site.goLiveDate}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Ops Manager:</span>
-                      <span className="font-medium">{site.assignedOpsManager}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Engineer:</span>
-                      <span className="font-medium">{site.assignedDeploymentEngineer}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Stakeholders:</span>
-                      <span className="font-medium">
-                        {site.stakeholders.map((stakeholder, index) => (
-                          <span key={index}>
-                            {stakeholder.name}
-                            {index < site.stakeholders.length - 1 ? ', ' : ''}
-                          </span>
-                        ))}
-                      </span>
+                      <span className="text-gray-600">Risk Level:</span>
+                      <Badge variant="outline">{site.riskLevel.toUpperCase()}</Badge>
                     </div>
                   </div>
-                  
-                  <div className="pt-2 border-t">
-                    <p className="text-sm text-gray-600 line-clamp-2">{site.description}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-0">
-              <div className="rounded-lg border border-gray-200 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="font-semibold text-gray-700">
-                        <Button variant="ghost" onClick={() => handleSort('name')} className="h-auto p-0 font-semibold">
-                          Site Name
-                          <ArrowUpDown className="ml-1 h-4 w-4" />
-                        </Button>
-                      </TableHead>
-                      <TableHead className="font-semibold text-gray-700">Org & Food Court</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Go-Live Date</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Priority / Risk</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Status</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Team</TableHead>
-                      <TableHead className="font-semibold text-gray-700">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedSites.map((site) => (
-                      <TableRow key={site.id} className="hover:bg-gray-50 transition-colors">
-                        <TableCell className="font-medium text-gray-900">
-                          <div>
-                            <div className="font-semibold">{site.name}</div>
-                            <div className="text-sm text-gray-500">Unit: {site.unitCode}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{site.organization}</div>
-                            <div className="text-sm text-gray-500">{site.foodCourt}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-700">{site.goLiveDate}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Badge className={getPriorityColor(site.priority)}>
-                              {site.priority}
-                            </Badge>
-                            <Badge className={getRiskColor(site.riskLevel)}>
-                              {site.riskLevel}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(site.status)}
-                            <Badge className={getStatusColor(site.status)}>
-                              {site.status.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium">{site.assignedOpsManager}</div>
-                            <div className="text-gray-500">{site.assignedDeploymentEngineer}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleViewSite(site)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditSite(site)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDownloadPDF(site)}>
-                                <Download className="h-4 w-4 mr-2" />
-                                Download PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDuplicateSite(site)}>
-                                <Copy className="h-4 w-4 mr-2" />
-                                Duplicate
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleDeleteSite(site)} className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                </div>
+              </div>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Description</h3>
+                <p className="text-gray-700">{site.description}</p>
               </div>
             </CardContent>
           </Card>
-        )}
+        </TabsContent>
 
-        {sortedSites.length === 0 && (
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-12 text-center">
-              <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No sites found</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || filterStatus !== 'all' || filterPriority !== 'all' 
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by creating your first site project'
-                }
-              </p>
-              <Button onClick={() => navigate('/site-creation')} variant="gradient">
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Site
-              </Button>
+        {/* Study Status Tab */}
+        <TabsContent value="study" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Study Status</CardTitle>
+              <CardDescription>
+                Track the progress of site studies and assessments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {site.status === 'in_study' || site.status === 'draft' ? (
+                <div className="space-y-6">
+                  {/* Study Progress Stepper */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Study Progress</h3>
+                    <div className="space-y-4">
+                      {/* Step 1: General Information */}
+                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">General Information</h4>
+                          <p className="text-sm text-gray-600">Basic site details and contact information</p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </div>
+
+                      {/* Step 2: Location & Infrastructure */}
+                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <MapPin className="h-4 w-4 text-blue-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">Location & Infrastructure</h4>
+                          <p className="text-sm text-gray-600">Site location, floor plan, and infrastructure details</p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </div>
+
+                      {/* Step 3: Hardware Requirements */}
+                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Package className="h-4 w-4 text-gray-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">Hardware Requirements</h4>
+                          <p className="text-sm text-gray-600">Define hardware needs and specifications</p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </div>
+
+                      {/* Step 4: Network & Power */}
+                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Wifi className="h-4 w-4 text-gray-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">Network & Power Requirements</h4>
+                          <p className="text-sm text-gray-600">Network connectivity and power specifications</p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </div>
+
+                      {/* Step 5: Review & Submit */}
+                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                            <FileText className="h-4 w-4 text-gray-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">Review & Submit</h4>
+                          <p className="text-sm text-gray-600">Review all information and submit study</p>
+                        </div>
+                        <Button variant="outline" size="sm" disabled>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Review
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Study
+                    </Button>
+                    <Button 
+                      variant="gradient"
+                      onClick={() => navigate(`/sites/${id}/study`)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Continue Study
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Site Study Management</h3>
+                  <p className="text-gray-600 mb-4">
+                    {site.status === 'hardware_scoped' || site.status === 'live' 
+                      ? 'Site study has been completed. View the study details below.'
+                      : 'Site study is not yet started or in progress.'
+                    }
+                  </p>
+                  <Button 
+                    onClick={() => navigate(`/sites/${id}/study`)}
+                    className="flex items-center space-x-2 mx-auto"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>View Study Details</span>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
-      </div>
+        </TabsContent>
+
+        {/* Activation Status Tab */}
+        <TabsContent value="activation" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Activation Status</CardTitle>
+              <CardDescription>
+                Track the activation progress and deployment status
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Deployment Progress</span>
+                  <span className="text-sm text-gray-600">75%</span>
+                </div>
+                <Progress value={75} className="w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  <div className="text-center">
+                    <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </div>
+                    <p className="text-sm font-medium">Hardware Scoped</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <p className="text-sm font-medium">In Progress</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <AlertTriangle className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <p className="text-sm font-medium">Pending</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Stakeholders Tab */}
+        <TabsContent value="stakeholders" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Stakeholders</CardTitle>
+              <CardDescription>
+                Key contacts and stakeholders for this site
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {site.stakeholders.map((stakeholder, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{stakeholder.name}</p>
+                        <p className="text-sm text-gray-600">{stakeholder.role}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Phone className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
-export default Site; 
+export default SiteDetail; 

@@ -1,74 +1,54 @@
 import React, { Suspense, lazy } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { canAccessPage } from '@/lib/roles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Building,
-  Users,
-  Settings,
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Building, 
+  Users, 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  AlertCircle, 
+  CheckCircle, 
+  XCircle, 
+  TrendingUp, 
+  TrendingDown,
+  Activity,
   Bell,
-  LogOut,
-  User,
-  Menu,
-  X,
+  Settings,
   Plus,
-  FileText,
-  Home,
-  MapPin,
-  Package,
-  Shield,
-  BarChart3,
-  Database,
-  CreditCard,
-  Monitor,
-  Zap,
-  ChevronDown,
-  Calendar,
-  CheckCircle,
   Eye,
+  Edit,
+  Trash2,
   Download,
   Upload,
-  List,
-  Search,
-  SettingsIcon,
-  Mail,
-  Activity,
-  ClipboardList,
+  FileText,
+  BarChart3,
+  Package,
   Truck,
-  Clock,
-  AlertCircle,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
+  Wrench,
+  Shield,
+  Zap,
   Target,
   Star,
-  Award,
-  PieChart
-} from '@/lib/icons';
+  Award
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { getRoleConfig } from '@/lib/roles';
+import { ContentLoader } from '@/components/ui/loader';
 import Header from '@/components/Header';
 import DashboardStats from "@/components/DashboardStats";
 import WorkflowCard from "@/components/WorkflowCard";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { getRoleConfig } from "@/lib/roles";
+import { canAccessPage } from '@/lib/roles';
 
 // Lazy load dashboard components
 const SimpleAdminDashboard = lazy(() => import('@/components/dashboards/SimpleAdminDashboard'));
 const SimpleOpsManagerDashboard = lazy(() => import('@/components/dashboards/SimpleOpsManagerDashboard'));
 const SimpleDeploymentEngineerDashboard = lazy(() => import('@/components/dashboards/SimpleDeploymentEngineerDashboard'));
-
-// Loading component for dashboard
-const DashboardLoader = () => (
-  <div className="flex items-center justify-center min-h-[400px]">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <p className="text-muted-foreground">Loading dashboard...</p>
-    </div>
-  </div>
-);
 
 const Index = () => {
   const { currentRole } = useAuth();
@@ -79,19 +59,19 @@ const Index = () => {
     switch (currentRole) {
       case 'admin':
         return (
-          <Suspense fallback={<DashboardLoader />}>
+          <Suspense fallback={<ContentLoader />}>
             <SimpleAdminDashboard />
           </Suspense>
         );
       case 'ops_manager':
         return (
-          <Suspense fallback={<DashboardLoader />}>
+          <Suspense fallback={<ContentLoader />}>
             <SimpleOpsManagerDashboard />
           </Suspense>
         );
       case 'deployment_engineer':
         return (
-          <Suspense fallback={<DashboardLoader />}>
+          <Suspense fallback={<ContentLoader />}>
             <SimpleDeploymentEngineerDashboard />
           </Suspense>
         );
@@ -193,10 +173,10 @@ const Index = () => {
       const actions = [];
 
       // Site Study - accessible to all users
-      if (canAccessPage(currentRole, '/site-study')) {
+      if (canAccessPage(currentRole, '/sites')) {
         actions.push({
           label: 'Site Study',
-          path: '/site-study',
+          path: '/sites',
           icon: Building,
           description: 'Conduct comprehensive site studies for cafeteria deployments',
           color: 'text-blue-600'
@@ -204,10 +184,10 @@ const Index = () => {
       }
 
       // Site Creation - accessible to all users
-      if (canAccessPage(currentRole, '/site-creation')) {
+      if (canAccessPage(currentRole, '/sites/create')) {
         actions.push({
           label: 'Create Site',
-          path: '/site-creation',
+          path: '/sites/create',
           icon: Plus,
           description: 'Create new cafeteria sites and manage site information',
           color: 'text-green-600'
@@ -247,7 +227,7 @@ const Index = () => {
         case 'in-progress':
           return <Clock className="h-4 w-4 text-blue-500" />;
         case 'pending':
-          return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+          return <AlertCircle className="h-4 w-4 text-yellow-500" />;
         default:
           return <Clock className="h-4 w-4 text-gray-500" />;
       }
@@ -282,7 +262,7 @@ const Index = () => {
     const getNotificationIcon = (type: string) => {
       switch (type) {
         case 'warning':
-          return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+          return <AlertCircle className="h-4 w-4 text-yellow-500" />;
         case 'success':
           return <CheckCircle className="h-4 w-4 text-green-500" />;
         case 'info':
@@ -385,7 +365,7 @@ const Index = () => {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-primary-dark">Pending Approval</CardTitle>
                   <div className="p-2 rounded-lg bg-warning/5">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    <AlertCircle className="h-4 w-4 text-warning" />
                   </div>
                 </CardHeader>
                 <CardContent>

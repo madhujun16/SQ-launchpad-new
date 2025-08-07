@@ -3,51 +3,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
+  Search, 
+  Filter, 
+  Clock, 
   AlertCircle, 
   CheckCircle, 
   XCircle, 
-  Clock, 
-  Search, 
-  Filter,
-  Eye,
-  MessageSquare,
-  Truck,
-  Package,
-  Users,
+  Package, 
+  Truck, 
   Calendar,
-  MapPin,
+  User,
+  Building,
   DollarSign,
-  Edit
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  Download,
+  Upload,
+  FileText,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  CreditCard,
+  Settings,
+  List,
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { AccessDenied } from '@/components/AccessDenied';
+import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useNavigate } from 'react-router-dom';
 
 interface HardwareRequest {
   id: string;
@@ -69,6 +66,8 @@ interface HardwareRequest {
 
 const ApprovalsProcurement = () => {
   const { currentRole, profile } = useAuth();
+  const { getTabAccess } = useRoleAccess();
+  const navigate = useNavigate();
   const roleConfig = getRoleConfig(currentRole || 'admin');
   
   const [requests, setRequests] = useState<HardwareRequest[]>([]);
@@ -81,6 +80,18 @@ const ApprovalsProcurement = () => {
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
   const [reviewComment, setReviewComment] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Check access permissions
+  const tabAccess = getTabAccess('/approvals-procurement');
+  
+  if (!tabAccess.canAccess) {
+    return (
+      <AccessDenied 
+        pageName="Approvals & Procurement"
+        customMessage="You don't have permission to access the Approvals & Procurement page."
+      />
+    );
+  }
 
   // Mock data - in real app, this would come from API
   useEffect(() => {
@@ -164,10 +175,29 @@ const ApprovalsProcurement = () => {
       }
     ];
 
-    setRequests(mockRequests);
-    setFilteredRequests(mockRequests);
+    // Filter requests based on user role and access level
+    let filteredRequestsData = mockRequests;
+    
+    if (currentRole === 'deployment_engineer') {
+      // For deployment engineers, only show own submissions and related approvals
+      const currentUserName = profile?.full_name || profile?.email || '';
+      filteredRequestsData = mockRequests.filter(request => 
+        request.requested_by === currentUserName || 
+        request.assigned_deployment_engineer === currentUserName
+      );
+    } else if (currentRole === 'ops_manager') {
+      // For ops managers, show all requests they can approve
+      const currentUserName = profile?.full_name || profile?.email || '';
+      filteredRequestsData = mockRequests.filter(request => 
+        request.assigned_ops_manager === currentUserName
+      );
+    }
+    // Admin sees all requests
+
+    setRequests(filteredRequestsData);
+    setFilteredRequests(filteredRequestsData);
     setLoading(false);
-  }, []);
+  }, [currentRole, profile]);
 
   useEffect(() => {
     let filtered = requests;
@@ -207,10 +237,10 @@ const ApprovalsProcurement = () => {
 
   const getPriorityConfig = (priority: string) => {
     const configs = {
-      low: { label: 'Low', color: 'bg-gray-100 text-gray-800' },
-      medium: { label: 'Medium', color: 'bg-blue-100 text-blue-800' },
-      high: { label: 'High', color: 'bg-orange-100 text-orange-800' },
-      urgent: { label: 'Urgent', color: 'bg-red-100 text-red-800' }
+      low: { label: 'Low', color: 'bg-gray-100 text-gray-800', icon: TrendingDown },
+      medium: { label: 'Medium', color: 'bg-blue-100 text-blue-800', icon: Activity },
+      high: { label: 'High', color: 'bg-orange-100 text-orange-800', icon: TrendingUp },
+      urgent: { label: 'Urgent', color: 'bg-red-100 text-red-800', icon: AlertCircle }
     };
     return configs[priority as keyof typeof configs] || configs.medium;
   };
@@ -265,16 +295,7 @@ const ApprovalsProcurement = () => {
   ];
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading requests...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <ContentLoader />;
   }
 
   return (
@@ -285,6 +306,11 @@ const ApprovalsProcurement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Approvals & Procurement</h1>
           <p className="text-gray-600 mt-1">
             Review hardware requests and manage procurement workflow
+            {tabAccess.message && (
+              <span className="block text-sm text-blue-600 mt-1">
+                {tabAccess.message}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -295,305 +321,322 @@ const ApprovalsProcurement = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by site or requester..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by priority" />
-              </SelectTrigger>
-              <SelectContent>
-                {priorityOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" className="flex items-center space-x-2">
-              <Filter className="h-4 w-4" />
-              <span>Clear Filters</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Content */}
-      <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="pending">Pending Review</TabsTrigger>
-          <TabsTrigger value="procurement">Procurement Status</TabsTrigger>
-          <TabsTrigger value="resubmission">Resubmissions</TabsTrigger>
+      {/* Sub-navigation Tabs */}
+      <Tabs defaultValue="requests" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="requests" className="flex items-center space-x-2">
+            <List className="h-4 w-4" />
+            <span>Requests</span>
+          </TabsTrigger>
+          <TabsTrigger value="hardware-approvals" className="flex items-center space-x-2">
+            <CheckSquare className="h-4 w-4" />
+            <span>Hardware Approvals</span>
+          </TabsTrigger>
+          <TabsTrigger value="hardware-scoping" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Hardware Scoping</span>
+          </TabsTrigger>
+          <TabsTrigger value="hardware-master" className="flex items-center space-x-2">
+            <Package className="h-4 w-4" />
+            <span>Hardware Master</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-6">
+        {/* Requests Tab */}
+        <TabsContent value="requests" className="space-y-6">
+          {/* Filters */}
           <Card>
-            <CardHeader>
-              <CardTitle>Pending Hardware Requests</CardTitle>
-              <CardDescription>
-                Hardware requests awaiting your review and approval
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Requested By</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests
-                    .filter(req => req.status === 'pending')
-                    .map((request) => {
-                      const statusConfig = getStatusConfig(request.status);
-                      const priorityConfig = getPriorityConfig(request.priority);
-                      const StatusIcon = statusConfig.icon;
-                      
-                      return (
-                        <TableRow key={request.id}>
-                          <TableCell>
-                            <div className="font-medium">{request.site_name}</div>
-                            <div className="text-sm text-gray-500">{request.assigned_ops_manager}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{request.requested_by}</div>
-                            <div className="text-sm text-gray-500">
-                              {new Date(request.requested_at).toLocaleDateString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={priorityConfig.color}>
-                              {priorityConfig.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Package className="h-4 w-4 text-gray-400" />
-                              <span>{request.items_count} items</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <DollarSign className="h-4 w-4 text-gray-400" />
-                              <span>£{request.total_value.toLocaleString()}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${statusConfig.color} flex items-center space-x-1`}>
-                              <StatusIcon className="h-3 w-3" />
-                              <span>{statusConfig.label}</span>
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {canReviewRequests && (
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by site or requester..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4" />
+                  <span>Clear Filters</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Main Content */}
+          <Tabs defaultValue="pending" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="pending">Pending Review</TabsTrigger>
+              <TabsTrigger value="procurement">Procurement Status</TabsTrigger>
+              <TabsTrigger value="resubmission">Resubmissions</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pending" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Hardware Requests</CardTitle>
+                  <CardDescription>
+                    Hardware requests awaiting your review and approval
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Site</TableHead>
+                        <TableHead>Requester</TableHead>
+                        <TableHead>Requested</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Priority</TableHead>
+                        <TableHead>Items</TableHead>
+                        <TableHead>Total Value</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRequests.map((request) => {
+                        const statusConfig = getStatusConfig(request.status);
+                        const priorityConfig = getPriorityConfig(request.priority);
+                        const StatusIcon = statusConfig.icon;
+                        const PriorityIcon = priorityConfig.icon;
+                        
+                        return (
+                          <TableRow key={request.id}>
+                            <TableCell>
+                              <div className="font-medium">{request.site_name}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-1">
+                                <User className="h-3 w-3 text-gray-400" />
+                                <span>{request.requested_by}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="h-3 w-3 text-gray-400" />
+                                <span>{new Date(request.requested_at).toLocaleDateString()}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${statusConfig.color} flex items-center space-x-1`}>
+                                <StatusIcon className="h-3 w-3" />
+                                <span>{statusConfig.label}</span>
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${priorityConfig.color} flex items-center space-x-1`}>
+                                <PriorityIcon className="h-3 w-3" />
+                                <span>{priorityConfig.label}</span>
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-1">
+                                <Package className="h-3 w-3 text-gray-400" />
+                                <span>{request.items_count} items</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-1">
+                                <DollarSign className="h-3 w-3 text-gray-400" />
+                                <span>£{request.total_value.toLocaleString()}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
                               <div className="flex items-center space-x-2">
                                 <Button
-                                  variant="outline"
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => handleReviewRequest(request, 'approve')}
-                                  className="text-green-600 hover:text-green-700"
                                 >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Approve
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
                                 </Button>
                                 <Button
-                                  variant="outline"
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => handleReviewRequest(request, 'reject')}
-                                  className="text-red-600 hover:text-red-700"
                                 >
-                                  <XCircle className="h-4 w-4 mr-1" />
-                                  Reject
+                                  <XCircle className="h-4 w-4 text-red-600" />
                                 </Button>
-                                <Button variant="ghost" size="sm">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedRequest(request)}
+                                >
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="procurement" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Procurement Status</CardTitle>
+                  <CardDescription>
+                    Track the status of approved hardware procurement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Procurement Tracking</h3>
+                    <p className="text-gray-600 mb-4">
+                      Track the status of approved hardware procurement and delivery.
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/approvals-procurement/hardware-approvals')}
+                      className="flex items-center space-x-2 mx-auto"
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                      <span>View Hardware Approvals</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="resubmission" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resubmission Requests</CardTitle>
+                  <CardDescription>
+                    Requests that have been resubmitted after rejection
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Resubmission Management</h3>
+                    <p className="text-gray-600 mb-4">
+                      Manage requests that have been resubmitted after initial rejection.
+                    </p>
+                    <Button 
+                      onClick={() => navigate('/approvals-procurement/hardware-approvals')}
+                      className="flex items-center space-x-2 mx-auto"
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                      <span>View Hardware Approvals</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        {/* Hardware Approvals Tab */}
+        <TabsContent value="hardware-approvals" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hardware Approvals</CardTitle>
+              <CardDescription>
+                Manage hardware approval workflows and processes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <CheckSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Hardware Approvals Management</h3>
+                <p className="text-gray-600 mb-4">
+                  Manage hardware approval workflows, review requests, and track approval status.
+                </p>
+                <Button 
+                  onClick={() => navigate('/approvals-procurement/hardware-approvals')}
+                  className="flex items-center space-x-2 mx-auto"
+                >
+                  <CheckSquare className="h-4 w-4" />
+                  <span>View Hardware Approvals</span>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="procurement" className="space-y-6">
+        {/* Hardware Scoping Tab */}
+        <TabsContent value="hardware-scoping" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Procurement Tracker</CardTitle>
+              <CardTitle>Hardware Scoping</CardTitle>
               <CardDescription>
-                Track the progress of approved hardware requests through procurement
+                Scope and define hardware requirements for sites
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Expected Delivery</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests
-                    .filter(req => ['approved', 'procurement', 'dispatched', 'delivered'].includes(req.status))
-                    .map((request) => {
-                      const statusConfig = getStatusConfig(request.status);
-                      const StatusIcon = statusConfig.icon;
-                      
-                      return (
-                        <TableRow key={request.id}>
-                          <TableCell>
-                            <div className="font-medium">{request.site_name}</div>
-                            <div className="text-sm text-gray-500">{request.assigned_deployment_engineer}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${statusConfig.color} flex items-center space-x-1`}>
-                              <StatusIcon className="h-3 w-3" />
-                              <span>{statusConfig.label}</span>
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {request.expected_delivery ? (
-                              <div className="flex items-center space-x-1">
-                                <Calendar className="h-3 w-3 text-gray-400" />
-                                <span>{new Date(request.expected_delivery).toLocaleDateString()}</span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">TBD</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <DollarSign className="h-4 w-4 text-gray-400" />
-                              <span>£{request.total_value.toLocaleString()}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  request.status === 'approved' ? 'bg-blue-600 w-1/4' :
-                                  request.status === 'procurement' ? 'bg-yellow-600 w-1/2' :
-                                  request.status === 'dispatched' ? 'bg-purple-600 w-3/4' :
-                                  'bg-green-600 w-full'
-                                }`}
-                              ></div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
+              <div className="text-center py-8">
+                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Hardware Scoping Management</h3>
+                <p className="text-gray-600 mb-4">
+                  Scope and define hardware requirements for different site types and configurations.
+                </p>
+                <Button 
+                  onClick={() => navigate('/approvals-procurement/hardware-scoping')}
+                  className="flex items-center space-x-2 mx-auto"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>View Hardware Scoping</span>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="resubmission" className="space-y-6">
+        {/* Hardware Master Tab */}
+        <TabsContent value="hardware-master" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Resubmission Requests</CardTitle>
+              <CardTitle>Hardware Master</CardTitle>
               <CardDescription>
-                Rejected requests that can be edited and resubmitted
+                Master hardware catalog and specifications
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Original Request</TableHead>
-                    <TableHead>Rejection Reason</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRequests
-                    .filter(req => req.status === 'rejected')
-                    .map((request) => {
-                      const statusConfig = getStatusConfig(request.status);
-                      const StatusIcon = statusConfig.icon;
-                      
-                      return (
-                        <TableRow key={request.id}>
-                          <TableCell>
-                            <div className="font-medium">{request.site_name}</div>
-                            <div className="text-sm text-gray-500">{request.requested_by}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <div>£{request.total_value.toLocaleString()}</div>
-                              <div className="text-gray-500">{request.items_count} items</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600 max-w-xs">
-                              {request.rejection_reason}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${statusConfig.color} flex items-center space-x-1`}>
-                              <StatusIcon className="h-3 w-3" />
-                              <span>{statusConfig.label}</span>
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit & Resubmit
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Hardware Master Catalog</h3>
+                <p className="text-gray-600 mb-4">
+                  Manage the master hardware catalog, specifications, and pricing information.
+                </p>
+                <Button 
+                  onClick={() => navigate('/approvals-procurement/hardware-master')}
+                  className="flex items-center space-x-2 mx-auto"
+                >
+                  <Package className="h-4 w-4" />
+                  <span>View Hardware Master</span>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

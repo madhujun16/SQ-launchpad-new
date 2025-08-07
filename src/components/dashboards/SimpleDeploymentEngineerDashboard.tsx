@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wrench, Clock, CheckCircle, TrendingUp } from 'lucide-react';
+import { ContentLoader } from '@/components/ui/loader';
 
 const SimpleDeploymentEngineerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -10,24 +11,7 @@ const SimpleDeploymentEngineerDashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="h-4 bg-muted rounded w-20"></div>
-                <div className="h-4 w-4 bg-muted rounded"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded w-16 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-24"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <ContentLoader />;
   }
 
   return (
