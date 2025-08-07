@@ -170,21 +170,25 @@ const Header = () => {
   };
 
   const renderDesktopNavigation = () => (
-    <nav className="hidden lg:flex items-center space-x-1">
-      {navigationStructure.map((item) => (
-        <Link
-          key={item.path}
-          to={item.path}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            isActivePage(item.path)
-              ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
-              : 'text-white/90 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <item.icon className="h-4 w-4" />
-          <span>{item.label}</span>
-        </Link>
-      ))}
+    <nav className="flex items-center space-x-1">
+      {navigationStructure && navigationStructure.length > 0 ? (
+        navigationStructure.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              isActivePage(item.path)
+                ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
+                : 'text-white/90 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            <span>{item.label}</span>
+          </Link>
+        ))
+      ) : (
+        <div className="text-white/70 text-sm">Loading navigation...</div>
+      )}
     </nav>
   );
 
@@ -418,7 +422,7 @@ const Header = () => {
       </header>
 
       {/* Navigation Tabs - Second Level */}
-      {!loading && currentRole && (
+      {!loading && currentRole && navigationStructure.length > 0 && (
         <div className="sticky top-16 z-40 bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center lg:justify-start overflow-x-auto">
