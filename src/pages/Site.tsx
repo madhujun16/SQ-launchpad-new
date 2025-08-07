@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Stepper } from '@/components/ui/stepper';
 import { 
   Building, 
   MapPin, 
@@ -49,7 +50,11 @@ import {
   Smartphone,
   Tv,
   Camera,
-  Navigation
+  Navigation,
+  CheckSquare,
+  Truck,
+  ArrowRight,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -77,6 +82,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperStepFromStatus, type UnifiedSiteStatus } from '@/lib/siteTypes';
+import { Checkbox } from '@/components/ui/checkbox';
+import { LocationPicker } from '@/components/ui/location-picker';
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -85,6 +93,12 @@ const SiteDetail = () => {
   const { sites, setSites, setSelectedSite } = useSiteContext();
   const [site, setSite] = useState<Site | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedStep, setSelectedStep] = useState(0);
+  const [locationData, setLocationData] = useState<{
+    lat: number;
+    lng: number;
+    address: string;
+  } | null>(null);
 
   // Check if user has permission to access sites
   useEffect(() => {
@@ -102,6 +116,7 @@ const SiteDetail = () => {
       
       if (existingSite) {
         setSite(existingSite);
+        setSelectedStep(getStepperStepFromStatus(existingSite.status as UnifiedSiteStatus));
         setLoading(false);
       } else {
         // If not found in context, load from mock data (in real app, this would be an API call)
@@ -118,8 +133,22 @@ const SiteDetail = () => {
           assignedOpsManager: 'Jessica Cleaver',
           assignedDeploymentEngineer: 'John Smith',
           stakeholders: [
-            { name: 'Sarah Johnson', role: 'Operations Manager', email: 'sarah.johnson@asda.com', phone: '+44 7700 900123' },
-            { name: 'Mike Wilson', role: 'IT Manager', email: 'mike.wilson@asda.com', phone: '+44 7700 900456' }
+            { 
+              id: '1',
+              name: 'Sarah Johnson', 
+              role: 'Operations Manager', 
+              email: 'sarah.johnson@asda.com', 
+              phone: '+44 7700 900123',
+              organization: 'ASDA'
+            },
+            { 
+              id: '2',
+              name: 'Mike Wilson', 
+              role: 'IT Manager', 
+              email: 'mike.wilson@asda.com', 
+              phone: '+44 7700 900456',
+              organization: 'ASDA'
+            }
           ],
           notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
           lastUpdated: '2024-07-30',
@@ -137,7 +166,7 @@ const SiteDetail = () => {
             goLiveDate: '2024-01-15',
             priority: 'high' as const,
             riskLevel: 'medium' as const,
-            status: 'go_live' as const,
+            status: 'live' as UnifiedSiteStatus,
             assignedOpsManager: 'John Smith',
             assignedDeploymentEngineer: 'Mike Johnson',
             stakeholders: [],
@@ -154,7 +183,7 @@ const SiteDetail = () => {
             goLiveDate: '2024-01-20',
             priority: 'medium' as const,
             riskLevel: 'low' as const,
-            status: 'deployment' as const,
+            status: 'live' as UnifiedSiteStatus,
             assignedOpsManager: 'Sarah Wilson',
             assignedDeploymentEngineer: 'David Brown',
             stakeholders: [],
@@ -171,21 +200,227 @@ const SiteDetail = () => {
             goLiveDate: '2024-01-25',
             priority: 'high' as const,
             riskLevel: 'medium' as const,
-            status: 'approved' as const,
+            status: 'live' as UnifiedSiteStatus,
             assignedOpsManager: 'Emma Davis',
             assignedDeploymentEngineer: 'Tom Wilson',
             stakeholders: [],
             notes: 'Birmingham South site implementation',
             description: 'Birmingham South site implementation',
             lastUpdated: '2024-01-19'
+          },
+          {
+            id: '4',
+            name: 'Leeds Central',
+            organization: 'Compass Group UK',
+            foodCourt: 'Leeds Central',
+            unitCode: 'LC004',
+            goLiveDate: '2024-02-01',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Alex Johnson',
+            assignedDeploymentEngineer: 'Lisa Brown',
+            stakeholders: [],
+            notes: 'Leeds Central site implementation',
+            description: 'Leeds Central site implementation',
+            lastUpdated: '2024-01-30'
+          },
+          {
+            id: '5',
+            name: 'Liverpool Docklands',
+            organization: 'Compass Group UK',
+            foodCourt: 'Liverpool Docklands',
+            unitCode: 'LD005',
+            goLiveDate: '2024-02-05',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Michael Wilson',
+            assignedDeploymentEngineer: 'Sarah Davis',
+            stakeholders: [],
+            notes: 'Liverpool Docklands site implementation',
+            description: 'Liverpool Docklands site implementation',
+            lastUpdated: '2024-02-01'
+          },
+          {
+            id: '6',
+            name: 'Edinburgh Castle',
+            organization: 'Compass Group UK',
+            foodCourt: 'Edinburgh Castle',
+            unitCode: 'EC006',
+            goLiveDate: '2024-02-10',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'David Thompson',
+            assignedDeploymentEngineer: 'Emma Wilson',
+            stakeholders: [],
+            notes: 'Edinburgh Castle site implementation',
+            description: 'Edinburgh Castle site implementation',
+            lastUpdated: '2024-02-05'
+          },
+          {
+            id: '7',
+            name: 'Cardiff Bay',
+            organization: 'Compass Group UK',
+            foodCourt: 'Cardiff Bay',
+            unitCode: 'CB007',
+            goLiveDate: '2024-02-15',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Rachel Green',
+            assignedDeploymentEngineer: 'James Miller',
+            stakeholders: [],
+            notes: 'Cardiff Bay site implementation',
+            description: 'Cardiff Bay site implementation',
+            lastUpdated: '2024-02-10'
+          },
+          {
+            id: '8',
+            name: 'Glasgow Central',
+            organization: 'Compass Group UK',
+            foodCourt: 'Glasgow Central',
+            unitCode: 'GC008',
+            goLiveDate: '2024-03-01',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'approved' as UnifiedSiteStatus,
+            assignedOpsManager: 'Fiona MacDonald',
+            assignedDeploymentEngineer: 'Robert Campbell',
+            stakeholders: [],
+            notes: 'Glasgow Central site implementation',
+            description: 'Glasgow Central site implementation',
+            lastUpdated: '2024-02-15'
+          },
+          {
+            id: '9',
+            name: 'Bristol Harbour',
+            organization: 'Compass Group UK',
+            foodCourt: 'Bristol Harbour',
+            unitCode: 'BH009',
+            goLiveDate: '2024-03-05',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'approved' as UnifiedSiteStatus,
+            assignedOpsManager: 'Tom Anderson',
+            assignedDeploymentEngineer: 'Helen White',
+            stakeholders: [],
+            notes: 'Bristol Harbour site implementation',
+            description: 'Bristol Harbour site implementation',
+            lastUpdated: '2024-02-20'
+          },
+          {
+            id: '10',
+            name: 'Newcastle Quayside',
+            organization: 'Compass Group UK',
+            foodCourt: 'Newcastle Quayside',
+            unitCode: 'NQ010',
+            goLiveDate: '2024-03-10',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'approved' as UnifiedSiteStatus,
+            assignedOpsManager: 'Peter Mitchell',
+            assignedDeploymentEngineer: 'Claire Roberts',
+            stakeholders: [],
+            notes: 'Newcastle Quayside site implementation',
+            description: 'Newcastle Quayside site implementation',
+            lastUpdated: '2024-02-25'
+          },
+          {
+            id: '11',
+            name: 'Sheffield Steelworks',
+            organization: 'Compass Group UK',
+            foodCourt: 'Sheffield Steelworks',
+            unitCode: 'SS011',
+            goLiveDate: '2024-03-15',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'approved' as UnifiedSiteStatus,
+            assignedOpsManager: 'Andrew Taylor',
+            assignedDeploymentEngineer: 'Natalie Clark',
+            stakeholders: [],
+            notes: 'Sheffield Steelworks site implementation',
+            description: 'Sheffield Steelworks site implementation',
+            lastUpdated: '2024-03-01'
+          },
+          {
+            id: '12',
+            name: 'Nottingham Castle',
+            organization: 'Compass Group UK',
+            foodCourt: 'Nottingham Castle',
+            unitCode: 'NC012',
+            goLiveDate: '2024-03-20',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'approved' as UnifiedSiteStatus,
+            assignedOpsManager: 'Daniel Wright',
+            assignedDeploymentEngineer: 'Sophie Turner',
+            stakeholders: [],
+            notes: 'Nottingham Castle site implementation',
+            description: 'Nottingham Castle site implementation',
+            lastUpdated: '2024-03-05'
+          },
+          {
+            id: '13',
+            name: 'Oxford University',
+            organization: 'Compass Group UK',
+            foodCourt: 'Oxford University',
+            unitCode: 'OU013',
+            goLiveDate: '2024-04-01',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'created' as UnifiedSiteStatus,
+            assignedOpsManager: 'Dr. Sarah Johnson',
+            assignedDeploymentEngineer: 'Mark Wilson',
+            stakeholders: [],
+            notes: 'Oxford University site implementation',
+            description: 'Oxford University site implementation',
+            lastUpdated: '2024-03-01'
+          },
+          {
+            id: '14',
+            name: 'Cambridge Science Park',
+            organization: 'Compass Group UK',
+            foodCourt: 'Cambridge Science Park',
+            unitCode: 'CSP014',
+            goLiveDate: '2024-04-05',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            status: 'study_in_progress' as UnifiedSiteStatus,
+            assignedOpsManager: 'Dr. Michael Brown',
+            assignedDeploymentEngineer: 'Emma Davis',
+            stakeholders: [],
+            notes: 'Cambridge Science Park site implementation',
+            description: 'Cambridge Science Park site implementation',
+            lastUpdated: '2024-03-10'
+          },
+          {
+            id: '15',
+            name: 'Durham Cathedral',
+            organization: 'Compass Group UK',
+            foodCourt: 'Durham Cathedral',
+            unitCode: 'DC015',
+            goLiveDate: '2024-04-10',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+            status: 'created' as UnifiedSiteStatus,
+            assignedOpsManager: 'Reverend James Smith',
+            assignedDeploymentEngineer: 'Lisa Anderson',
+            stakeholders: [],
+            notes: 'Durham Cathedral site implementation',
+            description: 'Durham Cathedral site implementation',
+            lastUpdated: '2024-03-15'
           }
         ];
         
         const foundSite = mockSites.find(s => s.id === id);
         if (foundSite) {
           setSite(foundSite);
+          setSelectedStep(getStepperStepFromStatus(foundSite.status as UnifiedSiteStatus));
         } else {
           setSite(mockSite);
+          setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
         }
         setLoading(false);
       }
@@ -218,40 +453,6 @@ const SiteDetail = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'in_study':
-        return 'bg-blue-100 text-blue-800';
-      case 'hardware_scoped':
-        return 'bg-purple-100 text-purple-800';
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'live':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <FileText className="h-4 w-4" />;
-      case 'in_study':
-        return <Clock className="h-4 w-4" />;
-      case 'hardware_scoped':
-        return <Settings className="h-4 w-4" />;
-      case 'approved':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'live':
-        return <CheckCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
-  };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'low':
@@ -264,6 +465,938 @@ const SiteDetail = () => {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Create stepper steps based on site status
+  const stepperSteps = createStepperSteps(site.status as UnifiedSiteStatus);
+
+  // Render content based on selected step
+  const renderStepContent = () => {
+    switch (selectedStep) {
+      case 0: // Site Creation
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
+                <p className="text-gray-600 mt-1">Basic site information and configuration</p>
+              </div>
+              <div className="flex space-x-3">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Site</span>
+                </Button>
+                <Button className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Submit for Review</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Site Creation Form */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* General Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Building className="mr-2 h-5 w-5" />
+                    General Information
+                  </CardTitle>
+                  <CardDescription>
+                    Basic site details and organisation information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Organisation</label>
+                      <Input 
+                        defaultValue={site.organization} 
+                        placeholder="e.g., Compass Group UK"
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Food Court Name</label>
+                      <Input 
+                        defaultValue={site.foodCourt} 
+                        placeholder="e.g., London Central"
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Unit Code</label>
+                      <Input 
+                        defaultValue={site.unitCode} 
+                        placeholder="e.g., LC001"
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Target Live Date</label>
+                      <Input 
+                        type="date"
+                        defaultValue={site.goLiveDate}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Location Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <MapPin className="mr-2 h-5 w-5" />
+                    Location Information
+                  </CardTitle>
+                  <CardDescription>
+                    Site address and geographical coordinates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <LocationPicker
+                    onLocationSelect={(location) => {
+                      setLocationData(location);
+                      console.log('Selected location:', location);
+                    }}
+                    initialLocation={locationData ? { lat: locationData.lat, lng: locationData.lng } : undefined}
+                  />
+                  
+                  {locationData && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Selected Address</label>
+                        <Input 
+                          value={locationData.address}
+                          readOnly
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Latitude</label>
+                          <Input 
+                            value={locationData.lat.toFixed(6)}
+                            readOnly
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Longitude</label>
+                          <Input 
+                            value={locationData.lng.toFixed(6)}
+                            readOnly
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Priority & Risk Assessment Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <AlertTriangle className="mr-2 h-5 w-5" />
+                    Priority & Risk Assessment
+                  </CardTitle>
+                  <CardDescription>
+                    Set priority level and assess potential risks
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Priority Level</label>
+                      <Select defaultValue={site.priority}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low Priority</SelectItem>
+                          <SelectItem value="medium">Medium Priority</SelectItem>
+                          <SelectItem value="high">High Priority</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Risk Level</label>
+                      <Select defaultValue={site.riskLevel}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select risk level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low Risk</SelectItem>
+                          <SelectItem value="medium">Medium Risk</SelectItem>
+                          <SelectItem value="high">High Risk</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Team Assignment Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    Team Assignment
+                  </CardTitle>
+                  <CardDescription>
+                    Assign key team members to this site
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Operations Manager</label>
+                      <Select defaultValue={site.assignedOpsManager}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select operations manager" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="John Smith">John Smith</SelectItem>
+                          <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+                          <SelectItem value="Emma Davis">Emma Davis</SelectItem>
+                          <SelectItem value="Alex Johnson">Alex Johnson</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Deployment Engineer</label>
+                      <Select defaultValue={site.assignedDeploymentEngineer}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select deployment engineer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
+                          <SelectItem value="David Brown">David Brown</SelectItem>
+                          <SelectItem value="Tom Wilson">Tom Wilson</SelectItem>
+                          <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Buttons at Bottom */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Save as Draft</span>
+              </Button>
+              <Button className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Submit for Review</span>
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 1: // Site Study
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Site Study Report</h2>
+                <p className="text-gray-600 mt-1">Comprehensive site assessment and deployment readiness</p>
+              </div>
+              <div className="flex space-x-3">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Site Study</span>
+                </Button>
+                <Button className="flex items-center space-x-2">
+                  <Download className="h-4 w-4" />
+                  <span>Export Report</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Site Study Content with Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* General Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Building className="mr-2 h-5 w-5" />
+                    General Information
+                  </CardTitle>
+                  <CardDescription>
+                    Organisation details and key contacts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Organisation:</span>
+                        <span className="font-medium">Compass Eurest</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Sector:</span>
+                        <span className="font-medium">Eurest</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Unit Manager:</span>
+                        <span className="font-medium">Sarah Johnson</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Job Title:</span>
+                        <span className="font-medium">Operations Manager</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Email:</span>
+                        <span className="font-medium">sarah.johnson@jlr.com</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mobile:</span>
+                        <span className="font-medium">+44 7700 900123</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Location & Delivery Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Truck className="mr-2 h-5 w-5" />
+                    Location & Delivery Information
+                  </CardTitle>
+                  <CardDescription>
+                    Access details and delivery requirements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Floor:</span>
+                        <span className="font-medium">2nd Floor</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Security Restrictions:</span>
+                        <span className="font-medium">Security pass required for all visitors</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Delivery Window:</span>
+                        <span className="font-medium">10:00 AM–2:00 PM</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Lift Access:</span>
+                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Staff & Capacity Planning Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    Staff & Capacity Planning
+                  </CardTitle>
+                  <CardDescription>
+                    Employee numbers and operational capacity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Employee Strength:</span>
+                        <span className="font-medium">2,500</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Expected Footfall:</span>
+                        <span className="font-medium">800</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Seating Capacity:</span>
+                        <span className="font-medium">300</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Operating Days:</span>
+                        <span className="font-medium">Monday - Friday</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Operating Hours:</span>
+                        <span className="font-medium">7:00 AM - 6:00 PM</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* IT & Power Infrastructure Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Wifi className="mr-2 h-5 w-5" />
+                    IT & Power Infrastructure
+                  </CardTitle>
+                  <CardDescription>
+                    Network connectivity and power requirements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">LAN Points:</span>
+                        <span className="font-medium">8</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Wi-Fi Available:</span>
+                        <Badge className="bg-green-100 text-green-800">Yes</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Bandwidth:</span>
+                        <span className="font-medium">6 Mbps</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Static IP:</span>
+                        <Badge className="bg-green-100 text-green-800">Provided</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">UPS Power (POS):</span>
+                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">UPS Power (Ceiling):</span>
+                        <Badge className="bg-red-100 text-red-800">Not Available</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Readiness & Risks Card */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Readiness & Risks
+                  </CardTitle>
+                  <CardDescription>
+                    Deployment readiness assessment and potential blockers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Site Deployment Ready:</span>
+                        <Badge className="bg-green-100 text-green-800">Ready</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Key Blockers:</span>
+                        <span className="font-medium">None</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Unresolved Dependencies:</span>
+                        <span className="font-medium">No</span>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Suggested Go-Live Date:</span>
+                        <span className="font-medium">1st November 2025</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Layout Images Upload Section */}
+                  <div className="border-t pt-6">
+                    <h4 className="font-semibold text-gray-900 mb-4">Layout Images</h4>
+                    <p className="text-sm text-gray-600 mb-4">Upload up to 3 layout images for the site (JPG, PNG, PDF - Max 10MB each)</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Upload Slot 1 */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <div className="flex flex-col items-center space-y-2">
+                          <Upload className="h-8 w-8 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Upload Layout 1</p>
+                            <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
+                          </div>
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            className="hidden"
+                            id="layout-1"
+                          />
+                          <label htmlFor="layout-1" className="cursor-pointer">
+                            <Button variant="outline" size="sm">
+                              Choose File
+                            </Button>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Upload Slot 2 */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <div className="flex flex-col items-center space-y-2">
+                          <Upload className="h-8 w-8 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Upload Layout 2</p>
+                            <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
+                          </div>
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            className="hidden"
+                            id="layout-2"
+                          />
+                          <label htmlFor="layout-2" className="cursor-pointer">
+                            <Button variant="outline" size="sm">
+                              Choose File
+                            </Button>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Upload Slot 3 */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <div className="flex flex-col items-center space-y-2">
+                          <Upload className="h-8 w-8 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Upload Layout 3</p>
+                            <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
+                          </div>
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            className="hidden"
+                            id="layout-3"
+                          />
+                          <label htmlFor="layout-3" className="cursor-pointer">
+                            <Button variant="outline" size="sm">
+                              Choose File
+                            </Button>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 2: // Scoping (Software & Hardware)
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Scoping</h2>
+                <p className="text-gray-600 mt-1">Select software and hardware requirements for the site</p>
+              </div>
+              <div className="flex space-x-3">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Scoping</span>
+                </Button>
+                <Button className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Submit for Approval</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Scoping Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Software Selection Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Monitor className="mr-2 h-5 w-5" />
+                    Software Selection
+                  </CardTitle>
+                  <CardDescription>
+                    Choose the software modules required for this site
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">POS System</h4>
+                        <p className="text-sm text-gray-600">Point of Sale system for transactions</p>
+                      </div>
+                      <Checkbox />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Kiosk Software</h4>
+                        <p className="text-sm text-gray-600">Self-service kiosk software</p>
+                      </div>
+                      <Checkbox />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Kitchen Display</h4>
+                        <p className="text-sm text-gray-600">Kitchen display system for orders</p>
+                      </div>
+                      <Checkbox />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Inventory Management</h4>
+                        <p className="text-sm text-gray-600">Inventory tracking and management</p>
+                      </div>
+                      <Checkbox />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Hardware Selection Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Hardware Selection
+                  </CardTitle>
+                  <CardDescription>
+                    Specify the quantity of hardware required
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">POS Terminals</h4>
+                        <p className="text-sm text-gray-600">Point of Sale terminals</p>
+                      </div>
+                      <Input type="number" placeholder="0" className="w-20" />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Self-Service Kiosks</h4>
+                        <p className="text-sm text-gray-600">Self-service ordering kiosks</p>
+                      </div>
+                      <Input type="number" placeholder="0" className="w-20" />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Kitchen Displays</h4>
+                        <p className="text-sm text-gray-600">Kitchen display screens</p>
+                      </div>
+                      <Input type="number" placeholder="0" className="w-20" />
+                    </div>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Printers</h4>
+                        <p className="text-sm text-gray-600">Receipt and kitchen printers</p>
+                      </div>
+                      <Input type="number" placeholder="0" className="w-20" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Buttons at Bottom */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Save as Draft</span>
+              </Button>
+              <Button className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Submit for Approval</span>
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 3: // Approval
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Approval</h2>
+                <p className="text-gray-600 mt-1">Ops Manager approval for software and hardware selection</p>
+              </div>
+              <div className="flex space-x-3">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Approval</span>
+                </Button>
+                <Button className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Approve</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Approval Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Approval Status Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <CheckSquare className="mr-2 h-5 w-5" />
+                    Approval Status
+                  </CardTitle>
+                  <CardDescription>
+                    Current approval status and next steps
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Approval Status</h4>
+                      <p className="text-sm text-gray-600">
+                        Waiting for approval from {site.assignedOpsManager}
+                      </p>
+                    </div>
+                    <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Requested Date:</span>
+                      <span className="font-medium">15th January 2025</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Expected Response:</span>
+                      <span className="font-medium">Within 48 hours</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Software & Hardware Summary Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Software & Hardware Summary
+                  </CardTitle>
+                  <CardDescription>
+                    Selected software and hardware requirements
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">POS System</h4>
+                        <p className="text-sm text-gray-600">Point of Sale system</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Selected</Badge>
+                    </div>
+                    <div className="flex justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Kiosk Software</h4>
+                        <p className="text-sm text-gray-600">Self-service kiosk</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Selected</Badge>
+                    </div>
+                    <div className="flex justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">POS Terminals</h4>
+                        <p className="text-sm text-gray-600">Point of Sale terminals</p>
+                      </div>
+                      <span className="font-medium">4 units</span>
+                    </div>
+                    <div className="flex justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Self-Service Kiosks</h4>
+                        <p className="text-sm text-gray-600">Self-service ordering</p>
+                      </div>
+                      <span className="font-medium">2 units</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Buttons at Bottom */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Request Changes</span>
+              </Button>
+              <Button className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Approve</span>
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 4: // Deployment
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Deployment</h2>
+                <p className="text-gray-600 mt-1">Hardware installation and system deployment</p>
+              </div>
+              <div className="flex space-x-3">
+                <Button variant="outline" className="flex items-center space-x-2">
+                  <Edit className="h-4 w-4" />
+                  <span>Update Progress</span>
+                </Button>
+                <Button className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Mark Complete</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Deployment Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Deployment Progress Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Truck className="mr-2 h-5 w-5" />
+                    Deployment Progress
+                  </CardTitle>
+                  <CardDescription>
+                    Current deployment status and progress
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Overall Progress</span>
+                    <span className="text-sm font-medium text-blue-600">75%</span>
+                  </div>
+                  <Progress value={75} className="w-full" />
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Hardware Delivered</h4>
+                          <p className="text-sm text-gray-600">All hardware received on site</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Clock className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Installation In Progress</h4>
+                          <p className="text-sm text-gray-600">POS terminals being installed</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center">
+                          <AlertTriangle className="h-3 w-3 text-gray-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Testing Pending</h4>
+                          <p className="text-sm text-gray-600">System testing and validation</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Deployment Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="mr-2 h-5 w-5" />
+                    Deployment Details
+                  </CardTitle>
+                  <CardDescription>
+                    Key deployment information and timeline
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Deployment Engineer:</span>
+                      <span className="font-medium">{site.assignedDeploymentEngineer}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Start Date:</span>
+                      <span className="font-medium">20th January 2025</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Expected Completion:</span>
+                      <span className="font-medium">25th January 2025</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Current Phase:</span>
+                      <Badge className="bg-blue-100 text-blue-800">Installation</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Buttons at Bottom */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Update Progress</span>
+              </Button>
+              <Button className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Mark Complete</span>
+              </Button>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Information</CardTitle>
+              <CardDescription>
+                Basic information about the site
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Select a step from the workflow above to view details.</p>
+            </CardContent>
+          </Card>
+        );
     }
   };
 
@@ -309,11 +1442,11 @@ const SiteDetail = () => {
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <div className={`p-2 rounded-full ${getStatusColor(site.status)}`}>
-                {getStatusIcon(site.status)}
+                <CheckCircle className="h-4 w-4" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-600">Status</p>
-                <p className="text-lg font-semibold">{site.status.replace('_', ' ').toUpperCase()}</p>
+                <p className="text-lg font-semibold">{getStatusDisplayName(site.status)}</p>
               </div>
             </div>
           </CardContent>
@@ -323,7 +1456,7 @@ const SiteDetail = () => {
             <div className="flex items-center space-x-2">
               <Calendar className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Go Live Date</p>
+                <p className="text-sm font-medium text-gray-600">Live Date</p>
                 <p className="text-lg font-semibold">{new Date(site.goLiveDate).toLocaleDateString()}</p>
               </div>
             </div>
@@ -353,309 +1486,60 @@ const SiteDetail = () => {
         </Card>
       </div>
 
-      {/* Site Detail Navigation */}
-      <Tabs defaultValue="info" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="info" className="flex items-center space-x-2">
-            <Info className="h-4 w-4" />
-            <span>Site Info</span>
-          </TabsTrigger>
-          <TabsTrigger value="study" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Study Status</span>
-          </TabsTrigger>
-          <TabsTrigger value="activation" className="flex items-center space-x-2">
-            <Zap className="h-4 w-4" />
-            <span>Activation Status</span>
-          </TabsTrigger>
-          <TabsTrigger value="stakeholders" className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>Stakeholders</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Workflow Stepper */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center text-gray-900">
+            <Info className="mr-2 h-5 w-5 text-blue-600" />
+            Workflow Progress
+          </CardTitle>
+          <CardDescription>
+            Track the progress of this site through the SmartQ LaunchPad workflow
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Stepper 
+            steps={stepperSteps} 
+            currentStep={selectedStep}
+            onStepClick={setSelectedStep}
+            className="mb-6"
+          />
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              Current Status: {getStatusDisplayName(site.status)}
+            </div>
+            <div className="text-sm text-gray-600">
+              Step {selectedStep + 1} of {stepperSteps.length}
+            </div>
+          </div>
+          
+          {/* Mobile Navigation Buttons */}
+          <div className="md:hidden flex justify-between items-center mt-4 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedStep(Math.max(0, selectedStep - 1))}
+              disabled={selectedStep === 0}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Previous</span>
+            </Button>
+            <Button
+              onClick={() => setSelectedStep(Math.min(stepperSteps.length - 1, selectedStep + 1))}
+              disabled={selectedStep === stepperSteps.length - 1}
+              className="flex items-center space-x-2"
+            >
+              <span>Next</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Site Info Tab */}
-        <TabsContent value="info" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Information</CardTitle>
-              <CardDescription>
-                Basic information about the site
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">General Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Organization:</span>
-                      <span className="font-medium">{site.organization}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Food Court:</span>
-                      <span className="font-medium">{site.foodCourt}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Unit Code:</span>
-                      <span className="font-medium">{site.unitCode}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Go Live Date:</span>
-                      <span className="font-medium">{new Date(site.goLiveDate).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Status & Priority</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <Badge className={getStatusColor(site.status)}>
-                        {site.status.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Priority:</span>
-                      <Badge className={getPriorityColor(site.priority)}>
-                        {site.priority.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Risk Level:</span>
-                      <Badge variant="outline">{site.riskLevel.toUpperCase()}</Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Description</h3>
-                <p className="text-gray-700">{site.description}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Study Status Tab */}
-        <TabsContent value="study" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Study Status</CardTitle>
-              <CardDescription>
-                Track the progress of site studies and assessments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {site.status === 'in_study' || site.status === 'draft' ? (
-                <div className="space-y-6">
-                  {/* Study Progress Stepper */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Study Progress</h3>
-                    <div className="space-y-4">
-                      {/* Step 1: General Information */}
-                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">General Information</h4>
-                          <p className="text-sm text-gray-600">Basic site details and contact information</p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      </div>
-
-                      {/* Step 2: Location & Infrastructure */}
-                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <MapPin className="h-4 w-4 text-blue-600" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">Location & Infrastructure</h4>
-                          <p className="text-sm text-gray-600">Site location, floor plan, and infrastructure details</p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      </div>
-
-                      {/* Step 3: Hardware Requirements */}
-                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                            <Package className="h-4 w-4 text-gray-600" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">Hardware Requirements</h4>
-                          <p className="text-sm text-gray-600">Define hardware needs and specifications</p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      </div>
-
-                      {/* Step 4: Network & Power */}
-                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                            <Wifi className="h-4 w-4 text-gray-600" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">Network & Power Requirements</h4>
-                          <p className="text-sm text-gray-600">Network connectivity and power specifications</p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      </div>
-
-                      {/* Step 5: Review & Submit */}
-                      <div className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                            <FileText className="h-4 w-4 text-gray-600" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">Review & Submit</h4>
-                          <p className="text-sm text-gray-600">Review all information and submit study</p>
-                        </div>
-                        <Button variant="outline" size="sm" disabled>
-                          <FileText className="h-4 w-4 mr-2" />
-                          Review
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export Study
-                    </Button>
-                    <Button 
-                      variant="gradient"
-                      onClick={() => navigate(`/sites/${id}/study`)}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Continue Study
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Site Study Management</h3>
-                  <p className="text-gray-600 mb-4">
-                    {site.status === 'hardware_scoped' || site.status === 'live' 
-                      ? 'Site study has been completed. View the study details below.'
-                      : 'Site study is not yet started or in progress.'
-                    }
-                  </p>
-                  <Button 
-                    onClick={() => navigate(`/sites/${id}/study`)}
-                    className="flex items-center space-x-2 mx-auto"
-                  >
-                    <FileText className="h-4 w-4" />
-                    <span>View Study Details</span>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Activation Status Tab */}
-        <TabsContent value="activation" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activation Status</CardTitle>
-              <CardDescription>
-                Track the activation progress and deployment status
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Deployment Progress</span>
-                  <span className="text-sm text-gray-600">75%</span>
-                </div>
-                <Progress value={75} className="w-full" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="text-center">
-                    <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </div>
-                    <p className="text-sm font-medium">Hardware Scoped</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Clock className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <p className="text-sm font-medium">In Progress</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <AlertTriangle className="h-4 w-4 text-gray-600" />
-                    </div>
-                    <p className="text-sm font-medium">Pending</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Stakeholders Tab */}
-        <TabsContent value="stakeholders" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stakeholders</CardTitle>
-              <CardDescription>
-                Key contacts and stakeholders for this site
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {site.stakeholders.map((stakeholder, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{stakeholder.name}</p>
-                        <p className="text-sm text-gray-600">{stakeholder.role}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Phone className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Step Content */}
+      <div className="space-y-6">
+        {renderStepContent()}
+      </div>
     </div>
   );
 };

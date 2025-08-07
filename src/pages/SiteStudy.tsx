@@ -98,44 +98,37 @@ export default function SiteStudy() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
 
-  // Stepper steps
-  const steps: StepperStep[] = [
+  // Stepper steps - updated when currentStep changes
+  const steps: StepperStep[] = React.useMemo(() => [
     {
-      id: 'general',
-      title: 'General Info',
-      description: 'Basic details',
+      id: 'site-info',
+      title: 'Site Info',
+      description: 'Basic site details',
       status: currentStep === 0 ? 'current' : currentStep > 0 ? 'completed' : 'upcoming',
       icon: Info
     },
     {
-      id: 'location',
-      title: 'Location',
-      description: 'Site location',
+      id: 'site-study',
+      title: 'Site Study',
+      description: 'Location & infrastructure',
       status: currentStep === 1 ? 'current' : currentStep > 1 ? 'completed' : 'upcoming',
-      icon: MapPin
+      icon: FileText
     },
     {
-      id: 'infrastructure',
-      title: 'Infrastructure',
-      description: 'Floor plan & setup',
+      id: 'software-scoping',
+      title: 'Software Scoping',
+      description: 'Software requirements',
       status: currentStep === 2 ? 'current' : currentStep > 2 ? 'completed' : 'upcoming',
-      icon: Building
+      icon: Settings
     },
     {
-      id: 'hardware',
-      title: 'Hardware',
-      description: 'Requirements',
+      id: 'hardware-scoping',
+      title: 'Hardware Scoping',
+      description: 'Hardware requirements',
       status: currentStep === 3 ? 'current' : currentStep > 3 ? 'completed' : 'upcoming',
       icon: Package
-    },
-    {
-      id: 'review',
-      title: 'Review',
-      description: 'Final review',
-      status: currentStep === 4 ? 'current' : currentStep > 4 ? 'completed' : 'upcoming',
-      icon: FileText
     }
-  ];
+  ], [currentStep]);
 
   // Get site data
   const site = id ? getSiteById(id) : null;
@@ -177,11 +170,11 @@ export default function SiteStudy() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0:
+      case 0: // Site Info
         return (
           <Card>
             <CardHeader>
-              <CardTitle>General Information</CardTitle>
+              <CardTitle>Site Information</CardTitle>
               <CardDescription>Basic site details and contact information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -264,12 +257,12 @@ export default function SiteStudy() {
           </Card>
         );
 
-      case 1:
+      case 1: // Site Study
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Location & Infrastructure</CardTitle>
-              <CardDescription>Site location and basic infrastructure details</CardDescription>
+              <CardTitle>Site Study</CardTitle>
+              <CardDescription>Location and infrastructure details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -319,54 +312,6 @@ export default function SiteStudy() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Select
-                    value={studyData.location.country}
-                    onValueChange={(value) => setStudyData(prev => ({
-                      ...prev,
-                      location: { ...prev.location, country: value }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                      <SelectItem value="Ireland">Ireland</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              {studyData.location.latitude && studyData.location.longitude && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">Location Coordinates</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Latitude:</span>
-                      <span className="ml-2 font-mono">{studyData.location.latitude.toFixed(6)}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Longitude:</span>
-                      <span className="ml-2 font-mono">{studyData.location.longitude.toFixed(6)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-
-      case 2:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Infrastructure Details</CardTitle>
-              <CardDescription>Floor plan, counters, and meal sessions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
                   <Label htmlFor="counters">Number of Counters</Label>
                   <Input
                     id="counters"
@@ -379,68 +324,36 @@ export default function SiteStudy() {
                     placeholder="e.g., 4"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="mealSessions">Meal Sessions</Label>
-                  <Select
-                    value=""
-                    onValueChange={(value) => {
-                      if (value && !studyData.infrastructure.mealSessions.includes(value)) {
-                        setStudyData(prev => ({
-                          ...prev,
-                          infrastructure: {
-                            ...prev.infrastructure,
-                            mealSessions: [...prev.infrastructure.mealSessions, value]
-                          }
-                        }));
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Add meal session" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Breakfast">Breakfast</SelectItem>
-                      <SelectItem value="Lunch">Lunch</SelectItem>
-                      <SelectItem value="Dinner">Dinner</SelectItem>
-                      <SelectItem value="Snacks">Snacks</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {studyData.infrastructure.mealSessions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {studyData.infrastructure.mealSessions.map((session, index) => (
-                        <Badge key={index} variant="secondary">
-                          {session}
-                          <button
-                            onClick={() => setStudyData(prev => ({
-                              ...prev,
-                              infrastructure: {
-                                ...prev.infrastructure,
-                                mealSessions: prev.infrastructure.mealSessions.filter((_, i) => i !== index)
-                              }
-                            }))}
-                            className="ml-1 text-gray-500 hover:text-gray-700"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </CardContent>
           </Card>
         );
 
-      case 3:
+      case 2: // Software Scoping
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Hardware Requirements</CardTitle>
-              <CardDescription>Define hardware needs and specifications</CardDescription>
+              <CardTitle>Software Scoping</CardTitle>
+              <CardDescription>Define software requirements and solutions</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="smartQSolutions">SmartQ Solutions Required</Label>
+                  <Textarea
+                    id="smartQSolutions"
+                    value={studyData.hardware.smartQSolutions.join(', ')}
+                    onChange={(e) => setStudyData(prev => ({
+                      ...prev,
+                      hardware: { 
+                        ...prev.hardware, 
+                        smartQSolutions: e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                      }
+                    }))}
+                    placeholder="Enter required SmartQ solutions (comma-separated)"
+                    rows={3}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="networkRequirements">Network Requirements</Label>
                   <Textarea
@@ -454,6 +367,36 @@ export default function SiteStudy() {
                     rows={3}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 3: // Hardware Scoping
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Hardware Scoping</CardTitle>
+              <CardDescription>Define hardware requirements and specifications</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="additionalHardware">Additional Hardware Required</Label>
+                  <Textarea
+                    id="additionalHardware"
+                    value={studyData.hardware.additionalHardware.join(', ')}
+                    onChange={(e) => setStudyData(prev => ({
+                      ...prev,
+                      hardware: { 
+                        ...prev.hardware, 
+                        additionalHardware: e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                      }
+                    }))}
+                    placeholder="Enter additional hardware requirements (comma-separated)"
+                    rows={3}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="powerRequirements">Power Requirements</Label>
                   <Textarea
@@ -464,46 +407,6 @@ export default function SiteStudy() {
                       hardware: { ...prev.hardware, powerRequirements: e.target.value }
                     }))}
                     placeholder="Describe power requirements..."
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case 4:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Review & Submit</CardTitle>
-              <CardDescription>Review all information before submitting</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="notes">Study Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={studyData.review.notes}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      review: { ...prev.review, notes: e.target.value }
-                    }))}
-                    placeholder="Additional notes about the study..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="recommendations">Recommendations</Label>
-                  <Textarea
-                    id="recommendations"
-                    value={studyData.review.recommendations}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      review: { ...prev.review, recommendations: e.target.value }
-                    }))}
-                    placeholder="Recommendations for deployment..."
                     rows={3}
                   />
                 </div>

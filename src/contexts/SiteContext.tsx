@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { type UnifiedSiteStatus } from '@/lib/siteTypes';
 
 export interface Stakeholder {
   id: string;
@@ -18,7 +19,7 @@ export interface Site {
   goLiveDate: string;
   priority: 'low' | 'medium' | 'high';
   riskLevel: 'low' | 'medium' | 'high';
-  status: 'draft' | 'in_study' | 'hardware_scoped' | 'live';
+  status: UnifiedSiteStatus;
   assignedOpsManager: string;
   assignedDeploymentEngineer: string;
   stakeholders: Stakeholder[];

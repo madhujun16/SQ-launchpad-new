@@ -49,7 +49,7 @@ const getStageIcon = (stage: DeploymentStage) => {
       return '🔧';
     case 'deployment_completed':
       return '✅';
-    case 'go_live_ready':
+    case 'live_ready':
       return '🚀';
     case 'live':
       return '🟢';

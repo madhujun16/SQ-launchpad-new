@@ -1,9 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Stepper, StepperContent, type StepperStep } from '@/components/ui/stepper';
 import { 
   Building, 
   Users, 
@@ -33,7 +34,11 @@ import {
   Zap,
   Target,
   Star,
-  Award
+  Award,
+  Info,
+  CheckSquare,
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
@@ -82,6 +87,47 @@ const Index = () => {
 
   // Default dashboard for users without specific role or for general overview
   const DefaultDashboard = () => {
+    const [currentWorkflowStep, setCurrentWorkflowStep] = useState(0);
+
+    // Workflow steps for the platform
+    const workflowSteps: StepperStep[] = React.useMemo(() => [
+      {
+        id: 'site-creation',
+        title: 'Site Creation',
+        description: 'Create new cafeteria sites',
+        status: currentWorkflowStep === 0 ? 'current' : currentWorkflowStep > 0 ? 'completed' : 'upcoming',
+        icon: Building
+      },
+      {
+        id: 'site-study',
+        title: 'Site Study',
+        description: 'Conduct on-site assessment',
+        status: currentWorkflowStep === 1 ? 'current' : currentWorkflowStep > 1 ? 'completed' : 'upcoming',
+        icon: FileText
+      },
+      {
+        id: 'hardware-scoping',
+        title: 'Hardware Scoping',
+        description: 'Define hardware requirements',
+        status: currentWorkflowStep === 2 ? 'current' : currentWorkflowStep > 2 ? 'completed' : 'upcoming',
+        icon: Package
+      },
+      {
+        id: 'approval',
+        title: 'Approval',
+        description: 'Ops Manager approval',
+        status: currentWorkflowStep === 3 ? 'current' : currentWorkflowStep > 3 ? 'completed' : 'upcoming',
+        icon: CheckSquare
+      },
+      {
+        id: 'deployment',
+        title: 'Deployment',
+        description: 'Hardware installation',
+        status: currentWorkflowStep === 4 ? 'current' : currentWorkflowStep > 4 ? 'completed' : 'upcoming',
+        icon: Truck
+      }
+    ], [currentWorkflowStep]);
+
     const recentActivities = [
       {
         title: "Manchester Central Cafeteria",
@@ -427,6 +473,71 @@ const Index = () => {
                         className={`h-4 w-4 ${star <= performanceMetrics.customerSatisfaction ? 'text-warning fill-current' : 'text-muted'}`} 
                       />
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Workflow Stepper */}
+            <div className="mb-8">
+              <Card className="border-primary/20 bg-card shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-primary-dark">
+                    <Info className="mr-2 h-5 w-5 text-primary" />
+                    Platform Workflow
+                  </CardTitle>
+                  <CardDescription>
+                    Track your progress through the SmartQ LaunchPad workflow
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Stepper 
+                    steps={workflowSteps} 
+                    currentStep={currentWorkflowStep}
+                    onStepClick={(stepIndex) => setCurrentWorkflowStep(stepIndex)}
+                    className="mb-6"
+                  />
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      Step {currentWorkflowStep + 1} of {workflowSteps.length}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setCurrentWorkflowStep(Math.max(0, currentWorkflowStep - 1))}
+                        disabled={currentWorkflowStep === 0}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        onClick={() => setCurrentWorkflowStep(Math.min(workflowSteps.length - 1, currentWorkflowStep + 1))}
+                        disabled={currentWorkflowStep === workflowSteps.length - 1}
+                      >
+                        Next
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile Navigation Buttons */}
+                  <div className="md:hidden flex justify-between items-center mt-4 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentWorkflowStep(Math.max(0, currentWorkflowStep - 1))}
+                      disabled={currentWorkflowStep === 0}
+                      className="flex items-center space-x-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Previous</span>
+                    </Button>
+                    <Button
+                      onClick={() => setCurrentWorkflowStep(Math.min(workflowSteps.length - 1, currentWorkflowStep + 1))}
+                      disabled={currentWorkflowStep === workflowSteps.length - 1}
+                      className="flex items-center space-x-2"
+                    >
+                      <span>Next</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -28,14 +28,15 @@ import { AccessDenied } from '@/components/AccessDenied';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
+import { getStatusColor, getStatusDisplayName, type UnifiedSiteStatus } from '@/lib/siteTypes';
 
 interface Site {
   id: string;
   name: string;
   type: string;
   location: string;
-  status: 'created' | 'study_in_progress' | 'study_completed' | 'hardware_scoped' | 'approved' | 'procurement' | 'deployment' | 'activated' | 'go_live';
-  target_go_live_date: string;
+  status: UnifiedSiteStatus;
+  target_live_date: string;
   assigned_ops_manager?: string;
   assigned_deployment_engineer?: string;
   created_at: string;
@@ -74,8 +75,8 @@ const Sites = () => {
         name: 'London Central',
         type: 'Cafeteria',
         location: 'London, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-01-15',
+        status: 'live',
+        target_live_date: '2024-01-15',
         assigned_ops_manager: 'John Smith',
         assigned_deployment_engineer: 'Mike Johnson',
         created_at: '2024-01-01',
@@ -86,8 +87,8 @@ const Sites = () => {
         name: 'Manchester North',
         type: 'Cafeteria',
         location: 'Manchester, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-01-20',
+        status: 'live',
+        target_live_date: '2024-01-20',
         assigned_ops_manager: 'Sarah Wilson',
         assigned_deployment_engineer: 'David Brown',
         created_at: '2024-01-05',
@@ -98,8 +99,8 @@ const Sites = () => {
         name: 'Birmingham South',
         type: 'Food Court',
         location: 'Birmingham, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-01-25',
+        status: 'live',
+        target_live_date: '2024-01-25',
         assigned_ops_manager: 'Emma Davis',
         assigned_deployment_engineer: 'Tom Wilson',
         created_at: '2024-01-10',
@@ -110,8 +111,8 @@ const Sites = () => {
         name: 'Leeds Central',
         type: 'Cafeteria',
         location: 'Leeds, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-02-01',
+        status: 'live',
+        target_live_date: '2024-02-01',
         assigned_ops_manager: 'Alex Johnson',
         assigned_deployment_engineer: 'Lisa Brown',
         created_at: '2024-01-15',
@@ -122,8 +123,8 @@ const Sites = () => {
         name: 'Liverpool Docklands',
         type: 'Food Court',
         location: 'Liverpool, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-02-05',
+        status: 'live',
+        target_live_date: '2024-02-05',
         assigned_ops_manager: 'Michael Wilson',
         assigned_deployment_engineer: 'Sarah Davis',
         created_at: '2024-01-20',
@@ -134,8 +135,8 @@ const Sites = () => {
         name: 'Edinburgh Castle',
         type: 'Cafeteria',
         location: 'Edinburgh, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-02-10',
+        status: 'live',
+        target_live_date: '2024-02-10',
         assigned_ops_manager: 'David Thompson',
         assigned_deployment_engineer: 'Emma Wilson',
         created_at: '2024-01-25',
@@ -146,8 +147,8 @@ const Sites = () => {
         name: 'Cardiff Bay',
         type: 'Food Court',
         location: 'Cardiff, UK',
-        status: 'go_live',
-        target_go_live_date: '2024-02-15',
+        status: 'live',
+        target_live_date: '2024-02-15',
         assigned_ops_manager: 'Rachel Green',
         assigned_deployment_engineer: 'James Miller',
         created_at: '2024-01-30',
@@ -160,7 +161,7 @@ const Sites = () => {
         type: 'Cafeteria',
         location: 'Glasgow, UK',
         status: 'approved',
-        target_go_live_date: '2024-03-01',
+        target_live_date: '2024-03-01',
         assigned_ops_manager: 'Fiona MacDonald',
         assigned_deployment_engineer: 'Robert Campbell',
         created_at: '2024-02-01',
@@ -172,7 +173,7 @@ const Sites = () => {
         type: 'Food Court',
         location: 'Bristol, UK',
         status: 'approved',
-        target_go_live_date: '2024-03-05',
+        target_live_date: '2024-03-05',
         assigned_ops_manager: 'Tom Anderson',
         assigned_deployment_engineer: 'Helen White',
         created_at: '2024-02-05',
@@ -184,7 +185,7 @@ const Sites = () => {
         type: 'Cafeteria',
         location: 'Newcastle, UK',
         status: 'approved',
-        target_go_live_date: '2024-03-10',
+        target_live_date: '2024-03-10',
         assigned_ops_manager: 'Peter Mitchell',
         assigned_deployment_engineer: 'Claire Roberts',
         created_at: '2024-02-10',
@@ -196,7 +197,7 @@ const Sites = () => {
         type: 'Food Court',
         location: 'Sheffield, UK',
         status: 'approved',
-        target_go_live_date: '2024-03-15',
+        target_live_date: '2024-03-15',
         assigned_ops_manager: 'Andrew Taylor',
         assigned_deployment_engineer: 'Natalie Clark',
         created_at: '2024-02-15',
@@ -208,7 +209,7 @@ const Sites = () => {
         type: 'Cafeteria',
         location: 'Nottingham, UK',
         status: 'approved',
-        target_go_live_date: '2024-03-20',
+        target_live_date: '2024-03-20',
         assigned_ops_manager: 'Daniel Wright',
         assigned_deployment_engineer: 'Sophie Turner',
         created_at: '2024-02-20',
@@ -221,7 +222,7 @@ const Sites = () => {
         type: 'Cafeteria',
         location: 'Oxford, UK',
         status: 'created',
-        target_go_live_date: '2024-04-01',
+        target_live_date: '2024-04-01',
         assigned_ops_manager: 'Dr. Sarah Johnson',
         assigned_deployment_engineer: 'Mark Wilson',
         created_at: '2024-03-01',
@@ -233,7 +234,7 @@ const Sites = () => {
         type: 'Food Court',
         location: 'Cambridge, UK',
         status: 'study_in_progress',
-        target_go_live_date: '2024-04-05',
+        target_live_date: '2024-04-05',
         assigned_ops_manager: 'Dr. Michael Brown',
         assigned_deployment_engineer: 'Emma Davis',
         created_at: '2024-03-05',
@@ -245,7 +246,7 @@ const Sites = () => {
         type: 'Cafeteria',
         location: 'Durham, UK',
         status: 'created',
-        target_go_live_date: '2024-04-10',
+        target_live_date: '2024-04-10',
         assigned_ops_manager: 'Reverend James Smith',
         assigned_deployment_engineer: 'Lisa Anderson',
         created_at: '2024-03-10',
@@ -292,15 +293,15 @@ const Sites = () => {
 
   const getStatusConfig = (status: string) => {
     const configs = {
-      created: { label: 'Created', color: 'bg-gray-100 text-gray-800', icon: Plus },
-      study_in_progress: { label: 'Study In Progress', color: 'bg-blue-100 text-blue-800', icon: FileTextIcon },
-      study_completed: { label: 'Study Completed', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      hardware_scoped: { label: 'Hardware Scoped', color: 'bg-purple-100 text-purple-800', icon: Settings },
-      approved: { label: 'Approved', color: 'bg-orange-100 text-orange-800', icon: AlertCircle },
-      procurement: { label: 'Procurement', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      deployment: { label: 'Deployment', color: 'bg-indigo-100 text-indigo-800', icon: Wrench },
-      activated: { label: 'Activated', color: 'bg-teal-100 text-teal-800', icon: Activity },
-      go_live: { label: 'Go Live', color: 'bg-green-100 text-green-800', icon: CheckCircle }
+      created: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Plus },
+      study_in_progress: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: FileTextIcon },
+      study_completed: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: CheckCircle },
+      hardware_scoped: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Settings },
+      approved: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: AlertCircle },
+      procurement: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Clock },
+      deployment: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Wrench },
+      activated: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Activity },
+      live: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: CheckCircle }
     };
     return configs[status as keyof typeof configs] || configs.created;
   };
@@ -367,7 +368,7 @@ const Sites = () => {
                   <SelectItem value="procurement">Procurement</SelectItem>
                   <SelectItem value="deployment">Deployment</SelectItem>
                   <SelectItem value="activated">Activated</SelectItem>
-                  <SelectItem value="go_live">Go Live</SelectItem>
+                  <SelectItem value="live">Live</SelectItem>
                 </SelectContent>
               </Select>
               <Button variant="outline" className="flex items-center space-x-2">
@@ -415,7 +416,7 @@ const Sites = () => {
                           {statusConfig.label}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(site.target_go_live_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(site.target_live_date).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <div className="flex items-center space-x-1">

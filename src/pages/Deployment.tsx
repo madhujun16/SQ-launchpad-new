@@ -41,7 +41,6 @@ import {
   Zap,
   Play,
   Pause,
-  Stop,
   Settings,
   List,
   CheckSquare,
@@ -67,7 +66,7 @@ interface Deployment {
   hardware_delivered: boolean;
   installation_started: boolean;
   testing_completed: boolean;
-  go_live_ready: boolean;
+  live_ready: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -131,7 +130,7 @@ const Deployment = () => {
         hardware_delivered: true,
         installation_started: true,
         testing_completed: false,
-        go_live_ready: false,
+        live_ready: false,
         created_at: '2024-01-15',
         updated_at: '2024-01-20'
       },
@@ -156,7 +155,7 @@ const Deployment = () => {
         hardware_delivered: false,
         installation_started: false,
         testing_completed: false,
-        go_live_ready: false,
+        live_ready: false,
         created_at: '2024-01-16',
         updated_at: '2024-01-19'
       },
@@ -181,7 +180,7 @@ const Deployment = () => {
         hardware_delivered: true,
         installation_started: true,
         testing_completed: true,
-        go_live_ready: true,
+        live_ready: true,
         created_at: '2024-01-12',
         updated_at: '2024-01-18'
       }
@@ -264,7 +263,7 @@ const Deployment = () => {
           ...deployment,
           status: 'completed' as Deployment['status'],
           progress_percentage: 100,
-          go_live_ready: true
+          live_ready: true
         };
       }
       return deployment;
@@ -434,7 +433,7 @@ const Deployment = () => {
                                 onClick={() => handleGoLive(deployment.id)}
                               >
                                 <Play className="h-4 w-4 mr-1" />
-                                Go Live
+                                Live
                               </Button>
                             )}
                           </div>
@@ -619,7 +618,7 @@ const Deployment = () => {
                       
                       <div className="text-center">
                         <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.go_live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                          deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
                         }`}>
                           <Activity className="h-4 w-4" />
                         </div>

@@ -21,7 +21,7 @@ export type DeploymentStage =
   | 'deployment_scheduled'
   | 'deployment_in_progress'
   | 'deployment_completed'
-  | 'go_live_ready'
+  | 'live_ready'
   | 'live';
 
 export type ApprovalStatus = 
@@ -252,7 +252,7 @@ export const getWorkflowStageLabel = (stage: DeploymentStage): string => {
     deployment_scheduled: 'Deployment Scheduled',
     deployment_in_progress: 'Deployment In Progress',
     deployment_completed: 'Deployment Completed',
-    go_live_ready: 'Ready for Go-Live',
+    live_ready: 'Ready for Go-Live',
     live: 'Live',
   };
   return labels[stage];
@@ -270,7 +270,7 @@ export const getWorkflowStageColor = (stage: DeploymentStage): string => {
     deployment_scheduled: 'bg-blue-100 text-blue-800',
     deployment_in_progress: 'bg-yellow-100 text-yellow-800',
     deployment_completed: 'bg-green-100 text-green-800',
-    go_live_ready: 'bg-green-100 text-green-800',
+    live_ready: 'bg-green-100 text-green-800',
     live: 'bg-green-100 text-green-800',
   };
   return colors[stage];
