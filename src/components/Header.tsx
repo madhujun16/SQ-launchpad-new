@@ -93,7 +93,7 @@ const Header = () => {
   const roleConfig = getCurrentRoleConfig();
   const RoleIcon = roleConfig?.icon || User;
 
-  // Navigation structure with new 6 main tabs
+  // Navigation structure with 6 primary tabs
   const getNavigationStructure = () => {
     if (!currentRole) {
       return [];
@@ -108,123 +108,39 @@ const Header = () => {
         description: 'Overview and analytics'
       },
       {
-        type: 'dropdown' as const,
+        type: 'link' as const,
+        path: '/sites',
         label: 'Sites',
         icon: Building,
-        items: [
-          {
-            path: '/sites',
-            label: 'All Sites',
-            icon: Building,
-            description: 'View and manage all sites'
-          },
-          {
-            path: '/site-study',
-            label: 'Site Studies',
-            icon: FileText,
-            description: 'Site analysis and planning'
-          },
-          {
-            path: '/site-creation',
-            label: 'Create Site',
-            icon: Plus,
-            description: 'Add new site to the system'
-          }
-        ]
+        description: 'View and manage all sites'
       },
       {
-        type: 'dropdown' as const,
-        label: 'Hardware',
-        icon: Package,
-        items: [
-          {
-            path: '/hardware-scoping',
-            label: 'Hardware Scoping',
-            icon: Package,
-            description: 'Define hardware requirements'
-          },
-          {
-            path: '/hardware-approvals',
-            label: 'Hardware Approvals',
-            icon: Shield,
-            description: 'Review and approve hardware'
-          },
-          {
-            path: '/hardware-master',
-            label: 'Hardware Master',
-            icon: Database,
-            description: 'Master hardware inventory'
-          }
-        ]
+        type: 'link' as const,
+        path: '/approvals-procurement',
+        label: 'Approvals & Procurement',
+        icon: CreditCard,
+        description: 'Manage approvals and purchases'
       },
       {
-        type: 'dropdown' as const,
-        label: 'Operations',
+        type: 'link' as const,
+        path: '/deployment',
+        label: 'Deployment',
+        icon: Truck,
+        description: 'Track deployment progress'
+      },
+      {
+        type: 'link' as const,
+        path: '/assets',
+        label: 'Assets',
+        icon: Monitor,
+        description: 'Asset management and tracking'
+      },
+      {
+        type: 'link' as const,
+        path: '/platform-configuration',
+        label: 'Platform Configuration',
         icon: Settings,
-        items: [
-          {
-            path: '/deployment',
-            label: 'Deployment',
-            icon: Truck,
-            description: 'Track deployment progress'
-          },
-          {
-            path: '/approvals-procurement',
-            label: 'Approvals & Procurement',
-            icon: CreditCard,
-            description: 'Manage approvals and purchases'
-          },
-          {
-            path: '/assets',
-            label: 'Assets',
-            icon: Monitor,
-            description: 'Asset management and tracking'
-          }
-        ]
-      },
-      {
-        type: 'dropdown' as const,
-        label: 'Management',
-        icon: BarChart3,
-        items: [
-          {
-            path: '/inventory',
-            label: 'Inventory',
-            icon: Package,
-            description: 'Inventory management'
-          },
-          {
-            path: '/license-management',
-            label: 'License Management',
-            icon: Shield,
-            description: 'Software license tracking'
-          },
-          {
-            path: '/forecast',
-            label: 'Forecast',
-            icon: TrendingUp,
-            description: 'Future planning and predictions'
-          }
-        ]
-      },
-      {
-        type: 'dropdown' as const,
-        label: 'System',
-        icon: Settings,
-        items: [
-          {
-            path: '/platform-configuration',
-            label: 'Platform Configuration',
-            icon: Settings,
-            description: 'System settings and configuration'
-          },
-          {
-            path: '/integrations',
-            label: 'Integrations',
-            icon: Zap,
-            description: 'Third-party integrations'
-          }
-        ]
+        description: 'System settings and configuration'
       }
     ];
 
@@ -255,118 +171,38 @@ const Header = () => {
 
   const renderDesktopNavigation = () => (
     <nav className="hidden lg:flex items-center space-x-1">
-      {navigationStructure.map((item) => {
-        if (item.type === 'link') {
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActivePage(item.path)
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className="h-4 w-4" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        }
-
-        if (item.type === 'dropdown') {
-          return (
-            <DropdownMenu key={item.label}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={`flex items-center space-x-2 px-4 py-2 h-auto ${
-                    item.items?.some(subItem => isActivePage(subItem.path))
-                      ? 'bg-green-600 text-white shadow-md'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span className="text-sm font-medium">{item.label}</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                <DropdownMenuLabel className="font-semibold">
-                  {item.label}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {item.items?.map((subItem) => (
-                  <DropdownMenuItem
-                    key={subItem.path}
-                    onClick={() => navigate(subItem.path)}
-                    className="flex items-start space-x-3 p-3"
-                  >
-                    <subItem.icon className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                    <div className="flex-1">
-                      <div className="font-medium">{subItem.label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {subItem.description}
-                      </div>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        }
-
-        return null;
-      })}
+      {navigationStructure.map((item) => (
+        <Link
+          key={item.path}
+          to={item.path}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            isActivePage(item.path)
+              ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
+              : 'text-white/90 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <item.icon className="h-4 w-4" />
+          <span>{item.label}</span>
+        </Link>
+      ))}
     </nav>
   );
 
   const renderMobileNavigation = () => (
     <div className="space-y-4">
-      {navigationStructure.map((item) => {
-        if (item.type === 'link') {
-          return (
-            <Button
-              key={item.path}
-              variant={isActivePage(item.path) ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => handleMobileNavigation(item.path)}
-            >
-              <item.icon className="mr-3 h-4 w-4" />
-              <div className="text-left">
-                <div className="font-medium">{item.label}</div>
-              </div>
-            </Button>
-          );
-        }
-
-        if (item.type === 'dropdown') {
-          return (
-            <div key={item.label} className="space-y-2">
-              <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
-                {item.label}
-              </div>
-              {item.items?.map((subItem) => (
-                <Button
-                  key={subItem.path}
-                  variant={isActivePage(subItem.path) ? "default" : "ghost"}
-                  className="w-full justify-start ml-4"
-                  onClick={() => handleMobileNavigation(subItem.path)}
-                >
-                  <subItem.icon className="mr-3 h-4 w-4" />
-                  <div className="text-left">
-                    <div className="font-medium">{subItem.label}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {subItem.description}
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          );
-        }
-
-        return null;
-      })}
+      {navigationStructure.map((item) => (
+        <Button
+          key={item.path}
+          variant={isActivePage(item.path) ? "default" : "ghost"}
+          className="w-full justify-start"
+          onClick={() => handleMobileNavigation(item.path)}
+        >
+          <item.icon className="mr-3 h-4 w-4" />
+          <div className="text-left">
+            <div className="font-medium">{item.label}</div>
+          </div>
+        </Button>
+      ))}
     </div>
   );
 
