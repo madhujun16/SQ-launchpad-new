@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
   <!-- Background -->
-  <rect width="96" height="96" fill="#000000"/>
+  <rect width="96" height="96" fill="#FFFFFF"/>
   
-  <!-- Rocket body (olive green) -->
-  <path d="M48 20 L44 60 L52 60 Z" fill="#6B8E23"/>
+  <!-- Rocket body (vibrant light olive green, smooth rounded shape) -->
+  <ellipse cx="48" cy="40" rx="10" ry="22" fill="#9ACD32"/>
   
-  <!-- Rocket nose cone -->
-  <path d="M48 20 L44 24 L52 24 Z" fill="#556B2F"/>
+  <!-- Rocket nose cone (rounded top) -->
+  <ellipse cx="48" cy="18" rx="7" ry="10" fill="#6B8E23"/>
   
-  <!-- Left wing -->
-  <path d="M44 50 L36 58 L40 58 L44 54 Z" fill="#6B8E23"/>
+  <!-- Left fin (triangular, integrated with body, rounded edges) -->
+  <path d="M38 45 Q28 58 32 62 Q38 58 38 50 Z" fill="#9ACD32"/>
   
-  <!-- Right wing -->
-  <path d="M52 50 L60 58 L56 58 L52 54 Z" fill="#6B8E23"/>
+  <!-- Right fin (triangular, integrated with body, rounded edges) -->
+  <path d="M58 45 Q68 58 64 62 Q58 58 58 50 Z" fill="#9ACD32"/>
   
-  <!-- Rocket base -->
-  <rect x="44" y="58" width="8" height="4" fill="#556B2F"/>
+  <!-- Rocket base (rounded bottom) -->
+  <ellipse cx="48" cy="62" rx="7" ry="5" fill="#6B8E23"/>
   
-  <!-- Flame (bright yellow) -->
-  <path d="M48 62 L44 72 L48 68 L52 72 Z" fill="#FFD700"/>
+  <!-- Outer flame (vibrant orange, soft rounded V-shape) -->
+  <path d="M48 67 Q40 85 48 92 Q56 85 48 67 Z" fill="#FF8C00"/>
+  
+  <!-- Inner flame (bright sunny yellow, rounded teardrop) -->
+  <ellipse cx="48" cy="80" rx="4" ry="10" fill="#FFD700"/>
 </svg>

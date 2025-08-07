@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import smartqLogo from '@/assets/smartq-icon-logo.svg';
+import { RocketIcon } from '@/components/ui/RocketIcon';
 import { getRoleConfig, canAccessPage } from '@/lib/roles';
 import { Loader } from '@/components/ui/loader';
 import {
@@ -224,7 +224,7 @@ const Header = () => {
             {/* Left Side - Logo and Search */}
             <div className="flex items-center space-x-6">
               <Link to="/dashboard" className="flex items-center space-x-3">
-                <img src={smartqLogo} alt="SmartQ Launchpad" className="h-8 w-8 sm:h-10 sm:w-10" />
+                <RocketIcon className="h-8 w-8 sm:h-10 sm:w-10" />
                 <div className="hidden sm:block">
                   <h1 className="text-lg sm:text-2xl font-bold text-white">Launchpad</h1>
                 </div>
@@ -356,7 +356,7 @@ const Header = () => {
                 <SheetContent side="right" className="w-80">
                   <SheetHeader>
                     <SheetTitle className="flex items-center space-x-2">
-                      <img src={smartqLogo} alt="SmartQ Launchpad" className="h-6 w-6" />
+                      <RocketIcon className="h-6 w-6" />
                       <span>Navigation</span>
                     </SheetTitle>
                     <SheetDescription>

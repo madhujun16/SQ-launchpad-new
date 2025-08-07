@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Building, Users, BarChart, Target, Shield, Database, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import smartqLogo from '@/assets/smartq-icon-logo.svg';
+import { RocketIcon } from '@/components/ui/RocketIcon';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const Landing = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <img src={smartqLogo} alt="SmartQ Launchpad" className="h-12 w-12" />
+                <RocketIcon className="h-12 w-12" />
                 <div>
                   <h1 className="text-2xl font-bold text-white">SmartQ Launchpad</h1>
                 </div>

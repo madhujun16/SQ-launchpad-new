@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
+import { RocketIcon } from '@/components/ui/RocketIcon';
 
 const Auth = () => {
   const { signInWithOtp, verifyOtp, user } = useAuth();
@@ -81,7 +82,7 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-            <Lock className="w-6 h-6 text-white" />
+            <RocketIcon className="w-6 h-6 text-white" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
             {otpSent ? 'Enter OTP' : 'Welcome Back'}
