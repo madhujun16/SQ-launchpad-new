@@ -137,23 +137,12 @@ const Header = () => {
       },
       {
         type: 'link' as const,
-        path: '/platform-configuration',
+        path: currentRole === 'admin' ? '/admin' : '/platform-configuration',
         label: 'Platform Configuration',
         icon: Settings,
         description: 'System settings and configuration'
       }
     ];
-
-    // Add admin-specific navigation
-    if (currentRole === 'admin') {
-      baseNavigation.push({
-        type: 'link' as const,
-        path: '/admin',
-        label: 'Admin',
-        icon: Shield,
-        description: 'Administrative functions'
-      });
-    }
 
     return baseNavigation;
   };
