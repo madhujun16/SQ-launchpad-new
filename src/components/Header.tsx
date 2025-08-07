@@ -178,8 +178,8 @@ const Header = () => {
             to={item.path}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               isActivePage(item.path)
-                ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
-                : 'text-white/90 hover:text-white hover:bg-white/10'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             <item.icon className="h-4 w-4" />
@@ -187,7 +187,7 @@ const Header = () => {
           </Link>
         ))
       ) : (
-        <div className="text-white/70 text-sm">Loading navigation...</div>
+        <div className="text-gray-600 text-sm">Loading navigation...</div>
       )}
     </nav>
   );
@@ -423,7 +423,7 @@ const Header = () => {
 
       {/* Navigation Tabs - Second Level */}
       {!loading && currentRole && navigationStructure.length > 0 && (
-        <div className="sticky top-16 z-40 bg-white/10 backdrop-blur-md border-b border-white/20 shadow-lg">
+        <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center lg:justify-start overflow-x-auto">
               <div className="flex items-center space-x-1 py-3">
