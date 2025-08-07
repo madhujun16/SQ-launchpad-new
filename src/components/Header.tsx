@@ -125,7 +125,7 @@ const Header = () => {
         type: 'link' as const,
         path: '/deployment',
         label: 'Deployment',
-        icon: Truck,
+        icon: Package,
         description: 'Track deployment progress'
       },
       {
@@ -167,7 +167,7 @@ const Header = () => {
             to={item.path}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               isActivePage(item.path)
-                ? 'bg-green-600 text-white shadow-md'
+                ? 'border-2 border-green-600 text-green-700 bg-gradient-to-r from-green-50 to-green-100 shadow-sm'
                 : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
@@ -186,8 +186,12 @@ const Header = () => {
       {navigationStructure.map((item) => (
         <Button
           key={item.path}
-          variant={isActivePage(item.path) ? "default" : "ghost"}
-          className="w-full justify-start"
+          variant="ghost"
+          className={`w-full justify-start ${
+            isActivePage(item.path) 
+              ? 'border-2 border-green-600 text-green-700 bg-gradient-to-r from-green-50 to-green-100' 
+              : ''
+          }`}
           onClick={() => handleMobileNavigation(item.path)}
         >
           <item.icon className="mr-3 h-4 w-4" />
