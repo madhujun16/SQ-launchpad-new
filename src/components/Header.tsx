@@ -226,7 +226,7 @@ const Header = () => {
               <Link to="/dashboard" className="flex items-center space-x-3">
                 <img src={smartqLogo} alt="SmartQ Launchpad" className="h-8 w-8 sm:h-10 sm:w-10" />
                 <div className="hidden sm:block">
-                  <h1 className="text-lg sm:text-2xl font-bold text-white">SmartQ Launchpad</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold text-white">Launchpad</h1>
                 </div>
               </Link>
               
