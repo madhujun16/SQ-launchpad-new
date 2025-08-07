@@ -24,6 +24,22 @@ try {
   console.warn('Google Maps API not available:', error);
 }
 
+// LocationIQ API configuration
+const LOCATIONIQ_API_KEY = 'pk.2b07dbcb85ff59de62dc9f1cf9f0facb';
+const LOCATIONIQ_BASE_URL = 'https://us1.locationiq.com/v1';
+
+interface LocationIQResponse {
+  display_name: string;
+  address: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  };
+}
+
 const containerStyle = {
   width: '100%',
   height: '400px'
@@ -72,7 +88,64 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     setMap(null);
   }, []);
 
-  const handleMapClick = useCallback((event: any) => {
+  // LocationIQ reverse geocoding function
+  const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
+    try {
+      const url = `${LOCATIONIQ_BASE_URL}/reverse?key=${LOCATIONIQ_API_KEY}&lat=${lat}&lon=${lng}&format=json`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: LocationIQResponse = await response.json();
+      return data.display_name || `${lat}, ${lng}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${lat}, ${lng}`;
+    }
+  }, []);
+
+  // LocationIQ forward geocoding function
+  const forwardGeocode = useCallback(async (address: string): Promise<{ lat: number; lng: number; address: string } | null> => {
+    try {
+      const encodedAddress = encodeURIComponent(address);
+      const url = `${LOCATIONIQ_BASE_URL}/search?key=${LOCATIONIQ_API_KEY}&q=${encodedAddress}&format=json&limit=1`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const location = data[0];
+        return {
+          lat: parseFloat(location.lat),
+          lng: parseFloat(location.lon),
+          address: location.display_name
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Forward geocoding error:', error);
+      return null;
+    }
+  }, []);
+
+  const handleMapClick = useCallback(async (event: any) => {
     if (event.latLng) {
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
@@ -80,32 +153,21 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       
       setMarker(newLocation);
       
-      // Reverse geocode to get address
-      if (geocoder.current) {
-        geocoder.current.geocode({ location: newLocation }, (results: any, status: any) => {
-          if (status === 'OK' && results && results[0]) {
-            const address = results[0].formatted_address;
-            onLocationSelect({ lat, lng, address });
-          }
-        });
-      }
+      // Use LocationIQ for reverse geocoding
+      const address = await reverseGeocode(lat, lng);
+      onLocationSelect({ lat, lng, address });
     }
-  }, [onLocationSelect]);
+  }, [onLocationSelect, reverseGeocode]);
 
-  const handleSearch = useCallback(() => {
-    if (!searchAddress.trim() || !geocoder.current) return;
+  const handleSearch = useCallback(async () => {
+    if (!searchAddress.trim()) return;
     
     setIsLoading(true);
-    geocoder.current.geocode({ address: searchAddress }, (results: any, status: any) => {
-      setIsLoading(false);
+    try {
+      const location = await forwardGeocode(searchAddress);
       
-      if (status === 'OK' && results && results[0]) {
-        const location = results[0].geometry.location;
-        const lat = location.lat();
-        const lng = location.lng();
-        const address = results[0].formatted_address;
-        
-        const newLocation = { lat, lng };
+      if (location) {
+        const newLocation = { lat: location.lat, lng: location.lng };
         setMarker(newLocation);
         
         if (map) {
@@ -113,17 +175,24 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           map.setZoom(15);
         }
         
-        onLocationSelect({ lat, lng, address });
-        setSearchAddress(address);
+        onLocationSelect(location);
+        setSearchAddress(location.address);
+      } else {
+        // Show error message
+        console.error('Location not found');
       }
-    });
-  }, [searchAddress, map, onLocationSelect]);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchAddress, map, onLocationSelect, forwardGeocode]);
 
-  const handleCurrentLocation = useCallback(() => {
+  const handleCurrentLocation = useCallback(async () => {
     if (navigator.geolocation) {
       setIsLoading(true);
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const newLocation = { lat, lng };
@@ -135,17 +204,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             map.setZoom(15);
           }
           
-          // Reverse geocode to get address
-          if (geocoder.current) {
-            geocoder.current.geocode({ location: newLocation }, (results: any, status: any) => {
-              setIsLoading(false);
-              if (status === 'OK' && results && results[0]) {
-                const address = results[0].formatted_address;
-                onLocationSelect({ lat, lng, address });
-                setSearchAddress(address);
-              }
-            });
-          }
+          // Use LocationIQ for reverse geocoding
+          const address = await reverseGeocode(lat, lng);
+          onLocationSelect({ lat, lng, address });
+          setSearchAddress(address);
+          setIsLoading(false);
         },
         (error) => {
           setIsLoading(false);
@@ -153,25 +216,26 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         }
       );
     }
-  }, [map, onLocationSelect]);
+  }, [map, onLocationSelect, reverseGeocode]);
 
   // Manual coordinate input fallback
   const [manualLat, setManualLat] = useState(initialLocation?.lat.toString() || '');
   const [manualLng, setManualLng] = useState(initialLocation?.lng.toString() || '');
   const [manualAddress, setManualAddress] = useState('');
 
-  const handleManualLocationSubmit = () => {
+  const handleManualLocationSubmit = async () => {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
     
     if (!isNaN(lat) && !isNaN(lng)) {
-      const location = { lat, lng, address: manualAddress || `${lat}, ${lng}` };
+      const address = manualAddress || await reverseGeocode(lat, lng);
+      const location = { lat, lng, address };
       onLocationSelect(location);
       setMarker({ lat, lng });
     }
   };
 
-  // If Google Maps is not available, show fallback interface
+  // If Google Maps is not available, show LocationIQ interface
   if (!isGoogleMapsAvailable) {
     return (
       <Card className={className}>
@@ -182,18 +246,44 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              <h4 className="font-medium text-yellow-800">Google Maps API Key Required</h4>
+              <MapPin className="h-5 w-5 text-blue-600" />
+              <h4 className="font-medium text-blue-800">LocationIQ Integration</h4>
             </div>
-            <p className="text-sm text-yellow-700 mb-3">
-              To use the interactive map, please set up your Google Maps API key. For now, you can manually enter coordinates.
+            <p className="text-sm text-blue-700 mb-3">
+              Using LocationIQ API for geocoding and reverse geocoding. You can search for addresses or enter coordinates manually.
             </p>
-            <div className="text-xs text-yellow-600">
-              <p>1. Get API key from <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console</a></p>
-              <p>2. Create a .env file with: VITE_GOOGLE_MAPS_API_KEY=your_api_key</p>
-              <p>3. Restart the development server</p>
+          </div>
+
+          {/* Search functionality */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Search Location</h4>
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Enter address or postcode..."
+                value={searchAddress}
+                onChange={(e) => setSearchAddress(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSearch}
+                disabled={isLoading}
+                className="flex items-center space-x-2"
+              >
+                <Search className="h-4 w-4" />
+                <span>Search</span>
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleCurrentLocation}
+                disabled={isLoading}
+                className="flex items-center space-x-2"
+              >
+                <Navigation className="h-4 w-4" />
+                <span>Current</span>
+              </Button>
             </div>
           </div>
 
@@ -323,22 +413,16 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               <Marker
                 position={marker}
                 draggable={true}
-                onDragEnd={(e: any) => {
+                onDragEnd={async (e: any) => {
                   if (e.latLng) {
                     const lat = e.latLng.lat();
                     const lng = e.latLng.lng();
                     const newLocation = { lat, lng };
                     setMarker(newLocation);
                     
-                    // Reverse geocode to get address
-                    if (geocoder.current) {
-                      geocoder.current.geocode({ location: newLocation }, (results: any, status: any) => {
-                        if (status === 'OK' && results && results[0]) {
-                          const address = results[0].formatted_address;
-                          onLocationSelect({ lat, lng, address });
-                        }
-                      });
-                    }
+                    // Use LocationIQ for reverse geocoding
+                    const address = await reverseGeocode(lat, lng);
+                    onLocationSelect({ lat, lng, address });
                   }
                 }}
               />
