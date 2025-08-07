@@ -246,16 +246,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <MapPin className="h-5 w-5 text-blue-600" />
-              <h4 className="font-medium text-blue-800">LocationIQ Integration</h4>
-            </div>
-            <p className="text-sm text-blue-700 mb-3">
-              Using LocationIQ API for geocoding and reverse geocoding. You can search for addresses or enter coordinates manually.
-            </p>
-          </div>
-
           {/* Search functionality */}
           <div className="space-y-4">
             <h4 className="font-medium text-gray-900">Search Location</h4>
@@ -432,10 +422,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
         {/* Instructions */}
         <div className="text-sm text-gray-600 space-y-2">
-          <p>• Click on the map to set a location</p>
+          <p>• Click on the map to set a location or use the search bar above</p>
           <p>• Drag the marker to adjust the position</p>
-          <p>• Use the search bar to find an address</p>
-          <p>• Click "Current" to use your current location</p>
         </div>
       </CardContent>
     </Card>
