@@ -92,14 +92,6 @@ const Dashboard = () => {
           icon: Users,
           color: 'text-purple-600',
           description: 'Active platform users'
-        },
-        {
-          title: 'Platform Health',
-          value: '98%',
-          change: '+2% this week',
-          icon: Activity,
-          color: 'text-green-600',
-          description: 'System uptime and performance'
         }
       );
     } else if (currentRole === 'ops_manager') {
