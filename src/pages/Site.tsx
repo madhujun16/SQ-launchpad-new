@@ -548,7 +548,15 @@ const SiteDetail = () => {
 
               {/* Location Information Card */}
               <Card>
-
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <MapPin className="mr-2 h-5 w-5" />
+                    Location Information
+                  </CardTitle>
+                  <CardDescription>
+                    Site location details and coordinates
+                  </CardDescription>
+                </CardHeader>
                 <CardContent className="space-y-4">
                   {locationData && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
