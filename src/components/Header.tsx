@@ -193,7 +193,7 @@ const Header = () => {
   return (
     <>
       {/* Main Header */}
-      <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-green-900 to-black shadow-lg">
+      <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-black to-green-900 shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Left Side - Logo and Search */}

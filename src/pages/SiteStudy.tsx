@@ -42,21 +42,27 @@ import {
   Info,
   ArrowLeft,
   Home,
-  ChevronRight
+  ChevronRight,
+  Edit,
+  Save,
+  X
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteContext } from '@/contexts/SiteContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SiteStudy() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentRole } = useAuth();
   const { sites, getSiteById } = useSiteContext();
+  const { toast } = useToast();
   
   const [currentStep, setCurrentStep] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [studyData, setStudyData] = useState({
     generalInfo: {
       sector: '',
@@ -98,6 +104,72 @@ export default function SiteStudy() {
 
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
+
+  // Mandatory fields validation
+  const mandatoryFields = {
+    generalInfo: ['sector', 'foodCourtName', 'unitManagerName', 'unitManagerEmail', 'unitManagerMobile'],
+    location: ['address', 'postcode', 'region'],
+    infrastructure: ['counters'],
+    hardware: ['smartQSolutions']
+  };
+
+  const validateMandatoryFields = () => {
+    const errors: string[] = [];
+    
+    // Check general info
+    mandatoryFields.generalInfo.forEach(field => {
+      if (!studyData.generalInfo[field as keyof typeof studyData.generalInfo]) {
+        errors.push(`${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`);
+      }
+    });
+
+    // Check location
+    mandatoryFields.location.forEach(field => {
+      if (!studyData.location[field as keyof typeof studyData.location]) {
+        errors.push(`${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`);
+      }
+    });
+
+    // Check infrastructure
+    if (!studyData.infrastructure.counters || studyData.infrastructure.counters <= 0) {
+      errors.push('Number of counters is required and must be greater than 0');
+    }
+
+    // Check hardware
+    if (!studyData.hardware.smartQSolutions.length) {
+      errors.push('At least one SmartQ solution is required');
+    }
+
+    return errors;
+  };
+
+  const handleSave = () => {
+    const errors = validateMandatoryFields();
+    
+    if (errors.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: errors.join(', '),
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Save the data (you can implement actual save logic here)
+    console.log('Saving study data:', studyData);
+    
+    toast({
+      title: "Success",
+      description: "Site study data saved successfully!",
+    });
+    
+    setIsEditMode(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    // Reset to original data if needed
+  };
 
   // Stepper steps - updated when currentStep changes
   const steps: StepperStep[] = React.useMemo(() => [
@@ -187,7 +259,9 @@ export default function SiteStudy() {
                 <h4 className="font-medium text-gray-900 border-b pb-2">Organization Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="sector">Sector</Label>
+                    <Label htmlFor="sector">
+                      Sector <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="sector"
                       value={studyData.generalInfo.sector}
@@ -196,10 +270,14 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, sector: e.target.value }
                       }))}
                       placeholder="e.g., Eurest, Sodexo"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="foodCourtName">Food Court Name</Label>
+                    <Label htmlFor="foodCourtName">
+                      Food Court Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="foodCourtName"
                       value={studyData.generalInfo.foodCourtName}
@@ -208,6 +286,8 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, foodCourtName: e.target.value }
                       }))}
                       placeholder="e.g., JLR Whitley"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -218,7 +298,9 @@ export default function SiteStudy() {
                 <h4 className="font-medium text-gray-900 border-b pb-2">Primary Contact</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="unitManagerName">Unit Manager Name</Label>
+                    <Label htmlFor="unitManagerName">
+                      Unit Manager Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="unitManagerName"
                       value={studyData.generalInfo.unitManagerName}
@@ -227,6 +309,8 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, unitManagerName: e.target.value }
                       }))}
                       placeholder="e.g., Sarah Johnson"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
@@ -239,10 +323,14 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, jobTitle: e.target.value }
                       }))}
                       placeholder="e.g., Operations Manager"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="unitManagerEmail">Email</Label>
+                    <Label htmlFor="unitManagerEmail">
+                      Email <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="unitManagerEmail"
                       type="email"
@@ -252,10 +340,14 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, unitManagerEmail: e.target.value }
                       }))}
                       placeholder="e.g., sarah.johnson@company.com"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="unitManagerMobile">Mobile</Label>
+                    <Label htmlFor="unitManagerMobile">
+                      Mobile <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="unitManagerMobile"
                       value={studyData.generalInfo.unitManagerMobile}
@@ -264,6 +356,8 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, unitManagerMobile: e.target.value }
                       }))}
                       placeholder="e.g., +44 7700 900123"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -283,6 +377,8 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, additionalContactName: e.target.value }
                       }))}
                       placeholder="e.g., John Smith"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
@@ -296,6 +392,8 @@ export default function SiteStudy() {
                         generalInfo: { ...prev.generalInfo, additionalContactEmail: e.target.value }
                       }))}
                       placeholder="e.g., john.smith@company.com"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -315,6 +413,8 @@ export default function SiteStudy() {
                         ...prev,
                         generalInfo: { ...prev.generalInfo, siteStudyDate: e.target.value }
                       }))}
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -339,7 +439,9 @@ export default function SiteStudy() {
                 <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <Label htmlFor="address">Site Address</Label>
+                    <Label htmlFor="address">
+                      Site Address <span className="text-red-500">*</span>
+                    </Label>
                     <div className="flex gap-2">
                       <Input
                         id="address"
@@ -349,10 +451,13 @@ export default function SiteStudy() {
                           location: { ...prev.location, address: e.target.value }
                         }))}
                         placeholder="Enter site address"
+                        disabled={!isEditMode}
+                        className={!isEditMode ? "bg-gray-50" : ""}
                       />
                       <Button
                         variant="outline"
                         onClick={handleLocationSearch}
+                        disabled={!isEditMode}
                       >
                         <MapPin className="h-4 w-4 mr-2" />
                         Tag Location
@@ -360,7 +465,9 @@ export default function SiteStudy() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="postcode">Postcode</Label>
+                    <Label htmlFor="postcode">
+                      Postcode <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="postcode"
                       value={studyData.location.postcode}
@@ -369,10 +476,14 @@ export default function SiteStudy() {
                         location: { ...prev.location, postcode: e.target.value }
                       }))}
                       placeholder="e.g., CV3 4LF"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="region">Region</Label>
+                    <Label htmlFor="region">
+                      Region <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="region"
                       value={studyData.location.region}
@@ -381,6 +492,8 @@ export default function SiteStudy() {
                         location: { ...prev.location, region: e.target.value }
                       }))}
                       placeholder="e.g., West Midlands"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
@@ -393,6 +506,8 @@ export default function SiteStudy() {
                         location: { ...prev.location, country: e.target.value }
                       }))}
                       placeholder="e.g., United Kingdom"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -403,7 +518,9 @@ export default function SiteStudy() {
                 <h4 className="font-medium text-gray-900 border-b pb-2">Infrastructure Assessment</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="counters">Number of Counters</Label>
+                    <Label htmlFor="counters">
+                      Number of Counters <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id="counters"
                       type="number"
@@ -413,15 +530,21 @@ export default function SiteStudy() {
                         infrastructure: { ...prev.infrastructure, counters: parseInt(e.target.value) || 0 }
                       }))}
                       placeholder="e.g., 4"
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                   <div>
                     <Label htmlFor="floorPlan">Floor Plan Available</Label>
-                    <Select value={studyData.infrastructure.floorPlan} onValueChange={(value) => setStudyData(prev => ({
-                      ...prev,
-                      infrastructure: { ...prev.infrastructure, floorPlan: value }
-                    }))}>
-                      <SelectTrigger>
+                    <Select 
+                      value={studyData.infrastructure.floorPlan} 
+                      onValueChange={(value) => setStudyData(prev => ({
+                        ...prev,
+                        infrastructure: { ...prev.infrastructure, floorPlan: value }
+                      }))}
+                      disabled={!isEditMode}
+                    >
+                      <SelectTrigger className={!isEditMode ? "bg-gray-50" : ""}>
                         <SelectValue placeholder="Select availability" />
                       </SelectTrigger>
                       <SelectContent>
@@ -446,6 +569,8 @@ export default function SiteStudy() {
                     }))}
                     placeholder="e.g., Breakfast, Lunch, Dinner"
                     rows={2}
+                    disabled={!isEditMode}
+                    className={!isEditMode ? "bg-gray-50" : ""}
                   />
                 </div>
               </div>
@@ -468,7 +593,9 @@ export default function SiteStudy() {
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 border-b pb-2">SmartQ Solutions</h4>
                 <div>
-                  <Label htmlFor="smartQSolutions">Required Solutions</Label>
+                  <Label htmlFor="smartQSolutions">
+                    Required Solutions <span className="text-red-500">*</span>
+                  </Label>
                   <Textarea
                     id="smartQSolutions"
                     value={studyData.hardware.smartQSolutions.join(', ')}
@@ -481,6 +608,8 @@ export default function SiteStudy() {
                     }))}
                     placeholder="Enter required SmartQ solutions (comma-separated)"
                     rows={3}
+                    disabled={!isEditMode}
+                    className={!isEditMode ? "bg-gray-50" : ""}
                   />
                   <p className="text-sm text-gray-500 mt-1">
                     Examples: Order Management, Payment Processing, Inventory Tracking, Analytics Dashboard
@@ -503,6 +632,8 @@ export default function SiteStudy() {
                       }))}
                       placeholder="Describe network requirements, bandwidth needs, security considerations..."
                       rows={3}
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -540,6 +671,8 @@ export default function SiteStudy() {
                       }))}
                       placeholder="Enter additional hardware requirements (comma-separated)"
                       rows={3}
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                     <p className="text-sm text-gray-500 mt-1">
                       Examples: POS Terminals, Receipt Printers, Barcode Scanners, Cash Drawers
@@ -563,6 +696,8 @@ export default function SiteStudy() {
                       }))}
                       placeholder="Describe power requirements, voltage needs, backup power considerations..."
                       rows={3}
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
                     />
                   </div>
                 </div>
@@ -616,14 +751,57 @@ export default function SiteStudy() {
             Complete the site study for {site.organization} • {site.foodCourt}
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate(`/sites/${id}`)}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Site
-        </Button>
+        <div className="flex items-center space-x-3">
+          {!isEditMode ? (
+            <Button
+              onClick={() => setIsEditMode(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Site Study
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/sites/${id}`)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Site
+          </Button>
+        </div>
       </div>
+
+      {/* Mandatory Fields Note */}
+      {!isEditMode && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-blue-900">View Mode</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Click "Edit Site Study" to modify the information. Fields marked with <span className="text-red-500">*</span> are mandatory.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stepper Form */}
       <StepperContent
