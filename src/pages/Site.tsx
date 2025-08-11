@@ -720,9 +720,13 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Comprehensive site assessment and deployment readiness</p>
               </div>
               <div className="flex space-x-3">
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center space-x-2"
+                  onClick={() => navigate(`/sites/${id}/study`)}
+                >
                   <Edit className="h-4 w-4" />
-                  <span>Site Study</span>
+                  <span>Edit Site Study</span>
                 </Button>
                 <Button className="flex items-center space-x-2">
                   <Download className="h-4 w-4" />
@@ -850,6 +854,24 @@ const SiteDetail = () => {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Operating Hours:</span>
                         <span className="font-medium">7:00 AM - 6:00 PM</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Peak Hours:</span>
+                        <span className="font-medium">12:00 PM - 2:00 PM</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Kitchen Staff:</span>
+                        <span className="font-medium">15</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Service Staff:</span>
+                        <span className="font-medium">8</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Management:</span>
+                        <span className="font-medium">3</span>
                       </div>
                     </div>
                   </div>
