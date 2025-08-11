@@ -173,7 +173,10 @@ const SiteDetail = () => {
             stakeholders: [],
             notes: 'London Central site implementation',
             description: 'London Central site implementation',
-            lastUpdated: '2024-01-15'
+            lastUpdated: '2024-01-15',
+            hardwareScope: {
+              approvalStatus: 'approved' as const
+            }
           },
           {
             id: '2',
@@ -377,7 +380,10 @@ const SiteDetail = () => {
             stakeholders: [],
             notes: 'Oxford University site implementation',
             description: 'Oxford University site implementation',
-            lastUpdated: '2024-03-01'
+            lastUpdated: '2024-03-01',
+            hardwareScope: {
+              approvalStatus: 'pending' as const
+            }
           },
           {
             id: '14',
@@ -394,7 +400,10 @@ const SiteDetail = () => {
             stakeholders: [],
             notes: 'Cambridge Science Park site implementation',
             description: 'Cambridge Science Park site implementation',
-            lastUpdated: '2024-03-10'
+            lastUpdated: '2024-03-10',
+            hardwareScope: {
+              approvalStatus: 'rejected' as const
+            }
           },
           {
             id: '15',
@@ -479,8 +488,37 @@ const SiteDetail = () => {
       // Only admins can edit anything at any stage
       if (currentRole === 'admin') return true;
       
-      // For non-admin users, they can only edit if the workflow has progressed to that step
+      // For non-admin users, check specific step logic
       const currentStepIndex = getStepperStepFromStatus(site.status);
+      
+      // Site Study (step 1) special logic
+      if (stepIndex === 1) {
+        // Site Study is NOT editable if status is approved, deployment, activated, or live
+        if (['approved', 'deployment', 'activated', 'live'].includes(site.status)) {
+          return false;
+        }
+        
+        // Exception: Site Study IS editable if scoping is rejected
+        if (site.hardwareScope?.approvalStatus === 'rejected') {
+          return true;
+        }
+        
+        // Otherwise, follow normal workflow progression
+        return stepIndex <= currentStepIndex;
+      }
+      
+      // Scoping (step 2) special logic
+      if (stepIndex === 2) {
+        // Scoping is editable if it's rejected
+        if (site.hardwareScope?.approvalStatus === 'rejected') {
+          return true;
+        }
+        
+        // Otherwise, follow normal workflow progression
+        return stepIndex <= currentStepIndex;
+      }
+      
+      // For other steps, they can only edit if the workflow has progressed to that step
       return stepIndex <= currentStepIndex;
     };
 
@@ -1459,26 +1497,23 @@ const SiteDetail = () => {
       {/* Workflow Stepper */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center text-gray-900">
-            <Info className="mr-2 h-5 w-5 text-blue-600" />
-            Go-Live Progress
-          </CardTitle>
-          <CardDescription>
-            Track the progress of this site through the SmartQ LaunchPad workflow
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex-1">
-              <Stepper 
-                steps={stepperSteps} 
-                currentStep={selectedStep}
-                onStepClick={setSelectedStep}
-              />
-            </div>
-            <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 ml-4">
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center text-gray-900">
+              <Info className="mr-2 h-5 w-5 text-blue-600" />
+              Go-Live Progress
+            </CardTitle>
+            <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
               Current Status: {getStatusDisplayName(site.status)}
             </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6">
+            <Stepper 
+              steps={stepperSteps} 
+              currentStep={selectedStep}
+              onStepClick={setSelectedStep}
+            />
           </div>
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
