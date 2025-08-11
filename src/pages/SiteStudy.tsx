@@ -434,84 +434,125 @@ export default function SiteStudy() {
               <CardDescription>Location and infrastructure details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Location Details */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="address">
-                      Site Address <span className="text-red-500">*</span>
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="address"
-                        value={studyData.location.address}
-                        onChange={(e) => setStudyData(prev => ({
-                          ...prev,
-                          location: { ...prev.location, address: e.target.value }
-                        }))}
-                        placeholder="Enter site address"
-                        disabled={!isEditMode}
-                        className={!isEditMode ? "bg-gray-50" : ""}
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={handleLocationSearch}
-                        disabled={!isEditMode}
-                      >
-                        <MapPin className="h-4 w-4 mr-2" />
-                        Tag Location
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="postcode">
-                      Postcode <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="postcode"
-                      value={studyData.location.postcode}
-                      onChange={(e) => setStudyData(prev => ({
-                        ...prev,
-                        location: { ...prev.location, postcode: e.target.value }
-                      }))}
-                      placeholder="e.g., CV3 4LF"
-                      disabled={!isEditMode}
-                      className={!isEditMode ? "bg-gray-50" : ""}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="region">
-                      Region <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="region"
-                      value={studyData.location.region}
-                      onChange={(e) => setStudyData(prev => ({
-                        ...prev,
-                        location: { ...prev.location, region: e.target.value }
-                      }))}
-                      placeholder="e.g., West Midlands"
-                      disabled={!isEditMode}
-                      className={!isEditMode ? "bg-gray-50" : ""}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={studyData.location.country}
-                      onChange={(e) => setStudyData(prev => ({
-                        ...prev,
-                        location: { ...prev.location, country: e.target.value }
-                      }))}
-                      placeholder="e.g., United Kingdom"
-                      disabled={!isEditMode}
-                      className={!isEditMode ? "bg-gray-50" : ""}
-                    />
-                  </div>
-                </div>
-              </div>
+                             {/* Location Details */}
+               <div className="space-y-4">
+                 <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
+                 
+                 {/* Read-only location display */}
+                 {!isEditMode && (
+                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                     {studyData.location.address ? (
+                       <>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div>
+                             <Label className="text-sm font-medium text-gray-700">Selected Address</Label>
+                             <p className="text-gray-900 mt-1">{studyData.location.address}</p>
+                           </div>
+                           <div>
+                             <Label className="text-sm font-medium text-gray-700">Postcode</Label>
+                             <p className="text-gray-900 mt-1">{studyData.location.postcode || 'Not specified'}</p>
+                           </div>
+                           <div>
+                             <Label className="text-sm font-medium text-gray-700">Region</Label>
+                             <p className="text-gray-900 mt-1">{studyData.location.region || 'Not specified'}</p>
+                           </div>
+                           <div>
+                             <Label className="text-sm font-medium text-gray-700">Country</Label>
+                             <p className="text-gray-900 mt-1">{studyData.location.country || 'Not specified'}</p>
+                           </div>
+                         </div>
+                         {(studyData.location.latitude && studyData.location.longitude) && (
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
+                             <div>
+                               <Label className="text-sm font-medium text-gray-700">Latitude</Label>
+                               <p className="text-gray-900 mt-1">{studyData.location.latitude}</p>
+                             </div>
+                             <div>
+                               <Label className="text-sm font-medium text-gray-700">Longitude</Label>
+                               <p className="text-gray-900 mt-1">{studyData.location.longitude}</p>
+                             </div>
+                           </div>
+                         )}
+                       </>
+                     ) : (
+                       <div className="text-center py-4">
+                         <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                         <p className="text-gray-500">No location information available</p>
+                         <p className="text-sm text-gray-400">Click "Edit Site Study" to add location details</p>
+                       </div>
+                     )}
+                   </div>
+                 )}
+
+                 {/* Editable location form */}
+                 {isEditMode && (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="md:col-span-2">
+                       <Label htmlFor="address">
+                         Site Address <span className="text-red-500">*</span>
+                       </Label>
+                       <div className="flex gap-2">
+                         <Input
+                           id="address"
+                           value={studyData.location.address}
+                           onChange={(e) => setStudyData(prev => ({
+                             ...prev,
+                             location: { ...prev.location, address: e.target.value }
+                           }))}
+                           placeholder="Enter site address"
+                         />
+                         <Button
+                           variant="outline"
+                           onClick={handleLocationSearch}
+                         >
+                           <MapPin className="h-4 w-4 mr-2" />
+                           Tag Location
+                         </Button>
+                       </div>
+                     </div>
+                     <div>
+                       <Label htmlFor="postcode">
+                         Postcode <span className="text-red-500">*</span>
+                       </Label>
+                       <Input
+                         id="postcode"
+                         value={studyData.location.postcode}
+                         onChange={(e) => setStudyData(prev => ({
+                           ...prev,
+                           location: { ...prev.location, postcode: e.target.value }
+                         }))}
+                         placeholder="e.g., CV3 4LF"
+                       />
+                     </div>
+                     <div>
+                       <Label htmlFor="region">
+                         Region <span className="text-red-500">*</span>
+                       </Label>
+                       <Input
+                         id="region"
+                         value={studyData.location.region}
+                         onChange={(e) => setStudyData(prev => ({
+                           ...prev,
+                           location: { ...prev.location, region: e.target.value }
+                         }))}
+                         placeholder="e.g., West Midlands"
+                       />
+                     </div>
+                     <div>
+                       <Label htmlFor="country">Country</Label>
+                       <Input
+                         id="country"
+                         value={studyData.location.country}
+                         onChange={(e) => setStudyData(prev => ({
+                           ...prev,
+                           location: { ...prev.location, country: e.target.value }
+                         }))}
+                         placeholder="e.g., United Kingdom"
+                       />
+                     </div>
+                   </div>
+                 )}
+               </div>
 
               {/* Infrastructure Details */}
               <div className="space-y-4">
