@@ -84,6 +84,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperStepFromStatus, type UnifiedSiteStatus } from '@/lib/siteTypes';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LocationPicker } from '@/components/ui/location-picker';
 
 
 const SiteDetail = () => {
@@ -588,6 +589,20 @@ const SiteDetail = () => {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Location Picker for updating location */}
+                  <div className="pt-4 border-t">
+                    <LocationPicker
+                      onLocationSelect={(location) => {
+                        setLocationData({
+                          lat: location.lat,
+                          lng: location.lng,
+                          address: location.address
+                        });
+                      }}
+                      initialLocation={locationData ? { lat: locationData.lat, lng: locationData.lng } : undefined}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 

@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { LocationPicker } from '@/components/ui/location-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteContext } from '@/contexts/SiteContext';
 
@@ -174,83 +175,148 @@ export default function SiteStudy() {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Site Information</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                Site Information
+              </CardTitle>
               <CardDescription>Basic site details and contact information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="sector">Sector</Label>
-                  <Input
-                    id="sector"
-                    value={studyData.generalInfo.sector}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, sector: e.target.value }
-                    }))}
-                    placeholder="e.g., Eurest, Sodexo"
-                  />
+            <CardContent className="space-y-6">
+              {/* Organization Details */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Organization Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="sector">Sector</Label>
+                    <Input
+                      id="sector"
+                      value={studyData.generalInfo.sector}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, sector: e.target.value }
+                      }))}
+                      placeholder="e.g., Eurest, Sodexo"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="foodCourtName">Food Court Name</Label>
+                    <Input
+                      id="foodCourtName"
+                      value={studyData.generalInfo.foodCourtName}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, foodCourtName: e.target.value }
+                      }))}
+                      placeholder="e.g., JLR Whitley"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="foodCourtName">Food Court Name</Label>
-                  <Input
-                    id="foodCourtName"
-                    value={studyData.generalInfo.foodCourtName}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, foodCourtName: e.target.value }
-                    }))}
-                    placeholder="e.g., JLR Whitley"
-                  />
+              </div>
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Primary Contact</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="unitManagerName">Unit Manager Name</Label>
+                    <Input
+                      id="unitManagerName"
+                      value={studyData.generalInfo.unitManagerName}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, unitManagerName: e.target.value }
+                      }))}
+                      placeholder="e.g., Sarah Johnson"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Input
+                      id="jobTitle"
+                      value={studyData.generalInfo.jobTitle}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, jobTitle: e.target.value }
+                      }))}
+                      placeholder="e.g., Operations Manager"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="unitManagerEmail">Email</Label>
+                    <Input
+                      id="unitManagerEmail"
+                      type="email"
+                      value={studyData.generalInfo.unitManagerEmail}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, unitManagerEmail: e.target.value }
+                      }))}
+                      placeholder="e.g., sarah.johnson@company.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="unitManagerMobile">Mobile</Label>
+                    <Input
+                      id="unitManagerMobile"
+                      value={studyData.generalInfo.unitManagerMobile}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, unitManagerMobile: e.target.value }
+                      }))}
+                      placeholder="e.g., +44 7700 900123"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="unitManagerName">Unit Manager Name</Label>
-                  <Input
-                    id="unitManagerName"
-                    value={studyData.generalInfo.unitManagerName}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, unitManagerName: e.target.value }
-                    }))}
-                    placeholder="e.g., Sarah Johnson"
-                  />
+              </div>
+
+              {/* Additional Contact */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Additional Contact</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="additionalContactName">Additional Contact Name</Label>
+                    <Input
+                      id="additionalContactName"
+                      value={studyData.generalInfo.additionalContactName}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, additionalContactName: e.target.value }
+                      }))}
+                      placeholder="e.g., John Smith"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="additionalContactEmail">Additional Contact Email</Label>
+                    <Input
+                      id="additionalContactEmail"
+                      type="email"
+                      value={studyData.generalInfo.additionalContactEmail}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, additionalContactEmail: e.target.value }
+                      }))}
+                      placeholder="e.g., john.smith@company.com"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="jobTitle">Job Title</Label>
-                  <Input
-                    id="jobTitle"
-                    value={studyData.generalInfo.jobTitle}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, jobTitle: e.target.value }
-                    }))}
-                    placeholder="e.g., Operations Manager"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="unitManagerEmail">Email</Label>
-                  <Input
-                    id="unitManagerEmail"
-                    type="email"
-                    value={studyData.generalInfo.unitManagerEmail}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, unitManagerEmail: e.target.value }
-                    }))}
-                    placeholder="e.g., sarah.johnson@company.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="unitManagerMobile">Mobile</Label>
-                  <Input
-                    id="unitManagerMobile"
-                    value={studyData.generalInfo.unitManagerMobile}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, unitManagerMobile: e.target.value }
-                    }))}
-                    placeholder="e.g., +44 7700 900123"
-                  />
+              </div>
+
+              {/* Study Information */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Study Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="siteStudyDate">Site Study Date</Label>
+                    <Input
+                      id="siteStudyDate"
+                      type="date"
+                      value={studyData.generalInfo.siteStudyDate}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        generalInfo: { ...prev.generalInfo, siteStudyDate: e.target.value }
+                      }))}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -261,67 +327,125 @@ export default function SiteStudy() {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Site Study</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Site Study
+              </CardTitle>
               <CardDescription>Location and infrastructure details</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="address">Site Address</Label>
-                  <div className="flex gap-2">
+            <CardContent className="space-y-6">
+              {/* Location Details */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="address">Site Address</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="address"
+                        value={studyData.location.address}
+                        onChange={(e) => setStudyData(prev => ({
+                          ...prev,
+                          location: { ...prev.location, address: e.target.value }
+                        }))}
+                        placeholder="Enter site address"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={handleLocationSearch}
+                      >
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Tag Location
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="postcode">Postcode</Label>
                     <Input
-                      id="address"
-                      value={studyData.location.address}
+                      id="postcode"
+                      value={studyData.location.postcode}
                       onChange={(e) => setStudyData(prev => ({
                         ...prev,
-                        location: { ...prev.location, address: e.target.value }
+                        location: { ...prev.location, postcode: e.target.value }
                       }))}
-                      placeholder="Enter site address"
+                      placeholder="e.g., CV3 4LF"
                     />
-                    <Button
-                      variant="outline"
-                      onClick={handleLocationSearch}
-                    >
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Tag Location
-                    </Button>
+                  </div>
+                  <div>
+                    <Label htmlFor="region">Region</Label>
+                    <Input
+                      id="region"
+                      value={studyData.location.region}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, region: e.target.value }
+                      }))}
+                      placeholder="e.g., West Midlands"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={studyData.location.country}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        location: { ...prev.location, country: e.target.value }
+                      }))}
+                      placeholder="e.g., United Kingdom"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Infrastructure Details */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Infrastructure Assessment</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="counters">Number of Counters</Label>
+                    <Input
+                      id="counters"
+                      type="number"
+                      value={studyData.infrastructure.counters}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        infrastructure: { ...prev.infrastructure, counters: parseInt(e.target.value) || 0 }
+                      }))}
+                      placeholder="e.g., 4"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="floorPlan">Floor Plan Available</Label>
+                    <Select value={studyData.infrastructure.floorPlan} onValueChange={(value) => setStudyData(prev => ({
+                      ...prev,
+                      infrastructure: { ...prev.infrastructure, floorPlan: value }
+                    }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select availability" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="postcode">Postcode</Label>
-                  <Input
-                    id="postcode"
-                    value={studyData.location.postcode}
+                  <Label htmlFor="mealSessions">Meal Sessions</Label>
+                  <Textarea
+                    id="mealSessions"
+                    value={studyData.infrastructure.mealSessions.join(', ')}
                     onChange={(e) => setStudyData(prev => ({
                       ...prev,
-                      location: { ...prev.location, postcode: e.target.value }
+                      infrastructure: { 
+                        ...prev.infrastructure, 
+                        mealSessions: e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                      }
                     }))}
-                    placeholder="e.g., CV3 4LF"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="region">Region</Label>
-                  <Input
-                    id="region"
-                    value={studyData.location.region}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      location: { ...prev.location, region: e.target.value }
-                    }))}
-                    placeholder="e.g., West Midlands"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="counters">Number of Counters</Label>
-                  <Input
-                    id="counters"
-                    type="number"
-                    value={studyData.infrastructure.counters}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      infrastructure: { ...prev.infrastructure, counters: parseInt(e.target.value) || 0 }
-                    }))}
-                    placeholder="e.g., 4"
+                    placeholder="e.g., Breakfast, Lunch, Dinner"
+                    rows={2}
                   />
                 </div>
               </div>
@@ -333,13 +457,18 @@ export default function SiteStudy() {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Software Scoping</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Software Scoping
+              </CardTitle>
               <CardDescription>Define software requirements and solutions</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
+            <CardContent className="space-y-6">
+              {/* SmartQ Solutions */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">SmartQ Solutions</h4>
                 <div>
-                  <Label htmlFor="smartQSolutions">SmartQ Solutions Required</Label>
+                  <Label htmlFor="smartQSolutions">Required Solutions</Label>
                   <Textarea
                     id="smartQSolutions"
                     value={studyData.hardware.smartQSolutions.join(', ')}
@@ -353,19 +482,29 @@ export default function SiteStudy() {
                     placeholder="Enter required SmartQ solutions (comma-separated)"
                     rows={3}
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Examples: Order Management, Payment Processing, Inventory Tracking, Analytics Dashboard
+                  </p>
                 </div>
-                <div>
-                  <Label htmlFor="networkRequirements">Network Requirements</Label>
-                  <Textarea
-                    id="networkRequirements"
-                    value={studyData.hardware.networkRequirements}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      hardware: { ...prev.hardware, networkRequirements: e.target.value }
-                    }))}
-                    placeholder="Describe network requirements..."
-                    rows={3}
-                  />
+              </div>
+
+              {/* Technical Requirements */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Technical Requirements</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="networkRequirements">Network Requirements</Label>
+                    <Textarea
+                      id="networkRequirements"
+                      value={studyData.hardware.networkRequirements}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        hardware: { ...prev.hardware, networkRequirements: e.target.value }
+                      }))}
+                      placeholder="Describe network requirements, bandwidth needs, security considerations..."
+                      rows={3}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -376,39 +515,56 @@ export default function SiteStudy() {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Hardware Scoping</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Hardware Scoping
+              </CardTitle>
               <CardDescription>Define hardware requirements and specifications</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label htmlFor="additionalHardware">Additional Hardware Required</Label>
-                  <Textarea
-                    id="additionalHardware"
-                    value={studyData.hardware.additionalHardware.join(', ')}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      hardware: { 
-                        ...prev.hardware, 
-                        additionalHardware: e.target.value.split(',').map(s => s.trim()).filter(s => s)
-                      }
-                    }))}
-                    placeholder="Enter additional hardware requirements (comma-separated)"
-                    rows={3}
-                  />
+            <CardContent className="space-y-6">
+              {/* Hardware Requirements */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Hardware Requirements</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="additionalHardware">Additional Hardware Required</Label>
+                    <Textarea
+                      id="additionalHardware"
+                      value={studyData.hardware.additionalHardware.join(', ')}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        hardware: { 
+                          ...prev.hardware, 
+                          additionalHardware: e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                        }
+                      }))}
+                      placeholder="Enter additional hardware requirements (comma-separated)"
+                      rows={3}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Examples: POS Terminals, Receipt Printers, Barcode Scanners, Cash Drawers
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="powerRequirements">Power Requirements</Label>
-                  <Textarea
-                    id="powerRequirements"
-                    value={studyData.hardware.powerRequirements}
-                    onChange={(e) => setStudyData(prev => ({
-                      ...prev,
-                      hardware: { ...prev.hardware, powerRequirements: e.target.value }
-                    }))}
-                    placeholder="Describe power requirements..."
-                    rows={3}
-                  />
+              </div>
+
+              {/* Power & Infrastructure */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Power & Infrastructure</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="powerRequirements">Power Requirements</Label>
+                    <Textarea
+                      id="powerRequirements"
+                      value={studyData.hardware.powerRequirements}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        hardware: { ...prev.hardware, powerRequirements: e.target.value }
+                      }))}
+                      placeholder="Describe power requirements, voltage needs, backup power considerations..."
+                      rows={3}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -483,41 +639,23 @@ export default function SiteStudy() {
 
       {/* Location Modal */}
       <Dialog open={showLocationModal} onOpenChange={setShowLocationModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Tag Site Location</DialogTitle>
             <DialogDescription>
-              Search for the site location or select it on the map
+              Use the Location Picker to search for the site location or select it on the map
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="locationSearch">Search Location</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="locationSearch"
-                  value={locationSearch}
-                  onChange={(e) => setLocationSearch(e.target.value)}
-                  placeholder="Search for address, postcode, or landmark..."
-                />
-                <Button onClick={() => {
-                  // In a real app, this would integrate with Google Maps API
-                  // For now, we'll simulate a location selection
-                  handleLocationSelect(52.4068, -1.5197, locationSearch || 'JLR Whitley, Abbey Road, Coventry, CV3 4LF');
-                }}>
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-              </div>
-            </div>
-            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <Map className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">Map integration would go here</p>
-                <p className="text-sm text-gray-500">Google Maps or OpenStreetMap integration</p>
-              </div>
-            </div>
-          </div>
+          <LocationPicker
+            onLocationSelect={(location) => {
+              handleLocationSelect(location.lat, location.lng, location.address);
+              setShowLocationModal(false);
+            }}
+            initialLocation={studyData.location.latitude && studyData.location.longitude ? {
+              lat: studyData.location.latitude,
+              lng: studyData.location.longitude
+            } : undefined}
+          />
         </DialogContent>
       </Dialog>
     </div>
