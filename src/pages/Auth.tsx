@@ -9,10 +9,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { RocketIcon } from '@/components/ui/RocketIcon';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Auth = () => {
   const { signInWithOtp, verifyOtp, user } = useAuth();
   const navigate = useNavigate();
+  const { isMobile, isTablet } = useIsMobile();
+  
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
@@ -78,16 +81,38 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-            <RocketIcon className="w-6 h-6 text-white" />
+    <div className={`
+      min-h-screen flex items-center justify-center 
+      bg-gradient-to-br from-blue-50 to-indigo-100 
+      p-4 sm:p-6
+    `}>
+      <Card className={`
+        w-full shadow-xl
+        ${isMobile ? 'max-w-sm' : isTablet ? 'max-w-md' : 'max-w-md'}
+      `}>
+        <CardHeader className={`
+          text-center space-y-2
+          ${isMobile ? 'p-4' : 'p-6'}
+        `}>
+          <div className={`
+            mx-auto bg-blue-600 rounded-full flex items-center justify-center
+            ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}
+          `}>
+            <RocketIcon className={`
+              text-white
+              ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}
+            `} />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className={`
+            font-bold text-gray-900
+            ${isMobile ? 'text-xl' : 'text-2xl'}
+          `}>
             {otpSent ? 'Enter OTP' : 'Welcome Back'}
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className={`
+            text-gray-600
+            ${isMobile ? 'text-sm' : 'text-base'}
+          `}>
             {otpSent 
               ? 'We\'ve sent a one-time code to your email'
               : 'Sign in to your account using your email'
@@ -95,7 +120,9 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className={`
+          ${isMobile ? 'px-4 pb-4' : 'px-6 pb-6'}
+        `}>
           {otpSent ? (
             // OTP Verification Form
             <form onSubmit={handleVerifyOtp} className="space-y-4">
@@ -106,16 +133,27 @@ const Auth = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="otp">One-Time Code</Label>
+                <Label htmlFor="otp" className={`
+                  ${isMobile ? 'text-sm' : 'text-base'}
+                `}>
+                  One-Time Code
+                </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className={`
+                    absolute left-3 top-3 text-gray-400
+                    ${isMobile ? 'h-4 w-4' : 'h-4 w-4'}
+                  `} />
                   <Input
                     id="otp"
                     type="text"
                     placeholder="Enter 6-digit code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="pl-10"
+                    className={`
+                      pl-10
+                      ${isMobile ? 'h-11 text-base' : 'h-12 text-base'}
+                      touch-manipulation
+                    `}
                     maxLength={6}
                     required
                   />
@@ -124,8 +162,13 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                className="w-full shadow-soft rounded-lg px-4 py-2"
-                variant="gradient"
+                className={`
+                  w-full shadow-soft rounded-lg
+                  ${isMobile ? 'h-11 text-base' : 'h-12 text-base'}
+                  active:scale-95 transition-transform
+                  touch-manipulation
+                `}
+                variant="default"
                 disabled={loading}
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
@@ -136,14 +179,24 @@ const Auth = () => {
                   type="button"
                   variant="ghost"
                   onClick={handleBackToEmail}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className={`
+                    text-gray-500 hover:text-gray-700
+                    ${isMobile ? 'text-sm h-10' : 'text-base h-11'}
+                    active:scale-95 transition-transform
+                  `}
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  <ArrowLeft className={`
+                    mr-1
+                    ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}
+                  `} />
                   Back to email
                 </Button>
               </div>
 
-              <div className="text-center text-sm text-muted-foreground">
+              <div className={`
+                text-center text-muted-foreground
+                ${isMobile ? 'text-xs' : 'text-sm'}
+              `}>
                 <p>
                   Didn't receive the code? Check your spam folder or try again.
                 </p>
@@ -159,16 +212,27 @@ const Auth = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email" className={`
+                  ${isMobile ? 'text-sm' : 'text-base'}
+                `}>
+                  Email Address
+                </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className={`
+                    absolute left-3 top-3 text-gray-400
+                    ${isMobile ? 'h-4 w-4' : 'h-4 w-4'}
+                  `} />
                   <Input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className={`
+                      pl-10
+                      ${isMobile ? 'h-11 text-base' : 'h-12 text-base'}
+                      touch-manipulation
+                    `}
                     required
                   />
                 </div>
@@ -176,16 +240,24 @@ const Auth = () => {
 
               <Button
                 type="submit"
-                className="w-full shadow-soft rounded-lg px-4 py-2"
-                variant="gradient"
+                className={`
+                  w-full shadow-soft rounded-lg
+                  ${isMobile ? 'h-11 text-base' : 'h-12 text-base'}
+                  active:scale-95 transition-transform
+                  touch-manipulation
+                `}
+                variant="default"
                 disabled={loading}
               >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
+                {loading ? 'Sending...' : 'Send OTP'}
               </Button>
 
-              <div className="text-center text-sm text-muted-foreground">
+              <div className={`
+                text-center text-muted-foreground
+                ${isMobile ? 'text-xs' : 'text-sm'}
+              `}>
                 <p>
-                  We'll send a one-time code to your email address for secure login.
+                  We'll send a one-time password to your email address.
                 </p>
               </div>
             </form>

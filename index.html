@@ -2,20 +2,78 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>SmartQ Launchpad</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content="SmartQ Launchpad - Streamline site deployment and management" />
     <meta name="author" content="SmartQ" />
 
+    <!-- Mobile-specific meta tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="SmartQ Launchpad" />
+    <meta name="application-name" content="SmartQ Launchpad" />
+    <meta name="msapplication-TileColor" content="#43A047" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Touch and gesture optimization -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Performance optimization -->
+    <meta name="theme-color" content="#43A047" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Social media meta tags -->
     <meta property="og:title" content="SmartQ Launchpad" />
     <meta property="og:description" content="SmartQ Launchpad - Streamline site deployment and management" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/src/assets/smartq-launchpad-logo.svg" />
+    <meta property="og:url" content="https://smartq-launchpad.com" />
+    <meta property="og:site_name" content="SmartQ Launchpad" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@smartq" />
     <meta name="twitter:image" content="/src/assets/smartq-launchpad-logo.svg" />
+    <meta name="twitter:title" content="SmartQ Launchpad" />
+    <meta name="twitter:description" content="Streamline site deployment and management" />
+
+    <!-- PWA and offline support -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/src/assets/smartq-launchpad-logo.svg" />
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- CSS optimization -->
+    <style>
+      /* Critical CSS for mobile performance */
+      body { margin: 0; padding: 0; }
+      #root { min-height: 100vh; }
+      
+      /* Prevent horizontal scroll on mobile */
+      html, body { overflow-x: hidden; }
+      
+      /* Touch-friendly tap targets */
+      button, a, input, select, textarea { 
+        min-height: 44px; 
+        min-width: 44px; 
+      }
+      
+      /* Smooth scrolling for mobile */
+      html { scroll-behavior: smooth; }
+      
+      /* Optimize rendering */
+      * { box-sizing: border-box; }
+      
+      /* Prevent text selection on buttons */
+      button { user-select: none; }
+      
+      /* Optimize images */
+      img { max-width: 100%; height: auto; }
+    </style>
   </head>
 
   <body>

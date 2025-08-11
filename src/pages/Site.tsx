@@ -84,7 +84,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperStepFromStatus, type UnifiedSiteStatus } from '@/lib/siteTypes';
 import { Checkbox } from '@/components/ui/checkbox';
-import { LocationPicker } from '@/components/ui/location-picker';
+
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -548,26 +548,10 @@ const SiteDetail = () => {
 
               {/* Location Information Card */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MapPin className="mr-2 h-5 w-5" />
-                    Location Information
-                  </CardTitle>
-                  <CardDescription>
-                    Site address and geographical coordinates
-                  </CardDescription>
-                </CardHeader>
+
                 <CardContent className="space-y-4">
-                  <LocationPicker
-                    onLocationSelect={(location) => {
-                      setLocationData(location);
-                      console.log('Selected location:', location);
-                    }}
-                    initialLocation={locationData ? { lat: locationData.lat, lng: locationData.lng } : undefined}
-                  />
-                  
                   {locationData && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Selected Address</label>
                         <Input 
@@ -1454,7 +1438,7 @@ const SiteDetail = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-5 w-5 text-gray-500" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Live Date</p>
                 <p className="text-lg font-semibold">{new Date(site.goLiveDate).toLocaleDateString()}</p>
@@ -1465,7 +1449,7 @@ const SiteDetail = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Users className="h-8 w-8 text-green-600" />
+              <Users className="h-5 w-5 text-gray-500" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Ops Manager</p>
                 <p className="text-lg font-semibold">{site.assignedOpsManager}</p>
@@ -1476,7 +1460,7 @@ const SiteDetail = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Wrench className="h-8 w-8 text-purple-600" />
+              <Wrench className="h-5 w-5 text-gray-500" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Deployment Engineer</p>
                 <p className="text-lg font-semibold">{site.assignedDeploymentEngineer}</p>

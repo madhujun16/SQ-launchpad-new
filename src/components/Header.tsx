@@ -1,70 +1,62 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Building, 
-  Users, 
-  Settings, 
-  Bell, 
-  LogOut, 
-  User, 
-  Menu, 
-  X,
-  Plus, 
-  FileText,
-  Home,
-  MapPin,
-  Package,
-  Shield,
-  BarChart3,
-  Database,
-  CreditCard,
-  Monitor,
-  Zap,
-  ChevronDown,
-  Calendar,
-  CheckCircle,
-  Eye,
-  Download,
-  Upload,
-  List,
-  Search,
-  Settings as SettingsIcon,
-  Activity,
-  ClipboardList,
-  Truck,
-  Clock,
-  AlertCircle,
-  TrendingUp
-} from "lucide-react";
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  Search, 
+  Bell, 
+  User, 
+  FileText, 
+  Plus, 
+  LogOut,
+  Menu,
+  X,
+  Home,
+  Building,
+  Package,
+  Settings,
+  BarChart3,
+  Users
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { getRoleConfig } from '@/lib/roles';
+import { canAccessPage } from '@/lib/roles';
 import { RocketIcon } from '@/components/ui/RocketIcon';
-import { getRoleConfig, canAccessPage } from '@/lib/roles';
-import { Loader } from '@/components/ui/loader';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
-  const { profile, currentRole, availableRoles, switchRole, signOut, loading } = useAuth();
+  const { currentRole, profile, signOut, switchRole, availableRoles } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isMobile, isTablet, isTouchDevice } = useIsMobile();
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsSearchOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMobileMenuOpen && !(event.target as Element).closest('[data-mobile-menu]')) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMobileMenuOpen]);
 
   const handleAdminClick = () => {
     navigate('/admin');
@@ -106,63 +98,52 @@ const Header = () => {
         path: '/dashboard',
         label: 'Dashboard',
         icon: Home,
-        description: 'Overview and analytics',
-        roles: ['admin', 'ops_manager', 'deployment_engineer']
+        canAccess: canAccessPage(currentRole, '/dashboard')
       },
       {
         type: 'link' as const,
         path: '/sites',
         label: 'Sites',
         icon: Building,
-        description: 'View and manage sites',
-        roles: ['admin', 'ops_manager', 'deployment_engineer']
+        canAccess: canAccessPage(currentRole, '/sites')
       },
       {
         type: 'link' as const,
-        path: '/approvals-procurement',
-        label: 'Approvals & Procurement',
-        icon: CreditCard,
-        description: 'Manage approvals and purchases',
-        roles: ['admin', 'ops_manager', 'deployment_engineer']
+        path: '/inventory',
+        label: 'Inventory',
+        icon: Package,
+        canAccess: canAccessPage(currentRole, '/inventory')
       },
       {
         type: 'link' as const,
         path: '/deployment',
         label: 'Deployment',
-        icon: Package,
-        description: 'Track deployment progress',
-        roles: ['admin', 'ops_manager', 'deployment_engineer']
+        icon: Users,
+        canAccess: canAccessPage(currentRole, '/deployment')
       },
       {
         type: 'link' as const,
-        path: '/assets',
-        label: 'Assets',
-        icon: Monitor,
-        description: 'Asset management and tracking',
-        roles: ['admin', 'ops_manager', 'deployment_engineer']
+        path: '/forecast',
+        label: 'Forecast',
+        icon: BarChart3,
+        canAccess: canAccessPage(currentRole, '/forecast')
       },
       {
         type: 'link' as const,
-        path: currentRole === 'admin' ? '/admin' : '/platform-configuration',
-        label: 'Platform Configuration',
+        path: '/admin',
+        label: 'Admin',
         icon: Settings,
-        description: 'System settings and configuration',
-        roles: ['admin']
+        canAccess: canAccessPage(currentRole, '/admin')
       }
     ];
 
-    // Filter navigation items based on user role and access permissions
-    return baseNavigation.filter(item => {
-      const hasRoleAccess = item.roles.includes(currentRole);
-      const hasTabAccess = canAccessPage(currentRole || 'admin', item.path);
-      return hasRoleAccess && hasTabAccess;
-    });
+    return baseNavigation.filter(item => item.canAccess);
   };
 
   const navigationStructure = getNavigationStructure();
 
   const isActivePage = (path: string) => {
-    return location.pathname === path;
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   const handleMobileNavigation = (path: string) => {
@@ -171,42 +152,39 @@ const Header = () => {
   };
 
   const renderDesktopNavigation = () => (
-    <nav className="flex items-center space-x-1">
-      {navigationStructure && navigationStructure.length > 0 ? (
-        navigationStructure.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              isActivePage(item.path)
-                ? 'border-2 border-green-600 text-green-700 bg-gradient-to-r from-green-50 to-green-100 shadow-sm'
-                : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-          >
-            <item.icon className="h-4 w-4" />
-            <span>{item.label}</span>
-          </Link>
-        ))
-      ) : (
-        <Loader />
-      )}
-    </nav>
-  );
-
-  const renderMobileNavigation = () => (
-    <div className="space-y-4">
+    <div className="hidden lg:flex items-center space-x-1">
       {navigationStructure.map((item) => (
         <Button
           key={item.path}
           variant="ghost"
-          className={`w-full justify-start ${
+          className={`px-3 py-2 text-sm font-medium transition-all duration-200 ${
             isActivePage(item.path) 
               ? 'border-2 border-green-600 text-green-700 bg-gradient-to-r from-green-50 to-green-100' 
-              : ''
+              : 'text-gray-700 hover:text-green-700 hover:bg-green-50'
+          }`}
+          onClick={() => navigate(item.path)}
+        >
+          <item.icon className="mr-2 h-4 w-4" />
+          {item.label}
+        </Button>
+      ))}
+    </div>
+  );
+
+  const renderMobileNavigation = () => (
+    <div className="space-y-2">
+      {navigationStructure.map((item) => (
+        <Button
+          key={item.path}
+          variant="ghost"
+          className={`w-full justify-start text-left h-12 px-4 ${
+            isActivePage(item.path) 
+              ? 'bg-green-100 text-green-700 border-l-4 border-green-600' 
+              : 'hover:bg-gray-100'
           }`}
           onClick={() => handleMobileNavigation(item.path)}
         >
-          <item.icon className="mr-3 h-4 w-4" />
+          <item.icon className="mr-3 h-5 w-5" />
           <div className="text-left">
             <div className="font-medium">{item.label}</div>
           </div>
@@ -215,6 +193,15 @@ const Header = () => {
     </div>
   );
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Implement search functionality
+      console.log('Searching for:', searchQuery);
+      setIsSearchOpen(false);
+    }
+  };
+
   return (
     <>
       {/* Main Header */}
@@ -222,34 +209,43 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Left Side - Logo and Search */}
-            <div className="flex items-center space-x-6">
-              <Link to="/dashboard" className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4 lg:space-x-6">
+              <Link to="/dashboard" className="flex items-center space-x-2 lg:space-x-3">
                 <RocketIcon className="h-8 w-8 sm:h-10 sm:w-10" />
                 <div className="hidden sm:block">
-                  <h1 className="text-lg sm:text-2xl font-bold text-white">Launchpad</h1>
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Launchpad</h1>
                 </div>
               </Link>
               
-              {/* Search Bar */}
-              <div className="hidden md:flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+              {/* Desktop Search Bar */}
+              <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
                 <Search className="h-4 w-4 text-white/70" />
                 <input
                   type="text"
                   placeholder="Search..."
-                  className="bg-transparent text-white placeholder-white/70 text-sm outline-none w-48"
+                  className="bg-transparent text-white placeholder-white/70 text-sm outline-none w-48 focus:w-64 transition-all duration-300"
                 />
               </div>
             </div>
 
             {/* Right Side - Actions and User */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 lg:space-x-3">
               {/* Mobile Search Button */}
-              <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="lg:hidden text-white hover:bg-white/10 h-10 w-10"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
                 <Search className="h-5 w-5" />
               </Button>
 
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative text-white hover:bg-white/10 h-10 w-10"
+              >
                 <Bell className="h-5 w-5" />
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
                   3
@@ -260,7 +256,7 @@ const Header = () => {
               {!loading && profile && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2 text-white hover:bg-white/10">
+                    <Button variant="ghost" className="flex items-center space-x-2 text-white hover:bg-white/10 h-10 px-3">
                       <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                         <RoleIcon className="h-4 w-4 text-white" />
                       </div>
@@ -345,16 +341,17 @@ const Header = () => {
               {/* Mobile Menu Button */}
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden text-white hover:bg-white/10">
-                    <div className="flex flex-col space-y-1">
-                      <div className="w-5 h-0.5 bg-white"></div>     
-                      <div className="w-5 h-0.5 bg-white"></div>     
-                      <div className="w-5 h-0.5 bg-white"></div>     
-                    </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="lg:hidden text-white hover:bg-white/10 h-10 w-10"
+                    data-mobile-menu
+                  >
+                    <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80">
-                  <SheetHeader>
+                <SheetContent side="right" className="w-80 p-0" data-mobile-menu>
+                  <SheetHeader className="px-6 py-4 border-b">
                     <SheetTitle className="flex items-center space-x-2">
                       <RocketIcon className="h-6 w-6" />
                       <span>Navigation</span>
@@ -365,22 +362,26 @@ const Header = () => {
                   </SheetHeader>
                   
                   {/* Mobile Search */}
-                  <div className="mt-4 flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2">
-                    <Search className="h-4 w-4 text-gray-500" />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      className="bg-transparent text-gray-900 placeholder-gray-500 text-sm outline-none flex-1"
-                    />
+                  <div className="px-6 py-4 border-b">
+                    <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2">
+                      <Search className="h-4 w-4 text-gray-500" />
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-transparent text-gray-900 placeholder-gray-500 text-sm outline-none flex-1"
+                      />
+                    </form>
                   </div>
                   
-                  <div className="mt-6">
+                  <div className="px-6 py-4">
                     {!loading && currentRole && renderMobileNavigation()}
                   </div>
 
                   {/* Mobile User Info */}
                   {!loading && profile && (
-                    <div className="mt-8 pt-6 border-t">
+                    <div className="px-6 py-4 border-t mt-auto">
                       <div className="flex items-center space-x-3 mb-4"> 
                         <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                           <RoleIcon className="h-5 w-5 text-primary-foreground" />
@@ -397,10 +398,8 @@ const Header = () => {
                       <div className="space-y-2">
                         <Button
                           variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => {
-                            handleMobileNavigation('/sites');       
-                          }}
+                          className="w-full justify-start h-12"
+                          onClick={() => handleMobileNavigation('/sites')}
                         >
                           <FileText className="mr-3 h-4 w-4" />
                           Site Study
@@ -408,10 +407,8 @@ const Header = () => {
                         
                         <Button
                           variant="outline"
-                          className="w-full justify-start"
-                          onClick={() => {
-                            handleMobileNavigation('/sites/create');    
-                          }}
+                          className="w-full justify-start h-12"
+                          onClick={() => handleMobileNavigation('/sites/create')}
                         >
                           <Plus className="mr-3 h-4 w-4" />
                           Create Site
@@ -423,6 +420,31 @@ const Header = () => {
               </Sheet>
             </div>
           </div>
+
+          {/* Mobile Search Bar (Conditional) */}
+          {isSearchOpen && (
+            <div className="lg:hidden py-3 border-t border-white/20">
+              <form onSubmit={handleSearch} className="flex items-center space-x-2">
+                <Search className="h-4 w-4 text-white/70" />
+                <Input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-white/10 border-white/20 text-white placeholder-white/70 flex-1"
+                />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-white hover:bg-white/10"
+                  onClick={() => setIsSearchOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          )}
         </div>
       </header>
 
@@ -430,8 +452,8 @@ const Header = () => {
       {!loading && currentRole && navigationStructure.length > 0 && (
         <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center lg:justify-start">
-              <div className="flex items-center space-x-1 py-3">
+            <div className="flex items-center justify-center lg:justify-start overflow-x-auto">
+              <div className="flex items-center space-x-1 py-3 min-w-max">
                 {renderDesktopNavigation()}
               </div>
             </div>

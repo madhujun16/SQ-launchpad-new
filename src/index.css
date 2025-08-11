@@ -136,10 +136,235 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Mobile-first responsive typography */
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* Touch-friendly button and input sizing */
+  button, input, select, textarea {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improved focus states for mobile */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Mobile-optimized scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch-friendly spacing for mobile */
+  @media (max-width: 768px) {
+    .touch-spacing {
+      padding: 1rem;
+    }
+    
+    .touch-spacing > * + * {
+      margin-top: 1rem;
+    }
+  }
+
+  /* Mobile-optimized card layouts */
+  @media (max-width: 640px) {
+    .mobile-card {
+      margin: 0.5rem;
+      border-radius: 0.75rem;
+    }
+  }
+
+  /* Improved mobile navigation */
+  @media (max-width: 768px) {
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: hsl(var(--background));
+      border-top: 1px solid hsl(var(--border));
+      padding: 0.5rem;
+    }
+  }
+
+  /* Mobile-optimized forms */
+  @media (max-width: 640px) {
+    .mobile-form input,
+    .mobile-form select,
+    .mobile-form textarea {
+      font-size: 16px; /* Prevents zoom on iOS */
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+    }
+  }
+
+  /* Mobile-optimized tables */
+  @media (max-width: 768px) {
+    .mobile-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    
+    .mobile-table td,
+    .mobile-table th {
+      padding: 0.5rem;
+      min-width: 120px;
+    }
+  }
+
+  /* Mobile-optimized modals and dialogs */
+  @media (max-width: 640px) {
+    .mobile-modal {
+      margin: 1rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+    }
+  }
+
+  /* Mobile-optimized buttons */
+  @media (max-width: 640px) {
+    .mobile-button {
+      min-height: 44px;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+    }
+  }
+
+  /* Mobile-optimized spacing */
+  @media (max-width: 640px) {
+    .mobile-spacing {
+      gap: 0.75rem;
+    }
+    
+    .mobile-spacing > * + * {
+      margin-top: 0.75rem;
+    }
+  }
+
+  /* Mobile-optimized grid layouts */
+  @media (max-width: 640px) {
+    .mobile-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .mobile-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  /* Mobile-optimized text sizing */
+  @media (max-width: 640px) {
+    .mobile-text-sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    
+    .mobile-text-base {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+    
+    .mobile-text-lg {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+  }
+
+  /* Mobile-optimized shadows */
+  @media (max-width: 640px) {
+    .mobile-shadow {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* Mobile-optimized transitions */
+  @media (max-width: 640px) {
+    .mobile-transition {
+      transition: all 0.2s ease-in-out;
+    }
+  }
+
+  /* Mobile-optimized hover states */
+  @media (hover: none) and (pointer: coarse) {
+    .mobile-hover:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  /* Mobile-optimized focus states */
+  @media (max-width: 640px) {
+    .mobile-focus:focus {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: 2px;
+    }
+  }
+
+  /* Mobile-optimized animations */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-animate {
+      animation: none;
+      transition: none;
+    }
+  }
+
+  /* Mobile-optimized loading states */
+  @media (max-width: 640px) {
+    .mobile-loading {
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  /* Mobile-optimized error states */
+  @media (max-width: 640px) {
+    .mobile-error {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: hsl(var(--destructive) / 0.1);
+      border: 1px solid hsl(var(--destructive) / 0.2);
+      color: hsl(var(--destructive));
+    }
+  }
+
+  /* Mobile-optimized success states */
+  @media (max-width: 640px) {
+    .mobile-success {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: hsl(var(--success) / 0.1);
+      border: 1px solid hsl(var(--success) / 0.2);
+      color: hsl(var(--success));
+    }
   }
 }
 
-/* Custom utility classes for the new theme */
+/* Mobile-specific utility classes */
 @layer utilities {
   .bg-gradient-header {
     background: var(--gradient-header);
@@ -159,5 +384,45 @@ All colors MUST be HSL.
   
   .border-primary-light {
     border-color: hsl(var(--primary-light));
+  }
+
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .mobile-text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  
+  .mobile-spacing-responsive {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+  
+  .mobile-grid-responsive {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  .mobile-padding-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+  
+  .mobile-margin-responsive {
+    @apply m-4 sm:m-6 lg:m-8;
+  }
+  
+  .mobile-border-responsive {
+    @apply border-2 sm:border-4;
+  }
+  
+  .mobile-radius-responsive {
+    @apply rounded-lg sm:rounded-xl lg:rounded-2xl;
+  }
+  
+  .mobile-shadow-responsive {
+    @apply shadow-md sm:shadow-lg lg:shadow-xl;
+  }
+  
+  .mobile-transition-responsive {
+    @apply transition-all duration-200 sm:duration-300 lg:duration-500;
   }
 }
