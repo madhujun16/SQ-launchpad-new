@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 
 interface SimpleInventoryFiltersProps {
-  onFiltersChange?: (filters: any) => void;
+  onFiltersChange?: (filters: { search?: string; status?: string; type?: string }) => void;
 }
 
 export const SimpleInventoryFiltersPanel: React.FC<SimpleInventoryFiltersProps> = ({ onFiltersChange }) => {

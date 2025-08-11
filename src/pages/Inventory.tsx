@@ -52,8 +52,13 @@ const Inventory: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [filters, setFilters] = useState<any>({}); // Changed to any for simplicity, adjust type if needed
-  const [stats, setStats] = useState<any>(null);
+  const [filters, setFilters] = useState<Record<string, unknown>>({});
+  const [stats, setStats] = useState<{
+    total: number;
+    byStatus: Record<string, number>;
+    byGroupType: Record<string, number>;
+    byInventoryType: Record<string, number>;
+  } | null>(null);
 
   useEffect(() => {
     fetchInventoryData();

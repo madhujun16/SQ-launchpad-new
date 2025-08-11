@@ -5,7 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Package, MapPin, User, Calendar } from 'lucide-react';
 
 interface SimpleInventoryItemDetailsProps {
-  item?: any;
+  item?: {
+    model?: string;
+    status?: string;
+    serial_number?: string;
+    inventory_type?: string;
+    site?: { name?: string };
+    assigned_user?: { full_name?: string };
+    created_at?: string;
+  };
 }
 
 export const SimpleInventoryItemDetails: React.FC<SimpleInventoryItemDetailsProps> = ({ item }) => {

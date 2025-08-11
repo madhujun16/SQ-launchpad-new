@@ -39,23 +39,23 @@ export interface Site {
   // Hardware Scoping specific fields
   hardwareScope?: {
     smartQSolutions?: string[];
-    autoPulledHardware?: any[];
-    additionalHardware?: any[];
-    costBreakdown?: any;
+    autoPulledHardware?: string[];
+    additionalHardware?: string[];
+    costBreakdown?: { [key: string]: number };
     approvalStatus?: 'pending' | 'approved' | 'rejected';
   };
   // Deployment specific fields
   deployment?: {
     deliveryStatus?: 'pending' | 'dispatched' | 'delivered';
     installationStatus?: 'pending' | 'in_progress' | 'completed';
-    engineerTasks?: any[];
-    checklist?: any[];
+    engineerTasks?: string[];
+    checklist?: string[];
   };
   // Forecast specific fields
   forecast?: {
-    projectedTimeline?: any;
-    milestones?: any[];
-    dependencies?: any[];
+    projectedTimeline?: string;
+    milestones?: string[];
+    dependencies?: string[];
   };
 }
 

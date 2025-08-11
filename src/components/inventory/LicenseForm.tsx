@@ -88,7 +88,7 @@ export function LicenseForm({
                 <Label htmlFor="license_type">License Type *</Label>
                 <Select
                   value={watch('license_type')}
-                  onValueChange={(value) => setValue('license_type', value as any)}
+                  onValueChange={(value) => setValue('license_type', value as string)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select license type" />
@@ -107,7 +107,7 @@ export function LicenseForm({
                 <Label htmlFor="status">Status *</Label>
                 <Select
                   value={watch('status')}
-                  onValueChange={(value) => setValue('status', value as any)}
+                  onValueChange={(value) => setValue('status', value as string)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />

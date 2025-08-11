@@ -19,9 +19,9 @@ interface AuthContextType {
   availableRoles: UserRole[];
   switchRole: (role: UserRole) => void;
   signOut: () => Promise<void>;
-  signInWithOtp: (email: string) => Promise<{ error: any }>;
-  verifyOtp: (email: string, token: string) => Promise<{ error: any }>;
-  createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: any }>;
+  signInWithOtp: (email: string) => Promise<{ error: string | null }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: string | null }>;
   loading: boolean;
 }
 

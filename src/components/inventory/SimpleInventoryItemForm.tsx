@@ -8,8 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 
 interface SimpleInventoryItemFormProps {
-  item?: any;
-  onSave?: (item: any) => void;
+  item?: {
+    serial_number?: string;
+    model?: string;
+    inventory_type?: string;
+    group_type?: string;
+    status?: string;
+    notes?: string;
+  };
+  onSave?: (item: {
+    serial_number: string;
+    model: string;
+    inventory_type: string;
+    group_type: string;
+    status: string;
+    notes: string;
+  }) => void;
   onCancel?: () => void;
 }
 

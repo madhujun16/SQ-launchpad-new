@@ -14,12 +14,12 @@ export const inventoryService = {
   },
 
   // Mock implementation
-  async createInventoryItem(item: any): Promise<InventoryItem> {
+  async createInventoryItem(item: Partial<InventoryItem>): Promise<InventoryItem> {
     throw new Error('Inventory items table not available');
   },
 
   // Mock implementation
-  async updateInventoryItem(id: string, updates: any): Promise<InventoryItem> {
+  async updateInventoryItem(id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> {
     throw new Error('Inventory items table not available');
   },
 
@@ -39,12 +39,12 @@ export const inventoryService = {
   },
 
   // Mock implementation
-  async createLicense(license: any): Promise<License> {
+  async createLicense(license: Partial<License>): Promise<License> {
     throw new Error('Licenses table not available');
   },
 
   // Mock implementation
-  async updateLicense(id: string, updates: any): Promise<License> {
+  async updateLicense(id: string, updates: Partial<License>): Promise<License> {
     throw new Error('Licenses table not available');
   },
 

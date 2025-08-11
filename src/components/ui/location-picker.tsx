@@ -11,9 +11,9 @@ interface LocationPickerProps {
 }
 
 // Try to import Google Maps components, but handle gracefully if not available
-let GoogleMap: React.ComponentType<any> | null = null;
-let useJsApiLoader: ((config: any) => { isLoaded: boolean }) | null = null;
-let Marker: React.ComponentType<any> | null = null;
+let GoogleMap: React.ComponentType<{ children?: React.ReactNode; [key: string]: unknown }> | null = null;
+let useJsApiLoader: ((config: { id: string; googleMapsApiKey: string; libraries: ('places' | 'geometry' | 'drawing' | 'visualization')[] }) => { isLoaded: boolean }) | null = null;
+let Marker: React.ComponentType<{ position: { lat: number; lng: number } | google.maps.LatLng | google.maps.LatLngLiteral; [key: string]: unknown }> | null = null;
 
 try {
   // Use dynamic import instead of require

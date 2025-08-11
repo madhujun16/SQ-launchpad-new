@@ -16,7 +16,7 @@ export const licenseService = {
     };
   },
 
-  async getLicenseManagementItems(filters: any = {}, page = 1, limit = 20) {
+  async getLicenseManagementItems(filters: Record<string, unknown> = {}, page = 1, limit = 20) {
     return {
       data: [],
       total: 0,
@@ -41,7 +41,7 @@ export const licenseService = {
     throw new Error('Licenses table not available');
   },
 
-  async updateLicense(id: string, updates: any) {
+  async updateLicense(id: string, updates: Partial<CreateLicenseForm>) {
     throw new Error('Licenses table not available');
   },
 
