@@ -38,6 +38,7 @@ export const RocketIcon: React.FC<RocketIconProps> = ({
   </g>
 </svg>
 
+
   );
 };
 
