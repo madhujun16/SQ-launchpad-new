@@ -25,7 +25,7 @@ export const RocketIcon: React.FC<RocketIconProps> = ({
   color = "currentColor" 
 }) => {
   return (
-  <svg width="96px" height="96px" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <svg width="80px" height="80px" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 
 <circle fill="#33495F" cx="50" cy="50" r="50"/>
 
