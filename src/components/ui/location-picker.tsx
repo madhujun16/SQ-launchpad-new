@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, MapPin, Navigation, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Search, MapPin, Navigation } from 'lucide-react';
+import { Button } from './button';
+import { Input } from './input';
+import { Card, CardContent, CardHeader, CardTitle } from './card';
 
 interface LocationPickerProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
@@ -11,15 +11,19 @@ interface LocationPickerProps {
 }
 
 // Try to import Google Maps components, but handle gracefully if not available
-let GoogleMap: any = null;
-let useJsApiLoader: any = null;
-let Marker: any = null;
+let GoogleMap: React.ComponentType<any> | null = null;
+let useJsApiLoader: ((config: any) => { isLoaded: boolean }) | null = null;
+let Marker: React.ComponentType<any> | null = null;
 
 try {
-  const googleMapsModule = require('@react-google-maps/api');
-  GoogleMap = googleMapsModule.GoogleMap;
-  useJsApiLoader = googleMapsModule.useJsApiLoader;
-  Marker = googleMapsModule.Marker;
+  // Use dynamic import instead of require
+  import('@react-google-maps/api').then((module) => {
+    GoogleMap = module.GoogleMap;
+    useJsApiLoader = module.useJsApiLoader;
+    Marker = module.Marker;
+  }).catch((error) => {
+    console.warn('Google Maps API not available:', error);
+  });
 } catch (error) {
   console.warn('Google Maps API not available:', error);
 }
@@ -55,31 +59,33 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   initialLocation,
   className
 }) => {
-  const [map, setMap] = useState<any>(null);
-  const [marker, setMarker] = useState<any>(initialLocation || null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
   const [searchAddress, setSearchAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
-  const geocoder = useRef<any>(null);
+  const geocoder = useRef<google.maps.Geocoder | null>(null);
 
   // Check if Google Maps API key is available
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const isGoogleMapsAvailable = GoogleMap && useJsApiLoader && apiKey && apiKey !== 'YOUR_API_KEY_HERE';
 
-  const { isLoaded } = useJsApiLoader ? useJsApiLoader({
+  // Conditional hook usage - move outside of conditional
+  const googleMapsLoader = useJsApiLoader || (() => ({ isLoaded: false }));
+  const { isLoaded } = googleMapsLoader({
     id: 'google-map-script',
     googleMapsApiKey: apiKey || 'YOUR_API_KEY_HERE',
     libraries: ['places']
-  }) : { isLoaded: false };
+  });
 
-  const onLoad = useCallback((map: any) => {
-    setMap(map);
+  const onLoad = useCallback((mapInstance: google.maps.Map) => {
+    setMap(mapInstance);
     if (window.google) {
       geocoder.current = new window.google.maps.Geocoder();
     }
     
     if (initialLocation) {
-      map.setCenter(initialLocation);
+      mapInstance.setCenter(initialLocation);
       setMarker(initialLocation);
     }
   }, [initialLocation]);
@@ -145,7 +151,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, []);
 
-  const handleMapClick = useCallback(async (event: any) => {
+  const handleMapClick = useCallback(async (event: google.maps.MapMouseEvent) => {
     if (event.latLng) {
       const lat = event.latLng.lat();
       const lng = event.latLng.lng();
@@ -403,7 +409,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
               <Marker
                 position={marker}
                 draggable={true}
-                onDragEnd={async (e: any) => {
+                onDragEnd={async (e: google.maps.MapMouseEvent) => {
                   if (e.latLng) {
                     const lat = e.latLng.lat();
                     const lng = e.latLng.lng();
