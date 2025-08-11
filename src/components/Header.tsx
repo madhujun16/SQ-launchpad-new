@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
-  Search, 
   Bell, 
   User, 
   FileText, 
@@ -34,14 +32,11 @@ const Header = () => {
   const { isMobile, isTablet, isTouchDevice } = useIsMobile();
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
-    setIsSearchOpen(false);
   }, [location.pathname]);
 
   // Close mobile menu when clicking outside
@@ -193,14 +188,7 @@ const Header = () => {
     </div>
   );
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // Implement search functionality
-      console.log('Searching for:', searchQuery);
-      setIsSearchOpen(false);
-    }
-  };
+
 
   return (
     <>
@@ -217,28 +205,12 @@ const Header = () => {
                 </div>
               </Link>
               
-              {/* Desktop Search Bar */}
-              <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
-                <Search className="h-4 w-4 text-white/70" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-transparent text-white placeholder-white/70 text-sm outline-none w-48 focus:w-64 transition-all duration-300"
-                />
-              </div>
+
             </div>
 
             {/* Right Side - Actions and User */}
             <div className="flex items-center space-x-2 lg:space-x-3">
-              {/* Mobile Search Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="lg:hidden text-white hover:bg-white/10 h-10 w-10"
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
+
 
               {/* Notifications */}
               <Button 
@@ -361,19 +333,7 @@ const Header = () => {
                     </SheetDescription>
                   </SheetHeader>
                   
-                  {/* Mobile Search */}
-                  <div className="px-6 py-4 border-b">
-                    <form onSubmit={handleSearch} className="flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2">
-                      <Search className="h-4 w-4 text-gray-500" />
-                      <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-transparent text-gray-900 placeholder-gray-500 text-sm outline-none flex-1"
-                      />
-                    </form>
-                  </div>
+
                   
                   <div className="px-6 py-4">
                     {!loading && currentRole && renderMobileNavigation()}
@@ -421,30 +381,7 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Mobile Search Bar (Conditional) */}
-          {isSearchOpen && (
-            <div className="lg:hidden py-3 border-t border-white/20">
-              <form onSubmit={handleSearch} className="flex items-center space-x-2">
-                <Search className="h-4 w-4 text-white/70" />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-white/10 border-white/20 text-white placeholder-white/70 flex-1"
-                />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-white hover:bg-white/10"
-                  onClick={() => setIsSearchOpen(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          )}
+
         </div>
       </header>
 
