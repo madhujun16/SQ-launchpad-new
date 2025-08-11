@@ -474,6 +474,25 @@ const SiteDetail = () => {
 
   // Render content based on selected step
   const renderStepContent = () => {
+    // Check if user can edit based on role and workflow progress
+    const canEditStep = (stepIndex: number) => {
+      // Only admins can edit anything at any stage
+      if (currentRole === 'admin') return true;
+      
+      // For non-admin users, they can only edit if the workflow has progressed to that step
+      const currentStepIndex = getStepperStepFromStatus(site.status);
+      return stepIndex <= currentStepIndex;
+    };
+
+    // Check if specific fields can be edited (Organization, Site, Unit code are always read-only for non-admins)
+    const canEditField = (fieldName: string) => {
+      if (currentRole === 'admin') return true;
+      
+      // These fields are always read-only for non-admins
+      const readOnlyFields = ['organization', 'foodCourt', 'unitCode'];
+      return !readOnlyFields.includes(fieldName);
+    };
+
     switch (selectedStep) {
       case 0: // Site Creation
         return (
@@ -485,10 +504,16 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Basic site information and configuration</p>
               </div>
               <div className="flex space-x-3">
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Site</span>
-                </Button>
+                {canEditStep(0) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit Site Creation</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Submit for Review</span>
@@ -519,7 +544,8 @@ const SiteDetail = () => {
                         <Input 
                           defaultValue={site.organization} 
                           placeholder="e.g., Compass Group UK"
-                          className="w-full"
+                          className={`w-full ${!canEditField('organization') ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('organization')}
                         />
                       </div>
                       <div className="space-y-2">
@@ -527,7 +553,8 @@ const SiteDetail = () => {
                         <Input 
                           defaultValue={site.foodCourt} 
                           placeholder="e.g., London Central"
-                          className="w-full"
+                          className={`w-full ${!canEditField('foodCourt') ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('foodCourt')}
                         />
                       </div>
                       <div className="space-y-2">
@@ -535,7 +562,8 @@ const SiteDetail = () => {
                         <Input 
                           defaultValue={site.unitCode} 
                           placeholder="e.g., LC001"
-                          className="w-full"
+                          className={`w-full ${!canEditField('unitCode') ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('unitCode')}
                         />
                       </div>
                       <div className="space-y-2">
@@ -543,7 +571,8 @@ const SiteDetail = () => {
                         <Input 
                           type="date"
                           defaultValue={site.goLiveDate}
-                          className="w-full"
+                          className={`w-full ${!canEditField('goLiveDate') ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('goLiveDate')}
                         />
                       </div>
                     </div>
@@ -555,8 +584,8 @@ const SiteDetail = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Priority Level</label>
-                        <Select defaultValue={site.priority}>
-                          <SelectTrigger>
+                        <Select defaultValue={site.priority} disabled={!canEditField('priority')}>
+                          <SelectTrigger className={!canEditField('priority') ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select priority" />
                           </SelectTrigger>
                           <SelectContent>
@@ -569,8 +598,8 @@ const SiteDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Risk Level</label>
-                        <Select defaultValue={site.riskLevel}>
-                          <SelectTrigger>
+                        <Select defaultValue={site.riskLevel} disabled={!canEditField('riskLevel')}>
+                          <SelectTrigger className={!canEditField('riskLevel') ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select risk level" />
                           </SelectTrigger>
                           <SelectContent>
@@ -589,8 +618,8 @@ const SiteDetail = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Operations Manager</label>
-                        <Select defaultValue={site.assignedOpsManager}>
-                          <SelectTrigger>
+                        <Select defaultValue={site.assignedOpsManager} disabled={!canEditField('assignedOpsManager')}>
+                          <SelectTrigger className={!canEditField('assignedOpsManager') ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select operations manager" />
                           </SelectTrigger>
                           <SelectContent>
@@ -603,15 +632,15 @@ const SiteDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Deployment Engineer</label>
-                        <Select defaultValue={site.assignedDeploymentEngineer}>
-                          <SelectTrigger>
+                        <Select defaultValue={site.assignedDeploymentEngineer} disabled={!canEditField('assignedDeploymentEngineer')}>
+                          <SelectTrigger className={!canEditField('assignedDeploymentEngineer') ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select deployment engineer" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                            <SelectItem value="David Brown">David Brown</SelectItem>
-                            <SelectItem value="Tom Wilson">Tom Wilson</SelectItem>
-                            <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                            <SelectItem value="Mike Brown">Mike Brown</SelectItem>
+                            <SelectItem value="Lisa Chen">Lisa Chen</SelectItem>
+                            <SelectItem value="David Wilson">David Wilson</SelectItem>
+                            <SelectItem value="Anna Rodriguez">Anna Rodriguez</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -706,14 +735,16 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Comprehensive site assessment and deployment readiness</p>
               </div>
               <div className="flex space-x-3">
-                <Button 
-                  variant="outline" 
-                  className="flex items-center space-x-2"
-                  onClick={() => navigate(`/sites/${id}/study`)}
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Site Study</span>
-                </Button>
+                {canEditStep(1) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit Site Study</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <Download className="h-4 w-4" />
                   <span>Export Report</span>
@@ -985,10 +1016,16 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Select software and hardware requirements for the site</p>
               </div>
               <div className="flex space-x-3">
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Scoping</span>
-                </Button>
+                {canEditStep(2) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit Scoping</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Submit for Approval</span>
@@ -1113,10 +1150,16 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Ops Manager approval for software and hardware selection</p>
               </div>
               <div className="flex space-x-3">
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Approval</span>
-                </Button>
+                {canEditStep(3) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit Approval</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Approve</span>
@@ -1230,10 +1273,16 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Hardware installation and system deployment</p>
               </div>
               <div className="flex space-x-3">
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Edit className="h-4 w-4" />
-                  <span>Update Progress</span>
-                </Button>
+                {canEditStep(4) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Update Progress</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Mark Complete</span>
@@ -1401,10 +1450,6 @@ const SiteDetail = () => {
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Sites</span>
-          </Button>
-          <Button variant="gradient" className="flex items-center space-x-2">
-            <Edit className="h-4 w-4" />
-            <span>Edit Site</span>
           </Button>
         </div>
       </div>

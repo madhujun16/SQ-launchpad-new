@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { LocationPicker } from '@/components/ui/location-picker';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useToast } from '@/hooks/use-toast';
@@ -65,45 +65,44 @@ export default function SiteStudy() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [studyData, setStudyData] = useState({
     generalInfo: {
-      sector: '',
-      foodCourtName: '',
-      unitManagerName: '',
-      jobTitle: '',
-      unitManagerEmail: '',
-      unitManagerMobile: '',
-      additionalContactName: '',
-      additionalContactEmail: '',
+      sector: 'Eurest',
+      foodCourtName: 'JLR Whitley',
+      unitManagerName: 'Sarah Johnson',
+      jobTitle: 'Operations Manager',
+      unitManagerEmail: 'sarah.johnson@jlr.com',
+      unitManagerMobile: '+44 7700 900123',
+      additionalContactName: 'John Smith',
+      additionalContactEmail: 'john.smith@jlr.com',
       siteStudyDate: new Date().toISOString().split('T')[0]
     },
     location: {
-      address: '',
-      postcode: '',
-      region: '',
+      address: 'Southhall Road, Crestview Hills, Birmingham, Jefferson County, Alabama, 35213, USA',
+      postcode: '35213',
+      region: 'West Midlands',
       country: 'United Kingdom',
-      latitude: null as number | null,
-      longitude: null as number | null,
-      accuracy: null as number | null
+      latitude: 33.523049,
+      longitude: -86.737073,
+      accuracy: 10
     },
     infrastructure: {
-      floorPlan: '',
-      photos: [] as string[],
-      counters: 0,
-      mealSessions: [] as string[]
+      floorPlan: 'yes',
+      photos: ['floor-plan-1.jpg', 'site-photo-1.jpg'],
+      counters: 4,
+      mealSessions: ['Breakfast', 'Lunch', 'Dinner']
     },
     hardware: {
-      smartQSolutions: [] as string[],
-      additionalHardware: [] as string[],
-      networkRequirements: '',
-      powerRequirements: ''
+      smartQSolutions: ['Order Management', 'Payment Processing', 'Inventory Tracking'],
+      additionalHardware: ['POS Terminals', 'Receipt Printers', 'Barcode Scanners'],
+      networkRequirements: 'High-speed internet connection required, minimum 100Mbps bandwidth',
+      powerRequirements: 'Standard 230V power outlets, backup power recommended'
     },
     review: {
-      notes: '',
-      recommendations: ''
+      notes: 'Site is ready for deployment. All infrastructure requirements have been assessed.',
+      recommendations: 'Proceed with hardware procurement and software installation.'
     }
   });
 
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationSearch, setLocationSearch] = useState('');
+
 
   // Mandatory fields validation
   const mandatoryFields = {
@@ -225,10 +224,16 @@ export default function SiteStudy() {
   };
 
   const handleLocationSearch = () => {
-    setShowLocationModal(true);
+    // Location picker is only available during site creation, not editing
+    toast({
+      title: "Location Picker Unavailable",
+      description: "Location picker is only available during site creation. Please manually enter the address details.",
+      variant: "default"
+    });
   };
 
   const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    // This function is not used in edit mode
     setStudyData(prev => ({
       ...prev,
       location: {
@@ -484,32 +489,26 @@ export default function SiteStudy() {
                    </div>
                  )}
 
-                 {/* Editable location form */}
-                 {isEditMode && (
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div className="md:col-span-2">
-                       <Label htmlFor="address">
-                         Site Address <span className="text-red-500">*</span>
-                       </Label>
-                       <div className="flex gap-2">
-                         <Input
-                           id="address"
-                           value={studyData.location.address}
-                           onChange={(e) => setStudyData(prev => ({
-                             ...prev,
-                             location: { ...prev.location, address: e.target.value }
-                           }))}
-                           placeholder="Enter site address"
-                         />
-                         <Button
-                           variant="outline"
-                           onClick={handleLocationSearch}
-                         >
-                           <MapPin className="h-4 w-4 mr-2" />
-                           Tag Location
-                         </Button>
-                       </div>
-                     </div>
+                                   {/* Editable location form */}
+                  {isEditMode && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <Label htmlFor="address">
+                          Site Address <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="address"
+                          value={studyData.location.address}
+                          onChange={(e) => setStudyData(prev => ({
+                            ...prev,
+                            location: { ...prev.location, address: e.target.value }
+                          }))}
+                          placeholder="Enter site address"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Location coordinates are managed during site creation. You can update the address details here.
+                        </p>
+                      </div>
                      <div>
                        <Label htmlFor="postcode">
                          Postcode <span className="text-red-500">*</span>
@@ -856,27 +855,7 @@ export default function SiteStudy() {
         {renderStepContent()}
       </StepperContent>
 
-      {/* Location Modal */}
-      <Dialog open={showLocationModal} onOpenChange={setShowLocationModal}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Tag Site Location</DialogTitle>
-            <DialogDescription>
-              Use the Location Picker to search for the site location or select it on the map
-            </DialogDescription>
-          </DialogHeader>
-          <LocationPicker
-            onLocationSelect={(location) => {
-              handleLocationSelect(location.lat, location.lng, location.address);
-              setShowLocationModal(false);
-            }}
-            initialLocation={studyData.location.latitude && studyData.location.longitude ? {
-              lat: studyData.location.latitude,
-              lng: studyData.location.longitude
-            } : undefined}
-          />
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 } 
