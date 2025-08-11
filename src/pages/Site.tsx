@@ -831,7 +831,7 @@ const SiteDetail = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Employee Strength:</span>
@@ -845,12 +845,12 @@ const SiteDetail = () => {
                         <span className="text-gray-600">Seating Capacity:</span>
                         <span className="font-medium">300</span>
                       </div>
-                    </div>
-                    <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Operating Days:</span>
                         <span className="font-medium">Monday - Friday</span>
                       </div>
+                    </div>
+                    <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Operating Hours:</span>
                         <span className="font-medium">7:00 AM - 6:00 PM</span>
@@ -859,8 +859,6 @@ const SiteDetail = () => {
                         <span className="text-gray-600">Peak Hours:</span>
                         <span className="font-medium">12:00 PM - 2:00 PM</span>
                       </div>
-                    </div>
-                    <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Kitchen Staff:</span>
                         <span className="font-medium">15</span>
