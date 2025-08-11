@@ -746,18 +746,18 @@ const SiteDetail = () => {
                         <span className="font-medium">Eurest</span>
                       </div>
                       <div className="flex justify-between">
+                        <span className="text-gray-600">Email:</span>
+                        <span className="font-medium">sarah.johnson@jlr.com</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
                         <span className="text-gray-600">Unit Manager:</span>
                         <span className="font-medium">Sarah Johnson</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Job Title:</span>
                         <span className="font-medium">Operations Manager</span>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Email:</span>
-                        <span className="font-medium">sarah.johnson@jlr.com</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Mobile:</span>
@@ -787,18 +787,18 @@ const SiteDetail = () => {
                         <span className="font-medium">2nd Floor</span>
                       </div>
                       <div className="flex justify-between">
+                        <span className="text-gray-600">Lift Access:</span>
+                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
                         <span className="text-gray-600">Security Restrictions:</span>
                         <span className="font-medium">Security pass required for all visitors</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Delivery Window:</span>
                         <span className="font-medium">10:00 AM–2:00 PM</span>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Lift Access:</span>
-                        <Badge className="bg-green-100 text-green-800">Available</Badge>
                       </div>
                     </div>
                   </div>
@@ -929,12 +929,12 @@ const SiteDetail = () => {
                         <span className="text-gray-600">Key Blockers:</span>
                         <span className="font-medium">None</span>
                       </div>
+                    </div>
+                    <div className="space-y-4">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Unresolved Dependencies:</span>
                         <span className="font-medium">No</span>
                       </div>
-                    </div>
-                    <div className="space-y-4">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Suggested Go-Live Date:</span>
                         <span className="font-medium">1st November 2025</span>
@@ -947,71 +947,25 @@ const SiteDetail = () => {
                     <h4 className="font-semibold text-gray-900 mb-4">Layout Images</h4>
                     <p className="text-sm text-gray-600 mb-4">Upload up to 3 layout images for the site (JPG, PNG, PDF - Max 10MB each)</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Upload Slot 1 */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                        <div className="flex flex-col items-center space-y-2">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">Upload Layout 1</p>
-                            <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
-                          </div>
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.pdf"
-                            className="hidden"
-                            id="layout-1"
-                          />
-                          <label htmlFor="layout-1" className="cursor-pointer">
-                            <Button variant="outline" size="sm">
-                              Choose File
-                            </Button>
-                          </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <div className="flex flex-col items-center space-y-4">
+                        <Upload className="h-12 w-12 text-gray-400" />
+                        <div>
+                          <p className="text-lg font-medium text-gray-700">Upload Layout Images</p>
+                          <p className="text-sm text-gray-500">Select up to 3 files or drag & drop them here</p>
                         </div>
-                      </div>
-
-                      {/* Upload Slot 2 */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                        <div className="flex flex-col items-center space-y-2">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">Upload Layout 2</p>
-                            <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
-                          </div>
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.pdf"
-                            className="hidden"
-                            id="layout-2"
-                          />
-                          <label htmlFor="layout-2" className="cursor-pointer">
-                            <Button variant="outline" size="sm">
-                              Choose File
-                            </Button>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Upload Slot 3 */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                        <div className="flex flex-col items-center space-y-2">
-                          <Upload className="h-8 w-8 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">Upload Layout 3</p>
-                            <p className="text-xs text-gray-500">Click to browse or drag & drop</p>
-                          </div>
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.pdf"
-                            className="hidden"
-                            id="layout-3"
-                          />
-                          <label htmlFor="layout-3" className="cursor-pointer">
-                            <Button variant="outline" size="sm">
-                              Choose File
-                            </Button>
-                          </label>
-                        </div>
+                        <input
+                          type="file"
+                          multiple
+                          accept=".jpg,.jpeg,.png,.pdf"
+                          className="hidden"
+                          id="layout-images"
+                        />
+                        <label htmlFor="layout-images" className="cursor-pointer">
+                          <Button variant="outline" size="lg">
+                            Choose Files
+                          </Button>
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -1429,9 +1383,15 @@ const SiteDetail = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
-          <p className="text-gray-600 mt-1">
-            {site.organization} • {site.foodCourt} ({site.unitCode})
-          </p>
+          <div className="flex items-center space-x-4 mt-2">
+            <p className="text-gray-600">
+              {site.organization} • {site.foodCourt} ({site.unitCode})
+            </p>
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span className="font-medium">Live Date: {new Date(site.goLiveDate).toLocaleDateString()}</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <Button 
@@ -1449,62 +1409,14 @@ const SiteDetail = () => {
         </div>
       </div>
 
-      {/* Site Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className={`p-2 rounded-full ${getStatusColor(site.status)}`}>
-                <CheckCircle className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Status</p>
-                <p className="text-lg font-semibold">{getStatusDisplayName(site.status)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Live Date</p>
-                <p className="text-lg font-semibold">{new Date(site.goLiveDate).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Ops Manager</p>
-                <p className="text-lg font-semibold">{site.assignedOpsManager}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Wrench className="h-5 w-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Deployment Engineer</p>
-                <p className="text-lg font-semibold">{site.assignedDeploymentEngineer}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+
 
       {/* Workflow Stepper */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center text-gray-900">
             <Info className="mr-2 h-5 w-5 text-blue-600" />
-            Workflow Progress
+            Go-Live Progress
           </CardTitle>
           <CardDescription>
             Track the progress of this site through the SmartQ LaunchPad workflow
@@ -1518,7 +1430,7 @@ const SiteDetail = () => {
             className="mb-6"
           />
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
+            <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
               Current Status: {getStatusDisplayName(site.status)}
             </div>
             <div className="text-sm text-gray-600">
