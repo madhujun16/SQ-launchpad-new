@@ -497,7 +497,7 @@ const SiteDetail = () => {
             </div>
 
             {/* Site Creation Form */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {/* General Information Card */}
               <Card>
                 <CardHeader>
@@ -509,39 +509,112 @@ const SiteDetail = () => {
                     Basic site details and organisation information
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Organisation</label>
-                      <Input 
-                        defaultValue={site.organization} 
-                        placeholder="e.g., Compass Group UK"
-                        className="w-full"
-                      />
+                <CardContent className="space-y-6">
+                  {/* Basic Site Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Basic Site Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Organisation</label>
+                        <Input 
+                          defaultValue={site.organization} 
+                          placeholder="e.g., Compass Group UK"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Food Court Name</label>
+                        <Input 
+                          defaultValue={site.foodCourt} 
+                          placeholder="e.g., London Central"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Unit Code</label>
+                        <Input 
+                          defaultValue={site.unitCode} 
+                          placeholder="e.g., LC001"
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Target Live Date</label>
+                        <Input 
+                          type="date"
+                          defaultValue={site.goLiveDate}
+                          className="w-full"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Food Court Name</label>
-                      <Input 
-                        defaultValue={site.foodCourt} 
-                        placeholder="e.g., London Central"
-                        className="w-full"
-                      />
+                  </div>
+
+                  {/* Priority & Risk Assessment */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Priority & Risk Assessment</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Priority Level</label>
+                        <Select defaultValue={site.priority}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low Priority</SelectItem>
+                            <SelectItem value="medium">Medium Priority</SelectItem>
+                            <SelectItem value="high">High Priority</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Risk Level</label>
+                        <Select defaultValue={site.riskLevel}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select risk level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low Risk</SelectItem>
+                            <SelectItem value="medium">Medium Risk</SelectItem>
+                            <SelectItem value="high">High Risk</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Unit Code</label>
-                      <Input 
-                        defaultValue={site.unitCode} 
-                        placeholder="e.g., LC001"
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Target Live Date</label>
-                      <Input 
-                        type="date"
-                        defaultValue={site.goLiveDate}
-                        className="w-full"
-                      />
+                  </div>
+
+                  {/* Team Assignment */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Team Assignment</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Operations Manager</label>
+                        <Select defaultValue={site.assignedOpsManager}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select operations manager" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="John Smith">John Smith</SelectItem>
+                            <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
+                            <SelectItem value="Emma Davis">Emma Davis</SelectItem>
+                            <SelectItem value="Alex Johnson">Alex Johnson</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Deployment Engineer</label>
+                        <Select defaultValue={site.assignedDeploymentEngineer}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select deployment engineer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
+                            <SelectItem value="David Brown">David Brown</SelectItem>
+                            <SelectItem value="Tom Wilson">Tom Wilson</SelectItem>
+                            <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -606,94 +679,7 @@ const SiteDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Priority & Risk Assessment Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <AlertTriangle className="mr-2 h-5 w-5" />
-                    Priority & Risk Assessment
-                  </CardTitle>
-                  <CardDescription>
-                    Set priority level and assess potential risks
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Priority Level</label>
-                      <Select defaultValue={site.priority}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low Priority</SelectItem>
-                          <SelectItem value="medium">Medium Priority</SelectItem>
-                          <SelectItem value="high">High Priority</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Risk Level</label>
-                      <Select defaultValue={site.riskLevel}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select risk level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low Risk</SelectItem>
-                          <SelectItem value="medium">Medium Risk</SelectItem>
-                          <SelectItem value="high">High Risk</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Team Assignment Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="mr-2 h-5 w-5" />
-                    Team Assignment
-                  </CardTitle>
-                  <CardDescription>
-                    Assign key team members to this site
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Operations Manager</label>
-                      <Select defaultValue={site.assignedOpsManager}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select operations manager" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="John Smith">John Smith</SelectItem>
-                          <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                          <SelectItem value="Emma Davis">Emma Davis</SelectItem>
-                          <SelectItem value="Alex Johnson">Alex Johnson</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Deployment Engineer</label>
-                      <Select defaultValue={site.assignedDeploymentEngineer}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select deployment engineer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                          <SelectItem value="David Brown">David Brown</SelectItem>
-                          <SelectItem value="Tom Wilson">Tom Wilson</SelectItem>
-                          <SelectItem value="Lisa Brown">Lisa Brown</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Action Buttons at Bottom */}
