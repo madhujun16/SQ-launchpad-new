@@ -522,13 +522,49 @@ const SiteDetail = () => {
       return stepIndex <= currentStepIndex;
     };
 
-    // Check if specific fields can be edited (Organization, Site, Unit code are always read-only for non-admins)
-    const canEditField = (fieldName: string) => {
+    // Check if specific fields can be edited based on user role and workflow progression
+    const canEditField = (fieldName: string, stepIndex?: number) => {
+      // Admin can edit any field at any stage
       if (currentRole === 'admin') return true;
       
       // These fields are always read-only for non-admins
       const readOnlyFields = ['organization', 'foodCourt', 'unitCode'];
-      return !readOnlyFields.includes(fieldName);
+      if (readOnlyFields.includes(fieldName)) {
+        return false;
+      }
+      
+      // For Site Study form fields (step 1), apply special role-based logic
+      if (stepIndex === 1) {
+        const currentStepIndex = getStepperStepFromStatus(site.status);
+        
+        // Deployment Engineer can edit Site Study fields up until Scoping step starts
+        if (currentRole === 'deployment_engineer') {
+          // Can edit if workflow hasn't reached Scoping step yet
+          return currentStepIndex < 2;
+        }
+        
+        // For all other roles (including ops_manager), Site Study fields become read-only 
+        // immediately after Site Study step is completed
+        return currentStepIndex <= 1;
+      }
+      
+      // For other steps, follow normal field permissions
+      return true;
+    };
+
+    // Check if the Site Study form should show as read-only
+    const isSiteStudyFormReadOnly = () => {
+      if (currentRole === 'admin') return false;
+      
+      const currentStepIndex = getStepperStepFromStatus(site.status);
+      
+      // Deployment Engineer can edit until Scoping starts
+      if (currentRole === 'deployment_engineer') {
+        return currentStepIndex >= 2;
+      }
+      
+      // Other roles can only edit during Site Study step
+      return currentStepIndex > 1;
     };
 
     switch (selectedStep) {
@@ -790,6 +826,24 @@ const SiteDetail = () => {
               </div>
             </div>
 
+            {/* Read-Only Banner */}
+            {isSiteStudyFormReadOnly() && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <div>
+                    <h4 className="font-medium text-amber-800">Form Read-Only</h4>
+                    <p className="text-sm text-amber-700">
+                      {currentRole === 'deployment_engineer' 
+                        ? 'The workflow has progressed to Scoping stage. Site Study fields are now read-only.'
+                        : 'Site Study step has been completed. Fields are now read-only for your role.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Site Study Content with Cards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* General Information Card */}
@@ -806,31 +860,62 @@ const SiteDetail = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Organisation:</span>
-                        <span className="font-medium">Compass Eurest</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Organisation</label>
+                        <Input 
+                          defaultValue="Compass Eurest"
+                          placeholder="Enter organisation name"
+                          className={`w-full ${!canEditField('organization', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('organization', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Sector:</span>
-                        <span className="font-medium">Eurest</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Sector</label>
+                        <Input 
+                          defaultValue="Eurest"
+                          placeholder="Enter sector"
+                          className={`w-full ${!canEditField('sector', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('sector', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Email:</span>
-                        <span className="font-medium">sarah.johnson@jlr.com</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Email</label>
+                        <Input 
+                          defaultValue="sarah.johnson@jlr.com"
+                          placeholder="Enter email address"
+                          type="email"
+                          className={`w-full ${!canEditField('email', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('email', 1)}
+                        />
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Unit Manager:</span>
-                        <span className="font-medium">Sarah Johnson</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Unit Manager</label>
+                        <Input 
+                          defaultValue="Sarah Johnson"
+                          placeholder="Enter unit manager name"
+                          className={`w-full ${!canEditField('unitManager', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('unitManager', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Job Title:</span>
-                        <span className="font-medium">Operations Manager</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Job Title</label>
+                        <Input 
+                          defaultValue="Operations Manager"
+                          placeholder="Enter job title"
+                          className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('jobTitle', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Mobile:</span>
-                        <span className="font-medium">+44 7700 900123</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Mobile</label>
+                        <Input 
+                          defaultValue="+44 7700 900123"
+                          placeholder="Enter mobile number"
+                          className={`w-full ${!canEditField('mobile', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('mobile', 1)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -851,23 +936,47 @@ const SiteDetail = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Floor:</span>
-                        <span className="font-medium">2nd Floor</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Floor</label>
+                        <Input 
+                          defaultValue="2nd Floor"
+                          placeholder="Enter floor number/description"
+                          className={`w-full ${!canEditField('floor', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('floor', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Lift Access:</span>
-                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Lift Access</label>
+                        <Select defaultValue="available" disabled={!canEditField('liftAccess', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('liftAccess', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select lift access" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="not-available">Not Available</SelectItem>
+                            <SelectItem value="limited">Limited</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Security Restrictions:</span>
-                        <span className="font-medium">Security pass required for all visitors</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Security Restrictions</label>
+                        <Input 
+                          defaultValue="Security pass required for all visitors"
+                          placeholder="Enter security restrictions"
+                          className={`w-full ${!canEditField('securityRestrictions', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('securityRestrictions', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Delivery Window:</span>
-                        <span className="font-medium">10:00 AM–2:00 PM</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Delivery Window</label>
+                        <Input 
+                          defaultValue="10:00 AM–2:00 PM"
+                          placeholder="Enter delivery window"
+                          className={`w-full ${!canEditField('deliveryWindow', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('deliveryWindow', 1)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -888,43 +997,94 @@ const SiteDetail = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Employee Strength:</span>
-                        <span className="font-medium">2,500</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Employee Strength</label>
+                        <Input 
+                          defaultValue="2,500"
+                          placeholder="Enter employee count"
+                          type="number"
+                          className={`w-full ${!canEditField('employeeStrength', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('employeeStrength', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Expected Footfall:</span>
-                        <span className="font-medium">800</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Expected Footfall</label>
+                        <Input 
+                          defaultValue="800"
+                          placeholder="Enter expected footfall"
+                          type="number"
+                          className={`w-full ${!canEditField('expectedFootfall', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('expectedFootfall', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Seating Capacity:</span>
-                        <span className="font-medium">300</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Seating Capacity</label>
+                        <Input 
+                          defaultValue="300"
+                          placeholder="Enter seating capacity"
+                          type="number"
+                          className={`w-full ${!canEditField('seatingCapacity', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('seatingCapacity', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Operating Days:</span>
-                        <span className="font-medium">Monday - Friday</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Operating Days</label>
+                        <Input 
+                          defaultValue="Monday - Friday"
+                          placeholder="Enter operating days"
+                          className={`w-full ${!canEditField('operatingDays', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('operatingDays', 1)}
+                        />
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Operating Hours:</span>
-                        <span className="font-medium">7:00 AM - 6:00 PM</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Operating Hours</label>
+                        <Input 
+                          defaultValue="7:00 AM - 6:00 PM"
+                          placeholder="Enter operating hours"
+                          className={`w-full ${!canEditField('operatingHours', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('operatingHours', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Peak Hours:</span>
-                        <span className="font-medium">12:00 PM - 2:00 PM</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Peak Hours</label>
+                        <Input 
+                          defaultValue="12:00 PM - 2:00 PM"
+                          placeholder="Enter peak hours"
+                          className={`w-full ${!canEditField('peakHours', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('peakHours', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Kitchen Staff:</span>
-                        <span className="font-medium">15</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Kitchen Staff</label>
+                        <Input 
+                          defaultValue="15"
+                          placeholder="Enter kitchen staff count"
+                          type="number"
+                          className={`w-full ${!canEditField('kitchenStaff', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('kitchenStaff', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Service Staff:</span>
-                        <span className="font-medium">8</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Service Staff</label>
+                        <Input 
+                          defaultValue="8"
+                          placeholder="Enter service staff count"
+                          type="number"
+                          className={`w-full ${!canEditField('serviceStaff', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('serviceStaff', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Management:</span>
-                        <span className="font-medium">3</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Management</label>
+                        <Input 
+                          defaultValue="3"
+                          placeholder="Enter management count"
+                          type="number"
+                          className={`w-full ${!canEditField('management', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('management', 1)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -945,31 +1105,78 @@ const SiteDetail = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">LAN Points:</span>
-                        <span className="font-medium">8</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">LAN Points</label>
+                        <Input 
+                          defaultValue="8"
+                          placeholder="Enter number of LAN points"
+                          type="number"
+                          className={`w-full ${!canEditField('lanPoints', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('lanPoints', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Wi-Fi Available:</span>
-                        <Badge className="bg-green-100 text-green-800">Yes</Badge>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Wi-Fi Available</label>
+                        <Select defaultValue="yes" disabled={!canEditField('wifiAvailable', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('wifiAvailable', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select Wi-Fi availability" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                            <SelectItem value="limited">Limited</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Bandwidth:</span>
-                        <span className="font-medium">6 Mbps</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Bandwidth</label>
+                        <Input 
+                          defaultValue="6 Mbps"
+                          placeholder="Enter bandwidth"
+                          className={`w-full ${!canEditField('bandwidth', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('bandwidth', 1)}
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Static IP:</span>
-                        <Badge className="bg-green-100 text-green-800">Provided</Badge>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Static IP</label>
+                        <Select defaultValue="provided" disabled={!canEditField('staticIP', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('staticIP', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select static IP status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="provided">Provided</SelectItem>
+                            <SelectItem value="not-provided">Not Provided</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">UPS Power (POS):</span>
-                        <Badge className="bg-green-100 text-green-800">Available</Badge>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">UPS Power (POS)</label>
+                        <Select defaultValue="available" disabled={!canEditField('upsPowerPOS', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('upsPowerPOS', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select UPS power status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="not-available">Not Available</SelectItem>
+                            <SelectItem value="limited">Limited</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">UPS Power (Ceiling):</span>
-                        <Badge className="bg-red-100 text-red-800">Not Available</Badge>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">UPS Power (Ceiling)</label>
+                        <Select defaultValue="not-available" disabled={!canEditField('upsPowerCeiling', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('upsPowerCeiling', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select UPS power status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="not-available">Not Available</SelectItem>
+                            <SelectItem value="limited">Limited</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </div>
@@ -990,23 +1197,51 @@ const SiteDetail = () => {
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Site Deployment Ready:</span>
-                        <Badge className="bg-green-100 text-green-800">Ready</Badge>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Site Deployment Ready</label>
+                        <Select defaultValue="ready" disabled={!canEditField('deploymentReady', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('deploymentReady', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select deployment readiness" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ready">Ready</SelectItem>
+                            <SelectItem value="not-ready">Not Ready</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Key Blockers:</span>
-                        <span className="font-medium">None</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Key Blockers</label>
+                        <Input 
+                          defaultValue="None"
+                          placeholder="Enter key blockers"
+                          className={`w-full ${!canEditField('keyBlockers', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('keyBlockers', 1)}
+                        />
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Unresolved Dependencies:</span>
-                        <span className="font-medium">No</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Unresolved Dependencies</label>
+                        <Select defaultValue="no" disabled={!canEditField('unresolvedDependencies', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('unresolvedDependencies', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select dependency status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                            <SelectItem value="partial">Partial</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Suggested Go-Live Date:</span>
-                        <span className="font-medium">1st November 2025</span>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Suggested Go-Live Date</label>
+                        <Input 
+                          defaultValue="1st November 2025"
+                          placeholder="Enter suggested go-live date"
+                          className={`w-full ${!canEditField('suggestedGoLiveDate', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('suggestedGoLiveDate', 1)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1029,9 +1264,10 @@ const SiteDetail = () => {
                           accept=".jpg,.jpeg,.png,.pdf"
                           className="hidden"
                           id="layout-images"
+                          disabled={!canEditField('layoutImages', 1)}
                         />
-                        <label htmlFor="layout-images" className="cursor-pointer">
-                          <Button variant="outline" size="lg">
+                        <label htmlFor="layout-images" className={`cursor-pointer ${!canEditField('layoutImages', 1) ? 'opacity-50' : ''}`}>
+                          <Button variant="outline" size="lg" disabled={!canEditField('layoutImages', 1)}>
                             Choose Files
                           </Button>
                         </label>
