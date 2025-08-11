@@ -731,7 +731,7 @@ const SiteDetail = () => {
             {/* Action Buttons at Top */}
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Site Study Report</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Site Study</h2>
                 <p className="text-gray-600 mt-1">Comprehensive site assessment and deployment readiness</p>
               </div>
               <div className="flex space-x-3">
@@ -1468,16 +1468,19 @@ const SiteDetail = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Stepper 
-            steps={stepperSteps} 
-            currentStep={selectedStep}
-            onStepClick={setSelectedStep}
-            className="mb-6"
-          />
-          <div className="flex justify-between items-center">
-            <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <Stepper 
+                steps={stepperSteps} 
+                currentStep={selectedStep}
+                onStepClick={setSelectedStep}
+              />
+            </div>
+            <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 ml-4">
               Current Status: {getStatusDisplayName(site.status)}
             </div>
+          </div>
+          <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
               Step {selectedStep + 1} of {stepperSteps.length}
             </div>
