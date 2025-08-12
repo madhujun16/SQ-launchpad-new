@@ -54,7 +54,7 @@ const Header = () => {
   }, [isMobileMenuOpen]);
 
   const handleAdminClick = () => {
-    navigate('/admin');
+    navigate('/platform-configuration');
   };
 
   const handleRoleBasedNavigation = (role: string) => {
@@ -122,13 +122,6 @@ const Header = () => {
         label: 'Forecast',
         icon: BarChart3,
         canAccess: canAccessPage(currentRole, '/forecast')
-      },
-      {
-        type: 'link' as const,
-        path: '/admin',
-        label: 'Admin',
-        icon: Settings,
-        canAccess: canAccessPage(currentRole, '/admin')
       }
     ];
 
@@ -302,6 +295,13 @@ const Header = () => {
                       </>
                     )}
 
+                    {canAccessPage(currentRole || 'admin', '/admin') && (
+                      <DropdownMenuItem onClick={handleAdminClick}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Platform Configuration</span>
+                      </DropdownMenuItem>
+                    )}
+
                     <DropdownMenuItem onClick={signOut}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign Out</span>
@@ -373,6 +373,17 @@ const Header = () => {
                           <Plus className="mr-3 h-4 w-4" />
                           Create Site
                         </Button>
+
+                        {canAccessPage(currentRole || 'admin', '/admin') && (
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start h-12"
+                            onClick={() => handleMobileNavigation('/platform-configuration')}
+                          >
+                            <Settings className="mr-3 h-4 w-4" />
+                            Platform Configuration
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}
