@@ -262,14 +262,14 @@ const Inventory: React.FC = () => {
             <div>
               <Label htmlFor="group-type">Group Type</Label>
               <Select
-                value={filters.group_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, group_type: value as any || undefined })}
+                value={filters.group_type || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, group_type: value === 'all' ? undefined : value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {GROUP_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -282,14 +282,14 @@ const Inventory: React.FC = () => {
             <div>
               <Label htmlFor="inventory-type">Inventory Type</Label>
               <Select
-                value={filters.inventory_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, inventory_type: value as any || undefined })}
+                value={filters.inventory_type || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, inventory_type: value === 'all' ? undefined : value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {INVENTORY_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -302,14 +302,14 @@ const Inventory: React.FC = () => {
             <div>
               <Label htmlFor="status">Status</Label>
               <Select
-                value={filters.status || ''}
-                onValueChange={(value) => setFilters({ ...filters, status: value as any || undefined })}
+                value={filters.status || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? undefined : value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {INVENTORY_STATUSES.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}

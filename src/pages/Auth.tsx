@@ -43,7 +43,7 @@ const Auth = () => {
 
     if (error) {
       console.error('OTP Error:', error); // Debug log
-      setError(error.message || 'Failed to send OTP');
+      setError(error || 'Failed to send OTP');
       toast.error('Failed to send OTP');
     } else {
       setOtpSent(true);
@@ -65,7 +65,7 @@ const Auth = () => {
     const { error } = await verifyOtp(email, otp);
 
     if (error) {
-      setError(error.message || 'Invalid OTP');
+      setError(error || 'Invalid OTP');
       toast.error('Invalid OTP');
     } else {
       toast.success('Login successful');

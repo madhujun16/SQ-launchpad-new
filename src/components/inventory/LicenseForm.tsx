@@ -187,14 +187,14 @@ export function LicenseForm({
               <div>
                 <Label htmlFor="site_id">Site</Label>
                 <Select
-                  value={watch('site_id') || ''}
-                  onValueChange={(value) => setValue('site_id', value || undefined)}
+                  value={watch('site_id') || 'none'}
+                  onValueChange={(value) => setValue('site_id', value === 'none' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select site" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No site assigned</SelectItem>
+                    <SelectItem value="none">No site assigned</SelectItem>
                     {sites.map((site) => (
                       <SelectItem key={site.id} value={site.id}>
                         <div>
@@ -212,14 +212,14 @@ export function LicenseForm({
               <div>
                 <Label htmlFor="inventory_item_id">Inventory Item</Label>
                 <Select
-                  value={watch('inventory_item_id') || ''}
-                  onValueChange={(value) => setValue('inventory_item_id', value || undefined)}
+                  value={watch('inventory_item_id') || 'none'}
+                  onValueChange={(value) => setValue('inventory_item_id', value === 'none' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select inventory item" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No item assigned</SelectItem>
+                    <SelectItem value="none">No item assigned</SelectItem>
                     {inventoryItems.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         <div>

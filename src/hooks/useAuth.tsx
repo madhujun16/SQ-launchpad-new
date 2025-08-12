@@ -115,28 +115,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithOtp = async (email: string) => {
     console.log('Starting OTP process for email:', email); // Debug log
     
-    // First, check if the user exists in the profiles table
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('email', email)
-      .single();
+    // Use the new secure function to check if email exists
+    const { data: emailExists, error: checkError } = await supabase
+      .rpc('check_email_exists', { email_to_check: email });
 
-    console.log('Profile check result:', { profileData, profileError }); // Debug log
+    console.log('Email existence check result:', { emailExists, checkError }); // Debug log
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      // PGRST116 is "not found" error, which is expected for new users
-      console.error('Profile check error:', profileError); // Debug log
-      return { error: profileError };
+    if (checkError) {
+      console.error('Email check error:', checkError); // Debug log
+      return { error: checkError.message || 'Failed to verify email' };
     }
 
     // If user doesn't exist in profiles table, they shouldn't be able to login
-    if (!profileData) {
+    if (!emailExists) {
       console.log('User not found in profiles table'); // Debug log
       return { 
-        error: { 
-          message: 'User not found. Please contact your administrator for access.' 
-        } 
+        error: 'User not found. Please contact your administrator for access.' 
       };
     }
 
@@ -152,7 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     console.log('OTP result:', { error }); // Debug log
-    return { error };
+    return { error: error?.message || null };
   };
 
   const verifyOtp = async (email: string, token: string) => {
@@ -162,7 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       type: 'email',
     });
     
-    return { error };
+    return { error: error?.message || null };
   };
 
   const createUserAsAdmin = async (email: string, password: string, role: UserRole) => {
@@ -175,7 +169,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     if (error) {
-      return { error };
+      return { error: error.message };
     }
 
     if (data.user) {
@@ -188,7 +182,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
       if (roleError) {
-        return { error: roleError };
+        return { error: roleError.message };
       }
 
       // Create profile for the new user
@@ -203,7 +197,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
       if (profileError) {
-        return { error: profileError };
+        return { error: profileError.message };
       }
     }
 
