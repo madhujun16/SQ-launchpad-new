@@ -44,6 +44,20 @@ interface LocationIQResponse {
   };
 }
 
+interface LocationIQSearchResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  };
+}
+
 const containerStyle = {
   width: '100%',
   height: '400px'
@@ -64,7 +78,24 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [searchAddress, setSearchAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState<LocationIQSearchResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const geocoder = useRef<google.maps.Geocoder | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Check if Google Maps API key is available
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -151,6 +182,36 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, []);
 
+  // LocationIQ search suggestions function
+  const getSearchSuggestions = useCallback(async (query: string): Promise<LocationIQSearchResult[]> => {
+    if (!query.trim() || query.length < 3) {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      return [];
+    }
+
+    try {
+      const encodedQuery = encodeURIComponent(query);
+      const url = `${LOCATIONIQ_BASE_URL}/search?key=${LOCATIONIQ_API_KEY}&q=${encodedQuery}&format=json&limit=5`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data || [];
+    } catch (error) {
+      console.error('Search suggestions error:', error);
+      return [];
+    }
+  }, []);
+
   const handleMapClick = useCallback(async (event: google.maps.MapMouseEvent) => {
     if (event.latLng) {
       const lat = event.latLng.lat();
@@ -164,6 +225,41 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       onLocationSelect({ lat, lng, address });
     }
   }, [onLocationSelect, reverseGeocode]);
+
+  const handleSearchInputChange = useCallback(async (value: string) => {
+    setSearchAddress(value);
+    
+    if (value.trim().length >= 3) {
+      const suggestions = await getSearchSuggestions(value);
+      setSearchSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [getSearchSuggestions]);
+
+  const handleSuggestionSelect = useCallback(async (suggestion: LocationIQSearchResult) => {
+    const location = {
+      lat: parseFloat(suggestion.lat),
+      lng: parseFloat(suggestion.lon),
+      address: suggestion.display_name
+    };
+    
+    setSearchAddress(suggestion.display_name);
+    setSearchSuggestions([]);
+    setShowSuggestions(false);
+    
+    const newLocation = { lat: location.lat, lng: location.lng };
+    setMarker(newLocation);
+    
+    if (map) {
+      map.setCenter(newLocation);
+      map.setZoom(15);
+    }
+    
+    onLocationSelect(location);
+  }, [map, onLocationSelect]);
 
   const handleSearch = useCallback(async () => {
     if (!searchAddress.trim()) return;
@@ -255,14 +351,37 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           {/* Search functionality */}
           <div className="space-y-4">
             <h4 className="font-medium text-gray-900">Search Location</h4>
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Enter address or postcode..."
-                value={searchAddress}
-                onChange={(e) => setSearchAddress(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1"
-              />
+            <div className="relative flex space-x-2">
+              <div className="flex-1 relative" ref={searchRef}>
+                <Input
+                  placeholder="Enter address or postcode..."
+                  value={searchAddress}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  className="w-full"
+                />
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                    {searchSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        onClick={() => handleSuggestionSelect(suggestion)}
+                      >
+                        <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
+                        {suggestion.address.city && (
+                          <div className="text-xs text-gray-500">
+                            {suggestion.address.city}
+                            {suggestion.address.state && `, ${suggestion.address.state}`}
+                            {suggestion.address.postcode && ` ${suggestion.address.postcode}`}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Button 
                 onClick={handleSearch}
                 disabled={isLoading}
@@ -362,14 +481,37 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search Bar */}
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Enter address or postcode..."
-            value={searchAddress}
-            onChange={(e) => setSearchAddress(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="flex-1"
-          />
+        <div className="relative flex space-x-2">
+          <div className="flex-1 relative" ref={searchRef}>
+            <Input
+              placeholder="Enter address or postcode..."
+              value={searchAddress}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-full"
+            />
+            {/* Search Suggestions Dropdown */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                {searchSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    onClick={() => handleSuggestionSelect(suggestion)}
+                  >
+                    <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
+                    {suggestion.address.city && (
+                      <div className="text-xs text-gray-500">
+                        {suggestion.address.city}
+                        {suggestion.address.state && `, ${suggestion.address.state}`}
+                        {suggestion.address.postcode && ` ${suggestion.address.postcode}`}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <Button 
             onClick={handleSearch}
             disabled={isLoading}

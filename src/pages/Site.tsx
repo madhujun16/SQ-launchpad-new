@@ -623,21 +623,21 @@ const SiteDetail = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Food Court Name</label>
-                        <Input 
-                          defaultValue={site.foodCourt} 
-                          placeholder="e.g., London Central"
-                          className={`w-full ${!canEditField('foodCourt') ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('foodCourt')}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Unit Code</label>
                         <Input 
                           defaultValue={site.unitCode} 
                           placeholder="e.g., LC001"
                           className={`w-full ${!canEditField('unitCode') ? "bg-gray-50" : ""}`}
                           disabled={!canEditField('unitCode')}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Food Court Name</label>
+                        <Input 
+                          defaultValue={site.foodCourt} 
+                          placeholder="e.g., London Central"
+                          className={`w-full ${!canEditField('foodCourt') ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('foodCourt')}
                         />
                       </div>
                       <div className="space-y-2">
