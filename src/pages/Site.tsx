@@ -85,6 +85,7 @@ import { Progress } from '@/components/ui/progress';
 import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperStepFromStatus, type UnifiedSiteStatus } from '@/lib/siteTypes';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LocationPicker } from '@/components/ui/location-picker';
+import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -233,9 +234,6 @@ const SiteDetail = () => {
     lat: number;
     lng: number;
     address: string;
-    city: string;
-    country: string;
-    postalCode: string;
   } | null>(null);
 
   // Check if user has permission to access sites
@@ -927,10 +925,7 @@ const SiteDetail = () => {
                         setLocationData({
                           lat: location.lat,
                           lng: location.lng,
-                          address: location.address,
-                          city: location.city,
-                          country: location.country,
-                          postalCode: location.postalCode
+                          address: location.address
                         });
                       }}
                       initialLocation={locationData ? { lat: locationData.lat, lng: locationData.lng } : undefined}
@@ -2029,26 +2024,28 @@ const SiteDetail = () => {
 
   // Helper functions for Scoping step
   const getRecommendedHardware = (selectedSoftware: string[]): HardwareItem[] => {
+    // Get recommendation rules from platform configuration
+    const recommendationRules = getHardwareRecommendations(selectedSoftware);
+    
     const recommendations: HardwareItem[] = [];
     
     selectedSoftware.forEach(softwareId => {
-      const software = softwareModules.find(s => s.id === softwareId);
-      if (software) {
-        software.hardwareRequirements.forEach(hardwareReq => {
-          const hardware = hardwareItems.find(h => h.id === hardwareReq);
-          if (hardware) {
-            const existing = recommendations.find(r => r.id === hardware.id);
-            if (existing) {
-              existing.quantity += 1;
-            } else {
-              recommendations.push({
-                ...hardware,
-                reason: `Required by ${software.name}`
-              });
-            }
+      const rules = recommendationRules.filter(r => r.softwareModuleId === softwareId);
+      rules.forEach(rule => {
+        const hardware = hardwareItems.find(h => h.id === rule.hardwareItemId);
+        if (hardware) {
+          const existing = recommendations.find(r => r.id === hardware.id);
+          if (existing) {
+            existing.quantity += rule.defaultQuantity;
+          } else {
+            recommendations.push({
+              ...hardware,
+              quantity: rule.defaultQuantity,
+              reason: rule.reason
+            });
           }
-        });
-      }
+        }
+      });
     });
     
     return recommendations;
@@ -2134,14 +2131,14 @@ const SiteDetail = () => {
         ...site,
         scoping: {
           ...site.scoping,
-          status: 'pending_approval',
+          status: 'pending_approval' as const,
           submittedAt: new Date().toISOString()
         }
       };
       setSite(updatedSite);
       
       // Update the sites array
-      setSites(prevSites => 
+      setSites((prevSites: Site[]) => 
         prevSites.map(s => s.id === site.id ? updatedSite : s)
       );
       

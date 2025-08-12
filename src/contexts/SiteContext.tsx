@@ -76,7 +76,7 @@ interface SiteContextType {
   selectedSite: Site | null;
   setSelectedSite: (site: Site | null) => void;
   sites: Site[];
-  setSites: (sites: Site[]) => void;
+  setSites: React.Dispatch<React.SetStateAction<Site[]>>;
   updateSite: (siteId: string, updates: Partial<Site>) => void;
   createSite: (siteData: Omit<Site, 'id' | 'lastUpdated'>) => string;
   deleteSite: (siteId: string) => void;
