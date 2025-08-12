@@ -2,59 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
-  Search, 
-  Filter, 
-  Clock, 
-  AlertCircle, 
-  CheckCircle, 
-  XCircle, 
-  Package, 
-  Truck, 
-  Calendar,
-  User,
   Building,
-  DollarSign,
+  Package,
+  Database,
+  Calculator,
+  Cog,
+  FileText,
+  Shield,
+  Home,
+  ChevronRight,
+  AlertCircle,
+  CheckSquare,
+  Plus,
   Eye,
   Edit,
-  Trash2,
-  Plus,
-  Download,
-  Upload,
-  FileText,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Wrench,
-  Shield,
-  Zap,
-  MapPin,
-  Settings,
   Users,
-  Database,
-  Monitor,
-  CreditCard,
-  List,
-  Cog,
-  BarChart,
-  Globe,
-  ArrowLeft,
-  ChevronRight,
-  Home,
-  ChevronDown,
   Bell,
-  Key,
-  Mail
+  Activity
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ContentLoader } from '@/components/ui/loader';
@@ -62,27 +32,7 @@ import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 
-interface Organization {
-  id: string;
-  name: string;
-  sector: string;
-  description: string;
-  linked_sites: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface User {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-  organization: string;
-  status: 'active' | 'inactive' | 'pending';
-  last_login: string;
-  created_at: string;
-}
-
+// Enhanced interfaces for unified configuration
 interface SoftwareModule {
   id: string;
   name: string;
@@ -90,6 +40,11 @@ interface SoftwareModule {
   category: string;
   status: 'active' | 'inactive' | 'deprecated';
   version: string;
+  monthlyFee: number;
+  setupFee: number;
+  licenseType: 'per_user' | 'per_device' | 'per_site' | 'unlimited';
+  hardwareRequirements: string[];
+  dependencies: string[];
   created_at: string;
   updated_at: string;
 }
@@ -101,193 +56,424 @@ interface HardwareItem {
   category: string;
   model: string;
   manufacturer: string;
-  cost: number;
+  unitCost: number;
   status: 'available' | 'discontinued' | 'maintenance';
+  softwareCompatibility: string[];
+  outletTypeCompatibility: string[];
   created_at: string;
   updated_at: string;
 }
 
-interface AuditLog {
+interface OutletType {
   id: string;
-  entity: string;
-  action: string;
-  user: string;
-  timestamp: string;
-  details: string;
-  ip_address: string;
+  name: string;
+  description: string;
+  defaultHardware: string[];
+  defaultSoftware: string[];
+  businessRules: string[];
 }
 
-const PlatformConfiguration = () => {
-  const { currentRole, profile } = useAuth();
+interface CostBreakdown {
+  capex: {
+    hardware: number;
+    software: number;
+    setup: number;
+    contingency: number;
+    total: number;
+  };
+  opex: {
+    monthlyFees: number;
+    maintenance: number;
+    licenses: number;
+    total: number;
+  };
+  total: number;
+}
+
+interface ScopingConfiguration {
+  id: string;
+  siteId: string;
+  outletType: string;
+  selectedSoftware: string[];
+  selectedHardware: Array<{
+    hardwareId: string;
+    quantity: number;
+    customizations?: string;
+  }>;
+  costBreakdown: CostBreakdown;
+  approvalStatus: 'draft' | 'pending' | 'approved' | 'rejected';
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function PlatformConfiguration() {
+  const { currentRole } = useAuth();
   const navigate = useNavigate();
-  const roleConfig = getRoleConfig(currentRole || 'admin');
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('configuration');
   
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  // State for unified configuration
   const [softwareModules, setSoftwareModules] = useState<SoftwareModule[]>([]);
   const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [outletTypes, setOutletTypes] = useState<OutletType[]>([]);
+  const [scopingConfigurations, setScopingConfigurations] = useState<ScopingConfiguration[]>([]);
+  
+  // State for active configuration
+  const [selectedOutletType, setSelectedOutletType] = useState<string>('');
+  const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
+  const [selectedHardware, setSelectedHardware] = useState<Array<{
+    hardwareId: string;
+    quantity: number;
+    customizations?: string;
+  }>>([]);
+  const [costBreakdown, setCostBreakdown] = useState<CostBreakdown>({
+    capex: { hardware: 0, software: 0, setup: 0, contingency: 0, total: 0 },
+    opex: { monthlyFees: 0, maintenance: 0, licenses: 0, total: 0 },
+    total: 0
+  });
+
+  const roleConfig = getRoleConfig(currentRole || 'admin');
 
   // Only allow admin access
   if (currentRole !== 'admin') {
     return (
       <div className="container mx-auto px-4 py-6">
-        <div className="text-center">
-          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access Platform Configuration.</p>
-        </div>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You do not have permission to access the Platform Configuration. Please contact an administrator.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  // Mock data
   useEffect(() => {
-    const mockOrganizations: Organization[] = [
-      {
-        id: '1',
-        name: 'Compass Group UK',
-        sector: 'Business & Industry',
-        description: 'Leading food service company in the UK',
-        linked_sites: 15,
-        created_at: '2024-01-01',
-        updated_at: '2024-01-15'
-      },
-      {
-        id: '2',
-        name: 'Compass Group Healthcare',
-        sector: 'Healthcare & Senior Living',
-        description: 'Healthcare food service division',
-        linked_sites: 8,
-        created_at: '2024-01-05',
-        updated_at: '2024-01-12'
-      }
-    ];
-
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        full_name: 'John Smith',
-        email: 'john.smith@compassgroup.com',
-        role: 'admin',
-        organization: 'Compass Group UK',
-        status: 'active',
-        last_login: '2024-01-20T10:30:00Z',
-        created_at: '2024-01-01'
-      },
-      {
-        id: '2',
-        full_name: 'Sarah Wilson',
-        email: 'sarah.wilson@compassgroup.com',
-        role: 'ops_manager',
-        organization: 'Compass Group UK',
-        status: 'active',
-        last_login: '2024-01-19T14:20:00Z',
-        created_at: '2024-01-05'
-      },
-      {
-        id: '3',
-        full_name: 'Mike Johnson',
-        email: 'mike.johnson@compassgroup.com',
-        role: 'deployment_engineer',
-        organization: 'Compass Group Healthcare',
-        status: 'active',
-        last_login: '2024-01-18T09:15:00Z',
-        created_at: '2024-01-10'
-      }
-    ];
-
-    const mockSoftwareModules: SoftwareModule[] = [
-      {
-        id: '1',
-        name: 'POS System',
-        description: 'Point of sale system for cafeteria operations',
-        category: 'Payment Processing',
-        status: 'active',
-        version: '2.1.0',
-        created_at: '2024-01-01',
-        updated_at: '2024-01-15'
-      },
-      {
-        id: '2',
-        name: 'Inventory Management',
-        description: 'Real-time inventory tracking and management',
-        category: 'Inventory',
-        status: 'active',
-        version: '1.5.2',
-        created_at: '2024-01-05',
-        updated_at: '2024-01-12'
-      }
-    ];
-
-    const mockHardwareItems: HardwareItem[] = [
-      {
-        id: '1',
-        name: 'POS Terminal',
-        description: 'Ingenico Telium 2 POS terminal',
-        category: 'Payment Processing',
-        model: 'Telium 2',
-        manufacturer: 'Ingenico',
-        cost: 2500,
-        status: 'available',
-        created_at: '2024-01-01',
-        updated_at: '2024-01-15'
-      },
-      {
-        id: '2',
-        name: 'Card Reader',
-        description: 'Contactless card reader for POS',
-        category: 'Payment Processing',
-        model: 'P4000',
-        manufacturer: 'Verifone',
-        cost: 150,
-        status: 'available',
-        created_at: '2024-01-05',
-        updated_at: '2024-01-12'
-      }
-    ];
-
-    const mockAuditLogs: AuditLog[] = [
-      {
-        id: '1',
-        entity: 'Site',
-        action: 'Created',
-        user: 'john.smith@compassgroup.com',
-        timestamp: '2024-01-20T10:30:00Z',
-        details: 'Created new site: ASDA Redditch',
-        ip_address: '192.168.1.100'
-      },
-      {
-        id: '2',
-        entity: 'User',
-        action: 'Updated',
-        user: 'sarah.wilson@compassgroup.com',
-        timestamp: '2024-01-19T14:20:00Z',
-        details: 'Updated user permissions for Mike Johnson',
-        ip_address: '192.168.1.101'
-      }
-    ];
-
-    setOrganizations(mockOrganizations);
-    setUsers(mockUsers);
-    setSoftwareModules(mockSoftwareModules);
-    setHardwareItems(mockHardwareItems);
-    setAuditLogs(mockAuditLogs);
-    setLoading(false);
+    fetchConfigurationData();
   }, []);
 
-  const getStatusConfig = (status: string) => {
-    const configs = {
-      active: { label: 'Active', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      inactive: { label: 'Inactive', color: 'bg-gray-100 text-gray-800', icon: XCircle },
-      pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      available: { label: 'Available', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      discontinued: { label: 'Discontinued', color: 'bg-red-100 text-red-800', icon: XCircle },
-      maintenance: { label: 'Maintenance', color: 'bg-orange-100 text-orange-800', icon: Wrench },
-      deprecated: { label: 'Deprecated', color: 'bg-gray-100 text-gray-800', icon: XCircle }
+  const fetchConfigurationData = async () => {
+    try {
+      setLoading(true);
+      
+      // Mock data for demonstration - replace with actual API calls
+      const mockSoftwareModules: SoftwareModule[] = [
+        {
+          id: '1',
+          name: 'POS System',
+          description: 'Point of sale system for cafeteria operations',
+          category: 'Payment Processing',
+          status: 'active',
+          version: '2.1.0',
+          monthlyFee: 25,
+          setupFee: 150,
+          licenseType: 'per_site',
+          hardwareRequirements: ['pos_terminal', 'printer', 'cash_drawer'],
+          dependencies: [],
+          created_at: '2024-01-01',
+          updated_at: '2024-01-15'
+        },
+        {
+          id: '2',
+          name: 'Inventory Management',
+          description: 'Real-time inventory tracking and management',
+          category: 'Inventory',
+          status: 'active',
+          version: '1.5.2',
+          monthlyFee: 15,
+          setupFee: 75,
+          licenseType: 'per_site',
+          hardwareRequirements: ['tablet', 'barcode_scanner'],
+          dependencies: [],
+          created_at: '2024-01-05',
+          updated_at: '2024-01-12'
+        },
+        {
+          id: '3',
+          name: 'Kitchen Display System',
+          description: 'Digital order management for kitchen staff',
+          category: 'Kitchen Management',
+          status: 'active',
+          version: '1.8.0',
+          monthlyFee: 20,
+          setupFee: 100,
+          licenseType: 'per_device',
+          hardwareRequirements: ['kitchen_display', 'printer'],
+          dependencies: ['pos_system'],
+          created_at: '2024-01-10',
+          updated_at: '2024-01-18'
+        }
+      ];
+
+      const mockHardwareItems: HardwareItem[] = [
+        {
+          id: '1',
+          name: 'POS Terminal',
+          description: 'Ingenico Telium 2 POS terminal',
+          category: 'Payment Processing',
+          model: 'Telium 2',
+          manufacturer: 'Ingenico',
+          unitCost: 2500,
+          status: 'available',
+          softwareCompatibility: ['pos_system'],
+          outletTypeCompatibility: ['cafeteria', 'restaurant', 'retail'],
+          created_at: '2024-01-01',
+          updated_at: '2024-01-15'
+        },
+        {
+          id: '2',
+          name: 'Thermal Printer',
+          description: 'Receipt and kitchen order printer',
+          category: 'Printing',
+          model: 'TM-T88VI',
+          manufacturer: 'Epson',
+          unitCost: 350,
+          status: 'available',
+          softwareCompatibility: ['pos_system', 'kitchen_display'],
+          outletTypeCompatibility: ['cafeteria', 'restaurant', 'retail'],
+          created_at: '2024-01-05',
+          updated_at: '2024-01-12'
+        },
+        {
+          id: '3',
+          name: 'Tablet',
+          description: 'iPad for inventory and order management',
+          category: 'Mobile Device',
+          model: 'iPad Air',
+          manufacturer: 'Apple',
+          unitCost: 800,
+          status: 'available',
+          softwareCompatibility: ['inventory_management', 'pos_system'],
+          outletTypeCompatibility: ['cafeteria', 'restaurant', 'retail'],
+          created_at: '2024-01-08',
+          updated_at: '2024-01-16'
+        },
+        {
+          id: '4',
+          name: 'Kitchen Display',
+          description: 'Digital display for kitchen orders',
+          category: 'Display',
+          model: 'KD-55X80K',
+          manufacturer: 'Sony',
+          unitCost: 1200,
+          status: 'available',
+          softwareCompatibility: ['kitchen_display'],
+          outletTypeCompatibility: ['cafeteria', 'restaurant'],
+          created_at: '2024-01-12',
+          updated_at: '2024-01-20'
+        }
+      ];
+
+      const mockOutletTypes: OutletType[] = [
+        {
+          id: '1',
+          name: 'Cafeteria',
+          description: 'Staff cafeteria with multiple food stations',
+          defaultHardware: ['pos_terminal', 'printer', 'tablet'],
+          defaultSoftware: ['pos_system', 'inventory_management'],
+          businessRules: ['peak_hours_11_14', 'staff_only', 'pre_order_available']
+        },
+        {
+          id: '2',
+          name: 'Restaurant',
+          description: 'Full-service restaurant with kitchen',
+          defaultHardware: ['pos_terminal', 'printer', 'kitchen_display'],
+          defaultSoftware: ['pos_system', 'kitchen_display'],
+          businessRules: ['dinner_service', 'reservations', 'kitchen_orders']
+        },
+        {
+          id: '3',
+          name: 'Retail Kiosk',
+          description: 'Small retail food kiosk',
+          defaultHardware: ['pos_terminal', 'printer'],
+          defaultSoftware: ['pos_system'],
+          businessRules: ['quick_service', 'limited_menu', 'self_service']
+        }
+      ];
+
+      setSoftwareModules(mockSoftwareModules);
+      setHardwareItems(mockHardwareItems);
+      setOutletTypes(mockOutletTypes);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching configuration data:', error);
+      setLoading(false);
+    }
+  };
+
+  // Smart scoping logic
+  const getRecommendedHardware = (softwareIds: string[], outletType: string) => {
+    const recommendations: Array<{
+      hardwareId: string;
+      quantity: number;
+      isRequired: boolean;
+      reason: string;
+    }> = [];
+
+    // Get hardware requirements from selected software
+    softwareIds.forEach(softwareId => {
+      const software = softwareModules.find(s => s.id === softwareId);
+      if (software) {
+        software.hardwareRequirements.forEach(hardwareReq => {
+          const hardware = hardwareItems.find(h => h.id === hardwareReq);
+          if (hardware) {
+            const existing = recommendations.find(r => r.hardwareId === hardware.id);
+            if (existing) {
+              existing.quantity += 1;
+            } else {
+              recommendations.push({
+                hardwareId: hardware.id,
+                quantity: 1,
+                isRequired: true,
+                reason: `Required by ${software.name}`
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // Add outlet-specific recommendations
+    const outletTypeData = outletTypes.find(o => o.id === outletType);
+    if (outletTypeData) {
+      outletTypeData.defaultHardware.forEach(hardwareId => {
+        const existing = recommendations.find(r => r.hardwareId === hardwareId);
+        if (!existing) {
+          const hardware = hardwareItems.find(h => h.id === hardwareId);
+          if (hardware) {
+            recommendations.push({
+              hardwareId: hardware.id,
+              quantity: 1,
+              isRequired: false,
+              reason: `Recommended for ${outletTypeData.name}`
+            });
+          }
+        }
+      });
+    }
+
+    return recommendations;
+  };
+
+  // Real-time cost calculation
+  const calculateCosts = (softwareIds: string[], selectedHardwareItems: Array<{hardwareId: string, quantity: number}>) => {
+    let capex = { hardware: 0, software: 0, setup: 0, contingency: 0, total: 0 };
+    let opex = { monthlyFees: 0, maintenance: 0, licenses: 0, total: 0 };
+
+    // Calculate hardware costs (CAPEX)
+    selectedHardwareItems.forEach(item => {
+      const hardware = hardwareItems.find(h => h.id === item.hardwareId);
+      if (hardware) {
+        capex.hardware += hardware.unitCost * item.quantity;
+      }
+    });
+
+    // Calculate software costs
+    softwareIds.forEach(softwareId => {
+      const software = softwareModules.find(s => s.id === softwareId);
+      if (software) {
+        capex.software += software.setupFee;
+        opex.monthlyFees += software.monthlyFee;
+      }
+    });
+
+    // Calculate setup costs (estimated)
+    capex.setup = capex.hardware * 0.1; // 10% of hardware cost
+
+    // Calculate contingency (15% of total CAPEX)
+    capex.contingency = (capex.hardware + capex.software + capex.setup) * 0.15;
+
+    // Calculate totals
+    capex.total = capex.hardware + capex.software + capex.setup + capex.contingency;
+    opex.total = opex.monthlyFees + opex.maintenance + opex.licenses;
+
+    return { capex, opex, total: capex.total + opex.total };
+  };
+
+  // Handle outlet type selection
+  const handleOutletTypeChange = (outletTypeId: string) => {
+    setSelectedOutletType(outletTypeId);
+    
+    // Auto-select default software for this outlet type
+    const outletType = outletTypes.find(o => o.id === outletTypeId);
+    if (outletType) {
+      const defaultSoftwareIds = softwareModules
+        .filter(s => outletType.defaultSoftware.includes(s.id))
+        .map(s => s.id);
+      setSelectedSoftware(defaultSoftwareIds);
+      
+      // Get hardware recommendations
+      const recommendations = getRecommendedHardware(defaultSoftwareIds, outletTypeId);
+      const recommendedHardware = recommendations.map(r => ({
+        hardwareId: r.hardwareId,
+        quantity: r.quantity,
+        customizations: undefined
+      }));
+      setSelectedHardware(recommendedHardware);
+      
+      // Calculate costs
+      const costs = calculateCosts(defaultSoftwareIds, recommendedHardware);
+      setCostBreakdown(costs);
+    }
+  };
+
+  // Handle software selection
+  const handleSoftwareChange = (softwareIds: string[]) => {
+    setSelectedSoftware(softwareIds);
+    
+    // Update hardware recommendations
+    if (selectedOutletType) {
+      const recommendations = getRecommendedHardware(softwareIds, selectedOutletType);
+      const recommendedHardware = recommendations.map(r => ({
+        hardwareId: r.hardwareId,
+        quantity: r.quantity,
+        customizations: undefined
+      }));
+      setSelectedHardware(recommendedHardware);
+      
+      // Recalculate costs
+      const costs = calculateCosts(softwareIds, recommendedHardware);
+      setCostBreakdown(costs);
+    }
+  };
+
+  // Handle hardware quantity changes
+  const handleHardwareQuantityChange = (hardwareId: string, quantity: number) => {
+    const updatedHardware = selectedHardware.map(item => 
+      item.hardwareId === hardwareId 
+        ? { ...item, quantity: Math.max(0, quantity) }
+        : item
+    ).filter(item => item.quantity > 0);
+    
+    setSelectedHardware(updatedHardware);
+    
+    // Recalculate costs
+    const costs = calculateCosts(selectedSoftware, updatedHardware);
+    setCostBreakdown(costs);
+  };
+
+  // Save configuration
+  const saveConfiguration = () => {
+    const newConfiguration: ScopingConfiguration = {
+      id: crypto.randomUUID(),
+      siteId: 'demo-site-1',
+      outletType: selectedOutletType,
+      selectedSoftware,
+      selectedHardware,
+      costBreakdown,
+      approvalStatus: 'draft',
+      createdBy: 'current-user',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    return configs[status as keyof typeof configs] || configs.active;
+
+    setScopingConfigurations(prev => [...prev, newConfiguration]);
+    
+    // Navigate to approval workflow
+    navigate('/approvals-procurement/hardware-approvals', { 
+      state: { configuration: newConfiguration }
+    });
   };
 
   if (loading) {
@@ -309,9 +495,9 @@ const PlatformConfiguration = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Platform Configuration</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Software & Hardware Configuration</h1>
           <p className="text-gray-600 mt-1">
-            System settings, user management, and platform administration
+            Unified configuration system with smart scoping and real-time cost calculations
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -322,493 +508,331 @@ const PlatformConfiguration = () => {
         </div>
       </div>
 
-      {/* Nested Navigation with Accordion Style */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Navigation */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Configuration Sections</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="space-y-1">
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-3">
-                      <div className="flex items-center space-x-2">
-                        <Building className="h-4 w-4" />
-                        <span>Organizations</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-6">
-                    <div className="space-y-1">
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <List className="h-3 w-3 mr-2" />
-                        All Organizations
-                      </Button>
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Plus className="h-3 w-3 mr-2" />
-                        Add Organization
-                      </Button>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+      {/* Main Configuration Interface */}
+      <div className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="configuration" className="flex items-center space-x-2">
+              <Cog className="h-4 w-4" />
+              <span>Smart Configuration</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>Configuration Templates</span>
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span>Business Rules</span>
+            </TabsTrigger>
+          </TabsList>
 
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-3">
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4" />
-                        <span>User Management</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-6">
-                    <div className="space-y-1">
-                      <Button 
-                        variant="ghost" 
-                        className="w-full justify-start p-2 text-sm"
-                        onClick={() => navigate('/platform-configuration/admin')}
-                      >
-                        <User className="h-3 w-3 mr-2" />
-                        User Accounts
-                      </Button>
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Shield className="h-3 w-3 mr-2" />
-                        Roles & Permissions
-                      </Button>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+          {/* Smart Configuration Tab */}
+          <TabsContent value="configuration" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Configuration Panel */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Outlet Type Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Building className="h-4 w-4" />
+                      <span>1. Select Outlet Type</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Choose the outlet type to get smart recommendations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Select value={selectedOutletType} onValueChange={handleOutletTypeChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select outlet type..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {outletTypes.map(outlet => (
+                          <SelectItem key={outlet.id} value={outlet.id}>
+                            <div className="flex items-center space-x-2">
+                              <Building className="h-4 w-4" />
+                              <span>{outlet.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
 
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-3">
-                      <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4" />
-                        <span>Software & Hardware</span>
-                      </div>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-6">
-                    <div className="space-y-1">
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Database className="h-3 w-3 mr-2" />
-                        Software Modules
-                      </Button>
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Package className="h-3 w-3 mr-2" />
-                        Hardware Catalog
-                      </Button>
+                {/* Software Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Database className="h-4 w-4" />
+                      <span>2. Select Software Modules</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Choose software modules for your outlet
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {softwareModules.map(software => (
+                        <div key={software.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                          <Checkbox
+                            id={software.id}
+                            checked={selectedSoftware.includes(software.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                handleSoftwareChange([...selectedSoftware, software.id]);
+                              } else {
+                                handleSoftwareChange(selectedSoftware.filter(id => id !== software.id));
+                              }
+                            }}
+                          />
+                          <div className="flex-1">
+                            <Label htmlFor={software.id} className="font-medium cursor-pointer">
+                              {software.name}
+                            </Label>
+                            <p className="text-sm text-gray-600">{software.description}</p>
+                            <div className="flex items-center space-x-4 mt-2 text-sm">
+                              <span className="text-green-600">£{software.monthlyFee}/month</span>
+                              <span className="text-blue-600">£{software.setupFee} setup</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </CardContent>
+                </Card>
 
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-3">
-                      <div className="flex items-center space-x-2">
-                        <Bell className="h-4 w-4" />
-                        <span>Notifications</span>
+                {/* Hardware Recommendations */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Package className="h-4 w-4" />
+                      <span>3. Hardware Requirements</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Automatically recommended based on your selections
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedHardware.length > 0 ? (
+                      <div className="space-y-3">
+                        {selectedHardware.map(item => {
+                          const hardware = hardwareItems.find(h => h.id === item.hardwareId);
+                          if (!hardware) return null;
+                          
+                          return (
+                            <div key={item.hardwareId} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex-1">
+                                <h4 className="font-medium">{hardware.name}</h4>
+                                <p className="text-sm text-gray-600">{hardware.description}</p>
+                                <p className="text-sm text-gray-500">{hardware.manufacturer} {hardware.model}</p>
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleHardwareQuantityChange(item.hardwareId, item.quantity - 1)}
+                                    disabled={item.quantity <= 1}
+                                  >
+                                    -
+                                  </Button>
+                                  <span className="w-8 text-center">{item.quantity}</span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleHardwareQuantityChange(item.hardwareId, item.quantity + 1)}
+                                  >
+                                    +
+                                  </Button>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-medium">£{(hardware.unitCost * item.quantity).toLocaleString()}</div>
+                                  <div className="text-sm text-gray-500">£{hardware.unitCost} each</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-6">
-                    <div className="space-y-1">
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Bell className="h-3 w-3 mr-2" />
-                        Notification Settings
-                      </Button>
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Mail className="h-3 w-3 mr-2" />
-                        Email Templates
-                      </Button>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-3">
-                      <div className="flex items-center space-x-2">
-                        <Activity className="h-4 w-4" />
-                        <span>Audit & Logs</span>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        Select software modules to see hardware recommendations
                       </div>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-6">
-                    <div className="space-y-1">
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <FileText className="h-3 w-3 mr-2" />
-                        System Logs
-                      </Button>
-                      <Button variant="ghost" className="w-full justify-start p-2 text-sm">
-                        <Activity className="h-3 w-3 mr-2" />
-                        Activity Logs
-                      </Button>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Main Content Area */}
-        <div className="lg:col-span-3">
-          <Tabs defaultValue="organizations" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="organizations" className="flex items-center space-x-2">
-                <Building className="h-4 w-4" />
-                <span>Organizations</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center space-x-2">
-                <Users className="h-4 w-4" />
-                <span>User Accounts</span>
-              </TabsTrigger>
-              <TabsTrigger value="software" className="flex items-center space-x-2">
-                <Database className="h-4 w-4" />
-                <span>Software Modules</span>
-              </TabsTrigger>
-              <TabsTrigger value="hardware" className="flex items-center space-x-2">
-                <Package className="h-4 w-4" />
-                <span>Hardware Catalog</span>
-              </TabsTrigger>
-              <TabsTrigger value="audit" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>System Logs</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Organizations Tab */}
-            <TabsContent value="organizations" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+              {/* Cost Summary Panel */}
+              <div className="space-y-6">
+                {/* Cost Breakdown */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Calculator className="h-4 w-4" />
+                      <span>Cost Summary</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Real-time cost calculations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* CAPEX */}
                     <div>
-                      <CardTitle>Organizations</CardTitle>
-                      <CardDescription>
-                        Manage client organizations and their associated sites
-                      </CardDescription>
+                      <h4 className="font-medium text-gray-900 mb-2">Capital Expenditure (CAPEX)</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Hardware</span>
+                          <span>£{costBreakdown.capex.hardware.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Software Setup</span>
+                          <span>£{costBreakdown.capex.software.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Installation</span>
+                          <span>£{costBreakdown.capex.setup.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Contingency (15%)</span>
+                          <span>£{costBreakdown.capex.contingency.toLocaleString()}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-medium">
+                          <span>Total CAPEX</span>
+                          <span>£{costBreakdown.capex.total.toLocaleString()}</span>
+                        </div>
+                      </div>
                     </div>
-                    <Button variant="gradient" className="flex items-center space-x-2">
-                      <Plus className="h-4 w-4" />
-                      <span>Add Organization</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Organization Name</TableHead>
-                        <TableHead>Sector</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Linked Sites</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {organizations.map((org) => (
-                        <TableRow key={org.id}>
-                          <TableCell>
-                            <div className="font-medium">{org.name}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{org.sector}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600 max-w-xs truncate">
-                              {org.description}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="h-3 w-3 text-gray-400" />
-                              <span>{org.linked_sites} sites</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600">
-                              {new Date(org.created_at).toLocaleDateString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            {/* Users Tab */}
-            <TabsContent value="users" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+                    {/* OPEX */}
                     <div>
-                      <CardTitle>User Accounts</CardTitle>
-                      <CardDescription>
-                        Manage user accounts, roles, and access permissions
-                      </CardDescription>
+                      <h4 className="font-medium text-gray-900 mb-2">Operating Expenditure (OPEX)</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Monthly Software Fees</span>
+                          <span>£{costBreakdown.opex.monthlyFees.toLocaleString()}/month</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Maintenance</span>
+                          <span>£{costBreakdown.opex.maintenance.toLocaleString()}/month</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Licenses</span>
+                          <span>£{costBreakdown.opex.licenses.toLocaleString()}/month</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-medium">
+                          <span>Total Monthly OPEX</span>
+                          <span>£{costBreakdown.opex.total.toLocaleString()}/month</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Total */}
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total Investment</span>
+                      <span>£{costBreakdown.total.toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Actions */}
+                <Card>
+                  <CardContent className="pt-6">
                     <Button 
-                      variant="gradient" 
-                      className="flex items-center space-x-2"
-                      onClick={() => navigate('/platform-configuration/admin')}
+                      onClick={saveConfiguration}
+                      disabled={!selectedOutletType || selectedSoftware.length === 0}
+                      className="w-full"
+                      size="lg"
                     >
-                      <Users className="h-4 w-4" />
-                      <span>Manage Users</span>
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Save & Submit for Approval
                     </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">User Management</h3>
-                    <p className="text-gray-600 mb-4">
-                      Manage user accounts, roles, and access permissions for the platform.
-                    </p>
-                    <Button 
-                      onClick={() => navigate('/platform-configuration/admin')}
-                      className="flex items-center space-x-2 mx-auto"
-                    >
-                      <Users className="h-4 w-4" />
-                      <span>View User Management</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
-            {/* Software Modules Tab */}
-            <TabsContent value="software" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Software Modules</CardTitle>
-                      <CardDescription>
-                        Manage software modules and their configurations
-                      </CardDescription>
-                    </div>
-                    <Button variant="gradient" className="flex items-center space-x-2">
-                      <Plus className="h-4 w-4" />
-                      <span>Add Software Module</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Module Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Version</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {softwareModules.map((module) => (
-                        <TableRow key={module.id}>
-                          <TableCell>
-                            <div className="font-medium">{module.name}</div>
-                            <div className="text-sm text-gray-600">{module.description}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{module.category}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono text-sm">{module.version}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusConfig(module.status).color}>
-                              {getStatusConfig(module.status).label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600">
-                              {new Date(module.created_at).toLocaleDateString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {/* Configuration Templates Tab */}
+          <TabsContent value="templates" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuration Templates</CardTitle>
+                <CardDescription>
+                  Pre-configured setups for common outlet types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {outletTypes.map(outlet => (
+                    <Card key={outlet.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Building className="h-5 w-5 text-blue-600" />
+                          <h3 className="font-medium">{outlet.name}</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">{outlet.description}</p>
+                        <div className="space-y-1 text-xs text-gray-500">
+                          <div>Software: {outlet.defaultSoftware.length} modules</div>
+                          <div>Hardware: {outlet.defaultHardware.length} items</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Hardware Catalog Tab */}
-            <TabsContent value="hardware" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Hardware Catalog</CardTitle>
-                      <CardDescription>
-                        Manage hardware catalog and specifications
-                      </CardDescription>
+          {/* Business Rules Tab */}
+          <TabsContent value="rules" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Business Rules & Dependencies</CardTitle>
+                <CardDescription>
+                  Rules that govern software and hardware compatibility
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {softwareModules.map(software => (
+                    <div key={software.id} className="border rounded-lg p-4">
+                      <h3 className="font-medium mb-2">{software.name}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Hardware Requirements:</span>
+                          <ul className="list-disc list-inside mt-1">
+                            {software.hardwareRequirements.map(req => (
+                              <li key={req} className="text-gray-600">{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <span className="font-medium">Dependencies:</span>
+                          <ul className="list-disc list-inside mt-1">
+                            {software.dependencies.length > 0 ? (
+                              software.dependencies.map(dep => (
+                                <li key={dep} className="text-gray-600">{dep}</li>
+                              ))
+                            ) : (
+                              <li className="text-gray-500">None</li>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
                     </div>
-                    <Button variant="gradient" className="flex items-center space-x-2">
-                      <Plus className="h-4 w-4" />
-                      <span>Add Hardware Item</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Item Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Model</TableHead>
-                        <TableHead>Manufacturer</TableHead>
-                        <TableHead>Cost</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {hardwareItems.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div className="font-medium">{item.name}</div>
-                            <div className="text-sm text-gray-600">{item.description}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{item.category}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono text-sm">{item.model}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{item.manufacturer}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <DollarSign className="h-3 w-3 text-gray-400" />
-                              <span>£{item.cost.toLocaleString()}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusConfig(item.status).color}>
-                              {getStatusConfig(item.status).label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* System Logs Tab */}
-            <TabsContent value="audit" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>System Logs</CardTitle>
-                      <CardDescription>
-                        View system activity and audit logs
-                      </CardDescription>
-                    </div>
-                    <Button variant="outline" className="flex items-center space-x-2">
-                      <Download className="h-4 w-4" />
-                      <span>Export Logs</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Entity</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Timestamp</TableHead>
-                        <TableHead>IP Address</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {auditLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>
-                            <div className="font-medium">{log.entity}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{log.action}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{log.user}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600">
-                              {new Date(log.timestamp).toLocaleString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-mono text-sm">{log.ip_address}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
-};
-
-export default PlatformConfiguration; 
+} 
