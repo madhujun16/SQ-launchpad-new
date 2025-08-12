@@ -243,7 +243,7 @@ export default function SiteStudy() {
         address: address
       }
     }));
-    setShowLocationModal(false);
+    // setShowLocationModal(false); // Commented out as state not defined
   };
 
   const renderStepContent = () => {

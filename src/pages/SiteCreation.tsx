@@ -176,7 +176,7 @@ const SiteCreation = () => {
       stakeholders: formData.stakeholders,
       notes: formData.notes,
       description: formData.notes,
-      status: 'draft'
+      status: 'created'
     });
 
     // Get the created site and set it as selected
@@ -194,7 +194,7 @@ const SiteCreation = () => {
       stakeholders: formData.stakeholders,
       notes: formData.notes,
       description: formData.notes,
-      status: 'draft' as const,
+      status: 'created' as const,
       lastUpdated: new Date().toISOString().split('T')[0]
     };
 
