@@ -38,11 +38,24 @@ export interface Site {
   };
   // Hardware Scoping specific fields
   hardwareScope?: {
-    smartQSolutions?: string[];
-    autoPulledHardware?: string[];
-    additionalHardware?: string[];
-    costBreakdown?: { [key: string]: number };
-    approvalStatus?: 'pending' | 'approved' | 'rejected';
+    approvalStatus: 'pending' | 'approved' | 'rejected';
+    submittedAt?: string;
+    approvedAt?: string;
+    approvedBy?: string;
+    comments?: string;
+  };
+  scoping?: {
+    selectedSoftware: string[];
+    selectedHardware: Array<{
+      id: string;
+      quantity: number;
+      customizations?: string;
+    }>;
+    status: 'draft' | 'pending_approval' | 'approved' | 'rejected';
+    submittedAt?: string;
+    approvedAt?: string;
+    approvedBy?: string;
+    comments?: string;
   };
   // Deployment specific fields
   deployment?: {

@@ -86,6 +86,140 @@ import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperSte
 import { Checkbox } from '@/components/ui/checkbox';
 import { LocationPicker } from '@/components/ui/location-picker';
 
+// Enhanced interfaces for Scoping step
+interface HardwareItem {
+  id: string;
+  name: string;
+  description: string;
+  manufacturer: string;
+  model: string;
+  unitCost: number;
+  quantity: number;
+  reason: string;
+}
+
+interface SoftwareModule {
+  id: string;
+  name: string;
+  monthlyFee: number;
+  setupFee: number;
+  hardwareRequirements: string[];
+}
+
+// Mock data for software modules and hardware items
+const softwareModules: SoftwareModule[] = [
+  {
+    id: 'pos-system',
+    name: 'POS System',
+    monthlyFee: 25,
+    setupFee: 150,
+    hardwareRequirements: ['pos-terminal', 'printer', 'cash-drawer']
+  },
+  {
+    id: 'kiosk-software',
+    name: 'Kiosk Software',
+    monthlyFee: 20,
+    setupFee: 100,
+    hardwareRequirements: ['kiosk-display', 'touch-screen', 'printer']
+  },
+  {
+    id: 'kitchen-display',
+    name: 'Kitchen Display',
+    monthlyFee: 20,
+    setupFee: 100,
+    hardwareRequirements: ['kitchen-display', 'printer']
+  },
+  {
+    id: 'inventory-management',
+    name: 'Inventory Management',
+    monthlyFee: 15,
+    setupFee: 75,
+    hardwareRequirements: ['tablet', 'barcode-scanner']
+  }
+];
+
+const hardwareItems: HardwareItem[] = [
+  {
+    id: 'pos-terminal',
+    name: 'POS Terminal',
+    description: 'Ingenico Telium 2 POS terminal',
+    manufacturer: 'Ingenico',
+    model: 'Telium 2',
+    unitCost: 2500,
+    quantity: 1,
+    reason: 'Required by POS System'
+  },
+  {
+    id: 'printer',
+    name: 'Thermal Printer',
+    description: 'Receipt and kitchen order printer',
+    manufacturer: 'Epson',
+    model: 'TM-T88VI',
+    unitCost: 350,
+    quantity: 1,
+    reason: 'Required by POS System'
+  },
+  {
+    id: 'cash-drawer',
+    name: 'Cash Drawer',
+    description: 'Electronic cash drawer',
+    manufacturer: 'APG',
+    model: 'CashDrawer-2000',
+    unitCost: 200,
+    quantity: 1,
+    reason: 'Required by POS System'
+  },
+  {
+    id: 'kiosk-display',
+    name: 'Kiosk Display',
+    description: 'Touch screen display for kiosk',
+    manufacturer: 'Elo',
+    model: 'TouchScreen-22',
+    unitCost: 800,
+    quantity: 1,
+    reason: 'Required by Kiosk Software'
+  },
+  {
+    id: 'touch-screen',
+    name: 'Touch Screen',
+    description: 'Touch screen interface',
+    manufacturer: 'Elo',
+    model: 'TouchScreen-15',
+    unitCost: 600,
+    quantity: 1,
+    reason: 'Required by Kiosk Software'
+  },
+  {
+    id: 'kitchen-display',
+    name: 'Kitchen Display',
+    description: 'Digital display for kitchen orders',
+    manufacturer: 'Sony',
+    model: 'KD-55X80K',
+    unitCost: 1200,
+    quantity: 1,
+    reason: 'Required by Kitchen Display'
+  },
+  {
+    id: 'tablet',
+    name: 'Tablet',
+    description: 'iPad for inventory management',
+    manufacturer: 'Apple',
+    model: 'iPad Air',
+    unitCost: 800,
+    quantity: 1,
+    reason: 'Required by Inventory Management'
+  },
+  {
+    id: 'barcode-scanner',
+    name: 'Barcode Scanner',
+    description: 'USB barcode scanner',
+    manufacturer: 'Honeywell',
+    model: 'Scanner-1900',
+    unitCost: 150,
+    quantity: 1,
+    reason: 'Required by Inventory Management'
+  }
+];
 
 const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -99,6 +233,9 @@ const SiteDetail = () => {
     lat: number;
     lng: number;
     address: string;
+    city: string;
+    country: string;
+    postalCode: string;
   } | null>(null);
 
   // Check if user has permission to access sites
@@ -153,7 +290,24 @@ const SiteDetail = () => {
           ],
           notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
           lastUpdated: '2024-07-30',
-          description: 'Full POS and Kiosk implementation for ASDA Redditch location'
+          description: 'Full POS and Kiosk implementation for ASDA Redditch location',
+          hardwareScope: {
+            approvalStatus: 'approved' as const
+          },
+          scoping: {
+            selectedSoftware: ['pos-system', 'inventory-management'],
+            selectedHardware: [
+              { id: 'pos-terminal', quantity: 2, customizations: undefined },
+              { id: 'printer', quantity: 2, customizations: undefined },
+              { id: 'cash-drawer', quantity: 1, customizations: undefined },
+              { id: 'tablet', quantity: 1, customizations: undefined },
+              { id: 'barcode-scanner', quantity: 1, customizations: undefined }
+            ],
+            status: 'approved' as const,
+            submittedAt: '2024-01-10T10:00:00Z',
+            approvedAt: '2024-01-12T14:30:00Z',
+            approvedBy: 'John Smith'
+          }
         };
         
         // Try to find site in mock data based on ID
@@ -773,7 +927,10 @@ const SiteDetail = () => {
                         setLocationData({
                           lat: location.lat,
                           lng: location.lng,
-                          address: location.address
+                          address: location.address,
+                          city: location.city,
+                          country: location.country,
+                          postalCode: location.postalCode
                         });
                       }}
                       initialLocation={locationData ? { lat: locationData.lat, lng: locationData.lng } : undefined}
@@ -1307,109 +1464,289 @@ const SiteDetail = () => {
               </div>
             </div>
 
-            {/* Scoping Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Software Selection Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Monitor className="mr-2 h-5 w-5" />
-                    Software Selection
-                  </CardTitle>
-                  <CardDescription>
-                    Choose the software modules required for this site
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">POS System</h4>
-                        <p className="text-sm text-gray-600">Point of Sale system for transactions</p>
+            {/* Enhanced Scoping Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Configuration Panel */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Software Selection Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Monitor className="mr-2 h-5 w-5" />
+                      Software Selection
+                    </CardTitle>
+                    <CardDescription>
+                      Choose software modules to automatically get hardware recommendations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox 
+                              id="pos-system"
+                              checked={site?.scoping?.selectedSoftware?.includes('pos-system') || false}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  // Add POS system and update hardware recommendations
+                                  const updatedSoftware = [...(site?.scoping?.selectedSoftware || []), 'pos-system'];
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                } else {
+                                  // Remove POS system and update hardware recommendations
+                                  const updatedSoftware = (site?.scoping?.selectedSoftware || []).filter(s => s !== 'pos-system');
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                }
+                              }}
+                              disabled={!canEditStep(2)}
+                            />
+                            <div>
+                              <h4 className="font-medium">POS System</h4>
+                              <p className="text-sm text-gray-600">Point of Sale system for transactions</p>
+                              <div className="flex items-center space-x-4 mt-2 text-sm">
+                                <span className="text-green-600">£25/month</span>
+                                <span className="text-blue-600">£150 setup</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Checkbox />
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Kiosk Software</h4>
-                        <p className="text-sm text-gray-600">Self-service kiosk software</p>
+                      
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox 
+                              id="kiosk-software"
+                              checked={site?.scoping?.selectedSoftware?.includes('kiosk-software') || false}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  const updatedSoftware = [...(site?.scoping?.selectedSoftware || []), 'kiosk-software'];
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                } else {
+                                  const updatedSoftware = (site?.scoping?.selectedSoftware || []).filter(s => s !== 'kiosk-software');
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                }
+                              }}
+                              disabled={!canEditStep(2)}
+                            />
+                            <div>
+                              <h4 className="font-medium">Kiosk Software</h4>
+                              <p className="text-sm text-gray-600">Self-service kiosk software</p>
+                              <div className="flex items-center space-x-4 mt-2 text-sm">
+                                <span className="text-green-600">£20/month</span>
+                                <span className="text-blue-600">£100 setup</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Checkbox />
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Kitchen Display</h4>
-                        <p className="text-sm text-gray-600">Kitchen display system for orders</p>
+                      
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox 
+                              id="kitchen-display"
+                              checked={site?.scoping?.selectedSoftware?.includes('kitchen-display') || false}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  const updatedSoftware = [...(site?.scoping?.selectedSoftware || []), 'kitchen-display'];
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                } else {
+                                  const updatedSoftware = (site?.scoping?.selectedSoftware || []).filter(s => s !== 'kitchen-display');
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                }
+                              }}
+                              disabled={!canEditStep(2)}
+                            />
+                            <div>
+                              <h4 className="font-medium">Kitchen Display</h4>
+                              <p className="text-sm text-gray-600">Kitchen display system for orders</p>
+                              <div className="flex items-center space-x-4 mt-2 text-sm">
+                                <span className="text-green-600">£20/month</span>
+                                <span className="text-blue-600">£100 setup</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Checkbox />
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Inventory Management</h4>
-                        <p className="text-sm text-gray-600">Inventory tracking and management</p>
+                      
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox 
+                              id="inventory-management"
+                              checked={site?.scoping?.selectedSoftware?.includes('inventory-management') || false}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  const updatedSoftware = [...(site?.scoping?.selectedSoftware || []), 'inventory-management'];
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                } else {
+                                  const updatedSoftware = (site?.scoping?.selectedSoftware || []).filter(s => s !== 'inventory-management');
+                                  updateSiteScoping(updatedSoftware, site?.scoping?.selectedHardware || []);
+                                }
+                              }}
+                              disabled={!canEditStep(2)}
+                            />
+                            <div>
+                              <h4 className="font-medium">Inventory Management</h4>
+                              <p className="text-sm text-gray-600">Inventory tracking and management</p>
+                              <div className="flex items-center space-x-4 mt-2 text-sm">
+                                <span className="text-green-600">£15/month</span>
+                                <span className="text-blue-600">£75 setup</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Checkbox />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Hardware Selection Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Package className="mr-2 h-5 w-5" />
-                    Hardware Selection
-                  </CardTitle>
-                  <CardDescription>
-                    Specify the quantity of hardware required
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">POS Terminals</h4>
-                        <p className="text-sm text-gray-600">Point of Sale terminals</p>
+                {/* Hardware Recommendations Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Package className="mr-2 h-5 w-5" />
+                      Hardware Requirements
+                    </CardTitle>
+                    <CardDescription>
+                      Automatically recommended based on your software selections
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {getRecommendedHardware(site?.scoping?.selectedSoftware || []).length > 0 ? (
+                      <div className="space-y-3">
+                        {getRecommendedHardware(site?.scoping?.selectedSoftware || []).map((item, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{item.name}</h4>
+                              <p className="text-sm text-gray-600">{item.description}</p>
+                              <p className="text-sm text-gray-500">{item.manufacturer} {item.model}</p>
+                              <p className="text-sm text-blue-600">{item.reason}</p>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateHardwareQuantity(item.id, item.quantity - 1)}
+                                  disabled={!canEditStep(2) || item.quantity <= 1}
+                                >
+                                  -
+                                </Button>
+                                <span className="w-8 text-center">{item.quantity}</span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateHardwareQuantity(item.id, item.quantity + 1)}
+                                  disabled={!canEditStep(2)}
+                                >
+                                  +
+                                </Button>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">£{(item.unitCost * item.quantity).toLocaleString()}</div>
+                                <div className="text-sm text-gray-500">£{item.unitCost} each</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <Input type="number" placeholder="0" className="w-20" />
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Self-Service Kiosks</h4>
-                        <p className="text-sm text-gray-600">Self-service ordering kiosks</p>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        Select software modules to see hardware recommendations
                       </div>
-                      <Input type="number" placeholder="0" className="w-20" />
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Kitchen Displays</h4>
-                        <p className="text-sm text-gray-600">Kitchen display screens</p>
-                      </div>
-                      <Input type="number" placeholder="0" className="w-20" />
-                    </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Printers</h4>
-                        <p className="text-sm text-gray-600">Receipt and kitchen printers</p>
-                      </div>
-                      <Input type="number" placeholder="0" className="w-20" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-            {/* Action Buttons at Bottom */}
-            <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Save as Draft</span>
-              </Button>
-              <Button className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Submit for Approval</span>
-              </Button>
+              {/* Cost Summary Panel */}
+              <div className="space-y-6">
+                {/* Cost Breakdown */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BarChart3 className="mr-2 h-5 w-5" />
+                      Cost Summary
+                    </CardTitle>
+                    <CardDescription>
+                      Real-time cost calculations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* CAPEX */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Capital Expenditure (CAPEX)</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Hardware</span>
+                          <span>£{calculateHardwareCosts().toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Software Setup</span>
+                          <span>£{calculateSoftwareSetupCosts().toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Installation</span>
+                          <span>£{calculateInstallationCosts().toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Contingency (15%)</span>
+                          <span>£{calculateContingencyCosts().toLocaleString()}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-medium">
+                          <span>Total CAPEX</span>
+                          <span>£{calculateTotalCAPEX().toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* OPEX */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Operating Expenditure (OPEX)</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Monthly Software Fees</span>
+                          <span>£{calculateMonthlySoftwareFees().toLocaleString()}/month</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Maintenance</span>
+                          <span>£{calculateMaintenanceCosts().toLocaleString()}/month</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-medium">
+                          <span>Total Monthly OPEX</span>
+                          <span>£{calculateTotalMonthlyOPEX().toLocaleString()}/month</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total */}
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total Investment</span>
+                      <span>£{calculateTotalInvestment().toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Actions */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <Button
+                      onClick={saveScopingConfiguration}
+                      disabled={!canEditStep(2) || !site?.scoping?.selectedSoftware?.length}
+                      className="w-full"
+                      size="lg"
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Save & Submit for Approval
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         );
@@ -1687,6 +2024,128 @@ const SiteDetail = () => {
             </CardContent>
           </Card>
         );
+    }
+  };
+
+  // Helper functions for Scoping step
+  const getRecommendedHardware = (selectedSoftware: string[]): HardwareItem[] => {
+    const recommendations: HardwareItem[] = [];
+    
+    selectedSoftware.forEach(softwareId => {
+      const software = softwareModules.find(s => s.id === softwareId);
+      if (software) {
+        software.hardwareRequirements.forEach(hardwareReq => {
+          const hardware = hardwareItems.find(h => h.id === hardwareReq);
+          if (hardware) {
+            const existing = recommendations.find(r => r.id === hardware.id);
+            if (existing) {
+              existing.quantity += 1;
+            } else {
+              recommendations.push({
+                ...hardware,
+                reason: `Required by ${software.name}`
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    return recommendations;
+  };
+
+  const calculateHardwareCosts = (): number => {
+    const selectedSoftware = site?.scoping?.selectedSoftware || [];
+    const recommendations = getRecommendedHardware(selectedSoftware);
+    return recommendations.reduce((total, item) => total + (item.unitCost * item.quantity), 0);
+  };
+
+  const calculateSoftwareSetupCosts = (): number => {
+    const selectedSoftware = site?.scoping?.selectedSoftware || [];
+    return selectedSoftware.reduce((total, softwareId) => {
+      const software = softwareModules.find(s => s.id === softwareId);
+      return total + (software?.setupFee || 0);
+    }, 0);
+  };
+
+  const calculateInstallationCosts = (): number => {
+    const hardwareCosts = calculateHardwareCosts();
+    return hardwareCosts * 0.1; // 10% of hardware cost
+  };
+
+  const calculateContingencyCosts = (): number => {
+    const hardwareCosts = calculateHardwareCosts();
+    const softwareSetupCosts = calculateSoftwareSetupCosts();
+    const installationCosts = calculateInstallationCosts();
+    return (hardwareCosts + softwareSetupCosts + installationCosts) * 0.15; // 15% contingency
+  };
+
+  const calculateTotalCAPEX = (): number => {
+    return calculateHardwareCosts() + calculateSoftwareSetupCosts() + calculateInstallationCosts() + calculateContingencyCosts();
+  };
+
+  const calculateMonthlySoftwareFees = (): number => {
+    const selectedSoftware = site?.scoping?.selectedSoftware || [];
+    return selectedSoftware.reduce((total, softwareId) => {
+      const software = softwareModules.find(s => s.id === softwareId);
+      return total + (software?.monthlyFee || 0);
+    }, 0);
+  };
+
+  const calculateMaintenanceCosts = (): number => {
+    const hardwareCosts = calculateHardwareCosts();
+    return hardwareCosts * 0.02; // 2% monthly maintenance
+  };
+
+  const calculateTotalMonthlyOPEX = (): number => {
+    return calculateMonthlySoftwareFees() + calculateMaintenanceCosts();
+  };
+
+  const calculateTotalInvestment = (): number => {
+    return calculateTotalCAPEX() + calculateTotalMonthlyOPEX();
+  };
+
+  const updateSiteScoping = (selectedSoftware: string[], selectedHardware: any[]) => {
+    if (site) {
+      setSite({
+        ...site,
+        scoping: {
+          ...site.scoping,
+          selectedSoftware,
+          selectedHardware
+        }
+      });
+    }
+  };
+
+  const updateHardwareQuantity = (hardwareId: string, quantity: number) => {
+    if (site?.scoping?.selectedHardware) {
+      const updatedHardware = site.scoping.selectedHardware.map(item =>
+        item.id === hardwareId ? { ...item, quantity: Math.max(1, quantity) } : item
+      );
+      updateSiteScoping(site.scoping.selectedSoftware || [], updatedHardware);
+    }
+  };
+
+  const saveScopingConfiguration = () => {
+    if (site) {
+      // Save the scoping configuration
+      const updatedSite = {
+        ...site,
+        scoping: {
+          ...site.scoping,
+          status: 'pending_approval',
+          submittedAt: new Date().toISOString()
+        }
+      };
+      setSite(updatedSite);
+      
+      // Update the sites array
+      setSites(prevSites => 
+        prevSites.map(s => s.id === site.id ? updatedSite : s)
+      );
+      
+      toast.success('Scoping configuration saved and submitted for approval');
     }
   };
 
