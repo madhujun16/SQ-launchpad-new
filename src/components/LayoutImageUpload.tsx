@@ -24,7 +24,6 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   // Load existing images on component mount
   useEffect(() => {
