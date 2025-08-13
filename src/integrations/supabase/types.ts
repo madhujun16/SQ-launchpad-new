@@ -1287,6 +1287,8 @@ export type Database = {
           hardware_notes: string | null
           hardware_scoped_at: string | null
           id: string
+          layout_images: Json | null
+          layout_images_metadata: Json | null
           name: string
           postcode: string | null
           procurement_started_at: string | null
@@ -1322,6 +1324,8 @@ export type Database = {
           hardware_notes?: string | null
           hardware_scoped_at?: string | null
           id?: string
+          layout_images?: Json | null
+          layout_images_metadata?: Json | null
           name: string
           postcode?: string | null
           procurement_started_at?: string | null
@@ -1357,6 +1361,8 @@ export type Database = {
           hardware_notes?: string | null
           hardware_scoped_at?: string | null
           id?: string
+          layout_images?: Json | null
+          layout_images_metadata?: Json | null
           name?: string
           postcode?: string | null
           procurement_started_at?: string | null
@@ -1514,6 +1520,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_rls_policies: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          policy_name: string
+          policy_definition: string
+          is_secure: boolean
+        }[]
+      }
       check_email_exists: {
         Args: { email_to_check: string }
         Returns: boolean
