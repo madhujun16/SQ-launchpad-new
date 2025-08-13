@@ -325,7 +325,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                       onClick={() => handleSuggestionSelect(suggestion)}
                     >
                       <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
-                      {suggestion.address.city && (
+                      {suggestion.address && suggestion.address.city && (
                         <div className="text-xs text-gray-500">
                           {suggestion.address.city}
                           {suggestion.address.state && `, ${suggestion.address.state}`}

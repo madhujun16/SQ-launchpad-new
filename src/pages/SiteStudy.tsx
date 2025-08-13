@@ -979,16 +979,26 @@ export default function SiteStudy() {
       )}
 
       {/* Stepper Form */}
-      <StepperContent
-        steps={steps}
-        currentStep={currentStep}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onComplete={handleComplete}
-        canProceed={true}
-      >
-        {renderStepContent()}
-      </StepperContent>
+      <div className="space-y-4">
+        {/* Debug Info */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Info</h3>
+          <p className="text-xs text-gray-600">Current Step: {currentStep}</p>
+          <p className="text-xs text-gray-600">Total Steps: {steps.length}</p>
+          <p className="text-xs text-gray-600">Steps: {steps.map(s => s.title).join(', ')}</p>
+        </div>
+        
+        <StepperContent
+          steps={steps}
+          currentStep={currentStep}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          onComplete={handleComplete}
+          canProceed={true}
+        >
+          {renderStepContent()}
+        </StepperContent>
+      </div>
 
 
     </div>
