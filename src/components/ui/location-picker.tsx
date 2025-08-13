@@ -10,24 +10,6 @@ interface LocationPickerProps {
   className?: string;
 }
 
-// Try to import Google Maps components, but handle gracefully if not available
-let GoogleMap: React.ComponentType<{ children?: React.ReactNode; [key: string]: unknown }> | null = null;
-let useJsApiLoader: ((config: { id: string; googleMapsApiKey: string; libraries: ('places' | 'geometry' | 'drawing' | 'visualization')[] }) => { isLoaded: boolean }) | null = null;
-let Marker: React.ComponentType<{ position: { lat: number; lng: number } | google.maps.LatLng | google.maps.LatLngLiteral; [key: string]: unknown }> | null = null;
-
-try {
-  // Use dynamic import instead of require
-  import('@react-google-maps/api').then((module) => {
-    GoogleMap = module.GoogleMap;
-    useJsApiLoader = module.useJsApiLoader;
-    Marker = module.Marker;
-  }).catch((error) => {
-    console.warn('Google Maps API not available:', error);
-  });
-} catch (error) {
-  console.warn('Google Maps API not available:', error);
-}
-
 // LocationIQ API configuration
 const LOCATIONIQ_API_KEY = 'pk.2b07dbcb85ff59de62dc9f1cf9f0facb';
 const LOCATIONIQ_BASE_URL = 'https://us1.locationiq.com/v1';
@@ -58,29 +40,16 @@ interface LocationIQSearchResult {
   };
 }
 
-const containerStyle = {
-  width: '100%',
-  height: '400px'
-};
-
-const defaultCenter = {
-  lat: 51.5074, // London coordinates
-  lng: -0.1278
-};
-
 export const LocationPicker: React.FC<LocationPickerProps> = ({
   onLocationSelect,
   initialLocation,
   className
 }) => {
-  const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
   const [searchAddress, setSearchAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKeyError, setApiKeyError] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<LocationIQSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const geocoder = useRef<google.maps.Geocoder | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close suggestions
@@ -95,34 +64,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
-
-  // Check if Google Maps API key is available
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const isGoogleMapsAvailable = GoogleMap && useJsApiLoader && apiKey && apiKey !== 'YOUR_API_KEY_HERE';
-
-  // Conditional hook usage - move outside of conditional
-  const googleMapsLoader = useJsApiLoader || (() => ({ isLoaded: false }));
-  const { isLoaded } = googleMapsLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: apiKey || 'YOUR_API_KEY_HERE',
-    libraries: ['places']
-  });
-
-  const onLoad = useCallback((mapInstance: google.maps.Map) => {
-    setMap(mapInstance);
-    if (window.google) {
-      geocoder.current = new window.google.maps.Geocoder();
-    }
-    
-    if (initialLocation) {
-      mapInstance.setCenter(initialLocation);
-      setMarker(initialLocation);
-    }
-  }, [initialLocation]);
-
-  const onUnmount = useCallback(() => {
-    setMap(null);
   }, []);
 
   // LocationIQ reverse geocoding function
@@ -212,20 +153,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, []);
 
-  const handleMapClick = useCallback(async (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      const newLocation = { lat, lng };
-      
-      setMarker(newLocation);
-      
-      // Use LocationIQ for reverse geocoding
-      const address = await reverseGeocode(lat, lng);
-      onLocationSelect({ lat, lng, address });
-    }
-  }, [onLocationSelect, reverseGeocode]);
-
   const handleSearchInputChange = useCallback(async (value: string) => {
     setSearchAddress(value);
     
@@ -253,13 +180,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     const newLocation = { lat: location.lat, lng: location.lng };
     setMarker(newLocation);
     
-    if (map) {
-      map.setCenter(newLocation);
-      map.setZoom(15);
-    }
-    
     onLocationSelect(location);
-  }, [map, onLocationSelect]);
+  }, [onLocationSelect]);
 
   const handleSearch = useCallback(async () => {
     if (!searchAddress.trim()) return;
@@ -272,11 +194,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         const newLocation = { lat: location.lat, lng: location.lng };
         setMarker(newLocation);
         
-        if (map) {
-          map.setCenter(newLocation);
-          map.setZoom(15);
-        }
-        
         onLocationSelect(location);
         setSearchAddress(location.address);
       } else {
@@ -288,7 +205,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [searchAddress, map, onLocationSelect, forwardGeocode]);
+  }, [searchAddress, onLocationSelect, forwardGeocode]);
 
   const handleCurrentLocation = useCallback(async () => {
     if (navigator.geolocation) {
@@ -300,11 +217,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
           const newLocation = { lat, lng };
           
           setMarker(newLocation);
-          
-          if (map) {
-            map.setCenter(newLocation);
-            map.setZoom(15);
-          }
           
           // Use LocationIQ for reverse geocoding
           const address = await reverseGeocode(lat, lng);
@@ -318,7 +230,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         }
       );
     }
-  }, [map, onLocationSelect, reverseGeocode]);
+  }, [onLocationSelect, reverseGeocode]);
 
   // Manual coordinate input fallback
   const [manualLat, setManualLat] = useState(initialLocation?.lat.toString() || '');
@@ -337,140 +249,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   };
 
-  // If Google Maps is not available, show LocationIQ interface
-  if (!isGoogleMapsAvailable) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MapPin className="mr-2 h-5 w-5" />
-            Location Picker
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Search functionality */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Search Location</h4>
-            <div className="relative flex space-x-2">
-              <div className="flex-1 relative" ref={searchRef}>
-                <Input
-                  placeholder="Enter address or postcode..."
-                  value={searchAddress}
-                  onChange={(e) => handleSearchInputChange(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full"
-                />
-                {/* Search Suggestions Dropdown */}
-                {showSuggestions && searchSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                    {searchSuggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        onClick={() => handleSuggestionSelect(suggestion)}
-                      >
-                        <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
-                        {suggestion.address.city && (
-                          <div className="text-xs text-gray-500">
-                            {suggestion.address.city}
-                            {suggestion.address.state && `, ${suggestion.address.state}`}
-                            {suggestion.address.postcode && ` ${suggestion.address.postcode}`}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Button 
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                <Search className="h-4 w-4" />
-                <span>Search</span>
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleCurrentLocation}
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                <Navigation className="h-4 w-4" />
-                <span>Current</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Manual coordinate input */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Manual Location Entry</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Address (Optional)</label>
-                <Input
-                  placeholder="Enter address..."
-                  value={manualAddress}
-                  onChange={(e) => setManualAddress(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Latitude</label>
-                <Input
-                  type="number"
-                  step="0.000001"
-                  placeholder="52.406800"
-                  value={manualLat}
-                  onChange={(e) => setManualLat(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Longitude</label>
-                <Input
-                  type="number"
-                  step="0.000001"
-                  placeholder="-1.519700"
-                  value={manualLng}
-                  onChange={(e) => setManualLng(e.target.value)}
-                />
-              </div>
-            </div>
-            <Button 
-              onClick={handleManualLocationSubmit}
-              className="w-full"
-              disabled={!manualLat || !manualLng}
-            >
-              Set Location
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MapPin className="mr-2 h-5 w-5" />
-            Location Picker
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading Google Maps...</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className={className}>
       <CardHeader>
@@ -480,98 +258,130 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search Bar */}
-        <div className="relative flex space-x-2">
-          <div className="flex-1 relative" ref={searchRef}>
-            <Input
-              placeholder="Enter address or postcode..."
-              value={searchAddress}
-              onChange={(e) => handleSearchInputChange(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full"
-            />
-            {/* Search Suggestions Dropdown */}
-            {showSuggestions && searchSuggestions.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                {searchSuggestions.map((suggestion, index) => (
-                  <div
-                    key={index}
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    onClick={() => handleSuggestionSelect(suggestion)}
-                  >
-                    <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
-                    {suggestion.address.city && (
-                      <div className="text-xs text-gray-500">
-                        {suggestion.address.city}
-                        {suggestion.address.state && `, ${suggestion.address.state}`}
-                        {suggestion.address.postcode && ` ${suggestion.address.postcode}`}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Search functionality */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900">Search Location</h4>
+          <div className="relative flex space-x-2">
+            <div className="flex-1 relative" ref={searchRef}>
+              <Input
+                placeholder="Enter address or postcode..."
+                value={searchAddress}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="w-full"
+              />
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {searchSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      onClick={() => handleSuggestionSelect(suggestion)}
+                    >
+                      <div className="text-sm font-medium text-gray-900">{suggestion.display_name}</div>
+                      {suggestion.address.city && (
+                        <div className="text-xs text-gray-500">
+                          {suggestion.address.city}
+                          {suggestion.address.state && `, ${suggestion.address.state}`}
+                          {suggestion.address.postcode && ` ${suggestion.address.postcode}`}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button 
+              onClick={handleSearch}
+              disabled={isLoading}
+              className="flex items-center space-x-2"
+            >
+              <Search className="h-4 w-4" />
+              <span>Search</span>
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleCurrentLocation}
+              disabled={isLoading}
+              className="flex items-center space-x-2"
+            >
+              <Navigation className="h-4 w-4" />
+              <span>Current</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Manual coordinate input */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-gray-900">Manual Location Entry</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Address (Optional)</label>
+              <Input
+                placeholder="Enter address..."
+                value={manualAddress}
+                onChange={(e) => setManualAddress(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Latitude</label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="52.406800"
+                value={manualLat}
+                onChange={(e) => setManualLat(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Longitude</label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="-1.519700"
+                value={manualLng}
+                onChange={(e) => setManualLng(e.target.value)}
+              />
+            </div>
           </div>
           <Button 
-            onClick={handleSearch}
-            disabled={isLoading}
-            className="flex items-center space-x-2"
+            onClick={handleManualLocationSubmit}
+            className="w-full"
+            disabled={!manualLat || !manualLng}
           >
-            <Search className="h-4 w-4" />
-            <span>Search</span>
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleCurrentLocation}
-            disabled={isLoading}
-            className="flex items-center space-x-2"
-          >
-            <Navigation className="h-4 w-4" />
-            <span>Current</span>
+            Set Location
           </Button>
         </div>
 
-        {/* Map */}
-        <div className="border rounded-lg overflow-hidden">
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={marker || defaultCenter}
-            zoom={marker ? 15 : 10}
-            onLoad={onLoad}
-            onUnmount={onUnmount}
-            onClick={handleMapClick}
-            options={{
-              zoomControl: true,
-              streetViewControl: false,
-              mapTypeControl: true,
-              fullscreenControl: true,
-            }}
-          >
-            {marker && (
-              <Marker
-                position={marker}
-                draggable={true}
-                onDragEnd={async (e: google.maps.MapMouseEvent) => {
-                  if (e.latLng) {
-                    const lat = e.latLng.lat();
-                    const lng = e.latLng.lng();
-                    const newLocation = { lat, lng };
-                    setMarker(newLocation);
-                    
-                    // Use LocationIQ for reverse geocoding
-                    const address = await reverseGeocode(lat, lng);
-                    onLocationSelect({ lat, lng, address });
-                  }
-                }}
-              />
-            )}
-          </GoogleMap>
-        </div>
+        {/* Current Location Display */}
+        {marker && (
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Selected Location</h4>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Coordinates:</span>
+                <span className="text-sm text-gray-600">
+                  {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                </span>
+              </div>
+              {searchAddress && (
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Address:</span> {searchAddress}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Instructions */}
         <div className="text-sm text-gray-600 space-y-2">
-          <p>• Click on the map to set a location or use the search bar above</p>
-          <p>• Drag the marker to adjust the position</p>
+          <p>• Use the search bar to find locations by address or postcode</p>
+          <p>• Click "Current" to use your current location</p>
+          <p>• Or manually enter coordinates below</p>
         </div>
       </CardContent>
     </Card>
