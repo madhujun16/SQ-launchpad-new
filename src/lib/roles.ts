@@ -59,8 +59,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/assets/license-management',
       '/platform-configuration',
       '/platform-configuration/admin',
-      '/platform-configuration/integrations',
-      '/platform-configuration/forecast',
+      // Note: Integrations and Forecast routes removed - not integrated into main navigation
       '/admin', 
       '/site-study', 
       '/hardware-scoping',
@@ -208,8 +207,7 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
     '/inventory',
     '/license-management',
     '/admin',
-    '/integrations',
-    '/forecast'
+    // Note: Integrations and Forecast routes removed - not integrated into main navigation
   ];
   
   if (legacyRoutes.includes(pagePath)) {

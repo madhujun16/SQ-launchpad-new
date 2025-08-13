@@ -37,8 +37,7 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
 
 // Platform Configuration related pages
-const Integrations = lazy(() => import("./pages/Integrations"));
-const Forecast = lazy(() => import("./pages/Forecast"));
+// Note: Integrations and Forecast are not currently integrated into main navigation
 
 // Create a client
 const queryClient = new QueryClient({
@@ -281,34 +280,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/platform-configuration/integrations"
-                    element={
-                      <ProtectedRoute>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Integrations />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/platform-configuration/forecast"
-                    element={
-                      <ProtectedRoute>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Forecast />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
+                  {/* Note: Integrations and Forecast routes removed - not integrated into main navigation */}
 
                   {/* Legacy route redirects */}
                   <Route path="/site-study" element={<Navigate to="/sites" replace />} />
@@ -319,8 +291,7 @@ function App() {
                   <Route path="/inventory" element={<Navigate to="/assets/inventory" replace />} />
                   <Route path="/license-management" element={<Navigate to="/assets/license-management" replace />} />
                   <Route path="/admin" element={<Navigate to="/platform-configuration/admin" replace />} />
-                  <Route path="/integrations" element={<Navigate to="/platform-configuration/integrations" replace />} />
-                  <Route path="/forecast" element={<Navigate to="/platform-configuration/forecast" replace />} />
+                  {/* Legacy redirects for unused routes removed */}
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -68,8 +68,6 @@ export const useRoleAccess = () => {
 
       case '/platform-configuration':
       case '/platform-configuration/admin':
-      case '/platform-configuration/integrations':
-      case '/platform-configuration/forecast':
       case '/admin':
         if (currentRole === 'admin') {
           return { canAccess: true, accessLevel: 'full' };
