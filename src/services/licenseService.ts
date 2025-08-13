@@ -68,7 +68,7 @@ export const referenceDataService = {
       .order('name');
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(city => ({ ...city, country: 'United Kingdom' }));
   },
 
   async getSites(): Promise<Site[]> {
@@ -82,6 +82,9 @@ export const referenceDataService = {
       .order('name');
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(site => ({
+      ...site,
+      city: site.city ? { ...site.city, country: 'United Kingdom' } : undefined
+    }));
   },
 };

@@ -14,6 +14,764 @@ export type Database = {
   }
   public: {
     Tables: {
+      assets: {
+        Row: {
+          assigned_to: string | null
+          cost: number
+          created_at: string | null
+          id: string
+          last_maintenance: string | null
+          license_expiry: string | null
+          license_key: string | null
+          location: string | null
+          maintenance_schedule: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          next_maintenance: string | null
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string | null
+          site_id: string | null
+          site_name: string | null
+          status: string
+          type: string
+          updated_at: string | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          cost?: number
+          created_at?: string | null
+          id?: string
+          last_maintenance?: string | null
+          license_expiry?: string | null
+          license_key?: string | null
+          location?: string | null
+          maintenance_schedule?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          next_maintenance?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          status?: string
+          type: string
+          updated_at?: string | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          cost?: number
+          created_at?: string | null
+          id?: string
+          last_maintenance?: string | null
+          license_expiry?: string | null
+          license_key?: string | null
+          location?: string | null
+          maintenance_schedule?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          next_maintenance?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          status?: string
+          type?: string
+          updated_at?: string | null
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "assets_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: string | null
+          entity: string
+          id: string
+          ip_address: unknown | null
+          timestamp: string | null
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: string | null
+          entity: string
+          id?: string
+          ip_address?: unknown | null
+          timestamp?: string | null
+          user_id?: string | null
+          user_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: string | null
+          entity?: string
+          id?: string
+          ip_address?: unknown | null
+          timestamp?: string | null
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      business_rules: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          hardware_item_ids: string[] | null
+          id: string
+          name: string
+          priority: number | null
+          rule_type: string
+          rule_value: string | null
+          software_module_ids: string[] | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          hardware_item_ids?: string[] | null
+          id?: string
+          name: string
+          priority?: number | null
+          rule_type: string
+          rule_value?: string | null
+          software_module_ids?: string[] | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          hardware_item_ids?: string[] | null
+          id?: string
+          name?: string
+          priority?: number | null
+          rule_type?: string
+          rule_value?: string | null
+          software_module_ids?: string[] | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          region: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          region: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          region?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      configuration_audit_log: {
+        Row: {
+          action: string
+          changed_at: string | null
+          changed_by: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id: string
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string | null
+          changed_by?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string
+          table_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      deployment_checklist_items: {
+        Row: {
+          category: string
+          completed: boolean | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          deployment_id: string | null
+          description: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          category: string
+          completed?: boolean | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          deployment_id?: string | null
+          description?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          deployment_id?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployment_checklist_items_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "deployment_checklist_items_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deployments: {
+        Row: {
+          assigned_deployment_engineer: string | null
+          assigned_ops_manager: string | null
+          created_at: string | null
+          deployment_date: string
+          go_live_ready: boolean | null
+          hardware_delivered: boolean | null
+          id: string
+          installation_started: boolean | null
+          notes: string | null
+          progress_percentage: number
+          site_id: string | null
+          site_name: string
+          status: string
+          testing_completed: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_deployment_engineer?: string | null
+          assigned_ops_manager?: string | null
+          created_at?: string | null
+          deployment_date: string
+          go_live_ready?: boolean | null
+          hardware_delivered?: boolean | null
+          id?: string
+          installation_started?: boolean | null
+          notes?: string | null
+          progress_percentage?: number
+          site_id?: string | null
+          site_name: string
+          status?: string
+          testing_completed?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_deployment_engineer?: string | null
+          assigned_ops_manager?: string | null
+          created_at?: string | null
+          deployment_date?: string
+          go_live_ready?: boolean | null
+          hardware_delivered?: boolean | null
+          id?: string
+          installation_started?: boolean | null
+          notes?: string | null
+          progress_percentage?: number
+          site_id?: string | null
+          site_name?: string
+          status?: string
+          testing_completed?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployments_assigned_deployment_engineer_fkey"
+            columns: ["assigned_deployment_engineer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "deployments_assigned_ops_manager_fkey"
+            columns: ["assigned_ops_manager"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "deployments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hardware_items: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          estimated_cost: number | null
+          id: string
+          is_active: boolean | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      hardware_request_items: {
+        Row: {
+          created_at: string | null
+          hardware_item_id: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          request_id: string | null
+          total_cost: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string | null
+          hardware_item_id?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          request_id?: string | null
+          total_cost?: number
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string | null
+          hardware_item_id?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          request_id?: string | null
+          total_cost?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hardware_request_items_hardware_item_id_fkey"
+            columns: ["hardware_item_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hardware_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hardware_requests: {
+        Row: {
+          assigned_deployment_engineer: string | null
+          assigned_ops_manager: string | null
+          comments: string | null
+          created_at: string | null
+          expected_delivery: string | null
+          id: string
+          items_count: number
+          priority: string
+          procurement_status: string | null
+          rejection_reason: string | null
+          requested_at: string | null
+          requested_by: string | null
+          site_id: string | null
+          site_name: string
+          status: string
+          total_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_deployment_engineer?: string | null
+          assigned_ops_manager?: string | null
+          comments?: string | null
+          created_at?: string | null
+          expected_delivery?: string | null
+          id?: string
+          items_count?: number
+          priority?: string
+          procurement_status?: string | null
+          rejection_reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
+          site_id?: string | null
+          site_name: string
+          status?: string
+          total_value?: number
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_deployment_engineer?: string | null
+          assigned_ops_manager?: string | null
+          comments?: string | null
+          created_at?: string | null
+          expected_delivery?: string | null
+          id?: string
+          items_count?: number
+          priority?: string
+          procurement_status?: string | null
+          rejection_reason?: string | null
+          requested_at?: string | null
+          requested_by?: string | null
+          site_id?: string | null
+          site_name?: string
+          status?: string
+          total_value?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hardware_requests_assigned_deployment_engineer_fkey"
+            columns: ["assigned_deployment_engineer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hardware_requests_assigned_ops_manager_fkey"
+            columns: ["assigned_ops_manager"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hardware_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "hardware_requests_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id: string
+          inventory_type: Database["public"]["Enums"]["inventory_type"]
+          model: string
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string
+          site_id: string | null
+          status: Database["public"]["Enums"]["inventory_status"] | null
+          updated_at: string
+          warranty_expiry: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id?: string
+          inventory_type: Database["public"]["Enums"]["inventory_type"]
+          model: string
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number: string
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["inventory_status"] | null
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string
+          group_type?: Database["public"]["Enums"]["group_type"]
+          id?: string
+          inventory_type?: Database["public"]["Enums"]["inventory_type"]
+          model?: string
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string
+          site_id?: string | null
+          status?: Database["public"]["Enums"]["inventory_status"] | null
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licenses: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          expiry_date: string | null
+          id: string
+          license_key: string | null
+          license_type: string | null
+          name: string
+          notes: string | null
+          purchase_date: string | null
+          status: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          license_key?: string | null
+          license_type?: string | null
+          name: string
+          notes?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          license_key?: string | null
+          license_type?: string | null
+          name?: string
+          notes?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_logs: {
+        Row: {
+          asset_id: string | null
+          asset_name: string
+          cost: number
+          created_at: string | null
+          description: string
+          id: string
+          maintenance_type: string
+          next_maintenance_date: string | null
+          notes: string | null
+          performed_at: string | null
+          performed_by: string | null
+        }
+        Insert: {
+          asset_id?: string | null
+          asset_name: string
+          cost?: number
+          created_at?: string | null
+          description: string
+          id?: string
+          maintenance_type: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          performed_at?: string | null
+          performed_by?: string | null
+        }
+        Update: {
+          asset_id?: string | null
+          asset_name?: string
+          cost?: number
+          created_at?: string | null
+          description?: string
+          id?: string
+          maintenance_type?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          performed_at?: string | null
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sector: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sector?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sector?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -22,8 +780,10 @@ export type Database = {
           id: string
           invited_at: string | null
           invited_by: string | null
+          last_login_at: string | null
           updated_at: string
           user_id: string
+          welcome_email_sent: boolean | null
         }
         Insert: {
           created_at?: string
@@ -32,8 +792,10 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by?: string | null
+          last_login_at?: string | null
           updated_at?: string
           user_id: string
+          welcome_email_sent?: boolean | null
         }
         Update: {
           created_at?: string
@@ -42,8 +804,681 @@ export type Database = {
           id?: string
           invited_at?: string | null
           invited_by?: string | null
+          last_login_at?: string | null
           updated_at?: string
           user_id?: string
+          welcome_email_sent?: boolean | null
+        }
+        Relationships: []
+      }
+      recommendation_rules: {
+        Row: {
+          cost_multiplier: number | null
+          created_at: string | null
+          created_by: string | null
+          default_quantity: number | null
+          hardware_item_id: string
+          id: string
+          is_required: boolean | null
+          reason: string | null
+          software_module_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          cost_multiplier?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          default_quantity?: number | null
+          hardware_item_id: string
+          id?: string
+          is_required?: boolean | null
+          reason?: string | null
+          software_module_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          cost_multiplier?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          default_quantity?: number | null
+          hardware_item_id?: string
+          id?: string
+          is_required?: boolean | null
+          reason?: string | null
+          software_module_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_rules_hardware_item_id_fkey"
+            columns: ["hardware_item_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendation_rules_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sectors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          created_at: string
+          deployment_engineer_id: string | null
+          id: string
+          ops_manager_id: string | null
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          created_at?: string
+          deployment_engineer_id?: string | null
+          id?: string
+          ops_manager_id?: string | null
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          created_at?: string
+          deployment_engineer_id?: string | null
+          id?: string
+          ops_manager_id?: string | null
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_assignments_deployment_engineer_id_fkey"
+            columns: ["deployment_engineer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_assignments_ops_manager_id_fkey"
+            columns: ["ops_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_hardware_scoping: {
+        Row: {
+          created_at: string | null
+          custom_name: string | null
+          hardware_item_id: string | null
+          id: string
+          is_auto_suggested: boolean | null
+          is_custom: boolean | null
+          notes: string | null
+          quantity: number | null
+          scoped_at: string | null
+          scoped_by: string | null
+          site_id: string | null
+          software_module_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          custom_name?: string | null
+          hardware_item_id?: string | null
+          id?: string
+          is_auto_suggested?: boolean | null
+          is_custom?: boolean | null
+          notes?: string | null
+          quantity?: number | null
+          scoped_at?: string | null
+          scoped_by?: string | null
+          site_id?: string | null
+          software_module_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          custom_name?: string | null
+          hardware_item_id?: string | null
+          id?: string
+          is_auto_suggested?: boolean | null
+          is_custom?: boolean | null
+          notes?: string | null
+          quantity?: number | null
+          scoped_at?: string | null
+          scoped_by?: string | null
+          site_id?: string | null
+          software_module_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_hardware_scoping_hardware_item_id_fkey"
+            columns: ["hardware_item_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hardware_scoping_scoped_by_fkey"
+            columns: ["scoped_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "site_hardware_scoping_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hardware_scoping_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_software_scoping: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_frozen: boolean | null
+          is_selected: boolean | null
+          notes: string | null
+          quantity: number | null
+          scoped_at: string | null
+          scoped_by: string | null
+          site_id: string | null
+          software_module_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_frozen?: boolean | null
+          is_selected?: boolean | null
+          notes?: string | null
+          quantity?: number | null
+          scoped_at?: string | null
+          scoped_by?: string | null
+          site_id?: string | null
+          software_module_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_frozen?: boolean | null
+          is_selected?: boolean | null
+          notes?: string | null
+          quantity?: number | null
+          scoped_at?: string | null
+          scoped_by?: string | null
+          site_id?: string | null
+          software_module_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_software_scoping_scoped_by_fkey"
+            columns: ["scoped_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "site_software_scoping_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_software_scoping_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_status_tracking: {
+        Row: {
+          cost_approval_status: string | null
+          deployment_status: string | null
+          id: string
+          inventory_status: string | null
+          overall_status: Database["public"]["Enums"]["site_status"] | null
+          products_status: string | null
+          site_id: string
+          study_status: string | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          cost_approval_status?: string | null
+          deployment_status?: string | null
+          id?: string
+          inventory_status?: string | null
+          overall_status?: Database["public"]["Enums"]["site_status"] | null
+          products_status?: string | null
+          site_id: string
+          study_status?: string | null
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          cost_approval_status?: string | null
+          deployment_status?: string | null
+          id?: string
+          inventory_status?: string | null
+          overall_status?: Database["public"]["Enums"]["site_status"] | null
+          products_status?: string | null
+          site_id?: string
+          study_status?: string | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_status_tracking_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_status_tracking_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_studies: {
+        Row: {
+          conducted_by: string
+          counter_count: number | null
+          created_at: string
+          findings: string | null
+          geolocation_lat: number | null
+          geolocation_lng: number | null
+          hardware_requirements: Json | null
+          id: string
+          site_id: string
+          site_map_url: string | null
+          status: string | null
+          study_date: string
+          updated_at: string
+        }
+        Insert: {
+          conducted_by: string
+          counter_count?: number | null
+          created_at?: string
+          findings?: string | null
+          geolocation_lat?: number | null
+          geolocation_lng?: number | null
+          hardware_requirements?: Json | null
+          id?: string
+          site_id: string
+          site_map_url?: string | null
+          status?: string | null
+          study_date: string
+          updated_at?: string
+        }
+        Update: {
+          conducted_by?: string
+          counter_count?: number | null
+          created_at?: string
+          findings?: string | null
+          geolocation_lat?: number | null
+          geolocation_lng?: number | null
+          hardware_requirements?: Json | null
+          id?: string
+          site_id?: string
+          site_map_url?: string | null
+          status?: string | null
+          study_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_studies_conducted_by_fkey"
+            columns: ["conducted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_studies_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_workflow_stages: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          site_id: string | null
+          stage_name: string
+          started_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          site_id?: string | null
+          stage_name: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          site_id?: string | null
+          stage_name?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_workflow_stages_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "site_workflow_stages_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          activated_at: string | null
+          address: string
+          approved_at: string | null
+          assigned_deployment_engineer: string | null
+          assigned_ops_manager: string | null
+          cafeteria_type: Database["public"]["Enums"]["cafeteria_type"] | null
+          capacity: number | null
+          city_id: string | null
+          created_at: string
+          created_by: string
+          deployment_notes: string | null
+          deployment_started_at: string | null
+          description: string | null
+          expected_footfall: number | null
+          food_court_unit: string | null
+          go_live_at: string | null
+          hardware_notes: string | null
+          hardware_scoped_at: string | null
+          id: string
+          name: string
+          postcode: string | null
+          procurement_started_at: string | null
+          sector_id: string | null
+          status: string | null
+          study_completed_at: string | null
+          study_notes: string | null
+          study_started_at: string | null
+          target_deployment_start: string | null
+          target_go_live: string | null
+          target_hardware_approval: string | null
+          target_study_completion: string | null
+          updated_at: string
+          workflow_status: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          address: string
+          approved_at?: string | null
+          assigned_deployment_engineer?: string | null
+          assigned_ops_manager?: string | null
+          cafeteria_type?: Database["public"]["Enums"]["cafeteria_type"] | null
+          capacity?: number | null
+          city_id?: string | null
+          created_at?: string
+          created_by: string
+          deployment_notes?: string | null
+          deployment_started_at?: string | null
+          description?: string | null
+          expected_footfall?: number | null
+          food_court_unit?: string | null
+          go_live_at?: string | null
+          hardware_notes?: string | null
+          hardware_scoped_at?: string | null
+          id?: string
+          name: string
+          postcode?: string | null
+          procurement_started_at?: string | null
+          sector_id?: string | null
+          status?: string | null
+          study_completed_at?: string | null
+          study_notes?: string | null
+          study_started_at?: string | null
+          target_deployment_start?: string | null
+          target_go_live?: string | null
+          target_hardware_approval?: string | null
+          target_study_completion?: string | null
+          updated_at?: string
+          workflow_status?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          address?: string
+          approved_at?: string | null
+          assigned_deployment_engineer?: string | null
+          assigned_ops_manager?: string | null
+          cafeteria_type?: Database["public"]["Enums"]["cafeteria_type"] | null
+          capacity?: number | null
+          city_id?: string | null
+          created_at?: string
+          created_by?: string
+          deployment_notes?: string | null
+          deployment_started_at?: string | null
+          description?: string | null
+          expected_footfall?: number | null
+          food_court_unit?: string | null
+          go_live_at?: string | null
+          hardware_notes?: string | null
+          hardware_scoped_at?: string | null
+          id?: string
+          name?: string
+          postcode?: string | null
+          procurement_started_at?: string | null
+          sector_id?: string | null
+          status?: string | null
+          study_completed_at?: string | null
+          study_notes?: string | null
+          study_started_at?: string | null
+          target_deployment_start?: string | null
+          target_go_live?: string | null
+          target_hardware_approval?: string | null
+          target_study_completion?: string | null
+          updated_at?: string
+          workflow_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sites_assigned_deployment_engineer_fkey"
+            columns: ["assigned_deployment_engineer"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "sites_assigned_ops_manager_fkey"
+            columns: ["assigned_ops_manager"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "sites_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      software_hardware_mapping: {
+        Row: {
+          created_at: string | null
+          hardware_item_id: string | null
+          id: string
+          is_required: boolean | null
+          quantity: number | null
+          software_module_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hardware_item_id?: string | null
+          id?: string
+          is_required?: boolean | null
+          quantity?: number | null
+          software_module_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hardware_item_id?: string | null
+          id?: string
+          is_required?: boolean | null
+          quantity?: number | null
+          software_module_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "software_hardware_mapping_hardware_item_id_fkey"
+            columns: ["hardware_item_id"]
+            isOneToOne: false
+            referencedRelation: "hardware_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "software_hardware_mapping_software_module_id_fkey"
+            columns: ["software_module_id"]
+            isOneToOne: false
+            referencedRelation: "software_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      software_modules: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -74,662 +1509,80 @@ export type Database = {
         }
         Relationships: []
       }
-      organizations: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          sector: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          sector?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          sector?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      check_email_exists: {
+        Args: { email_to_check: string }
+        Returns: boolean
       }
-      sectors: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
+      get_current_user_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"][]
       }
-      cities: {
-        Row: {
-          id: string
-          name: string
-          region: string | null
-          country: string
+      get_filtered_inventory: {
+        Args: {
+          p_site_id?: string
+          p_inventory_type?: Database["public"]["Enums"]["inventory_type"]
+          p_status?: Database["public"]["Enums"]["inventory_status"]
+          p_assigned_to?: string
+        }
+        Returns: {
+          assigned_to: string | null
           created_at: string
+          created_by: string
+          group_type: Database["public"]["Enums"]["group_type"]
+          id: string
+          inventory_type: Database["public"]["Enums"]["inventory_type"]
+          model: string
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string
+          site_id: string | null
+          status: Database["public"]["Enums"]["inventory_status"] | null
           updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          region?: string | null
-          country?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          region?: string | null
-          country?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
+          warranty_expiry: string | null
+        }[]
       }
-      sites: {
-        Row: {
+      get_inventory_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_items: number
+          available_items: number
+          deployed_items: number
+          maintenance_items: number
+          retired_items: number
+        }[]
+      }
+      get_site_with_details: {
+        Args: { site_uuid: string }
+        Returns: {
           id: string
           name: string
           food_court_unit: string
-          sector_id: string | null
-          city_id: string | null
-          address: string | null
-          postcode: string | null
-          contact_person: string | null
-          contact_email: string | null
-          contact_phone: string | null
-          status: string
-          created_at: string
-          updated_at: string
-          created_by: string | null
+          address: string
+          postcode: string
           cafeteria_type: Database["public"]["Enums"]["cafeteria_type"]
           capacity: number
           expected_footfall: number
-          description: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          food_court_unit: string
-          sector_id?: string | null
-          city_id?: string | null
-          address?: string | null
-          postcode?: string | null
-          contact_person?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-          created_by?: string | null
-          cafeteria_type?: Database["public"]["Enums"]["cafeteria_type"]
-          capacity?: number
-          expected_footfall?: number
-          description?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          food_court_unit?: string
-          sector_id?: string | null
-          city_id?: string | null
-          address?: string | null
-          postcode?: string | null
-          contact_person?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-          created_by?: string | null
-          cafeteria_type?: Database["public"]["Enums"]["cafeteria_type"]
-          capacity?: number
-          expected_footfall?: number
-          description?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sites_sector_id_fkey"
-            columns: ["sector_id"]
-            isOneToOne: false
-            referencedRelation: "sectors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sites_city_id_fkey"
-            columns: ["city_id"]
-            isOneToOne: false
-            referencedRelation: "cities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sites_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-      site_assignments: {
-        Row: {
-          id: string
-          site_id: string
-          ops_manager_id: string | null
-          deployment_engineer_id: string | null
-          assigned_at: string
-          assigned_by: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          ops_manager_id?: string | null
-          deployment_engineer_id?: string | null
-          assigned_at?: string
-          assigned_by: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          ops_manager_id?: string | null
-          deployment_engineer_id?: string | null
-          assigned_at?: string
-          assigned_by?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "site_assignments_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_assignments_ops_manager_id_fkey"
-            columns: ["ops_manager_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "site_assignments_deployment_engineer_id_fkey"
-            columns: ["deployment_engineer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "site_assignments_assigned_by_fkey"
-            columns: ["assigned_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-      site_studies: {
-        Row: {
-          id: string
-          site_id: string
-          conducted_by: string
-          study_date: string
-          findings: string | null
-          site_map_url: string | null
-          counter_count: number | null
-          hardware_requirements: Json | null
-          geolocation_lat: number | null
-          geolocation_lng: number | null
+          description: string
           status: string
           created_at: string
           updated_at: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          conducted_by: string
-          study_date: string
-          findings?: string | null
-          site_map_url?: string | null
-          counter_count?: number | null
-          hardware_requirements?: Json | null
-          geolocation_lat?: number | null
-          geolocation_lng?: number | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          conducted_by?: string
-          study_date?: string
-          findings?: string | null
-          site_map_url?: string | null
-          counter_count?: number | null
-          hardware_requirements?: Json | null
-          geolocation_lat?: number | null
-          geolocation_lng?: number | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "site_studies_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_studies_conducted_by_fkey"
-            columns: ["conducted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-      site_status_tracking: {
-        Row: {
-          id: string
-          site_id: string
+          created_by: string
+          sector_name: string
+          city_name: string
+          ops_manager_name: string
+          deployment_engineer_name: string
           study_status: string
           cost_approval_status: string
           inventory_status: string
           products_status: string
           deployment_status: string
           overall_status: Database["public"]["Enums"]["site_status"]
-          updated_at: string
-          updated_by: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          study_status?: string
-          cost_approval_status?: string
-          inventory_status?: string
-          products_status?: string
-          deployment_status?: string
-          overall_status?: Database["public"]["Enums"]["site_status"]
-          updated_at?: string
-          updated_by: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          study_status?: string
-          cost_approval_status?: string
-          inventory_status?: string
-          products_status?: string
-          deployment_status?: string
-          overall_status?: Database["public"]["Enums"]["site_status"]
-          updated_at?: string
-          updated_by?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "site_status_tracking_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_status_tracking_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-      software_modules: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          category: string
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          category: string
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          category?: string
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      hardware_items: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          category: string
-          model: string | null
-          manufacturer: string | null
-          estimated_cost: number | null
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          category: string
-          model?: string | null
-          manufacturer?: string | null
-          estimated_cost?: number | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          category?: string
-          model?: string | null
-          manufacturer?: string | null
-          estimated_cost?: number | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      software_hardware_mapping: {
-        Row: {
-          id: string
-          software_module_id: string
-          hardware_item_id: string
-          is_required: boolean
-          quantity: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          software_module_id: string
-          hardware_item_id: string
-          is_required?: boolean
-          quantity?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          software_module_id?: string
-          hardware_item_id?: string
-          is_required?: boolean
-          quantity?: number
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "software_hardware_mapping_software_module_id_fkey"
-            columns: ["software_module_id"]
-            isOneToOne: false
-            referencedRelation: "software_modules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "software_hardware_mapping_hardware_item_id_fkey"
-            columns: ["hardware_item_id"]
-            isOneToOne: false
-            referencedRelation: "hardware_items"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      site_workflow_stages: {
-        Row: {
-          id: string
-          site_id: string
-          stage_name: string
-          status: string
-          started_at: string | null
-          completed_at: string | null
-          assigned_to: string | null
-          notes: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          stage_name: string
-          status?: string
-          started_at?: string | null
-          completed_at?: string | null
-          assigned_to?: string | null
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          stage_name?: string
-          status?: string
-          started_at?: string | null
-          completed_at?: string | null
-          assigned_to?: string | null
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "site_workflow_stages_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_workflow_stages_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-      site_software_scoping: {
-        Row: {
-          id: string
-          site_id: string
-          software_module_id: string
-          is_selected: boolean
-          quantity: number
-          notes: string | null
-          scoped_by: string | null
-          scoped_at: string
-          is_frozen: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          software_module_id: string
-          is_selected?: boolean
-          quantity?: number
-          notes?: string | null
-          scoped_by?: string | null
-          scoped_at?: string
-          is_frozen?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          software_module_id?: string
-          is_selected?: boolean
-          quantity?: number
-          notes?: string | null
-          scoped_by?: string | null
-          scoped_at?: string
-          is_frozen?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "site_software_scoping_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_software_scoping_software_module_id_fkey"
-            columns: ["software_module_id"]
-            isOneToOne: false
-            referencedRelation: "software_modules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_software_scoping_scoped_by_fkey"
-            columns: ["scoped_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-      site_hardware_scoping: {
-        Row: {
-          id: string
-          site_id: string
-          hardware_item_id: string
-          software_module_id: string | null
-          quantity: number
-          is_auto_suggested: boolean
-          is_custom: boolean
-          custom_name: string | null
-          notes: string | null
-          scoped_by: string | null
-          scoped_at: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          site_id: string
-          hardware_item_id: string
-          software_module_id?: string | null
-          quantity?: number
-          is_auto_suggested?: boolean
-          is_custom?: boolean
-          custom_name?: string | null
-          notes?: string | null
-          scoped_by?: string | null
-          scoped_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          site_id?: string
-          hardware_item_id?: string
-          software_module_id?: string | null
-          quantity?: number
-          is_auto_suggested?: boolean
-          is_custom?: boolean
-          custom_name?: string | null
-          notes?: string | null
-          scoped_by?: string | null
-          scoped_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "site_hardware_scoping_site_id_fkey"
-            columns: ["site_id"]
-            isOneToOne: false
-            referencedRelation: "sites"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_hardware_scoping_hardware_item_id_fkey"
-            columns: ["hardware_item_id"]
-            isOneToOne: false
-            referencedRelation: "hardware_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_hardware_scoping_software_module_id_fkey"
-            columns: ["software_module_id"]
-            isOneToOne: false
-            referencedRelation: "software_modules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_hardware_scoping_scoped_by_fkey"
-            columns: ["scoped_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          }
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      get_current_user_roles: {
-        Args: Record<PropertyKey, never>
-        Returns: Database["public"]["Enums"]["app_role"][]
+        }[]
       }
       has_role: {
         Args: {
@@ -742,40 +1595,18 @@ export type Database = {
         Args: { _user_id?: string }
         Returns: boolean
       }
-      get_site_with_details: {
-        Args: {
-          site_uuid: string
-        }
-        Returns: {
-          id: string
-          name: string
-          food_court_unit: string
-          address: string | null
-          postcode: string | null
-          cafeteria_type: Database["public"]["Enums"]["cafeteria_type"]
-          capacity: number
-          expected_footfall: number
-          description: string | null
-          status: string
-          created_at: string
-          updated_at: string
-          created_by: string | null
-          sector_name: string | null
-          city_name: string | null
-          ops_manager_name: string | null
-          deployment_engineer_name: string | null
-          study_status: string | null
-          cost_approval_status: string | null
-          inventory_status: string | null
-          products_status: string | null
-          deployment_status: string | null
-          overall_status: Database["public"]["Enums"]["site_status"] | null
-        }[]
+      log_audit_event: {
+        Args: { p_entity: string; p_action: string; p_details?: string }
+        Returns: undefined
       }
     }
-          Enums: {
-        app_role: "admin" | "ops_manager" | "deployment_engineer"
+    Enums: {
+      app_role: "admin" | "ops_manager" | "deployment_engineer"
+      app_role_new: "admin" | "ops_manager" | "deployment_engineer"
       cafeteria_type: "staff" | "visitor" | "mixed"
+      group_type: "hardware" | "software" | "network" | "accessories"
+      inventory_status: "available" | "deployed" | "maintenance" | "retired"
+      inventory_type: "counter" | "tablet" | "router" | "cable" | "other"
       site_status: "new" | "in-progress" | "active" | "deployed"
     }
     CompositeTypes: {
@@ -905,7 +1736,11 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "ops_manager", "deployment_engineer"],
+      app_role_new: ["admin", "ops_manager", "deployment_engineer"],
       cafeteria_type: ["staff", "visitor", "mixed"],
+      group_type: ["hardware", "software", "network", "accessories"],
+      inventory_status: ["available", "deployed", "maintenance", "retired"],
+      inventory_type: ["counter", "tablet", "router", "cable", "other"],
       site_status: ["new", "in-progress", "active", "deployed"],
     },
   },

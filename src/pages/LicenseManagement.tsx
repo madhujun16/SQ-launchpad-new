@@ -537,7 +537,7 @@ export default function LicenseManagement() {
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={mockLicensesByStatus}>
+                        <BarChart data={licenseByStatus}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                           <XAxis dataKey="status" />
                           <YAxis />
@@ -653,6 +653,8 @@ export default function LicenseManagement() {
               </DialogDescription>
             </DialogHeader>
             <LicenseForm
+              sites={[]}
+              inventoryItems={[]}
               onSubmit={createLicenseMutation.mutate}
               isLoading={createLicenseMutation.isPending}
             />

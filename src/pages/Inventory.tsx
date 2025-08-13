@@ -84,10 +84,20 @@ const Inventory: React.FC = () => {
     }
   };
 
-  const handleCreateItem = async (item: InventoryItem) => {
+  const handleCreateItem = async (item: {
+    serial_number: string;
+    model: string;
+    inventory_type: string;
+    group_type: string;
+    status: string;
+    notes: string;
+  }) => {
     try {
       await inventoryService.createInventoryItem({
         ...item,
+        inventory_type: item.inventory_type as any,
+        group_type: item.group_type as any,
+        status: item.status as any,
         created_by: profile?.user_id || '',
       });
       // toast.success('Inventory item created successfully'); // Removed toast as per new_code
@@ -99,9 +109,24 @@ const Inventory: React.FC = () => {
     }
   };
 
-  const handleUpdateItem = async (item: InventoryItem) => {
+  const handleUpdateItem = async (item: {
+    serial_number: string;
+    model: string;
+    inventory_type: string;
+    group_type: string;
+    status: string;
+    notes: string;
+  }) => {
+    if (!editingItem) return;
+    
     try {
-      await inventoryService.updateInventoryItem(item.id, item);
+      await inventoryService.updateInventoryItem(editingItem.id, { 
+        ...editingItem, 
+        ...item,
+        inventory_type: item.inventory_type as any,
+        group_type: item.group_type as any,
+        status: item.status as any,
+      });
       // toast.success('Inventory item updated successfully'); // Removed toast as per new_code
       setEditingItem(null);
       fetchInventoryData();
@@ -252,7 +277,7 @@ const Inventory: React.FC = () => {
                 <Input
                   id="search"
                   placeholder="Search by serial number or model..."
-                  value={filters.search || ''}
+                  value={filters.search as string || ''}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="pl-10"
                 />
@@ -262,14 +287,14 @@ const Inventory: React.FC = () => {
             <div>
               <Label htmlFor="group-type">Group Type</Label>
               <Select
-                value={filters.group_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, group_type: value as any || undefined })}
+                value={filters.group_type as string || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, group_type: value === 'all' ? undefined : value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {GROUP_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -282,14 +307,14 @@ const Inventory: React.FC = () => {
             <div>
               <Label htmlFor="inventory-type">Inventory Type</Label>
               <Select
-                value={filters.inventory_type || ''}
-                onValueChange={(value) => setFilters({ ...filters, inventory_type: value as any || undefined })}
+                value={filters.inventory_type as string || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, inventory_type: value === 'all' ? undefined : value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {INVENTORY_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
@@ -302,14 +327,14 @@ const Inventory: React.FC = () => {
             <div>
               <Label htmlFor="status">Status</Label>
               <Select
-                value={filters.status || ''}
-                onValueChange={(value) => setFilters({ ...filters, status: value as any || undefined })}
+                value={filters.status as string || 'all'}
+                onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? undefined : value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {INVENTORY_STATUSES.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {status.label}
