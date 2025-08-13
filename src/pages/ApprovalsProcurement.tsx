@@ -45,6 +45,9 @@ import { AccessDenied } from '@/components/AccessDenied';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
+import { CostingApprovalCard } from '@/components/CostingApprovalCard';
+import { CostingService } from '@/services/costingService';
+import { CostingApproval } from '@/types/costing';
 
 interface HardwareRequest {
   id: string;
@@ -80,6 +83,12 @@ const ApprovalsProcurement = () => {
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
   const [reviewComment, setReviewComment] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // Costing approvals state
+  const [costingApprovals, setCostingApprovals] = useState<CostingApproval[]>([]);
+  const [filteredCostingApprovals, setFilteredCostingApprovals] = useState<CostingApproval[]>([]);
+  const [costingStatusFilter, setCostingStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('hardware');
 
   // Check access permissions
   const tabAccess = getTabAccess('/approvals-procurement');
@@ -196,6 +205,14 @@ const ApprovalsProcurement = () => {
 
     setRequests(filteredRequestsData);
     setFilteredRequests(filteredRequestsData);
+    
+    // Load costing approvals
+    if (currentRole === 'ops_manager' || currentRole === 'admin') {
+      const approvals = await CostingService.getCostingApprovals();
+      setCostingApprovals(approvals);
+      setFilteredCostingApprovals(approvals);
+    }
+    
     setLoading(false);
   }, [currentRole, profile]);
 
@@ -222,6 +239,18 @@ const ApprovalsProcurement = () => {
 
     setFilteredRequests(filtered);
   }, [requests, searchTerm, statusFilter, priorityFilter]);
+
+  // Filter costing approvals
+  useEffect(() => {
+    let filtered = costingApprovals;
+
+    // Apply status filter
+    if (costingStatusFilter !== 'all') {
+      filtered = filtered.filter(approval => approval.status === costingStatusFilter);
+    }
+
+    setFilteredCostingApprovals(filtered);
+  }, [costingApprovals, costingStatusFilter]);
 
   const getStatusConfig = (status: string) => {
     const configs = {
@@ -274,6 +303,24 @@ const ApprovalsProcurement = () => {
     setReviewComment('');
   };
 
+  const handleCostingStatusFilter = (status: string) => {
+    setCostingStatusFilter(status);
+    if (status === 'all') {
+      setFilteredCostingApprovals(costingApprovals);
+    } else {
+      const filtered = costingApprovals.filter(approval => approval.status === status);
+      setFilteredCostingApprovals(filtered);
+    }
+  };
+
+  const handleCostingStatusChange = () => {
+    // Refresh costing approvals after status change
+    CostingService.getCostingApprovals().then(approvals => {
+      setCostingApprovals(approvals);
+      setFilteredCostingApprovals(approvals);
+    });
+  };
+
   const canReviewRequests = currentRole === 'ops_manager';
 
   const statusOptions = [
@@ -284,6 +331,14 @@ const ApprovalsProcurement = () => {
     { value: 'procurement', label: 'In Procurement' },
     { value: 'dispatched', label: 'Dispatched' },
     { value: 'delivered', label: 'Delivered' }
+  ];
+
+  const costingStatusOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'pending_review', label: 'Pending Review' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'resubmitted', label: 'Resubmitted' }
   ];
 
   const priorityOptions = [
@@ -323,10 +378,14 @@ const ApprovalsProcurement = () => {
 
       {/* Sub-navigation Tabs */}
       <Tabs defaultValue="requests" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="requests" className="flex items-center space-x-2">
             <List className="h-4 w-4" />
             <span>Requests</span>
+          </TabsTrigger>
+          <TabsTrigger value="costing-approvals" className="flex items-center space-x-2">
+            <DollarSign className="h-4 w-4" />
+            <span>Costing Approvals</span>
           </TabsTrigger>
           <TabsTrigger value="hardware-approvals" className="flex items-center space-x-2">
             <CheckSquare className="h-4 w-4" />
@@ -555,6 +614,65 @@ const ApprovalsProcurement = () => {
               </Card>
             </TabsContent>
           </Tabs>
+        </TabsContent>
+
+        {/* Costing Approvals Tab */}
+        <TabsContent value="costing-approvals" className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Select value={costingStatusFilter} onValueChange={handleCostingStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {costingStatusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-sm text-gray-600">
+                  Showing {filteredCostingApprovals.length} of {costingApprovals.length} approvals
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleCostingStatusFilter('all')}
+                  className="ml-auto"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Costing Approvals Grid */}
+          {filteredCostingApprovals.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Costing Approvals</h3>
+                <p className="text-gray-600">
+                  {costingStatusFilter === 'all' 
+                    ? 'No costing approvals found. Deployment engineers will submit costing requests after completing hardware scoping.'
+                    : `No costing approvals with status "${costingStatusFilter}".`
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredCostingApprovals.map((approval) => (
+                <CostingApprovalCard
+                  key={approval.id}
+                  approval={approval}
+                  onStatusChange={handleCostingStatusChange}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* Hardware Approvals Tab */}
