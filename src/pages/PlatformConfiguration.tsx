@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   Building,
   FileText,
@@ -23,34 +24,64 @@ import {
   Monitor,
   Calculator,
   Trash2,
-  Save
+  Save,
+  Crown,
+  Wrench,
+  Truck,
+  User,
+  Mail,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-// Interfaces for recommendation rules
-interface SoftwareModule {
+// Interfaces for platform configuration
+interface User {
+  id: string;
+  user_id: string;
+  email: string;
+  full_name: string;
+  created_at: string;
+  updated_at: string;
+  user_roles: Array<{
+    role: 'admin' | 'ops_manager' | 'deployment_engineer';
+  }>;
+}
+
+interface Organization {
   id: string;
   name: string;
   description: string;
-  monthlyFee: number;
-  setupFee: number;
+  sector: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SoftwareModule {
+  id: string;
+  name: string;
+  description: string | null;
   category: string;
-  status: 'active' | 'inactive';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface HardwareItem {
   id: string;
   name: string;
-  description: string;
-  manufacturer: string;
-  model: string;
-  unitCost: number;
+  description: string | null;
   category: string;
-  status: 'available' | 'discontinued';
+  model: string | null;
+  manufacturer: string | null;
+  estimated_cost: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface RecommendationRule {
@@ -80,13 +111,19 @@ export default function PlatformConfiguration() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('organizations');
 
-  // State for recommendation rules
+  // State for platform configuration
+  const [users, setUsers] = useState<User[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [softwareModules, setSoftwareModules] = useState<SoftwareModule[]>([]);
   const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
   const [recommendationRules, setRecommendationRules] = useState<RecommendationRule[]>([]);
   const [businessRules, setBusinessRules] = useState<BusinessRule[]>([]);
   const [editingRule, setEditingRule] = useState<RecommendationRule | null>(null);
   const [editingBusinessRule, setEditingBusinessRule] = useState<BusinessRule | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState('all');
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -112,130 +149,69 @@ export default function PlatformConfiguration() {
     try {
       setLoading(true);
       
-      // Mock data - replace with actual API calls
-      const mockSoftwareModules: SoftwareModule[] = [
-        {
-          id: 'pos-system',
-          name: 'POS System',
-          description: 'Point of Sale system for transactions',
-          monthlyFee: 25,
-          setupFee: 150,
-          category: 'Payment Processing',
-          status: 'active'
-        },
-        {
-          id: 'kiosk-software',
-          name: 'Kiosk Software',
-          description: 'Self-service kiosk software',
-          monthlyFee: 20,
-          setupFee: 100,
-          category: 'Self-Service',
-          status: 'active'
-        },
-        {
-          id: 'kitchen-display',
-          name: 'Kitchen Display',
-          description: 'Kitchen display system for orders',
-          monthlyFee: 20,
-          setupFee: 100,
-          category: 'Kitchen Management',
-          status: 'active'
-        },
-        {
-          id: 'inventory-management',
-          name: 'Inventory Management',
-          description: 'Inventory tracking and management',
-          monthlyFee: 15,
-          setupFee: 75,
-          category: 'Inventory',
-          status: 'active'
-        }
-      ];
+      // Load users
+      const { data: usersData, error: usersError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          user_id,
+          email,
+          full_name,
+          created_at,
+          updated_at
+        `);
+      
+      if (usersError) {
+        console.error('Error loading users:', usersError);
+        toast.error('Failed to load users');
+      } else {
+        // For now, assign a default role - in production this would come from a roles table
+        const usersWithRoles = (usersData || []).map(user => ({
+          ...user,
+          user_roles: [{ role: 'admin' as const }] // Default role
+        }));
+        setUsers(usersWithRoles);
+      }
 
-      const mockHardwareItems: HardwareItem[] = [
-        {
-          id: 'pos-terminal',
-          name: 'POS Terminal',
-          description: 'Ingenico Telium 2 POS terminal',
-          manufacturer: 'Ingenico',
-          model: 'Telium 2',
-          unitCost: 2500,
-          category: 'Payment Processing',
-          status: 'available'
-        },
-        {
-          id: 'printer',
-          name: 'Thermal Printer',
-          description: 'Receipt and kitchen order printer',
-          manufacturer: 'Epson',
-          model: 'TM-T88VI',
-          unitCost: 350,
-          category: 'Printing',
-          status: 'available'
-        },
-        {
-          id: 'cash-drawer',
-          name: 'Cash Drawer',
-          description: 'Electronic cash drawer',
-          manufacturer: 'APG',
-          model: 'CashDrawer-2000',
-          unitCost: 200,
-          category: 'Payment Processing',
-          status: 'available'
-        },
-        {
-          id: 'kiosk-display',
-          name: 'Kiosk Display',
-          description: 'Touch screen display for kiosk',
-          manufacturer: 'Elo',
-          model: 'TouchScreen-22',
-          unitCost: 800,
-          category: 'Display',
-          status: 'available'
-        },
-        {
-          id: 'touch-screen',
-          name: 'Touch Screen',
-          description: 'Touch screen interface',
-          manufacturer: 'Elo',
-          model: 'TouchScreen-15',
-          unitCost: 600,
-          category: 'Display',
-          status: 'available'
-        },
-        {
-          id: 'kitchen-display',
-          name: 'Kitchen Display',
-          description: 'Digital display for kitchen orders',
-          manufacturer: 'Sony',
-          model: 'KD-55X80K',
-          unitCost: 1200,
-          category: 'Display',
-          status: 'available'
-        },
-        {
-          id: 'tablet',
-          name: 'Tablet',
-          description: 'iPad for inventory management',
-          manufacturer: 'Apple',
-          model: 'iPad Air',
-          unitCost: 800,
-          category: 'Mobile Device',
-          status: 'available'
-        },
-        {
-          id: 'barcode-scanner',
-          name: 'Barcode Scanner',
-          description: 'USB barcode scanner',
-          manufacturer: 'Honeywell',
-          model: 'Scanner-1900',
-          unitCost: 150,
-          category: 'Input Device',
-          status: 'available'
-        }
-      ];
+      // Load organizations
+      const { data: orgsData, error: orgsError } = await supabase
+        .from('organizations')
+        .select('*');
+      
+      if (orgsError) {
+        console.error('Error loading organizations:', orgsError);
+        toast.error('Failed to load organizations');
+      } else {
+        setOrganizations(orgsData || []);
+      }
 
-      const mockRecommendationRules: RecommendationRule[] = [
+      // Load software modules
+      const { data: softwareData, error: softwareError } = await supabase
+        .from('software_modules')
+        .select('*');
+      
+      if (softwareError) {
+        console.error('Error loading software modules:', softwareError);
+        toast.error('Failed to load software modules');
+      } else {
+        setSoftwareModules(softwareData || []);
+      }
+
+      // Load hardware items
+      const { data: hardwareData, error: hardwareError } = await supabase
+        .from('hardware_items')
+        .select('*');
+      
+      if (hardwareError) {
+        console.error('Error loading hardware items:', hardwareError);
+        toast.error('Failed to load hardware items');
+      } else {
+        setHardwareItems(hardwareData || []);
+      }
+
+      // For now, keep some sample recommendation rules and business rules
+      // These would typically come from a database table
+      const sampleRecommendationRules: RecommendationRule[] = [
         {
           id: '1',
           softwareModuleId: 'pos-system',
@@ -244,73 +220,10 @@ export default function PlatformConfiguration() {
           isRequired: true,
           reason: 'Core POS functionality',
           costMultiplier: 1.0
-        },
-        {
-          id: '2',
-          softwareModuleId: 'pos-system',
-          hardwareItemId: 'printer',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Receipt printing',
-          costMultiplier: 1.0
-        },
-        {
-          id: '3',
-          softwareModuleId: 'pos-system',
-          hardwareItemId: 'cash-drawer',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Cash management',
-          costMultiplier: 1.0
-        },
-        {
-          id: '4',
-          softwareModuleId: 'kiosk-software',
-          hardwareItemId: 'kiosk-display',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Kiosk interface',
-          costMultiplier: 1.0
-        },
-        {
-          id: '5',
-          softwareModuleId: 'kiosk-software',
-          hardwareItemId: 'touch-screen',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Touch interaction',
-          costMultiplier: 1.0
-        },
-        {
-          id: '6',
-          softwareModuleId: 'kitchen-display',
-          hardwareItemId: 'kitchen-display',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Kitchen order display',
-          costMultiplier: 1.0
-        },
-        {
-          id: '7',
-          softwareModuleId: 'inventory-management',
-          hardwareItemId: 'tablet',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Mobile inventory management',
-          costMultiplier: 1.0
-        },
-        {
-          id: '8',
-          softwareModuleId: 'inventory-management',
-          hardwareItemId: 'barcode-scanner',
-          defaultQuantity: 1,
-          isRequired: true,
-          reason: 'Barcode scanning',
-          costMultiplier: 1.0
         }
       ];
 
-      const mockBusinessRules: BusinessRule[] = [
+      const sampleBusinessRules: BusinessRule[] = [
         {
           id: '1',
           name: 'POS Hardware Dependency',
@@ -320,33 +233,11 @@ export default function PlatformConfiguration() {
           hardwareItemIds: ['pos-terminal', 'printer', 'cash-drawer'],
           ruleValue: 'required',
           priority: 1
-        },
-        {
-          id: '2',
-          name: 'Kiosk Display Requirement',
-          description: 'Kiosk Software requires touch screen display',
-          ruleType: 'dependency',
-          softwareModuleIds: ['kiosk-software'],
-          hardwareItemIds: ['kiosk-display', 'touch-screen'],
-          ruleValue: 'required',
-          priority: 2
-        },
-        {
-          id: '3',
-          name: 'Kitchen Display Quantity',
-          description: 'Kitchen Display software requires exactly one display unit',
-          ruleType: 'quantity',
-          softwareModuleIds: ['kitchen-display'],
-          hardwareItemIds: ['kitchen-display'],
-          ruleValue: '1',
-          priority: 3
         }
       ];
 
-      setSoftwareModules(mockSoftwareModules);
-      setHardwareItems(mockHardwareItems);
-      setRecommendationRules(mockRecommendationRules);
-      setBusinessRules(mockBusinessRules);
+      setRecommendationRules(sampleRecommendationRules);
+      setBusinessRules(sampleBusinessRules);
       setLoading(false);
     } catch (error) {
       console.error('Error loading configuration data:', error);
@@ -426,6 +317,116 @@ export default function PlatformConfiguration() {
         setBusinessRules(prev => [...prev, newRule]);
       }
       setEditingBusinessRule(null);
+    }
+  };
+
+  // User management functions
+  const addUser = () => {
+    navigate('/platform-configuration/admin');
+  };
+
+  const editUser = (user: User) => {
+    setEditingUser(user);
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) {
+        toast.error('Failed to delete user');
+      } else {
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        toast.success('User deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    }
+  };
+
+  // Organization management functions
+  const addOrganization = () => {
+    const newOrg: Organization = {
+      id: crypto.randomUUID(),
+      name: '',
+      description: '',
+      sector: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setEditingOrganization(newOrg);
+  };
+
+  const editOrganization = (org: Organization) => {
+    setEditingOrganization(org);
+  };
+
+  const deleteOrganization = async (orgId: string) => {
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .delete()
+        .eq('id', orgId);
+      
+      if (error) {
+        toast.error('Failed to delete organization');
+      } else {
+        setOrganizations(prev => prev.filter(o => o.id !== orgId));
+        toast.success('Organization deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      toast.error('Failed to delete organization');
+    }
+  };
+
+  const saveOrganization = async () => {
+    if (editingOrganization) {
+      try {
+        if (editingOrganization.id && editingOrganization.id !== 'new') {
+          // Update existing organization
+          const { error } = await supabase
+            .from('organizations')
+            .update({
+              name: editingOrganization.name,
+              description: editingOrganization.description,
+              sector: editingOrganization.sector,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', editingOrganization.id);
+          
+          if (error) {
+            toast.error('Failed to update organization');
+            return;
+          }
+          
+          setOrganizations(prev => 
+            prev.map(o => o.id === editingOrganization.id ? editingOrganization : o)
+          );
+        } else {
+          // Add new organization
+          const { error } = await supabase
+            .from('organizations')
+            .insert([editingOrganization]);
+          
+          if (error) {
+            toast.error('Failed to create organization');
+            return;
+          }
+          
+          setOrganizations(prev => [...prev, editingOrganization]);
+        }
+        
+        setEditingOrganization(null);
+        toast.success('Organization saved successfully');
+      } catch (error) {
+        console.error('Error saving organization:', error);
+        toast.error('Failed to save organization');
+      }
     }
   };
 
@@ -529,32 +530,48 @@ export default function PlatformConfiguration() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Organizations</h3>
-                    <Button>
+                    <h3 className="text-lg font-medium">Organizations ({organizations.length})</h3>
+                    <Button onClick={addOrganization}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Organization
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Building className="h-5 w-5 text-blue-600" />
-                          <h4 className="font-medium">SmartQ Solutions</h4>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">Primary organization for SmartQ LaunchPad</p>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    {organizations.length === 0 ? (
+                      <div className="col-span-full text-center py-8 text-gray-500">
+                        <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm">No organizations found</p>
+                        <p className="text-xs">Create your first organization to get started</p>
+                      </div>
+                    ) : (
+                      organizations.map(org => (
+                        <Card key={org.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Building className="h-5 w-5 text-blue-600" />
+                              <h4 className="font-medium">{org.name}</h4>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{org.description}</p>
+                            <p className="text-xs text-gray-500 mb-3">Sector: {org.sector}</p>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => editOrganization(org)}>
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => deleteOrganization(org.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -576,32 +593,147 @@ export default function PlatformConfiguration() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">User Accounts</h3>
-                    <Button onClick={() => navigate('/platform-configuration/admin')}>
+                    <h3 className="text-lg font-medium">User Accounts ({users.length})</h3>
+                    <Button onClick={addUser}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add User
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  
+                  {/* User Statistics */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <Card>
                       <CardContent className="p-4">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Users className="h-5 w-5 text-green-600" />
-                          <h4 className="font-medium">Admin Users</h4>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-3">Full system access and configuration rights</p>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-5 w-5 text-blue-600" />
+                          <div>
+                            <p className="text-2xl font-bold">{users.length}</p>
+                            <p className="text-sm text-gray-600">Total Users</p>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-2">
+                          <Crown className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="text-2xl font-bold">{users.filter(u => u.user_roles.some(r => r.role === 'admin')).length}</p>
+                            <p className="text-sm text-gray-600">Admins</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-2">
+                          <Wrench className="h-5 w-5 text-orange-600" />
+                          <div>
+                            <p className="text-2xl font-bold">{users.filter(u => u.user_roles.some(r => r.role === 'ops_manager')).length}</p>
+                            <p className="text-sm text-gray-600">Ops Managers</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-2">
+                          <Truck className="h-5 w-5 text-purple-600" />
+                          <div>
+                            <p className="text-2xl font-bold">{users.filter(u => u.user_roles.some(r => r.role === 'deployment_engineer')).length}</p>
+                            <p className="text-sm text-gray-600">Deployment Engineers</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* User Search and Filter */}
+                  <div className="flex space-x-4 mb-4">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Search by email or name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filter by role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="ops_manager">Ops Manager</SelectItem>
+                        <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Users Table */}
+                  <div className="border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Roles</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users
+                          .filter(user => {
+                            const matchesSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                user.email.toLowerCase().includes(searchTerm.toLowerCase());
+                            const matchesRole = selectedRole === 'all' || 
+                                              user.user_roles.some(r => r.role === selectedRole);
+                            return matchesSearch && matchesRole;
+                          })
+                          .map(user => (
+                            <TableRow key={user.id}>
+                              <TableCell className="flex items-center space-x-2">
+                                <User className="h-4 w-4 text-gray-400" />
+                                <span>{user.full_name}</span>
+                              </TableCell>
+                              <TableCell className="flex items-center space-x-2">
+                                <Mail className="h-4 w-4 text-gray-400" />
+                                <span>{user.email}</span>
+                              </TableCell>
+                              <TableCell>
+                                {user.user_roles.map((role, index) => (
+                                  <Badge key={index} variant="outline" className="mr-1">
+                                    {role.role.replace('_', ' ')}
+                                  </Badge>
+                                ))}
+                              </TableCell>
+                              <TableCell className="flex items-center space-x-2">
+                                <Calendar className="h-4 w-4 text-gray-400" />
+                                <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  <Button variant="outline" size="sm" onClick={() => editUser(user)}>
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    Edit
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => deleteUser(user.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               </CardContent>
@@ -629,7 +761,7 @@ export default function PlatformConfiguration() {
                         {softwareModules.map(software => (
                           <div key={software.id} className="flex items-center justify-between p-2 border rounded">
                             <span>{software.name}</span>
-                            <Badge variant="outline">{software.status}</Badge>
+                            <Badge variant="outline">{software.is_active ? 'Active' : 'Inactive'}</Badge>
                           </div>
                         ))}
                       </div>
@@ -640,7 +772,7 @@ export default function PlatformConfiguration() {
                         {hardwareItems.map(hardware => (
                           <div key={hardware.id} className="flex items-center justify-between p-2 border rounded">
                             <span>{hardware.name}</span>
-                            <Badge variant="outline">{hardware.status}</Badge>
+                            <Badge variant="outline">{hardware.is_active ? 'Available' : 'Discontinued'}</Badge>
                           </div>
                         ))}
                       </div>
@@ -658,7 +790,7 @@ export default function PlatformConfiguration() {
                 <h2 className="text-2xl font-bold text-gray-900">Recommendation Rules</h2>
                 <p className="text-gray-600 mt-1">Manage hardware/software mappings, dependencies, and business logic</p>
               </div>
-              <Button onClick={() => toast.success('Configuration saved successfully')} className="flex items-center space-x-2">
+              <Button onClick={saveAllConfigurations} className="flex items-center space-x-2">
                 <Save className="h-4 w-4" />
                 <span>Save All Changes</span>
               </Button>
@@ -679,105 +811,58 @@ export default function PlatformConfiguration() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">Recommendation Rules</h3>
-                    <Button onClick={() => toast.info('Add rule functionality coming soon')}>
+                    <Button onClick={addRecommendationRule}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Rule
                     </Button>
                   </div>
                   
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1 grid grid-cols-4 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium">Software</Label>
-                          <p className="text-sm text-gray-600">POS System</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Hardware</Label>
-                          <p className="text-sm text-gray-600">POS Terminal</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Default Qty</Label>
-                          <p className="text-sm text-gray-600">1</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Required</Label>
-                          <Badge variant="default">Yes</Badge>
-                        </div>
+                    {recommendationRules.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm">No recommendation rules found</p>
+                        <p className="text-xs">Create your first rule to get started</p>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Edit functionality coming soon')}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Delete functionality coming soon')}>
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1 grid grid-cols-4 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium">Software</Label>
-                          <p className="text-sm text-gray-600">POS System</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Hardware</Label>
-                          <p className="text-sm text-gray-600">Thermal Printer</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Default Qty</Label>
-                          <p className="text-sm text-gray-600">1</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Required</Label>
-                          <Badge variant="default">Yes</Badge>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Edit functionality coming soon')}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Delete functionality coming soon')}>
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1 grid grid-cols-4 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium">Software</Label>
-                          <p className="text-sm text-gray-600">Kiosk Software</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Hardware</Label>
-                          <p className="text-sm text-gray-600">Touch Screen</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Default Qty</Label>
-                          <p className="text-sm text-gray-600">1</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Required</Label>
-                          <Badge variant="default">Yes</Badge>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Edit functionality coming soon')}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Delete functionality coming soon')}>
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
+                    ) : (
+                      recommendationRules.map(rule => {
+                        const software = softwareModules.find(s => s.id === rule.softwareModuleId);
+                        const hardware = hardwareItems.find(h => h.id === rule.hardwareItemId);
+                        
+                        return (
+                          <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1 grid grid-cols-4 gap-4">
+                              <div>
+                                <Label className="text-sm font-medium">Software</Label>
+                                <p className="text-sm text-gray-600">{software?.name || 'Unknown'}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Hardware</Label>
+                                <p className="text-sm text-gray-600">{hardware?.name || 'Unknown'}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Default Qty</Label>
+                                <p className="text-sm text-gray-600">{rule.defaultQuantity}</p>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Required</Label>
+                                <Badge variant="default">{rule.isRequired ? 'Yes' : 'No'}</Badge>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => editRecommendationRule(rule)}>
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => deleteRecommendationRule(rule.id)}>
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -798,56 +883,44 @@ export default function PlatformConfiguration() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">Business Rules</h3>
-                    <Button onClick={() => toast.info('Add business rule functionality coming soon')}>
+                    <Button onClick={addBusinessRule}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Rule
                     </Button>
                   </div>
                   
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">POS Hardware Dependency</h4>
-                        <p className="text-sm text-gray-600">POS System requires POS Terminal, Printer, and Cash Drawer</p>
-                        <div className="flex items-center space-x-4 mt-2 text-sm">
-                          <Badge variant="outline">dependency</Badge>
-                          <span>Priority: 1</span>
-                          <span>Value: required</span>
+                    {businessRules.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Settings className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm">No business rules found</p>
+                        <p className="text-xs">Create your first business rule to get started</p>
+                      </div>
+                    ) : (
+                      businessRules.map(rule => (
+                        <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{rule.name}</h4>
+                            <p className="text-sm text-gray-600">{rule.description}</p>
+                            <div className="flex items-center space-x-4 mt-2 text-sm">
+                              <Badge variant="outline">{rule.ruleType}</Badge>
+                              <span>Priority: {rule.priority}</span>
+                              <span>Value: {rule.ruleValue}</span>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => editBusinessRule(rule)}>
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => deleteBusinessRule(rule.id)}>
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Edit functionality coming soon')}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Delete functionality coming soon')}>
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">Kiosk Display Requirement</h4>
-                        <p className="text-sm text-gray-600">Kiosk Software requires touch screen display</p>
-                        <div className="flex items-center space-x-4 mt-2 text-sm">
-                          <Badge variant="outline">dependency</Badge>
-                          <span>Priority: 2</span>
-                          <span>Value: required</span>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Edit functionality coming soon')}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => toast.info('Delete functionality coming soon')}>
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1048,6 +1121,50 @@ export default function PlatformConfiguration() {
               <div className="flex space-x-2">
                 <Button onClick={saveBusinessRule} className="flex-1">Save</Button>
                 <Button variant="outline" onClick={() => setEditingBusinessRule(null)} className="flex-1">Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Organization Dialog */}
+      {editingOrganization && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">
+              {editingOrganization.id === 'new' ? 'Add Organization' : 'Edit Organization'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="orgName">Organization Name</Label>
+                <Input
+                  value={editingOrganization.name}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, name: e.target.value})}
+                  placeholder="Enter organization name"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="orgDescription">Description</Label>
+                <Input
+                  value={editingOrganization.description}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, description: e.target.value})}
+                  placeholder="Enter organization description"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="orgSector">Sector</Label>
+                <Input
+                  value={editingOrganization.sector}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, sector: e.target.value})}
+                  placeholder="Enter sector (e.g., Retail, Healthcare)"
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button onClick={saveOrganization} className="flex-1">Save</Button>
+                <Button variant="outline" onClick={() => setEditingOrganization(null)} className="flex-1">Cancel</Button>
               </div>
             </div>
           </div>
