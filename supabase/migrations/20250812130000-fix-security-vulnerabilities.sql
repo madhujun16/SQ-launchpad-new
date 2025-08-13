@@ -11,6 +11,11 @@
 -- Drop the overly permissive policy that allows anyone to read profiles
 DROP POLICY IF EXISTS "Allow email existence check for login" ON public.profiles;
 
+-- Drop any other overly permissive policies that might exist
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Authenticated users can view all profiles" ON public.profiles;
+
 -- Create a secure policy that only allows authenticated users to see their own profile
 -- and admins to see all profiles
 -- Handle both possible column names: 'id' or 'user_id'
@@ -341,3 +346,4 @@ GRANT EXECUTE ON FUNCTION public.audit_rls_policies() TO authenticated;
 -- ✅ Covers all tables mentioned in Lovable security issues
 -- ✅ Handles different profiles table structures gracefully
 -- ✅ Uses correct column names for site_assignments table
+-- ✅ Removes overly permissive "Enable read access for authenticated users" policies
