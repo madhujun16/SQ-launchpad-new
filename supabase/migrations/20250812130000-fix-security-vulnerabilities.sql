@@ -205,7 +205,7 @@ END $$;
 -- =====================================================
 
 -- Create policy for users to see sites they're assigned to
--- Handle both possible column names for profiles table
+-- Handle both possible column names for profiles table and use correct site_assignments columns
 DO $$
 BEGIN
   IF EXISTS (
@@ -214,24 +214,32 @@ BEGIN
     AND table_name = 'profiles' 
     AND column_name = 'user_id'
   ) THEN
-    -- Use user_id column
+    -- Use user_id column for profiles
     EXECUTE 'CREATE POLICY "Users can view assigned sites" ON public.sites FOR SELECT USING (
       auth.role() = ''authenticated'' AND (
         EXISTS (
           SELECT 1 FROM public.site_assignments 
-          WHERE site_id = sites.id AND user_id = auth.uid()
+          WHERE site_id = sites.id AND (
+            ops_manager_id = auth.uid() OR 
+            deployment_engineer_id = auth.uid() OR 
+            assigned_by = auth.uid()
+          )
         ) OR
         created_by = auth.uid() OR
         public.is_admin()
       )
     )';
   ELSE
-    -- Use id column
+    -- Use id column for profiles
     EXECUTE 'CREATE POLICY "Users can view assigned sites" ON public.sites FOR SELECT USING (
       auth.role() = ''authenticated'' AND (
         EXISTS (
           SELECT 1 FROM public.site_assignments 
-          WHERE site_id = sites.id AND user_id = auth.uid()
+          WHERE site_id = sites.id AND (
+            ops_manager_id = auth.uid() OR 
+            deployment_engineer_id = auth.uid() OR 
+            assigned_by = auth.uid()
+          )
         ) OR
         created_by = auth.uid() OR
         public.is_admin()
@@ -241,7 +249,7 @@ BEGIN
 END $$;
 
 -- Create policy for users to see inventory items they're assigned to
--- Handle both possible column names for profiles table
+-- Handle both possible column names for profiles table and use correct site_assignments columns
 DO $$
 BEGIN
   IF EXISTS (
@@ -250,26 +258,34 @@ BEGIN
     AND table_name = 'profiles' 
     AND column_name = 'user_id'
   ) THEN
-    -- Use user_id column
+    -- Use user_id column for profiles
     EXECUTE 'CREATE POLICY "Users can view assigned inventory" ON public.inventory_items FOR SELECT USING (
       auth.role() = ''authenticated'' AND (
         assigned_to = auth.uid() OR
         EXISTS (
           SELECT 1 FROM public.site_assignments 
-          WHERE site_id = inventory_items.site_id AND user_id = auth.uid()
+          WHERE site_id = inventory_items.site_id AND (
+            ops_manager_id = auth.uid() OR 
+            deployment_engineer_id = auth.uid() OR 
+            assigned_by = auth.uid()
+          )
         ) OR
         created_by = auth.uid() OR
         public.is_admin()
       )
     )';
   ELSE
-    -- Use id column
+    -- Use id column for profiles
     EXECUTE 'CREATE POLICY "Users can view assigned inventory" ON public.inventory_items FOR SELECT USING (
       auth.role() = ''authenticated'' AND (
         assigned_to = auth.uid() OR
         EXISTS (
           SELECT 1 FROM public.site_assignments 
-          WHERE site_id = inventory_items.site_id AND user_id = auth.uid()
+          WHERE site_id = inventory_items.site_id AND (
+            ops_manager_id = auth.uid() OR 
+            deployment_engineer_id = auth.uid() OR 
+            assigned_by = auth.uid()
+          )
         ) OR
         created_by = auth.uid() OR
         public.is_admin()
@@ -324,3 +340,4 @@ GRANT EXECUTE ON FUNCTION public.audit_rls_policies() TO authenticated;
 -- ✅ Handles missing tables gracefully using conditional logic
 -- ✅ Covers all tables mentioned in Lovable security issues
 -- ✅ Handles different profiles table structures gracefully
+-- ✅ Uses correct column names for site_assignments table
