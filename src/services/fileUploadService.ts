@@ -46,13 +46,7 @@ export class FileUploadService {
         .from(this.BUCKET_NAME)
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false,
-          onUploadProgress: (progress) => {
-            if (onProgress && progress.total) {
-              const percentage = Math.round((progress.loaded / progress.total) * 100);
-              onProgress(percentage);
-            }
-          }
+          upsert: false
         });
 
       if (error) {
