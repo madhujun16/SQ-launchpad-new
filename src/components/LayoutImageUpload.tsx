@@ -3,7 +3,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { X, Download, Eye, Trash2 } from 'lucide-react';
+import { X, Download, Eye, Trash2, Image as ImageIcon, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUploadService, type UploadedFile } from '@/services/fileUploadService';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,8 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   // Load existing images on component mount
   useEffect(() => {
@@ -52,8 +54,12 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
     }
   };
 
-  const handleFilesSelected = async (files: File[]) => {
-    if (files.length === 0) return;
+  const handleFilesSelected = (files: File[]) => {
+    setSelectedFiles(files);
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
 
     try {
       setIsUploading(true);
@@ -61,10 +67,10 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
 
       // Upload files with progress tracking
       const result = await FileUploadService.uploadMultipleFiles(
-        files,
+        selectedFiles,
         siteId,
         (fileIndex, progress) => {
-          const fileName = files[fileIndex].name;
+          const fileName = selectedFiles[fileIndex].name;
           setUploadProgress(prev => ({
             ...prev,
             [fileName]: progress
@@ -86,6 +92,9 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
         }
 
         toast.success(`Successfully uploaded ${result.files.length} image(s)`);
+        
+        // Clear selected files after successful upload
+        setSelectedFiles([]);
         
         // Show any errors that occurred during upload
         if (result.errors && result.errors.length > 0) {
@@ -183,60 +192,213 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) {
-      return '🖼️';
+      return <ImageIcon className="h-4 w-4" />;
     } else if (fileType === 'application/pdf') {
-      return '📄';
+      return <FileText className="h-4 w-4" />;
     }
-    return '📁';
+    return <FileText className="h-4 w-4" />;
+  };
+
+  const renderThumbnail = (image: UploadedFile) => {
+    if (image.type.startsWith('image/')) {
+      return (
+        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+          <img
+            src={image.url}
+            alt={image.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              target.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-200">
+            <ImageIcon className="h-6 w-6 text-gray-400" />
+          </div>
+        </div>
+      );
+    } else if (image.type === 'application/pdf') {
+      return (
+        <div className="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+          <FileText className="h-8 w-8 text-red-600" />
+        </div>
+      );
+    }
+    return (
+      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <FileText className="h-8 w-8 text-gray-400" />
+      </div>
+    );
+  };
+
+  const renderSelectedFileThumbnail = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return (
+        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+          <img
+            src={URL.createObjectURL(file)}
+            alt={file.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      );
+    } else if (file.type === 'application/pdf') {
+      return (
+        <div className="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+          <FileText className="h-8 w-8 text-red-600" />
+        </div>
+      );
+    }
+    return (
+      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <FileText className="h-8 w-8 text-gray-400" />
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* File Upload Component */}
-      <FileUpload
-        multiple={true}
-        maxFiles={3}
-        maxFileSize={10 * 1024 * 1024} // 10MB
-        acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']}
-        onFilesSelected={handleFilesSelected}
-        disabled={disabled || isUploading}
-        placeholder="Select up to 3 layout images or drag & drop them here"
-      />
+      <div className="space-y-4">
+        <FileUpload
+          multiple={true}
+          maxFiles={3}
+          maxFileSize={10 * 1024 * 1024} // 10MB
+          acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']}
+          onFilesSelected={handleFilesSelected}
+          disabled={disabled || isUploading}
+          placeholder="Select up to 3 layout images or drag & drop them here"
+        />
+
+        {/* Selected Files Preview */}
+        {selectedFiles.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h5 className="text-sm font-medium text-gray-700">
+                Selected Files ({selectedFiles.length}/3)
+              </h5>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-500">
+                  {selectedFiles.reduce((total, file) => total + file.size, 0) > 10 * 1024 * 1024 
+                    ? '⚠️ Total size exceeds 10MB limit' 
+                    : `${Math.round(selectedFiles.reduce((total, file) => total + file.size, 0) / (1024 * 1024) * 100) / 100}MB total`
+                  }
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedFiles([])}
+                  disabled={disabled || isUploading}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Clear All
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {selectedFiles.map((file, index) => (
+                <Card key={`${file.name}-${index}`} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      {renderSelectedFileThumbnail(file)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-700 truncate">
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatFileSize(file.size)}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {file.type}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newFiles = selectedFiles.filter((_, i) => i !== index);
+                          setSelectedFiles(newFiles);
+                        }}
+                        disabled={disabled || isUploading}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Upload Button */}
+            <Button
+              onClick={handleUpload}
+              disabled={disabled || isUploading}
+              className="w-full"
+              size="lg"
+            >
+              {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Existing Images */}
       {existingImages.length > 0 && (
         <div className="space-y-3">
-          <h5 className="text-sm font-medium text-gray-700">
-            Uploaded Images ({existingImages.length}/3)
-          </h5>
+          <div className="flex items-center justify-between">
+            <h5 className="text-sm font-medium text-gray-700">
+              Uploaded Images ({existingImages.length}/3)
+            </h5>
+            <p className="text-xs text-gray-500">
+              Drag to reorder • First image will be the primary layout
+            </p>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {existingImages.map((image, index) => (
-              <Card key={image.id} className="overflow-hidden">
+              <Card key={image.id} className="overflow-hidden group hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      <span className="text-2xl">{getFileIcon(image.type)}</span>
-                      <div className="flex-1 min-w-0">
+                  <div className="flex items-start space-x-3">
+                    <div className="relative">
+                      {renderThumbnail(image)}
+                      {index === 0 && (
+                        <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          Primary
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
                         <p className="text-sm font-medium text-gray-700 truncate">
                           {image.name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {formatFileSize(image.size)}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(image.uploaded_at).toLocaleDateString()}
-                        </p>
+                        {index === 0 && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            Primary Layout
+                          </span>
+                        )}
                       </div>
+                      <p className="text-xs text-gray-500">
+                        {formatFileSize(image.size)}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(image.uploaded_at).toLocaleDateString()}
+                      </p>
                     </div>
                     
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => handleViewImage(image)}
                         className="h-8 w-8 p-0"
+                        title="View"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -247,6 +409,7 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
                         size="sm"
                         onClick={() => handleDownloadImage(image)}
                         className="h-8 w-8 p-0"
+                        title="Download"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -258,6 +421,7 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
                         onClick={() => handleDeleteImage(index)}
                         disabled={disabled}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -291,6 +455,15 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
         <div className="text-center py-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
           <p className="text-sm text-gray-500 mt-2">Loading existing images...</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && existingImages.length === 0 && selectedFiles.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+          <p className="text-sm">No layout images uploaded yet</p>
+          <p className="text-xs">Upload up to 3 layout images to get started</p>
         </div>
       )}
     </div>
