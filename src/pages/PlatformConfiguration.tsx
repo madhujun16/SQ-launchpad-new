@@ -441,7 +441,10 @@ export default function PlatformConfiguration() {
         updatedBy: currentRole
       };
 
-      console.log('Saving configuration data:', configurationData);
+      // Log to audit system instead of console in production
+      if (import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+        console.log('Saving configuration data:', configurationData);
+      }
       
       // TODO: Replace with actual API call
       // await saveConfigurationToBackend(configurationData);

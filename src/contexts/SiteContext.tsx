@@ -70,6 +70,15 @@ export interface Site {
     milestones?: string[];
     dependencies?: string[];
   };
+  // Layout images
+  layout_images?: string[];
+  layout_images_metadata?: Array<{
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    uploaded_at: string;
+  }>;
 }
 
 interface SiteContextType {

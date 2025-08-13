@@ -86,6 +86,7 @@ import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperSte
 import { Checkbox } from '@/components/ui/checkbox';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
+import { LayoutImageUpload } from '@/components/LayoutImageUpload';
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -235,6 +236,24 @@ const SiteDetail = () => {
     lng: number;
     address: string;
   } | null>(null);
+
+  // Handler for layout images updates
+  const handleLayoutImagesUpdated = (images: any[]) => {
+    // Update local site state if needed
+    if (site) {
+      setSite({
+        ...site,
+        layout_images: images.map(img => img.url),
+        layout_images_metadata: images.map(img => ({
+          id: img.id,
+          name: img.name,
+          size: img.size,
+          type: img.type,
+          uploaded_at: img.uploaded_at
+        }))
+      });
+    }
+  };
 
   // Check if user has permission to access sites
   useEffect(() => {
@@ -1403,28 +1422,11 @@ const SiteDetail = () => {
                     <h4 className="font-semibold text-gray-900 mb-4">Layout Images</h4>
                     <p className="text-sm text-gray-600 mb-4">Upload up to 3 layout images for the site (JPG, PNG, PDF - Max 10MB each)</p>
                     
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                      <div className="flex flex-col items-center space-y-4">
-                        <Upload className="h-12 w-12 text-gray-400" />
-                        <div>
-                          <p className="text-lg font-medium text-gray-700">Upload Layout Images</p>
-                          <p className="text-sm text-gray-500">Select up to 3 files or drag & drop them here</p>
-                        </div>
-                        <input
-                          type="file"
-                          multiple
-                          accept=".jpg,.jpeg,.png,.pdf"
-                          className="hidden"
-                          id="layout-images"
-                          disabled={!canEditField('layoutImages', 1)}
-                        />
-                        <label htmlFor="layout-images" className={`cursor-pointer ${!canEditField('layoutImages', 1) ? 'opacity-50' : ''}`}>
-                          <Button variant="outline" size="lg" disabled={!canEditField('layoutImages', 1)}>
-                            Choose Files
-                          </Button>
-                        </label>
-                      </div>
-                    </div>
+                    <LayoutImageUpload
+                      siteId={id || ''}
+                      disabled={!canEditField('layoutImages', 1)}
+                      onImagesUpdated={handleLayoutImagesUpdated}
+                    />
                   </div>
                 </CardContent>
               </Card>

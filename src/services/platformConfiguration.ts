@@ -331,7 +331,10 @@ export const saveRecommendationRule = async (rule: RecommendationRule): Promise<
   //   body: JSON.stringify(rule)
   // });
   
-  console.log('Saving recommendation rule:', rule);
+  // Log to audit system instead of console in production
+  if (import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+    console.log('Saving recommendation rule:', rule);
+  }
 };
 
 export const deleteRecommendationRule = async (ruleId: string): Promise<void> => {
@@ -340,7 +343,10 @@ export const deleteRecommendationRule = async (ruleId: string): Promise<void> =>
   //   method: 'DELETE'
   // });
   
-  console.log('Deleting recommendation rule:', ruleId);
+  // Log to audit system instead of console in production
+  if (import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+    console.log('Deleting recommendation rule:', ruleId);
+  }
 };
 
 export const saveBusinessRule = async (rule: BusinessRule): Promise<void> => {
@@ -351,7 +357,10 @@ export const saveBusinessRule = async (rule: BusinessRule): Promise<void> => {
   //   body: JSON.stringify(rule)
   // });
   
-  console.log('Saving business rule:', rule);
+  // Log to audit system instead of console in production
+  if (import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+    console.log('Saving business rule:', rule);
+  }
 };
 
 export const deleteBusinessRule = async (ruleId: string): Promise<void> => {
@@ -360,7 +369,10 @@ export const deleteBusinessRule = async (ruleId: string): Promise<void> => {
   //   method: 'DELETE'
   // });
   
-  console.log('Deleting business rule:', ruleId);
+  // Log to audit system instead of console in production
+  if (import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+    console.log('Deleting business rule:', ruleId);
+  }
 };
 
 // Helper function to get hardware recommendations based on selected software
