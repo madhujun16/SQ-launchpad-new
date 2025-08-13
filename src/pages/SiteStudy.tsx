@@ -45,7 +45,8 @@ import {
   ChevronRight,
   Edit,
   Save,
-  X
+  X,
+  StickyNote
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
@@ -53,6 +54,10 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useToast } from '@/hooks/use-toast';
+import { StakeholderManager } from '@/components/StakeholderManager';
+import { SiteNotesManager } from '@/components/SiteNotesManager';
+import { SiteStudyService } from '@/services/siteStudyService';
+import { Stakeholder, SiteStudyFormData } from '@/types/siteStudy';
 
 export default function SiteStudy() {
   const { id } = useParams<{ id: string }>();
@@ -63,7 +68,8 @@ export default function SiteStudy() {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [studyData, setStudyData] = useState({
+  const [isLoadingStudyData, setIsLoadingStudyData] = useState(true);
+  const [studyData, setStudyData] = useState<SiteStudyFormData>({
     generalInfo: {
       sector: 'Eurest',
       foodCourtName: 'JLR Whitley',
@@ -99,7 +105,13 @@ export default function SiteStudy() {
     review: {
       notes: 'Site is ready for deployment. All infrastructure requirements have been assessed.',
       recommendations: 'Proceed with hardware procurement and software installation.'
-    }
+    },
+    // New fields
+    siteNotes: {
+      notes: '',
+      additionalSiteDetails: ''
+    },
+    stakeholders: []
   });
 
 
@@ -109,7 +121,10 @@ export default function SiteStudy() {
     generalInfo: ['sector', 'foodCourtName', 'unitManagerName', 'unitManagerEmail', 'unitManagerMobile'],
     location: ['address', 'postcode', 'region'],
     infrastructure: ['counters'],
-    hardware: ['smartQSolutions']
+    hardware: ['smartQSolutions'],
+    // Notes and stakeholders are optional but recommended
+    siteNotes: [],
+    stakeholders: []
   };
 
   const validateMandatoryFields = () => {
@@ -199,11 +214,45 @@ export default function SiteStudy() {
       description: 'Hardware requirements',
       status: currentStep === 3 ? 'current' : currentStep > 3 ? 'completed' : 'upcoming',
       icon: Package
+    },
+    {
+      id: 'site-notes-stakeholders',
+      title: 'Notes & Stakeholders',
+      description: 'Site notes and stakeholders',
+      status: currentStep === 4 ? 'current' : currentStep > 4 ? 'completed' : 'upcoming',
+      icon: StickyNote
     }
   ], [currentStep]);
 
   // Get site data
   const site = id ? getSiteById(id) : null;
+
+  // Load existing site study data
+  useEffect(() => {
+    const loadSiteStudyData = async () => {
+      if (!id) return;
+      
+      try {
+        const existingStudy = await SiteStudyService.getSiteStudyBySiteId(id);
+        if (existingStudy) {
+          setStudyData(prev => ({
+            ...prev,
+            siteNotes: {
+              notes: existingStudy.site_notes || '',
+              additionalSiteDetails: existingStudy.additional_site_details || ''
+            },
+            stakeholders: existingStudy.stakeholders || []
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading site study data:', error);
+      } finally {
+        setIsLoadingStudyData(false);
+      }
+    };
+
+    loadSiteStudyData();
+  }, [id]);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -244,6 +293,58 @@ export default function SiteStudy() {
       }
     }));
     // setShowLocationModal(false); // Commented out as state not defined
+  };
+
+  // Handle site notes changes
+  const handleSiteNotesChange = async (notes: string, additionalDetails: string) => {
+    if (!id) return;
+    
+    try {
+      const success = await SiteStudyService.updateSiteNotes(id, notes, additionalDetails);
+      if (success) {
+        setStudyData(prev => ({
+          ...prev,
+          siteNotes: { notes, additionalSiteDetails: additionalDetails }
+        }));
+        toast({
+          title: "Success",
+          description: "Site notes updated successfully!",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating site notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update site notes. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle stakeholders changes
+  const handleStakeholdersChange = async (stakeholders: Stakeholder[]) => {
+    if (!id) return;
+    
+    try {
+      const success = await SiteStudyService.updateStakeholders(id, stakeholders);
+      if (success) {
+        setStudyData(prev => ({
+          ...prev,
+          stakeholders
+        }));
+        toast({
+          title: "Success",
+          description: "Stakeholders updated successfully!",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating stakeholders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update stakeholders. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderStepContent = () => {
@@ -746,6 +847,28 @@ export default function SiteStudy() {
           </Card>
         );
 
+      case 4: // Site Notes & Stakeholders
+        return (
+          <div className="space-y-6">
+            {/* Site Notes */}
+            <SiteNotesManager
+              siteId={id || ''}
+              notes={studyData.siteNotes.notes}
+              additionalDetails={studyData.siteNotes.additionalSiteDetails}
+              onNotesChange={handleSiteNotesChange}
+              disabled={!isEditMode}
+            />
+
+            {/* Stakeholders */}
+            <StakeholderManager
+              siteId={id || ''}
+              stakeholders={studyData.stakeholders}
+              onStakeholdersChange={handleStakeholdersChange}
+              disabled={!isEditMode}
+            />
+          </div>
+        );
+
       default:
         return null;
     }
@@ -762,6 +885,18 @@ export default function SiteStudy() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Sites
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingStudyData) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading Site Study</h1>
+          <p className="text-gray-600">Please wait while we load the site study data...</p>
         </div>
       </div>
     );
