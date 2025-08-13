@@ -50,6 +50,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<LocationIQSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close suggestions
@@ -69,6 +70,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   // LocationIQ reverse geocoding function
   const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
     try {
+      setError(null);
       const url = `${LOCATIONIQ_BASE_URL}/reverse?key=${LOCATIONIQ_API_KEY}&lat=${lat}&lon=${lng}&format=json`;
       const response = await fetch(url, {
         method: 'GET',
@@ -85,6 +87,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       return data.display_name || `${lat}, ${lng}`;
     } catch (error) {
       console.error('Reverse geocoding error:', error);
+      setError('Failed to get address for coordinates');
       return `${lat}, ${lng}`;
     }
   }, []);
@@ -92,6 +95,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   // LocationIQ forward geocoding function
   const forwardGeocode = useCallback(async (address: string): Promise<{ lat: number; lng: number; address: string } | null> => {
     try {
+      setError(null);
       const encodedAddress = encodeURIComponent(address);
       const url = `${LOCATIONIQ_BASE_URL}/search?key=${LOCATIONIQ_API_KEY}&q=${encodedAddress}&format=json&limit=1`;
       const response = await fetch(url, {
@@ -119,6 +123,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       return null;
     } catch (error) {
       console.error('Forward geocoding error:', error);
+      setError('Failed to search for location');
       return null;
     }
   }, []);
@@ -132,6 +137,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
 
     try {
+      setError(null);
       const encodedQuery = encodeURIComponent(query);
       const url = `${LOCATIONIQ_BASE_URL}/search?key=${LOCATIONIQ_API_KEY}&q=${encodedQuery}&format=json&limit=5`;
       const response = await fetch(url, {
@@ -149,44 +155,58 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       return data || [];
     } catch (error) {
       console.error('Search suggestions error:', error);
+      setError('Failed to get search suggestions');
       return [];
     }
   }, []);
 
   const handleSearchInputChange = useCallback(async (value: string) => {
-    setSearchAddress(value);
-    
-    if (value.trim().length >= 3) {
-      const suggestions = await getSearchSuggestions(value);
-      setSearchSuggestions(suggestions);
-      setShowSuggestions(suggestions.length > 0);
-    } else {
-      setSearchSuggestions([]);
-      setShowSuggestions(false);
+    try {
+      setSearchAddress(value);
+      setError(null);
+      
+      if (value.trim().length >= 3) {
+        const suggestions = await getSearchSuggestions(value);
+        setSearchSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+      } else {
+        setSearchSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error handling search input change:', error);
+      setError('Failed to process search input');
     }
   }, [getSearchSuggestions]);
 
   const handleSuggestionSelect = useCallback(async (suggestion: LocationIQSearchResult) => {
-    const location = {
-      lat: parseFloat(suggestion.lat),
-      lng: parseFloat(suggestion.lon),
-      address: suggestion.display_name
-    };
-    
-    setSearchAddress(suggestion.display_name);
-    setSearchSuggestions([]);
-    setShowSuggestions(false);
-    
-    const newLocation = { lat: location.lat, lng: location.lng };
-    setMarker(newLocation);
-    
-    onLocationSelect(location);
+    try {
+      setError(null);
+      const location = {
+        lat: parseFloat(suggestion.lat),
+        lng: parseFloat(suggestion.lon),
+        address: suggestion.display_name
+      };
+      
+      setSearchAddress(suggestion.display_name);
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+      
+      const newLocation = { lat: location.lat, lng: location.lng };
+      setMarker(newLocation);
+      
+      onLocationSelect(location);
+    } catch (error) {
+      console.error('Error selecting suggestion:', error);
+      setError('Failed to select location');
+    }
   }, [onLocationSelect]);
 
   const handleSearch = useCallback(async () => {
     if (!searchAddress.trim()) return;
     
     setIsLoading(true);
+    setError(null);
     try {
       const location = await forwardGeocode(searchAddress);
       
@@ -197,11 +217,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         onLocationSelect(location);
         setSearchAddress(location.address);
       } else {
-        // Show error message
-        console.error('Location not found');
+        setError('Location not found. Please try a different search term.');
       }
     } catch (error) {
       console.error('Search error:', error);
+      setError('Search failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -210,25 +230,35 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const handleCurrentLocation = useCallback(async () => {
     if (navigator.geolocation) {
       setIsLoading(true);
+      setError(null);
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const newLocation = { lat, lng };
-          
-          setMarker(newLocation);
-          
-          // Use LocationIQ for reverse geocoding
-          const address = await reverseGeocode(lat, lng);
-          onLocationSelect({ lat, lng, address });
-          setSearchAddress(address);
-          setIsLoading(false);
+          try {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const newLocation = { lat, lng };
+            
+            setMarker(newLocation);
+            
+            // Use LocationIQ for reverse geocoding
+            const address = await reverseGeocode(lat, lng);
+            onLocationSelect({ lat, lng, address });
+            setSearchAddress(address);
+          } catch (error) {
+            console.error('Error processing current location:', error);
+            setError('Failed to process current location');
+          } finally {
+            setIsLoading(false);
+          }
         },
         (error) => {
           setIsLoading(false);
           console.error('Error getting current location:', error);
+          setError('Failed to get current location');
         }
       );
+    } else {
+      setError('Geolocation is not supported by this browser');
     }
   }, [onLocationSelect, reverseGeocode]);
 
@@ -238,14 +268,22 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [manualAddress, setManualAddress] = useState('');
 
   const handleManualLocationSubmit = async () => {
-    const lat = parseFloat(manualLat);
-    const lng = parseFloat(manualLng);
-    
-    if (!isNaN(lat) && !isNaN(lng)) {
-      const address = manualAddress || await reverseGeocode(lat, lng);
-      const location = { lat, lng, address };
-      onLocationSelect(location);
-      setMarker({ lat, lng });
+    try {
+      setError(null);
+      const lat = parseFloat(manualLat);
+      const lng = parseFloat(manualLng);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        const address = manualAddress || await reverseGeocode(lat, lng);
+        const location = { lat, lng, address };
+        onLocationSelect(location);
+        setMarker({ lat, lng });
+      } else {
+        setError('Please enter valid coordinates');
+      }
+    } catch (error) {
+      console.error('Error setting manual location:', error);
+      setError('Failed to set manual location');
     }
   };
 
@@ -258,6 +296,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
         {/* Search functionality */}
         <div className="space-y-4">
           <h4 className="font-medium text-gray-900">Search Location</h4>

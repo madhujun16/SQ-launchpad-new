@@ -104,6 +104,13 @@ const Header = () => {
       },
       {
         type: 'link' as const,
+        path: '/approvals-procurement',
+        label: 'Approvals',
+        icon: FileText,
+        canAccess: canAccessPage(currentRole, '/approvals-procurement')
+      },
+      {
+        type: 'link' as const,
         path: '/inventory',
         label: 'Inventory',
         icon: Package,
