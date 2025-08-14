@@ -304,8 +304,8 @@ const Header = () => {
                               <DropdownMenuItem
                                 key={role}
                                 onClick={() => {
-                                  switchRole(role);
-                                  handleRoleBasedNavigation(role);       
+                                  switchRole(role as UserRole);
+                                  handleRoleBasedNavigation(role as UserRole);
                                 }}
                                 className={`${currentRole === role ? 'bg-muted' : ''} flex items-center`}
                               >
@@ -422,8 +422,8 @@ const Header = () => {
                               variant={isActive ? 'gradient' : 'outline'}
                               className="w-full justify-start h-10"
                               onClick={() => {
-                                switchRole(role);
-                                handleRoleBasedNavigation(role);
+                                switchRole(role as UserRole);
+                                handleRoleBasedNavigation(role as UserRole);
                                 setIsMobileMenuOpen(false);
                               }}
                             >

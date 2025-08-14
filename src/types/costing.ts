@@ -4,6 +4,7 @@ export interface CostingItem {
   item_type: 'hardware' | 'software' | 'license';
   item_name: string;
   item_description?: string;
+  description?: string; // Alias for item_description
   quantity: number;
   unit_cost: number;
   total_cost: number;

@@ -398,8 +398,8 @@ export const CostingApprovalCard: React.FC<CostingApprovalCardProps> = ({
                         <TableCell>
                           <div>
                             <div className="font-medium">{item.item_name}</div>
-                            {item.description && (
-                              <div className="text-sm text-gray-500">{item.description}</div>
+                            {(item.description || item.item_description) && (
+                              <div className="text-sm text-gray-500">{item.description || item.item_description}</div>
                             )}
                           </div>
                         </TableCell>
