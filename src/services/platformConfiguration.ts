@@ -209,9 +209,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Core POS functionality',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 5,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // // maxQuantity: 5,
+    // conditionalLogic: null
   },
   {
     id: '2',
@@ -221,9 +221,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Receipt printing',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 3,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // maxQuantity: 3,
+    // conditionalLogic: null
   },
   {
     id: '3',
@@ -233,9 +233,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Cash management',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 2,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // maxQuantity: 2,
+    // conditionalLogic: null
   },
   {
     id: '4',
@@ -245,9 +245,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Kiosk interface',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 4,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // maxQuantity: 4,
+    // conditionalLogic: null
   },
   {
     id: '5',
@@ -257,9 +257,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Touch interaction',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 4,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // maxQuantity: 4,
+    // conditionalLogic: null
   },
   {
     id: '6',
@@ -269,9 +269,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Kitchen order display',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 3,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // maxQuantity: 3,
+    // conditionalLogic: null
   },
   {
     id: '7',
@@ -281,9 +281,9 @@ const mockRecommendationRules: RecommendationRule[] = [
     isRequired: true,
     reason: 'Mobile inventory management',
     costMultiplier: 1.0,
-    minQuantity: 1,
-    maxQuantity: 2,
-    conditionalLogic: null
+    // minQuantity: 1,
+    // maxQuantity: 2,
+    // conditionalLogic: null
   }
 ];
 

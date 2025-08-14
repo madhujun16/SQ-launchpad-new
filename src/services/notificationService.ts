@@ -38,10 +38,10 @@ export const getUserPreferences = async (userId: string): Promise<NotificationPr
     user_id: userId,
     email_enabled: true,
     push_enabled: true,
-    // in_app_enabled: true,
+    scoping_notifications: true,
     approval_notifications: true,
-    // status_change_notifications: true,
-    // deadline_notifications: true,
+    deployment_notifications: true,
+    maintenance_notifications: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

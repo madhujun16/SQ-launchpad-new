@@ -1411,7 +1411,7 @@ export default function PlatformConfiguration() {
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-medium">Audit Logs ({auditLogs.length})</h3>
                     <div className="flex items-center space-x-2">
-                      <Select value={logFilter} onValueChange={setLogFilter}>
+                      <Select value={logFilter} onValueChange={(value) => setLogFilter(value as any)}>
                         <SelectTrigger className="w-[180px]">
                           <SelectValue placeholder="Filter logs" />
                         </SelectTrigger>

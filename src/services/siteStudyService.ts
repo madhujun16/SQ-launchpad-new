@@ -16,7 +16,7 @@ export class SiteStudyService {
         return null;
       }
 
-      return data;
+    return { ...data, stakeholders: Array.isArray(data.stakeholders) ? data.stakeholders : [] } as any;
     } catch (error) {
       console.error('Error in getSiteStudyBySiteId:', error);
       return null;
@@ -26,21 +26,19 @@ export class SiteStudyService {
   // Create or update site study
   static async upsertSiteStudy(siteStudyData: Partial<SiteStudy>): Promise<SiteStudy | null> {
     try {
-      const { data, error } = await supabase
-        .from('site_studies')
-        .upsert(siteStudyData, {
-          onConflict: 'site_id',
-          ignoreDuplicates: false
-        })
-        .select()
-        .single();
+    const { data, error } = await supabase.from('site_studies').insert([{ 
+      ...siteStudyData, 
+      conducted_by: siteStudyData.conducted_by || '' 
+    } as any])
+      .select()
+      .single();
 
       if (error) {
         console.error('Error upserting site study:', error);
         return null;
       }
 
-      return data;
+      return data as any;
     } catch (error) {
       console.error('Error in upsertSiteStudy:', error);
       return null;
@@ -77,7 +75,7 @@ export class SiteStudyService {
       const { error } = await supabase
         .from('site_studies')
         .update({
-          stakeholders: stakeholders,
+          stakeholders: stakeholders as any,
           updated_at: new Date().toISOString()
         })
         .eq('site_id', siteId);

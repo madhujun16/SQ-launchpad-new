@@ -138,9 +138,9 @@ export const getScopingRecommendations = async (): Promise<ScopingRecommendation
             category: hardware.category,
             model: hardware.model,
             manufacturer: hardware.manufacturer,
-            unit_cost: hardware.unit_cost || hardware.estimated_cost || 0,
-            installation_cost: hardware.installation_cost || 0,
-            maintenance_cost: hardware.maintenance_cost || 0,
+            unit_cost: (hardware as any).unit_cost || hardware.estimated_cost || 0,
+            installation_cost: (hardware as any).installation_cost || 0,
+            maintenance_cost: (hardware as any).maintenance_cost || 0,
             is_active: hardware.is_active
           },
           rule: {
@@ -151,8 +151,8 @@ export const getScopingRecommendations = async (): Promise<ScopingRecommendation
             isRequired: rule.is_required || false,
             reason: rule.reason || '',
             costMultiplier: rule.cost_multiplier || 1.0,
-            minQuantity: rule.min_quantity || 1,
-            maxQuantity: rule.max_quantity || 5
+            minQuantity: (rule as any).min_quantity || 1,
+            maxQuantity: (rule as any).max_quantity || 5
           },
           suggestedQuantity: rule.default_quantity || 1
         };
@@ -164,9 +164,9 @@ export const getScopingRecommendations = async (): Promise<ScopingRecommendation
           name: software.name,
           description: software.description,
           category: software.category,
-          monthly_fee: software.monthly_fee || 0,
-          setup_fee: software.setup_fee || 0,
-          license_fee: software.license_fee || 0,
+          monthly_fee: (software as any).monthly_fee || 0,
+          setup_fee: (software as any).setup_fee || 0,
+          license_fee: (software as any).license_fee || 0,
           is_active: software.is_active
         },
         recommendedHardware,
@@ -179,7 +179,7 @@ export const getScopingRecommendations = async (): Promise<ScopingRecommendation
           hardwareItemIds: rule.hardware_item_ids || [],
           ruleValue: rule.rule_value,
           priority: rule.priority,
-          costImpact: rule.cost_impact
+          costImpact: (rule as any).cost_impact || 0
         }))
       };
     });

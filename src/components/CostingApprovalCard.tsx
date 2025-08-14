@@ -88,19 +88,25 @@ export const CostingApprovalCard: React.FC<CostingApprovalCardProps> = ({
 
     setIsSubmitting(true);
     try {
-      const success = await CostingService.reviewCostingApproval({
-        approval_id: approval.id,
-        action: reviewAction,
-        comment: reviewComment,
-        rejection_reason: reviewAction === 'reject' ? rejectionReason : undefined
-      });
+      await CostingService.reviewCostingApproval(
+        approval.id,
+        reviewAction,
+        reviewComment || (reviewAction === 'reject' ? rejectionReason : '')
+      );
 
-      if (success) {
-        setShowReviewDialog(false);
-        setReviewComment('');
-        setRejectionReason('');
-        onStatusChange();
-      }
+      // Success - reset form state
+      setShowReviewDialog(false);
+      setReviewComment('');
+      setRejectionReason('');
+      setReviewAction('approve');
+      
+      toast.success(`Costing ${reviewAction === 'approve' ? 'approved' : 'rejected'} successfully`);
+      
+      // Refresh the approval data
+      onStatusChange();
+    } catch (error) {
+      console.error('Error reviewing costing approval:', error);
+      toast.error('Failed to review costing approval');
     } finally {
       setIsSubmitting(false);
     }
