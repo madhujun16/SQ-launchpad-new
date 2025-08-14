@@ -10,9 +10,8 @@ interface LocationPickerProps {
   className?: string;
 }
 
-// LocationIQ API configuration
-const LOCATIONIQ_API_KEY = 'pk.2b07dbcb85ff59de62dc9f1cf9f0facb';
-const LOCATIONIQ_BASE_URL = 'https://us1.locationiq.com/v1';
+// Secure geocoding via Edge Function
+import { supabase } from '@/integrations/supabase/client';
 
 interface LocationIQResponse {
   display_name: string;
@@ -69,52 +68,44 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     };
   }, []);
 
-  // LocationIQ reverse geocoding function
+  // Secure reverse geocoding function
   const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
     try {
       setError(null);
-      const url = `${LOCATIONIQ_BASE_URL}/reverse?key=${LOCATIONIQ_API_KEY}&lat=${lat}&lon=${lng}&format=json`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        }
+      
+      const { data, error } = await supabase.functions.invoke('geocoding', {
+        body: { action: 'reverse', lat, lng }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const data: LocationIQResponse = await response.json();
-      return data.display_name || `${lat}, ${lng}`;
+      const result: LocationIQResponse = data.data;
+      return result.display_name || `${lat}, ${lng}`;
     } catch (error) {
-      console.error('Reverse geocoding error:', error);
       setError('Failed to get address for coordinates');
       return `${lat}, ${lng}`;
     }
   }, []);
 
-  // LocationIQ forward geocoding function
+  // Secure forward geocoding function
   const forwardGeocode = useCallback(async (address: string): Promise<{ lat: number; lng: number; address: string } | null> => {
     try {
       setError(null);
-      const encodedAddress = encodeURIComponent(address);
-      const url = `${LOCATIONIQ_BASE_URL}/search?key=${LOCATIONIQ_API_KEY}&q=${encodedAddress}&format=json&limit=1`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        }
+      
+      const { data, error } = await supabase.functions.invoke('geocoding', {
+        body: { action: 'search', query: address, limit: 1 }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const data = await response.json();
+      const results = data.data;
       
-      if (data && data.length > 0) {
-        const location = data[0];
+      if (results && results.length > 0) {
+        const location = results[0];
         return {
           lat: parseFloat(location.lat),
           lng: parseFloat(location.lon),
@@ -124,13 +115,12 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       
       return null;
     } catch (error) {
-      console.error('Forward geocoding error:', error);
       setError('Failed to search for location');
       return null;
     }
   }, []);
 
-  // LocationIQ search suggestions function
+  // Secure search suggestions function
   const getSearchSuggestions = useCallback(async (query: string): Promise<LocationIQSearchResult[]> => {
     if (!query.trim() || query.length < 3) {
       setSearchSuggestions([]);
@@ -140,23 +130,17 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
     try {
       setError(null);
-      const encodedQuery = encodeURIComponent(query);
-      const url = `${LOCATIONIQ_BASE_URL}/search?key=${LOCATIONIQ_API_KEY}&q=${encodedQuery}&format=json&limit=5`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        }
+      
+      const { data, error } = await supabase.functions.invoke('geocoding', {
+        body: { action: 'search', query, limit: 5 }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const data = await response.json();
-      return data || [];
+      return data.data || [];
     } catch (error) {
-      console.error('Search suggestions error:', error);
       setError('Failed to get search suggestions');
       return [];
     }
@@ -176,7 +160,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         setShowSuggestions(false);
       }
     } catch (error) {
-      console.error('Error handling search input change:', error);
       setError('Failed to process search input');
     }
   }, [getSearchSuggestions]);
@@ -203,7 +186,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       setIsExpanded(false);
       setIsEditing(false);
     } catch (error) {
-      console.error('Error selecting suggestion:', error);
       setError('Failed to select location');
     }
   }, [onLocationSelect]);
@@ -267,7 +249,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         },
         (error) => {
           setIsLoading(false);
-          console.error('Error getting current location:', error);
           setError('Failed to get current location');
         }
       );
@@ -301,7 +282,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         setError('Please enter valid coordinates');
       }
     } catch (error) {
-      console.error('Error setting manual location:', error);
       setError('Failed to set manual location');
     }
   };

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { secureLog } from '@/config/security';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   user_roles?: Array<{
@@ -65,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      secureLog('error', 'Error fetching profile', { error });
     }
   };
 
@@ -113,28 +114,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signInWithOtp = async (email: string) => {
-    console.log('Starting OTP process for email:', email); // Debug log
+    secureLog('info', 'Starting OTP process', { email });
     
     // Use the new secure function to check if email exists
     const { data: emailExists, error: checkError } = await supabase
       .rpc('check_email_exists', { email_to_check: email });
 
-    console.log('Email existence check result:', { emailExists, checkError }); // Debug log
+    secureLog('info', 'Email existence check completed');
 
     if (checkError) {
-      console.error('Email check error:', checkError); // Debug log
+      secureLog('error', 'Email check error', { error: checkError });
       return { error: checkError.message || 'Failed to verify email' };
     }
 
     // If user doesn't exist in profiles table, they shouldn't be able to login
     if (!emailExists) {
-      console.log('User not found in profiles table'); // Debug log
+      secureLog('warn', 'User not found in profiles table');
       return { 
         error: 'User not found. Please contact your administrator for access.' 
       };
     }
 
-    console.log('User found in profiles, proceeding with OTP'); // Debug log
+    secureLog('info', 'User verified, proceeding with OTP');
 
     // User exists, proceed with OTP
     const { error } = await supabase.auth.signInWithOtp({
@@ -145,7 +146,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       },
     });
     
-    console.log('OTP result:', { error }); // Debug log
+    if (error) {
+      secureLog('error', 'OTP sending failed', { error: error.message });
+    } else {
+      secureLog('info', 'OTP sent successfully');
+    }
     return { error: error?.message || null };
   };
 

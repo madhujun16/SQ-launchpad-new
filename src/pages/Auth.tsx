@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { RocketIcon } from '@/components/ui/RocketIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { secureLog } from '@/config/security';
 
 const Auth = () => {
   const { signInWithOtp, verifyOtp, user } = useAuth();
@@ -37,12 +38,12 @@ const Auth = () => {
 
     setLoading(true);
     setError('');
-    console.log('Sending OTP to:', email); // Debug log
+    secureLog('info', 'Initiating OTP send', { email });
 
     const { error } = await signInWithOtp(email);
 
     if (error) {
-      console.error('OTP Error:', error); // Debug log
+      secureLog('error', 'OTP Error', { error });
       setError(error || 'Failed to send OTP');
       toast.error('Failed to send OTP');
     } else {

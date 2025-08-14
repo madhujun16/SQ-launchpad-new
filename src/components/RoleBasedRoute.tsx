@@ -19,15 +19,11 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   useEffect(() => {
     if (!loading && currentRole) {
-      console.log('RoleBasedRoute Debug:', {
-        currentRole,
-        pathname: location.pathname,
-        canAccess: canAccessPage(currentRole, location.pathname)
-      });
+      // Access check completed
       
       // Check if user can access the current page
       if (!canAccessPage(currentRole, location.pathname)) {
-        console.log('Access denied, redirecting to dashboard');
+        // Access denied, redirecting to dashboard
         // Only redirect if it's not a loading state and we're sure they don't have access
         if (!loading) {
           // Add a small delay to prevent immediate redirect
@@ -48,7 +44,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   }
 
   if (!currentRole) {
-    console.log('No current role found');
+    // No current role found
     return (
       <AccessDenied 
         pageName={location.pathname}
@@ -59,7 +55,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   // Check if user can access the current page
   const hasAccess = canAccessPage(currentRole, location.pathname);
-  console.log(`Access check for ${location.pathname}: ${hasAccess}`);
+  // Access check completed
 
   if (!hasAccess) {
     return (

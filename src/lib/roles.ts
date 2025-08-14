@@ -177,7 +177,7 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
   
   // First check for exact matches
   if (roleConfig.accessiblePages.includes(pagePath)) {
-    console.log(`Exact match found for ${pagePath}`);
+    // Exact match found
     return true;
   }
   
@@ -191,7 +191,7 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
       
       const regex = new RegExp(`^${pattern}$`);
       if (regex.test(pagePath)) {
-        console.log(`Pattern match found: ${accessiblePage} matches ${pagePath}`);
+        // Pattern match found
         return true;
       }
     }
@@ -211,19 +211,19 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
   ];
   
   if (legacyRoutes.includes(pagePath)) {
-    console.log(`Legacy route match found for ${pagePath}`);
+    // Legacy route match found
     return true;
   }
   
   // Check if the page path starts with any of the accessible pages (for nested routes)
   for (const accessiblePage of roleConfig.accessiblePages) {
     if (pagePath.startsWith(accessiblePage) && accessiblePage !== '/dashboard') {
-      console.log(`Nested route match found: ${pagePath} starts with ${accessiblePage}`);
+      // Nested route match found
       return true;
     }
   }
   
-  console.log(`No access found for ${pagePath}. Available pages:`, roleConfig.accessiblePages);
+  // No access found
   return false;
 };
 
