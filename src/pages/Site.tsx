@@ -54,7 +54,8 @@ import {
   CheckSquare,
   Truck,
   ArrowRight,
-  Upload
+  Upload,
+  StickyNote
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -87,6 +88,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
 import { LayoutImageUpload } from '@/components/LayoutImageUpload';
+import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -236,6 +238,7 @@ const SiteDetail = () => {
     lng: number;
     address: string;
   } | null>(null);
+  const [showNotesModal, setShowNotesModal] = useState(false);
 
   // Handler for layout images updates
   const handleLayoutImagesUpdated = (images: any[]) => {
@@ -2177,6 +2180,14 @@ const SiteDetail = () => {
         <div className="flex items-center space-x-2">
           <Button 
             variant="outline" 
+            onClick={() => setShowNotesModal(true)}
+            className="flex items-center space-x-2"
+          >
+            <StickyNote className="h-4 w-4" />
+            <span>Site Notes</span>
+          </Button>
+          <Button 
+            variant="outline" 
             onClick={() => navigate('/sites')}
             className="flex items-center space-x-2"
           >
@@ -2242,6 +2253,16 @@ const SiteDetail = () => {
       <div className="space-y-6">
         {renderStepContent()}
       </div>
+
+      {/* Global Site Notes Modal */}
+      {site && (
+        <GlobalSiteNotesModal
+          isOpen={showNotesModal}
+          onClose={() => setShowNotesModal(false)}
+          siteId={site.id}
+          siteName={site.name}
+        />
+      )}
     </div>
   );
 };

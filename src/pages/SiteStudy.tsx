@@ -55,9 +55,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useToast } from '@/hooks/use-toast';
 import { StakeholderManager } from '@/components/StakeholderManager';
-import { SiteNotesManager } from '@/components/SiteNotesManager';
 import { SiteStudyService } from '@/services/siteStudyService';
 import { Stakeholder, SiteStudyFormData } from '@/types/siteStudy';
+import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 
 export default function SiteStudy() {
   const { id } = useParams<{ id: string }>();
@@ -69,6 +69,7 @@ export default function SiteStudy() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingStudyData, setIsLoadingStudyData] = useState(true);
+  const [showNotesModal, setShowNotesModal] = useState(false);
   const [studyData, setStudyData] = useState<SiteStudyFormData>({
     generalInfo: {
       sector: 'Eurest',
@@ -851,13 +852,35 @@ export default function SiteStudy() {
         return (
           <div className="space-y-6">
             {/* Site Notes */}
-            <SiteNotesManager
-              siteId={id || ''}
-              notes={studyData.siteNotes.notes}
-              additionalDetails={studyData.siteNotes.additionalSiteDetails}
-              onNotesChange={handleSiteNotesChange}
-              disabled={!isEditMode}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <StickyNote className="h-5 w-5" />
+                  Site Notes & Details
+                </CardTitle>
+                <CardDescription>
+                  Manage site notes and additional details
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <StickyNote className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-600 mb-4">
+                    Site notes are now managed globally and accessible from multiple locations.
+                  </p>
+                  <Button
+                    onClick={() => setShowNotesModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <StickyNote className="h-4 w-4 mr-2" />
+                    Open Site Notes
+                  </Button>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Notes are stored against the site record and visible in all contexts
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Stakeholders */}
             <StakeholderManager
@@ -1000,7 +1023,15 @@ export default function SiteStudy() {
         </StepperContent>
       </div>
 
-
+      {/* Global Site Notes Modal */}
+      {site && (
+        <GlobalSiteNotesModal
+          isOpen={showNotesModal}
+          onClose={() => setShowNotesModal(false)}
+          siteId={site.id}
+          siteName={site.name}
+        />
+      )}
     </div>
   );
 } 

@@ -21,6 +21,7 @@ const Deployment = lazy(() => import("./pages/Deployment"));
 const Assets = lazy(() => import("./pages/Assets"));
 const PlatformConfiguration = lazy(() => import("./pages/PlatformConfiguration"));
 const Admin = lazy(() => import("./pages/Admin"));
+const Forecast = lazy(() => import("./pages/Forecast"));
 
 // Sites-related pages
 const SiteStudy = lazy(() => import("./pages/SiteStudy"));
@@ -200,6 +201,22 @@ function App() {
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
                               <Deployment />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Forecast */}
+                  <Route
+                    path="/forecast"
+                    element={
+                      <ProtectedRoute>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <Forecast />
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>

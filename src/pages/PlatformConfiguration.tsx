@@ -30,7 +30,8 @@ import {
   Truck,
   User,
   Mail,
-  Calendar
+  Calendar,
+  Download
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ContentLoader } from '@/components/ui/loader';
@@ -38,6 +39,7 @@ import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Interfaces for platform configuration
 interface User {
@@ -139,6 +141,14 @@ interface SoftwareHardwareMapping {
   oneTimeCost: number;
 }
 
+interface AuditLog {
+  id: string;
+  type: 'create' | 'update' | 'delete' | 'info' | 'error';
+  message: string;
+  actor?: string | null;
+  created_at: string;
+}
+
 export default function PlatformConfiguration() {
   const { currentRole } = useAuth();
   const navigate = useNavigate();
@@ -160,6 +170,8 @@ export default function PlatformConfiguration() {
   const [editingHardwareItem, setEditingHardwareItem] = useState<HardwareItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [logFilter, setLogFilter] = useState<'all' | AuditLog['type']>('all');
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -180,6 +192,69 @@ export default function PlatformConfiguration() {
   useEffect(() => {
     loadConfigurationData();
   }, []);
+
+  const logAudit = (entry: Omit<AuditLog, 'id' | 'created_at'>) => {
+    setAuditLogs(prev => [
+      { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
+      ...prev,
+    ]);
+  };
+
+  // Helper to seed default software options
+  const seedDefaultSoftware = () => {
+    const defaults: SoftwareModule[] = [
+      {
+        id: 'pos-system',
+        name: 'POS System',
+        description: 'Point of Sale system for transactions',
+        category: 'POS',
+        is_active: true,
+        monthly_fee: 25,
+        setup_fee: 150,
+        license_fee: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'kiosk-software',
+        name: 'Kiosk Software',
+        description: 'Self-service kiosk software',
+        category: 'Kiosk',
+        is_active: true,
+        monthly_fee: 20,
+        setup_fee: 100,
+        license_fee: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'kitchen-display',
+        name: 'Kitchen Display',
+        description: 'Kitchen display system for orders',
+        category: 'Back-of-house',
+        is_active: true,
+        monthly_fee: 20,
+        setup_fee: 100,
+        license_fee: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'inventory-management',
+        name: 'Inventory Management',
+        description: 'Inventory tracking and management',
+        category: 'Inventory',
+        is_active: true,
+        monthly_fee: 0,
+        setup_fee: 0,
+        license_fee: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+    setSoftwareModules(defaults);
+    logAudit({ type: 'info', message: 'Default software catalog seeded', actor: currentRole });
+  };
 
   const loadConfigurationData = async () => {
     try {
@@ -237,7 +312,12 @@ export default function PlatformConfiguration() {
           setup_fee: (software as any).setup_fee || 0,
           license_fee: (software as any).license_fee || 0
         }));
-        setSoftwareModules(mappedSoftware);
+        if (mappedSoftware.length === 0) {
+          // seed defaults for first-time experience
+          seedDefaultSoftware();
+        } else {
+          setSoftwareModules(mappedSoftware);
+        }
       }
 
       // Load hardware items
@@ -336,6 +416,63 @@ export default function PlatformConfiguration() {
     setEditingSoftwareModule(software);
   };
 
+  // Save Software Module
+  const saveSoftwareModule = async () => {
+    if (!editingSoftwareModule) return;
+    try {
+      let saved: SoftwareModule | null = null;
+      if (editingSoftwareModule.id && editingSoftwareModule.id !== 'new') {
+        const { error } = await supabase.from('software_modules').update({
+          name: editingSoftwareModule.name,
+          description: editingSoftwareModule.description,
+          category: editingSoftwareModule.category,
+          is_active: editingSoftwareModule.is_active,
+          monthly_fee: editingSoftwareModule.monthly_fee,
+          setup_fee: editingSoftwareModule.setup_fee,
+          license_fee: editingSoftwareModule.license_fee,
+          updated_at: new Date().toISOString(),
+        }).eq('id', editingSoftwareModule.id);
+        if (error) throw error;
+        setSoftwareModules(prev => prev.map(s => s.id === editingSoftwareModule.id ? editingSoftwareModule : s));
+        saved = editingSoftwareModule;
+        logAudit({ type: 'update', message: `Software updated: ${editingSoftwareModule.name}`, actor: currentRole });
+      } else {
+        const { data, error } = await supabase.from('software_modules').insert([{
+          name: editingSoftwareModule.name,
+          description: editingSoftwareModule.description,
+          category: editingSoftwareModule.category,
+          is_active: editingSoftwareModule.is_active,
+          monthly_fee: editingSoftwareModule.monthly_fee,
+          setup_fee: editingSoftwareModule.setup_fee,
+          license_fee: editingSoftwareModule.license_fee,
+        }]).select('*').single();
+        if (error) throw error;
+        const newEntry: SoftwareModule = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          is_active: data.is_active,
+          monthly_fee: data.monthly_fee,
+          setup_fee: data.setup_fee,
+          license_fee: data.license_fee,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+        setSoftwareModules(prev => [...prev, newEntry]);
+        saved = newEntry;
+        logAudit({ type: 'create', message: `Software added: ${newEntry.name}`, actor: currentRole });
+      }
+      setEditingSoftwareModule(null);
+      toast.success('Software saved');
+      return saved;
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to save software');
+      logAudit({ type: 'error', message: 'Failed to save software module', actor: currentRole });
+    }
+  };
+
   const deleteSoftwareModule = async (softwareId: string) => {
     try {
       const { error } = await supabase
@@ -348,6 +485,7 @@ export default function PlatformConfiguration() {
       } else {
         setSoftwareModules(prev => prev.filter(s => s.id !== softwareId));
         toast.success('Software module deleted successfully');
+        logAudit({ type: 'delete', message: `Software deleted: ${softwareId}`, actor: currentRole });
       }
     } catch (error) {
       console.error('Error deleting software module:', error);
@@ -377,6 +515,69 @@ export default function PlatformConfiguration() {
     setEditingHardwareItem(hardware);
   };
 
+  // Save Hardware Item
+  const saveHardwareItem = async () => {
+    if (!editingHardwareItem) return;
+    try {
+      let saved: HardwareItem | null = null;
+      if (editingHardwareItem.id && editingHardwareItem.id !== 'new') {
+        const { error } = await supabase.from('hardware_items').update({
+          name: editingHardwareItem.name,
+          description: editingHardwareItem.description,
+          category: editingHardwareItem.category,
+          model: editingHardwareItem.model,
+          manufacturer: editingHardwareItem.manufacturer,
+          unit_cost: editingHardwareItem.unit_cost,
+          installation_cost: editingHardwareItem.installation_cost,
+          maintenance_cost: editingHardwareItem.maintenance_cost,
+          is_active: editingHardwareItem.is_active,
+          updated_at: new Date().toISOString(),
+        }).eq('id', editingHardwareItem.id);
+        if (error) throw error;
+        setHardwareItems(prev => prev.map(h => h.id === editingHardwareItem.id ? editingHardwareItem : h));
+        saved = editingHardwareItem;
+        logAudit({ type: 'update', message: `Hardware updated: ${editingHardwareItem.name}`, actor: currentRole });
+      } else {
+        const { data, error } = await supabase.from('hardware_items').insert([{
+          name: editingHardwareItem.name,
+          description: editingHardwareItem.description,
+          category: editingHardwareItem.category,
+          model: editingHardwareItem.model,
+          manufacturer: editingHardwareItem.manufacturer,
+          unit_cost: editingHardwareItem.unit_cost,
+          installation_cost: editingHardwareItem.installation_cost,
+          maintenance_cost: editingHardwareItem.maintenance_cost,
+          is_active: editingHardwareItem.is_active,
+        }]).select('*').single();
+        if (error) throw error;
+        const newEntry: HardwareItem = {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          model: data.model,
+          manufacturer: data.manufacturer,
+          unit_cost: data.unit_cost,
+          installation_cost: data.installation_cost,
+          maintenance_cost: data.maintenance_cost,
+          is_active: data.is_active,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
+        setHardwareItems(prev => [...prev, newEntry]);
+        saved = newEntry;
+        logAudit({ type: 'create', message: `Hardware added: ${newEntry.name}`, actor: currentRole });
+      }
+      setEditingHardwareItem(null);
+      toast.success('Hardware saved');
+      return saved;
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to save hardware');
+      logAudit({ type: 'error', message: 'Failed to save hardware item', actor: currentRole });
+    }
+  };
+
   const deleteHardwareItem = async (hardwareId: string) => {
     try {
       const { error } = await supabase
@@ -389,6 +590,7 @@ export default function PlatformConfiguration() {
       } else {
         setHardwareItems(prev => prev.filter(h => h.id !== hardwareId));
         toast.success('Hardware item deleted successfully');
+        logAudit({ type: 'delete', message: `Hardware deleted: ${hardwareId}`, actor: currentRole });
       }
     } catch (error) {
       console.error('Error deleting hardware item:', error);
@@ -595,6 +797,18 @@ export default function PlatformConfiguration() {
       console.error('Error saving configuration:', error);
       toast.error('Failed to save configuration');
     }
+  };
+
+  // CSV export for logs
+  const downloadLogsCsv = () => {
+    const visible = auditLogs.filter(l => logFilter === 'all' ? true : l.type === logFilter);
+    const rows = [ ['Timestamp','Type','Message','Actor'], ...visible.map(l => [l.created_at, l.type, l.message, l.actor || '']) ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'audit-logs.csv'; a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -883,10 +1097,15 @@ export default function PlatformConfiguration() {
                 <h2 className="text-2xl font-bold text-gray-900">Software & Hardware Management</h2>
                 <p className="text-gray-600 mt-1">Unified management of software modules, hardware items, and their relationships with costing</p>
               </div>
-              <Button onClick={saveAllConfigurations} className="flex items-center space-x-2">
-                <Save className="h-4 w-4" />
-                <span>Save All Changes</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="light-outline" onClick={seedDefaultSoftware} className="hover-glow-green">
+                  Quick Add Default Software
+                </Button>
+                <Button onClick={saveAllConfigurations} className="flex items-center space-x-2">
+                  <Save className="h-4 w-4" />
+                  <span>Save All Changes</span>
+                </Button>
+              </div>
             </div>
 
             {/* Software Modules Management */}
@@ -924,7 +1143,7 @@ export default function PlatformConfiguration() {
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Monthly Fee</Label>
-                            <p className="text-sm text-gray-600">£{software.monthly_fee || 0}</p>
+                            <p className="text-sm text-gray-600">£{software.monthly_fee || 0}/month</p>
                           </div>
                           <div>
                             <Label className="text-sm font-medium">Setup Fee</Label>
@@ -1167,7 +1386,7 @@ export default function PlatformConfiguration() {
             </Card>
           </TabsContent>
 
-          {/* Audit & Logs Tab */}
+          {/* Audit & Logs Tab - interactive */}
           <TabsContent value="audit" className="space-y-6">
             <Card>
               <CardHeader>
@@ -1181,41 +1400,55 @@ export default function PlatformConfiguration() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">System Logs</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-2 border rounded">
-                          <span>User login</span>
-                          <Badge variant="outline">Info</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 border rounded">
-                          <span>Configuration change</span>
-                          <Badge variant="outline">Warning</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 border rounded">
-                          <span>System backup</span>
-                          <Badge variant="outline">Info</Badge>
-                        </div>
-                      </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Audit Logs ({auditLogs.length})</h3>
+                    <div className="flex items-center space-x-2">
+                      <Select value={logFilter} onValueChange={setLogFilter}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filter logs" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Logs</SelectItem>
+                          <SelectItem value="create">Create</SelectItem>
+                          <SelectItem value="update">Update</SelectItem>
+                          <SelectItem value="delete">Delete</SelectItem>
+                          <SelectItem value="info">Info</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={downloadLogsCsv} className="flex items-center space-x-2">
+                        <Download className="h-4 w-4" />
+                        <span>Download CSV</span>
+                      </Button>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Activity Logs</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-2 border rounded">
-                          <span>User management</span>
-                          <Badge variant="outline">Admin</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 border rounded">
-                          <span>Configuration update</span>
-                          <Badge variant="outline">Admin</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 border rounded">
-                          <span>System maintenance</span>
-                          <Badge variant="outline">System</Badge>
-                        </div>
-                      </div>
-                    </div>
+                  </div>
+                  <div className="border rounded-lg overflow-y-auto max-h-full">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Timestamp</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead>Actor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {auditLogs
+                          .filter(log => logFilter === 'all' || log.type === logFilter)
+                          .map(log => (
+                            <TableRow key={log.id}>
+                              <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Badge variant={log.type === 'create' ? 'success' : log.type === 'update' ? 'info' : log.type === 'delete' ? 'destructive' : log.type === 'error' ? 'destructive' : 'default'}>
+                                  {log.type.replace('_', ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{log.message}</TableCell>
+                              <TableCell>{log.actor || 'System'}</TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               </CardContent>
@@ -1282,13 +1515,13 @@ export default function PlatformConfiguration() {
               </div>
               
               <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id="isRequired"
                   checked={editingRule.isRequired}
-                  onChange={(e) => setEditingRule({...editingRule, isRequired: e.target.checked})}
+                  onCheckedChange={(v) => setEditingRule({ ...editingRule, isRequired: Boolean(v) })}
+                  className="mt-0.5"
                 />
-                <Label htmlFor="isRequired">Required (cannot be removed)</Label>
+                <Label htmlFor="isRequired" className="text-sm">Required (cannot be removed)</Label>
               </div>
               
               <div className="flex space-x-2">
@@ -1415,6 +1648,98 @@ export default function PlatformConfiguration() {
               <div className="flex space-x-2">
                 <Button onClick={saveOrganization} className="flex-1">Save</Button>
                 <Button variant="outline" onClick={() => setEditingOrganization(null)} className="flex-1">Cancel</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Software Module Dialog */}
+      {editingSoftwareModule && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+            <h3 className="text-lg font-medium mb-4">{editingSoftwareModule.id === 'new' ? 'Add Software Module' : 'Edit Software Module'}</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="softName">Name</Label>
+                <Input id="softName" value={editingSoftwareModule.name} onChange={(e)=>setEditingSoftwareModule({...editingSoftwareModule!, name: e.target.value})} />
+              </div>
+              <div>
+                <Label htmlFor="softDesc">Description</Label>
+                <Input id="softDesc" value={editingSoftwareModule.description || ''} onChange={(e)=>setEditingSoftwareModule({...editingSoftwareModule!, description: e.target.value})} />
+              </div>
+              <div>
+                <Label htmlFor="softCat">Category</Label>
+                <Input id="softCat" value={editingSoftwareModule.category} onChange={(e)=>setEditingSoftwareModule({...editingSoftwareModule!, category: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="softMonthly">Monthly Fee (£)</Label>
+                  <Input id="softMonthly" type="number" value={editingSoftwareModule.monthly_fee ?? 0} onChange={(e)=>setEditingSoftwareModule({...editingSoftwareModule!, monthly_fee: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <Label htmlFor="softSetup">Setup Fee (£)</Label>
+                  <Input id="softSetup" type="number" value={editingSoftwareModule.setup_fee ?? 0} onChange={(e)=>setEditingSoftwareModule({...editingSoftwareModule!, setup_fee: Number(e.target.value)})} />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="softActive" checked={editingSoftwareModule.is_active} onCheckedChange={(v)=>setEditingSoftwareModule({...editingSoftwareModule!, is_active: Boolean(v)})} />
+                <Label htmlFor="softActive" className="text-sm">Active</Label>
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={()=>setEditingSoftwareModule(null)}>Cancel</Button>
+                <Button onClick={saveSoftwareModule}>Save</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Hardware Item Dialog */}
+      {editingHardwareItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+            <h3 className="text-lg font-medium mb-4">{editingHardwareItem.id === 'new' ? 'Add Hardware Item' : 'Edit Hardware Item'}</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="hardName">Name</Label>
+                <Input id="hardName" value={editingHardwareItem.name} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, name: e.target.value})} />
+              </div>
+              <div>
+                <Label htmlFor="hardDesc">Description</Label>
+                <Input id="hardDesc" value={editingHardwareItem.description || ''} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, description: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="hardCat">Category</Label>
+                  <Input id="hardCat" value={editingHardwareItem.category} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, category: e.target.value})} />
+                </div>
+                <div>
+                  <Label htmlFor="hardModel">Model</Label>
+                  <Input id="hardModel" value={editingHardwareItem.model || ''} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, model: e.target.value})} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="hardUnit">Unit Cost (£)</Label>
+                  <Input id="hardUnit" type="number" value={editingHardwareItem.unit_cost ?? 0} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, unit_cost: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <Label htmlFor="hardInst">Installation (£)</Label>
+                  <Input id="hardInst" type="number" value={editingHardwareItem.installation_cost ?? 0} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, installation_cost: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <Label htmlFor="hardMaint">Maintenance (£/month)</Label>
+                  <Input id="hardMaint" type="number" value={editingHardwareItem.maintenance_cost ?? 0} onChange={(e)=>setEditingHardwareItem({...editingHardwareItem!, maintenance_cost: Number(e.target.value)})} />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="hardActive" checked={editingHardwareItem.is_active} onCheckedChange={(v)=>setEditingHardwareItem({...editingHardwareItem!, is_active: Boolean(v)})} />
+                <Label htmlFor="hardActive" className="text-sm">Available</Label>
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={()=>setEditingHardwareItem(null)}>Cancel</Button>
+                <Button onClick={saveHardwareItem}>Save</Button>
               </div>
             </div>
           </div>

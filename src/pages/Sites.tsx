@@ -20,7 +20,8 @@ import {
   Wrench,
   Settings,
   PlusCircle,
-  FileText as FileTextIcon
+  FileText as FileTextIcon,
+  StickyNote
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -29,6 +30,7 @@ import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { getStatusColor, getStatusDisplayName, type UnifiedSiteStatus } from '@/lib/siteTypes';
+import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 
 interface Site {
   id: string;
@@ -53,6 +55,8 @@ const Sites = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
 
   // Check access permissions
   const tabAccess = getTabAccess('/sites');
@@ -435,6 +439,7 @@ const Sites = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/sites/${site.id}`)}
+                            title="View Site Details"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -442,8 +447,20 @@ const Sites = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/sites/${site.id}/study`)}
+                            title="Site Study"
                           >
                             <FileTextIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedSite(site);
+                              setShowNotesModal(true);
+                            }}
+                            title="Site Notes"
+                          >
+                            <StickyNote className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -455,6 +472,19 @@ const Sites = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Global Site Notes Modal */}
+      {selectedSite && (
+        <GlobalSiteNotesModal
+          isOpen={showNotesModal}
+          onClose={() => {
+            setShowNotesModal(false);
+            setSelectedSite(null);
+          }}
+          siteId={selectedSite.id}
+          siteName={selectedSite.name}
+        />
+      )}
     </div>
   );
 };

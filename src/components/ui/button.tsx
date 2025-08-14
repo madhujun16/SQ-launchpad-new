@@ -19,6 +19,8 @@ const buttonVariants = cva(
         warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-md",
         info: "bg-info text-info-foreground hover:bg-info/90 shadow-md",
         gradient: "bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200",
+        "light-primary": "bg-[#1CB255] text-white hover:bg-[#18a64d] shadow-md hover:shadow-lg rounded-lg",
+        "light-outline": "border border-[#1CB255] text-[#1CB255] bg-white hover:bg-[#eafaf1] rounded-lg",
       },
       size: {
         default: "h-10 px-4 py-2",

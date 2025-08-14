@@ -3,15 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import { 
   Search, 
   Filter, 
@@ -47,10 +45,16 @@ import {
   Square
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
+
+interface ScopingItem { name: string; quantity: number; unit_cost: number }
+interface ApprovalHistoryEntry { date: string; user: string; action: 'submitted' | 'approved' | 'rejected'; comments?: string }
+type ProcurementStage = 'requested' | 'approved' | 'dispatched';
+interface DeploymentNote { id: string; author: string; content: string; timestamp: string }
 
 interface Deployment {
   id: string;
@@ -69,6 +73,12 @@ interface Deployment {
   live_ready: boolean;
   created_at: string;
   updated_at: string;
+  // New fields
+  approval: { status: 'pending' | 'approved' | 'rejected'; comments?: string; history: ApprovalHistoryEntry[] };
+  scoping_summary: { software: ScopingItem[]; hardware: ScopingItem[] };
+  procurement_stage: ProcurementStage;
+  milestones: Array<{ name: string; start: string; end: string; status: 'pending' | 'in_progress' | 'done' }>;
+  shared_notes: DeploymentNote[];
 }
 
 interface ChecklistItem {
@@ -91,7 +101,9 @@ const Deployment = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
-  const [showChecklistDialog, setShowChecklistDialog] = useState(false);
+  // Simplified flow: open a single details dialog when a site/card is clicked
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [decisionComment, setDecisionComment] = useState('');
   const [loading, setLoading] = useState(true);
 
   // Check access permissions
@@ -132,7 +144,29 @@ const Deployment = () => {
         testing_completed: false,
         live_ready: false,
         created_at: '2024-01-15',
-        updated_at: '2024-01-20'
+        updated_at: '2024-01-20',
+        approval: {
+          status: 'approved',
+          comments: 'Looks good, proceed.',
+          history: [
+            { date: '2024-01-16T10:00:00Z', user: 'David Brown', action: 'submitted' },
+            { date: '2024-01-17T09:00:00Z', user: 'Sarah Wilson', action: 'approved', comments: 'Looks good, proceed.' }
+          ]
+        },
+        scoping_summary: {
+          software: [ { name: 'POS System', quantity: 1, unit_cost: 1200 } ],
+          hardware: [ { name: 'POS Terminal', quantity: 3, unit_cost: 800 }, { name: 'KDS Screen', quantity: 2, unit_cost: 450 } ]
+        },
+        procurement_stage: 'approved',
+        milestones: [
+          { name: 'Procurement', start: '2024-01-10', end: '2024-01-18', status: 'done' },
+          { name: 'Installation', start: '2024-01-20', end: '2024-01-21', status: 'in_progress' },
+          { name: 'Testing', start: '2024-01-21', end: '2024-01-22', status: 'pending' },
+          { name: 'Go Live', start: '2024-01-23', end: '2024-01-23', status: 'pending' }
+        ],
+        shared_notes: [
+          { id: 'n1', author: 'Sarah Wilson', content: 'Ensure extra ethernet cables on site.', timestamp: '2024-01-19T12:00:00Z' }
+        ]
       },
       {
         id: '2',
@@ -157,7 +191,23 @@ const Deployment = () => {
         testing_completed: false,
         live_ready: false,
         created_at: '2024-01-16',
-        updated_at: '2024-01-19'
+        updated_at: '2024-01-19',
+        approval: {
+          status: 'pending',
+          history: [ { date: '2024-01-18T09:00:00Z', user: 'Tom Wilson', action: 'submitted' } ]
+        },
+        scoping_summary: {
+          software: [ { name: 'Kitchen Display', quantity: 1, unit_cost: 900 } ],
+          hardware: [ { name: 'POS Terminal', quantity: 2, unit_cost: 800 } ]
+        },
+        procurement_stage: 'requested',
+        milestones: [
+          { name: 'Procurement', start: '2024-01-19', end: '2024-01-22', status: 'in_progress' },
+          { name: 'Installation', start: '2024-01-25', end: '2024-01-26', status: 'pending' },
+          { name: 'Testing', start: '2024-01-27', end: '2024-01-27', status: 'pending' },
+          { name: 'Go Live', start: '2024-01-28', end: '2024-01-28', status: 'pending' }
+        ],
+        shared_notes: []
       },
       {
         id: '3',
@@ -182,7 +232,26 @@ const Deployment = () => {
         testing_completed: true,
         live_ready: true,
         created_at: '2024-01-12',
-        updated_at: '2024-01-18'
+        updated_at: '2024-01-18',
+        approval: {
+          status: 'approved',
+          history: [
+            { date: '2024-01-14T10:00:00Z', user: 'Chris Taylor', action: 'submitted' },
+            { date: '2024-01-15T09:00:00Z', user: 'Lisa Anderson', action: 'approved' }
+          ]
+        },
+        scoping_summary: {
+          software: [ { name: 'Inventory', quantity: 1, unit_cost: 700 } ],
+          hardware: [ { name: 'KDS Screen', quantity: 2, unit_cost: 450 } ]
+        },
+        procurement_stage: 'dispatched',
+        milestones: [
+          { name: 'Procurement', start: '2024-01-10', end: '2024-01-12', status: 'done' },
+          { name: 'Installation', start: '2024-01-16', end: '2024-01-16', status: 'done' },
+          { name: 'Testing', start: '2024-01-17', end: '2024-01-17', status: 'done' },
+          { name: 'Go Live', start: '2024-01-18', end: '2024-01-18', status: 'done' }
+        ],
+        shared_notes: [ { id: 'n2', author: 'Lisa Anderson', content: 'Post go-live training complete.', timestamp: '2024-01-18T18:00:00Z' } ]
       }
     ];
 
@@ -234,27 +303,7 @@ const Deployment = () => {
     return configs[status as keyof typeof configs] || configs.scheduled;
   };
 
-  const handleChecklistToggle = (deploymentId: string, itemId: string, completed: boolean) => {
-    setDeployments(prev => prev.map(deployment => {
-      if (deployment.id === deploymentId) {
-        return {
-          ...deployment,
-          checklist_items: deployment.checklist_items.map(item => {
-            if (item.id === itemId) {
-              return {
-                ...item,
-                completed,
-                completed_by: completed ? profile?.full_name : undefined,
-                completed_at: completed ? new Date().toISOString() : undefined
-              };
-            }
-            return item;
-          })
-        };
-      }
-      return deployment;
-    }));
-  };
+  // Checklist handling moved into the consolidated details dialog in future iterations
 
   const handleGoLive = (deploymentId: string) => {
     setDeployments(prev => prev.map(deployment => {
@@ -271,6 +320,9 @@ const Deployment = () => {
   };
 
   const canUpdateDeployment = currentRole === 'deployment_engineer' || currentRole === 'ops_manager';
+  const isAdmin = currentRole === 'admin';
+  const isOps = currentRole === 'ops_manager';
+  const isDE = currentRole === 'deployment_engineer';
 
   const statusOptions = [
     { value: 'all', label: 'All Statuses' },
@@ -343,354 +395,269 @@ const Deployment = () => {
         </CardContent>
       </Card>
 
-      {/* Main Content */}
-      <Tabs defaultValue="schedule" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="tracking">Tracking</TabsTrigger>
-          <TabsTrigger value="checklists">Checklists</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="schedule" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deployment Schedule</CardTitle>
-              <CardDescription>
-                Scheduled and upcoming deployments
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Deployment Date</TableHead>
-                    <TableHead>Assigned Team</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDeployments.map((deployment) => {
-                    const statusConfig = getStatusConfig(deployment.status);
-                    const StatusIcon = statusConfig.icon;
-                    
-                    return (
-                      <TableRow key={deployment.id}>
-                        <TableCell>
-                          <div className="font-medium">{deployment.site_name}</div>
-                          <div className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3 text-gray-400" />
-                            <span>{new Date(deployment.deployment_date).toLocaleDateString()}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="text-xs">
-                              <span className="font-medium">Engineer:</span> {deployment.assigned_deployment_engineer}
-                            </div>
-                            <div className="text-xs">
-                              <span className="font-medium">Ops:</span> {deployment.assigned_ops_manager}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${statusConfig.color} flex items-center space-x-1`}>
-                            <StatusIcon className="h-3 w-3" />
-                            <span>{statusConfig.label}</span>
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-xs">
-                              <span>Progress</span>
-                              <span>{deployment.progress_percentage}%</span>
-                            </div>
-                            <Progress value={deployment.progress_percentage} className="h-2" />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDeployment(deployment);
-                                setShowChecklistDialog(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {canUpdateDeployment && deployment.status === 'in_progress' && (
-                              <Button
-                                variant="gradient"
-                                size="sm"
-                                onClick={() => handleGoLive(deployment.id)}
-                              >
-                                <Play className="h-4 w-4 mr-1" />
-                                Live
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tracking" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Dispatch Tracking</CardTitle>
-              <CardDescription>
-                Track hardware dispatch status and delivery progress
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Hardware Status</TableHead>
-                    <TableHead>Expected Delivery</TableHead>
-                    <TableHead>Installation Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDeployments.map((deployment) => (
-                    <TableRow key={deployment.id}>
-                      <TableCell>
-                        <div className="font-medium">{deployment.site_name}</div>
-                        <div className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={deployment.hardware_delivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                          <Truck className="h-3 w-3 mr-1" />
-                          {deployment.hardware_delivered ? 'Delivered' : 'In Transit'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 text-gray-400" />
-                          <span>{new Date(deployment.deployment_date).toLocaleDateString()}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={deployment.installation_started ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}>
-                          <Wrench className="h-3 w-3 mr-1" />
-                          {deployment.installation_started ? 'Started' : 'Pending'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="checklists" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Installation Checklists</CardTitle>
-              <CardDescription>
-                Digital checklists for deployment verification and sign-off
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredDeployments.map((deployment) => (
-                  <Card key={deployment.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-lg">{deployment.site_name}</CardTitle>
-                      <CardDescription>
-                        {deployment.assigned_deployment_engineer} • {new Date(deployment.deployment_date).toLocaleDateString()}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {deployment.checklist_items.map((item) => (
-                          <div key={item.id} className="flex items-start space-x-3">
-                            <Checkbox
-                              checked={item.completed}
-                              onCheckedChange={(checked) => 
-                                handleChecklistToggle(deployment.id, item.id, checked as boolean)
-                              }
-                              disabled={!canUpdateDeployment}
-                            />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">{item.title}</div>
-                              <div className="text-xs text-gray-500">{item.description}</div>
-                              {item.completed && item.completed_by && (
-                                <div className="text-xs text-green-600 mt-1">
-                                  ✓ Completed by {item.completed_by}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4 pt-4 border-t">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">Progress</span>
-                          <span className="text-sm text-gray-500">
-                            {deployment.checklist_items.filter(item => item.completed).length} / {deployment.checklist_items.length}
-                          </span>
-                        </div>
-                        <Progress 
-                          value={(deployment.checklist_items.filter(item => item.completed).length / deployment.checklist_items.length) * 100} 
-                          className="h-2 mt-2" 
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="progress" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deployment Status Progress</CardTitle>
-              <CardDescription>
-                Real-time updates of deployment milestones and lifecycle phases
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {filteredDeployments.map((deployment) => (
-                  <div key={deployment.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-medium">{deployment.site_name}</h3>
-                        <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
-                      </div>
-                      <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
-                        {React.createElement(getStatusConfig(deployment.status).icon, { className: "h-3 w-3" })}
-                        <span>{getStatusConfig(deployment.status).label}</span>
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.hardware_delivered ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Truck className="h-4 w-4" />
-                        </div>
-                        <div className="text-xs font-medium">Hardware Delivered</div>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.installation_started ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Wrench className="h-4 w-4" />
-                        </div>
-                        <div className="text-xs font-medium">Installation Started</div>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.testing_completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <CheckCircle className="h-4 w-4" />
-                        </div>
-                        <div className="text-xs font-medium">Testing Completed</div>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Activity className="h-4 w-4" />
-                        </div>
-                        <div className="text-xs font-medium">Go-Live Ready</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span>Overall Progress</span>
-                        <span>{deployment.progress_percentage}%</span>
-                      </div>
-                      <Progress value={deployment.progress_percentage} className="h-2" />
-                    </div>
+      {/* Main Content - simplified: one list of deployments; click a card to open details dialog */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Deployment Status Progress</CardTitle>
+          <CardDescription>Click a site to see full details and actions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {filteredDeployments.map((deployment) => (
+              <button
+                key={deployment.id}
+                className="w-full text-left border rounded-lg p-4 hover:shadow-md transition-shadow"
+                onClick={() => {
+                  setSelectedDeployment(deployment);
+                  setShowDetailsDialog(true);
+                }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium">{deployment.site_name}</h3>
+                    <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
+                    {React.createElement(getStatusConfig(deployment.status).icon, { className: 'h-3 w-3' })}
+                    <span>{getStatusConfig(deployment.status).label}</span>
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                      deployment.hardware_delivered ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <Truck className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs font-medium">Hardware Delivered</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                      deployment.installation_started ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <Wrench className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs font-medium">Installation Started</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                      deployment.testing_completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <CheckCircle className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs font-medium">Testing Completed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                      deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <Activity className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs font-medium">Go-Live Ready</div>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Overall Progress</span>
+                    <span>{deployment.progress_percentage}%</span>
+                  </div>
+                  <Progress value={deployment.progress_percentage} className="h-2" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Checklist Dialog */}
-      <Dialog open={showChecklistDialog} onOpenChange={setShowChecklistDialog}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="md:max-w-[1000px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedDeployment?.site_name} - Deployment Checklist
+              {selectedDeployment?.site_name} — Deployment Overview
             </DialogTitle>
             <DialogDescription>
-              Installation checklist for {selectedDeployment?.assigned_deployment_engineer}
+              Live control center with scope, approvals, procurement, milestones, and notes
             </DialogDescription>
           </DialogHeader>
           {selectedDeployment && (
             <div className="space-y-4">
-              {selectedDeployment.checklist_items.map((item) => (
-                <div key={item.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                  <Checkbox
-                    checked={item.completed}
-                    onCheckedChange={(checked) => 
-                      handleChecklistToggle(selectedDeployment.id, item.id, checked as boolean)
-                    }
-                    disabled={!canUpdateDeployment}
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{item.title}</div>
-                    <div className="text-xs text-gray-500">{item.description}</div>
-                    {item.completed && item.completed_by && (
-                      <div className="text-xs text-green-600 mt-1">
-                        ✓ Completed by {item.completed_by} on {new Date(item.completed_at!).toLocaleDateString()}
+              {/* Header badges and quick actions */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Badge className={`${getStatusConfig(selectedDeployment.status).color}`}>{getStatusConfig(selectedDeployment.status).label}</Badge>
+                  <Badge variant="secondary">Go-Live: {new Date(selectedDeployment.deployment_date).toLocaleDateString()}</Badge>
+                  <Badge variant="outline">Ops: {selectedDeployment.assigned_ops_manager}</Badge>
+                  <Badge variant="outline">Engineer: {selectedDeployment.assigned_deployment_engineer}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isOps && selectedDeployment.approval.status === 'pending' && (
+                    <>
+                      <Input placeholder="Comments (optional)" value={decisionComment} onChange={(e) => setDecisionComment(e.target.value)} className="w-56" />
+                      <Button size="sm" onClick={() => {
+                        setDeployments(prev => prev.map(d => d.id === selectedDeployment.id ? { ...d, approval: { ...d.approval, status: 'approved', comments: decisionComment, history: [...d.approval.history, { date: new Date().toISOString(), user: profile?.full_name || 'Ops', action: 'approved', comments: decisionComment }] }, status: 'in_progress' } : d));
+                        toast.success('Scope approved');
+                      }}>Approve</Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setDeployments(prev => prev.map(d => d.id === selectedDeployment.id ? { ...d, approval: { ...d.approval, status: 'rejected', comments: decisionComment, history: [...d.approval.history, { date: new Date().toISOString(), user: profile?.full_name || 'Ops', action: 'rejected', comments: decisionComment }] }, status: 'on_hold' } : d));
+                        toast.success('Scope rejected');
+                      }}>Reject</Button>
+                    </>
+                  )}
+                  {isDE && selectedDeployment.approval.status === 'rejected' && (
+                    <Button size="sm" onClick={() => toast.info('Open scoping editor (stub)') }><Edit className="h-4 w-4 mr-1" />Edit & Resubmit</Button>
+                  )}
+                  {isAdmin && (
+                    <Button variant="outline" size="sm" onClick={() => toast.info('Exporting CSV...')}><Download className="h-4 w-4 mr-1" />Export</Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Scope Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Scope Summary</CardTitle>
+                    <CardDescription>Hardware and Software with costs</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium mb-2">Software</div>
+                        <div className="space-y-1">
+                          {selectedDeployment.scoping_summary.software.map((s, i) => (
+                            <div key={i} className="flex justify-between text-sm">
+                              <span>{s.name} × {s.quantity}</span>
+                              <span>£{(s.unit_cost * s.quantity).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium mb-2">Hardware</div>
+                        <div className="space-y-1">
+                          {selectedDeployment.scoping_summary.hardware.map((h, i) => (
+                            <div key={i} className="flex justify-between text-sm">
+                              <span>{h.name} × {h.quantity}</span>
+                              <span>£{(h.unit_cost * h.quantity).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <Separator className="my-3" />
+                    <div className="flex justify-between text-sm font-semibold">
+                      <span>Total</span>
+                      <span>£{(
+                        [...selectedDeployment.scoping_summary.software, ...selectedDeployment.scoping_summary.hardware]
+                          .reduce((sum, i) => sum + i.unit_cost * i.quantity, 0)
+                      ).toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Procurement Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Procurement Status</CardTitle>
+                    <CardDescription>Requested → Approved → Dispatched</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2 text-sm flex-wrap">
+                      <Badge className={`${selectedDeployment.procurement_stage === 'requested' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>Requested</Badge>
+                      <Badge className={`${selectedDeployment.procurement_stage === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>Approved</Badge>
+                      <Badge className={`${selectedDeployment.procurement_stage === 'dispatched' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'}`}>Dispatched</Badge>
+                    </div>
+                    {isAdmin && (
+                      <div className="mt-3 flex gap-2">
+                        <Button size="sm" variant={selectedDeployment.procurement_stage==='requested'? 'default':'outline'} onClick={() => setDeployments(prev => prev.map(d => d.id===selectedDeployment.id?{...d, procurement_stage:'requested'}:d))}>Requested</Button>
+                        <Button size="sm" variant={selectedDeployment.procurement_stage==='approved'? 'default':'outline'} onClick={() => setDeployments(prev => prev.map(d => d.id===selectedDeployment.id?{...d, procurement_stage:'approved'}:d))}>Approved</Button>
+                        <Button size="sm" variant={selectedDeployment.procurement_stage==='dispatched'? 'default':'outline'} onClick={() => setDeployments(prev => prev.map(d => d.id===selectedDeployment.id?{...d, procurement_stage:'dispatched'}:d))}>Dispatched</Button>
                       </div>
                     )}
-                  </div>
-                </div>
-              ))}
-              
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Overall Progress</span>
-                  <span className="text-sm text-gray-500">
-                    {selectedDeployment.checklist_items.filter(item => item.completed).length} / {selectedDeployment.checklist_items.length}
-                  </span>
-                </div>
-                <Progress 
-                  value={(selectedDeployment.checklist_items.filter(item => item.completed).length / selectedDeployment.checklist_items.length) * 100} 
-                  className="h-2" 
-                />
+                  </CardContent>
+                </Card>
+
+                {/* Milestones */}
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Forecast & Milestones</CardTitle>
+                    <CardDescription>Key dates and current status</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      {selectedDeployment.milestones.map((m, idx) => (
+                        <div key={idx} className="p-3 border rounded">
+                          <div className="text-sm font-medium">{m.name}</div>
+                          <div className="text-xs text-gray-600">{m.start} → {m.end}</div>
+                          <div className="mt-1 text-xs">Status: {m.status.replace('_',' ')}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Approval History */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Approval History</CardTitle>
+                    <CardDescription>Decisions and comments</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      {selectedDeployment.approval.history.map((h, i) => (
+                        <div key={i} className="flex items-start justify-between p-2 border rounded">
+                          <div>
+                            <div className="font-medium">{h.action.toUpperCase()} — {h.user}</div>
+                            {h.comments && <div className="text-xs text-gray-600">{h.comments}</div>}
+                          </div>
+                          <div className="text-xs text-gray-500">{new Date(h.date).toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Notes</CardTitle>
+                    <CardDescription>Shared across all roles</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {selectedDeployment.shared_notes.map(n => (
+                        <div key={n.id} className="p-2 border rounded text-sm flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{n.author}</div>
+                            <div>{n.content}</div>
+                          </div>
+                          <div className="text-xs text-gray-500">{new Date(n.timestamp).toLocaleString()}</div>
+                        </div>
+                      ))}
+                      {(isAdmin || isDE) && (
+                        <div className="flex items-center gap-2">
+                          <Input placeholder="Add a note" onKeyDown={(e) => {
+                            if (e.key === 'Enter' && selectedDeployment) {
+                              const content = (e.target as HTMLInputElement).value.trim();
+                              if (!content) return;
+                              setDeployments(prev => prev.map(d => d.id===selectedDeployment.id?{...d, shared_notes:[...d.shared_notes, { id: Date.now().toString(), author: profile?.full_name || 'User', content, timestamp: new Date().toISOString() }]}: d));
+                              (e.target as HTMLInputElement).value='';
+                            }
+                          }} />
+                          <Button size="sm" onClick={() => toast.success('Note added')}>Add</Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Checklist dialog removed in simplified flow */}
     </div>
   );
 };

@@ -19,10 +19,14 @@ import {
   BarChart3,
   Calendar,
   FileText,
-  Database
+  Database,
+  Eye,
+  Edit
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface DashboardMetric {
   title: string;
@@ -41,18 +45,90 @@ interface DashboardWidget {
   size: 'small' | 'medium' | 'large';
 }
 
+interface RequestSummaryItem { name: string; units?: number }
+interface RequestSummary { software: RequestSummaryItem[]; hardware: RequestSummaryItem[] }
+
+interface RequestRow {
+  id: string;
+  siteId: string;
+  siteName: string;
+  requestedBy: string;
+  status: 'pending' | 'approved' | 'rejected' | 'procurement';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  totalValue: number;
+  assignedOps?: string;
+  assignedEngineer?: string;
+  rejectionReason?: string;
+  submittedAt: string;
+  summary: RequestSummary;
+}
+
 const Dashboard = () => {
   const { currentRole, profile } = useAuth();
   const roleConfig = getRoleConfig(currentRole || 'admin');
+  const navigate = useNavigate();
 
   // Mock data - in real app, this would come from API
   const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
   const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
 
+  // Requests scoped for the dashboard role views
+  const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
+
+  useEffect(() => {
+    // Seed requests
+    const seed: RequestRow[] = [
+      {
+        id: 'r1', siteId: '3', siteName: 'Birmingham South', requestedBy: 'Tom Wilson',
+        status: 'pending', priority: 'high', totalValue: 4500, assignedOps: 'Emma Davis', assignedEngineer: 'Tom Wilson',
+        submittedAt: '2024-01-16T10:30:00Z',
+        summary: { software: [{ name: 'POS System' }, { name: 'Kiosk Software' }], hardware: [{ name: 'POS Terminals', units: 2 }] }
+      },
+      {
+        id: 'r2', siteId: '4', siteName: 'Leeds Central', requestedBy: 'Chris Taylor',
+        status: 'approved', priority: 'medium', totalValue: 12000, assignedOps: 'Lisa Anderson', assignedEngineer: 'Chris Taylor',
+        submittedAt: '2024-01-17T14:20:00Z',
+        summary: { software: [{ name: 'POS System' }, { name: 'Kitchen Display' }], hardware: [{ name: 'POS Terminals', units: 4 }] }
+      },
+      {
+        id: 'r3', siteId: '5', siteName: 'Liverpool East', requestedBy: 'Anna Garcia',
+        status: 'rejected', priority: 'low', totalValue: 800, assignedOps: 'Mark Thompson', assignedEngineer: 'Anna Garcia',
+        rejectionReason: 'Please reduce scope and resubmit.', submittedAt: '2024-01-18T09:15:00Z',
+        summary: { software: [{ name: 'Self-Service Kiosks' }], hardware: [{ name: 'Tablets', units: 1 }] }
+      },
+      {
+        id: 'r4', siteId: '2', siteName: 'Manchester North', requestedBy: 'David Brown',
+        status: 'procurement', priority: 'urgent', totalValue: 7500, assignedOps: 'Sarah Wilson', assignedEngineer: 'David Brown',
+        submittedAt: '2024-01-19T11:45:00Z',
+        summary: { software: [{ name: 'Kitchen Display' }], hardware: [{ name: 'KDS Screens', units: 3 }] }
+      }
+    ];
+    setAllRequests(seed);
+  }, []);
+
   useEffect(() => {
     // Generate role-specific metrics and widgets
     generateDashboardContent();
   }, [currentRole]);
+
+  const getStatusBadge = (status: RequestRow['status']) => {
+    switch (status) {
+      case 'pending': return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>;
+      case 'approved': return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+      case 'rejected': return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      case 'procurement': return <Badge className="bg-blue-100 text-blue-800">Procurement</Badge>;
+      default: return <Badge>Unknown</Badge>;
+    }
+  };
+
+  const approveInline = (id: string) => {
+    setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
+    toast.success('Request approved');
+  };
+  const rejectInline = (id: string) => {
+    setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected', rejectionReason: 'Rejected from dashboard' } : r));
+    toast.success('Request rejected');
+  };
 
   const generateDashboardContent = () => {
     const baseMetrics: DashboardMetric[] = [
@@ -66,11 +142,11 @@ const Dashboard = () => {
       },
       {
         title: 'Pending Approvals',
-        value: 5,
-        change: '-3 this week',
+        value: allRequests.filter(r => r.status === 'pending').length,
+        change: '+1 today',
         icon: AlertCircle,
         color: 'text-orange-600',
-        description: 'Hardware requests awaiting review'
+        description: 'Awaiting review'
       },
       {
         title: 'Deployments This Month',
@@ -86,7 +162,7 @@ const Dashboard = () => {
     if (currentRole === 'admin') {
       baseMetrics.push(
         {
-          title: 'Total Users',
+          title: 'Active Users',
           value: 24,
           change: '+3 this month',
           icon: Users,
@@ -116,30 +192,29 @@ const Dashboard = () => {
     } else if (currentRole === 'deployment_engineer') {
       baseMetrics.push(
         {
-          title: 'My Deployments',
-          value: 4,
+          title: 'My Sites',
+          value: 7,
           change: '+1 this week',
           icon: Wrench,
           color: 'text-green-600',
-          description: 'Sites you\'re deploying'
+          description: 'You are assigned to these sites'
         },
         {
-          title: 'Completion Rate',
-          value: '96%',
-          change: '+2% this month',
-          icon: TrendingUp,
-          color: 'text-green-600',
-          description: 'On-time deployment success'
+          title: 'Rejected Scopes',
+          value: allRequests.filter(r => r.status === 'rejected').length,
+          icon: AlertCircle,
+          color: 'text-red-600',
+          description: 'Need resubmission'
         }
       );
     }
 
     setMetrics(baseMetrics);
 
-    // Generate role-specific widgets
+    // Widgets remain, but we add role sections below metrics grid
     const roleWidgets: DashboardWidget[] = [];
 
-    // Common widgets for all roles
+    // Common recent activity widget
     roleWidgets.push(
       {
         id: 'recent-activity',
@@ -166,144 +241,10 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Package className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-sm font-medium">Hardware approval requested for "Birmingham South"</p>
-                  <p className="text-xs text-gray-500">6 hours ago</p>
-                </div>
-              </div>
-            </div>
           </div>
         )
       }
     );
-
-    // Role-specific widgets
-    if (currentRole === 'admin') {
-      roleWidgets.push(
-        {
-          id: 'system-overview',
-          title: 'System Overview',
-          description: 'Platform-wide metrics and health',
-          size: 'large',
-          content: (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">98%</div>
-                  <div className="text-sm text-gray-500">Uptime</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">24</div>
-                  <div className="text-sm text-gray-500">Active Users</div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Storage Usage</span>
-                  <span>75%</span>
-                </div>
-                <Progress value={75} className="h-2" />
-              </div>
-            </div>
-          )
-        },
-        {
-          id: 'user-management',
-          title: 'User Management',
-          description: 'Quick user actions and statistics',
-          size: 'medium',
-          content: (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">New Users This Month</span>
-                <Badge variant="secondary">+3</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Pending Invitations</span>
-                <Badge variant="outline">2</Badge>
-              </div>
-              <Button variant="gradient" size="sm" className="w-full">
-                <Users className="mr-2 h-4 w-4" />
-                Manage Users
-              </Button>
-            </div>
-          )
-        }
-      );
-    } else if (currentRole === 'ops_manager') {
-      roleWidgets.push(
-        {
-          id: 'approval-queue',
-          title: 'Approval Queue',
-          description: 'Pending hardware requests requiring your review',
-          size: 'medium',
-          content: (
-            <div className="space-y-3">
-              <div className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium">Birmingham South</p>
-                    <p className="text-xs text-gray-500">Hardware request - 2 items</p>
-                  </div>
-                  <Badge variant="secondary">High Priority</Badge>
-                </div>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium">Leeds Central</p>
-                    <p className="text-xs text-gray-500">Hardware request - 5 items</p>
-                  </div>
-                  <Badge variant="outline">Medium Priority</Badge>
-                </div>
-              </div>
-              <Button variant="gradient" size="sm" className="w-full">
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Review All Requests
-              </Button>
-            </div>
-          )
-        }
-      );
-    } else if (currentRole === 'deployment_engineer') {
-      roleWidgets.push(
-        {
-          id: 'deployment-schedule',
-          title: 'Deployment Schedule',
-          description: 'Your upcoming deployment tasks',
-          size: 'medium',
-          content: (
-            <div className="space-y-3">
-              <div className="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium">Manchester North</p>
-                    <p className="text-xs text-gray-500">Scheduled for tomorrow</p>
-                  </div>
-                  <Badge variant="secondary">Ready</Badge>
-                </div>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium">Liverpool East</p>
-                    <p className="text-xs text-gray-500">Scheduled for Friday</p>
-                  </div>
-                  <Badge variant="outline">Pending</Badge>
-                </div>
-              </div>
-              <Button variant="gradient" size="sm" className="w-full">
-                <Calendar className="mr-2 h-4 w-4" />
-                View Full Schedule
-              </Button>
-            </div>
-          )
-        }
-      );
-    }
 
     setWidgets(roleWidgets);
   };
@@ -319,6 +260,188 @@ const Dashboard = () => {
       default:
         return 'col-span-1';
     }
+  };
+
+  // Role-specific sections
+  const renderDeploymentEngineerSection = () => {
+    const mine = allRequests.filter(r => r.assignedEngineer === (profile?.full_name || profile?.email));
+    const pendingOrRejected = mine.filter(r => r.status === 'pending' || r.status === 'rejected');
+    const upcoming = mine.filter(r => r.status === 'approved' || r.status === 'procurement');
+    return (
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">My Scoping Queue</CardTitle>
+            <CardDescription>Pending and rejected scopes requiring attention</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pendingOrRejected.length === 0 ? (
+              <p className="text-sm text-gray-600">Nothing needs your attention right now.</p>
+            ) : (
+              <div className="space-y-2">
+                {pendingOrRejected.map(r => (
+                  <div key={r.id} className="p-3 border rounded flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{r.siteName}</div>
+                      <div className="text-xs text-gray-500">Submitted {new Date(r.submittedAt).toLocaleDateString()}</div>
+                      <div className="mt-1 flex items-center gap-2">
+                        {getStatusBadge(r.status)}
+                        {r.status === 'rejected' && (
+                          <span className="text-xs text-red-700">{r.rejectionReason}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {r.status === 'rejected' ? (
+                        <Button size="sm" onClick={() => navigate(`/sites/${r.siteId}/study`)}>
+                          <Edit className="h-4 w-4 mr-1" /> Edit & Resubmit
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => navigate('/approvals-procurement')}>
+                          <Eye className="h-4 w-4 mr-1" /> View
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Upcoming Procurement</CardTitle>
+            <CardDescription>Approved scopes moving to procurement</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {upcoming.length === 0 ? (
+              <p className="text-sm text-gray-600">No approved scopes at the moment.</p>
+            ) : (
+              <div className="space-y-2">
+                {upcoming.map(r => (
+                  <div key={r.id} className="p-3 border rounded flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{r.siteName}</div>
+                      <div className="text-xs text-gray-500">Value £{r.totalValue.toLocaleString()}</div>
+                    </div>
+                    <Badge variant="secondary">{r.status === 'procurement' ? 'In Procurement' : 'Approved'}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
+
+  const renderOpsManagerSection = () => {
+    const mine = allRequests.filter(r => r.assignedOps === (profile?.full_name || profile?.email));
+    const pending = mine.filter(r => r.status === 'pending');
+    const recent = mine.filter(r => r.status !== 'pending').slice(0, 5);
+    return (
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Pending Approvals</CardTitle>
+            <CardDescription>Newly submitted scopes awaiting your decision</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {pending.length === 0 ? (
+              <p className="text-sm text-gray-600">No pending approvals.</p>
+            ) : (
+              <div className="space-y-2">
+                {pending.map(r => (
+                  <div key={r.id} className="p-3 border rounded">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-medium">{r.siteName}</div>
+                        <div className="text-xs text-gray-500">Submitted {new Date(r.submittedAt).toLocaleDateString()}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={() => approveInline(r.id)}><CheckCircle className="h-4 w-4 mr-1" />Approve</Button>
+                        <Button size="sm" variant="outline" onClick={() => rejectInline(r.id)}><AlertCircle className="h-4 w-4 mr-1" />Reject</Button>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="p-2 border rounded">
+                        <p className="text-xs font-medium mb-1">Software</p>
+                        {r.summary.software.map((s, i) => (
+                          <div key={i} className="text-xs text-gray-700">• {s.name}</div>
+                        ))}
+                      </div>
+                      <div className="p-2 border rounded">
+                        <p className="text-xs font-medium mb-1">Hardware</p>
+                        {r.summary.hardware.map((h, i) => (
+                          <div key={i} className="text-xs text-gray-700">• {h.name} {h.units ? `(${h.units})` : ''}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">Total Cost: £{r.totalValue.toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Decisions</CardTitle>
+            <CardDescription>Approved, rejected, and resubmitted scopes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recent.length === 0 ? (
+              <p className="text-sm text-gray-600">No recent activity.</p>
+            ) : (
+              <div className="space-y-2">
+                {recent.map(r => (
+                  <div key={r.id} className="p-3 border rounded flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{r.siteName}</div>
+                      <div className="text-xs text-gray-500">Value £{r.totalValue.toLocaleString()}</div>
+                    </div>
+                    {getStatusBadge(r.status)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </>
+    );
+  };
+
+  const renderAdminSection = () => {
+    return (
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Platform Health</CardTitle>
+            <CardDescription>Overview of platform metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">98%</div>
+                <div className="text-sm text-gray-500">Uptime</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">24</div>
+                <div className="text-sm text-gray-500">Active Users</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">37</div>
+                <div className="text-sm text-gray-500">Active Sites</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">5</div>
+                <div className="text-sm text-gray-500">Alerts</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </>
+    );
   };
 
   return (
@@ -364,6 +487,11 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* Role-specific sections */}
+      {currentRole === 'deployment_engineer' && renderDeploymentEngineerSection()}
+      {currentRole === 'ops_manager' && renderOpsManagerSection()}
+      {currentRole === 'admin' && renderAdminSection()}
+
       {/* Widgets Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {widgets.map((widget) => (
@@ -387,22 +515,15 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
+            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2" onClick={() => navigate('/sites')}>
               <Building className="h-6 w-6" />
               <span className="text-sm font-medium">View Sites</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <FileText className="h-6 w-6" />
-              <span className="text-sm font-medium">Site Study</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
+            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2" onClick={() => navigate('/approvals-procurement')}>
               <Package className="h-6 w-6" />
-              <span className="text-sm font-medium">Hardware</span>
+              <span className="text-sm font-medium">Approvals</span>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <Database className="h-6 w-6" />
-              <span className="text-sm font-medium">Inventory</span>
-            </Button>
+            
           </div>
         </CardContent>
       </Card>

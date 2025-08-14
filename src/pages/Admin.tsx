@@ -805,66 +805,76 @@ const Admin = () => {
             <TabsContent value="users" className="space-y-6">
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-700">Total Users</CardTitle>
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Users className="h-4 w-4 text-blue-600" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.total}</div>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+                    <p className="text-xs text-gray-500 mt-1">
                       All registered users
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Admins</CardTitle>
-                    <Crown className="h-4 w-4 text-muted-foreground" />
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-700">Admins</CardTitle>
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                      <Crown className="h-4 w-4 text-red-600" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.admins}</div>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-gray-900">{stats.admins}</div>
+                    <p className="text-xs text-gray-500 mt-1">
                       System administrators
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ops Managers</CardTitle>
-                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-700">Ops Managers</CardTitle>
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Wrench className="h-4 w-4 text-green-600" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.opsManagers}</div>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-gray-900">{stats.opsManagers}</div>
+                    <p className="text-xs text-gray-500 mt-1">
                       Operations managers
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Deployment Engineers</CardTitle>
-                    <Truck className="h-4 w-4 text-muted-foreground" />
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-700">Deployment Engineers</CardTitle>
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Truck className="h-4 w-4 text-purple-600" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.deploymentEngineers}</div>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-gray-900">{stats.deploymentEngineers}</div>
+                    <p className="text-xs text-gray-500 mt-1">
                       Field engineers
                     </p>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">No Role</CardTitle>
-                    <UserX className="h-4 w-4 text-muted-foreground" />
+                <Card className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-medium text-gray-700">No Role</CardTitle>
+                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <UserX className="h-4 w-4 text-gray-600" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.noRole}</div>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-gray-900">{stats.noRole}</div>
+                    <p className="text-xs text-gray-500 mt-1">
                       Unassigned users
                     </p>
                   </CardContent>
@@ -872,9 +882,12 @@ const Admin = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">User Accounts</h2>
-                <Button onClick={() => setShowCreateUserDialog(true)} variant="gradient">
+              <div className="flex justify-between items-center py-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">User Accounts</h2>
+                  <p className="text-gray-600 mt-1">Manage user accounts and role assignments</p>
+                </div>
+                <Button onClick={() => setShowCreateUserDialog(true)} variant="gradient" className="h-10 px-6">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add New User
                 </Button>
@@ -882,26 +895,26 @@ const Admin = () => {
 
               {/* Filters */}
               <Card>
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="search">Search Users</Label>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="search" className="text-sm font-medium">Search Users</Label>
                       <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                           id="search"
                           placeholder="Search by email or name..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 h-10"
                           aria-label="Search users"
                         />
                       </div>
                     </div>
-                    <div>
-                      <Label htmlFor="role-filter">Filter by Role</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="role-filter" className="text-sm font-medium">Filter by Role</Label>
                       <Select value={roleFilter} onValueChange={setRoleFilter}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-10">
                           <SelectValue placeholder="All roles" />
                         </SelectTrigger>
                         <SelectContent>
@@ -918,43 +931,45 @@ const Admin = () => {
 
               {/* Users Table */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Users ({filteredUsers.length})</CardTitle>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Users ({filteredUsers.length})</CardTitle>
                   <CardDescription>
                     All registered users in the system
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Roles</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Name</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Email</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Roles</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Created</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-gray-400" />
-                                {user.full_name}
+                          <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
+                            <TableCell className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <User className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <span className="font-medium text-gray-900">{user.full_name}</span>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-gray-400" />
-                                {user.email}
+                                <span className="text-gray-700">{user.email}</span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
+                            <TableCell className="px-6 py-4">
+                              <div className="flex flex-wrap gap-2">
                                 {user.user_roles.length === 0 ? (
-                                  <Badge variant="secondary" className="text-gray-500">
+                                  <Badge variant="secondary" className="text-gray-500 bg-gray-100">
                                     <UserX className="h-3 w-3 mr-1" />
                                     No Role
                                   </Badge>
@@ -963,7 +978,7 @@ const Admin = () => {
                                     <Badge 
                                       key={index} 
                                       variant="outline" 
-                                      className={`${getRoleColor(role.role)} flex items-center gap-1`}
+                                      className={`${getRoleColor(role.role)} flex items-center gap-1 px-2 py-1`}
                                     >
                                       {getRoleIcon(role.role)}
                                       {getRoleConfig(role.role).displayName}
@@ -972,19 +987,20 @@ const Admin = () => {
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-gray-400" />
-                                {new Date(user.created_at).toLocaleDateString()}
+                                <span className="text-gray-700">{new Date(user.created_at).toLocaleDateString()}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
+                            <TableCell className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
                                 <Button 
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => openEditUserDialog(user)}
                                   aria-label={`Edit user ${user.full_name}`}
+                                  className="h-8 w-8 p-0"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -992,7 +1008,7 @@ const Admin = () => {
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => handleDeleteUser(user.user_id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                                   aria-label={`Delete user ${user.full_name}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1005,8 +1021,14 @@ const Admin = () => {
                     </Table>
                     
                     {filteredUsers.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        {users.length === 0 ? 'No users found' : 'No users match your filters'}
+                      <div className="text-center py-12 text-gray-500">
+                        <UserX className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium">
+                          {users.length === 0 ? 'No users found' : 'No users match your filters'}
+                        </p>
+                        {users.length === 0 && (
+                          <p className="text-xs text-gray-400 mt-1">Create your first user to get started</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1015,61 +1037,67 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="organizations" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">Organization Management</h2>
-                <Button onClick={() => setShowCreateOrgDialog(true)} variant="gradient">
+              <div className="flex justify-between items-center py-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Organization Management</h2>
+                  <p className="text-gray-600 mt-1">Manage organizations for site mapping</p>
+                </div>
+                <Button onClick={() => setShowCreateOrgDialog(true)} variant="gradient" className="h-10 px-6">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Organization
                 </Button>
               </div>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Organizations ({organizations.length})</CardTitle>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Organizations ({organizations.length})</CardTitle>
                   <CardDescription>
                     Manage organizations for site mapping
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Sector</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Name</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Description</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Sector</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Created</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {organizations.map((org) => (
-                          <TableRow key={org.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <Building className="h-4 w-4 text-gray-400" />
-                                {org.name}
+                          <TableRow key={org.id} className="hover:bg-gray-50 transition-colors">
+                            <TableCell className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <Building className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <span className="font-medium text-gray-900">{org.name}</span>
                               </div>
                             </TableCell>
-                            <TableCell>{org.description}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-sm">
+                            <TableCell className="px-6 py-4 text-gray-700">{org.description}</TableCell>
+                            <TableCell className="px-6 py-4">
+                              <Badge variant="outline" className="text-sm bg-gray-100">
                                 {org.sector || 'Not specified'}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-gray-400" />
-                                {new Date(org.created_at).toLocaleDateString()}
+                                <span className="text-gray-700">{new Date(org.created_at).toLocaleDateString()}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
+                            <TableCell className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
                                 <Button 
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => openEditOrgDialog(org)}
                                   aria-label={`Edit organization ${org.name}`}
+                                  className="h-8 w-8 p-0"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -1077,7 +1105,7 @@ const Admin = () => {
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => handleDeleteOrganization(org.id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                                   aria-label={`Delete organization ${org.name}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1090,8 +1118,10 @@ const Admin = () => {
                     </Table>
                     
                     {organizations.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No organizations found
+                      <div className="text-center py-12 text-gray-500">
+                        <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium">No organizations found</p>
+                        <p className="text-xs text-gray-400 mt-1">Create your first organization to get started</p>
                       </div>
                     )}
                   </div>
@@ -1100,67 +1130,73 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="software" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">Software Management</h2>
-                <Button onClick={() => setShowCreateSoftwareDialog(true)} variant="gradient">
+              <div className="flex justify-between items-center py-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Software Management</h2>
+                  <p className="text-gray-600 mt-1">Manage SmartQ software modules for site deployment</p>
+                </div>
+                <Button onClick={() => setShowCreateSoftwareDialog(true)} variant="gradient" className="h-10 px-6">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Software Module
                 </Button>
               </div>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Software Modules ({softwareModules.length})</CardTitle>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Software Modules ({softwareModules.length})</CardTitle>
                   <CardDescription>
                     Manage SmartQ software modules for site deployment
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Name</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Description</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Category</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Status</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Created</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {softwareModules.map((software) => (
-                          <TableRow key={software.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <Settings className="h-4 w-4 text-gray-400" />
-                                {software.name}
+                          <TableRow key={software.id} className="hover:bg-gray-50 transition-colors">
+                            <TableCell className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <Settings className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <span className="font-medium text-gray-900">{software.name}</span>
                               </div>
                             </TableCell>
-                            <TableCell>{software.description || 'No description'}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-sm">
+                            <TableCell className="px-6 py-4 text-gray-700">{software.description || 'No description'}</TableCell>
+                            <TableCell className="px-6 py-4">
+                              <Badge variant="outline" className="text-sm bg-blue-100">
                                 {software.category}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant={software.is_active ? "default" : "secondary"}>
+                            <TableCell className="px-6 py-4">
+                              <Badge variant={software.is_active ? "default" : "secondary"} className="text-sm">
                                 {software.is_active ? 'Active' : 'Inactive'}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-gray-400" />
-                                {new Date(software.created_at).toLocaleDateString()}
+                                <span className="text-gray-700">{new Date(software.created_at).toLocaleDateString()}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
+                            <TableCell className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
                                 <Button 
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => openEditSoftwareDialog(software)}
                                   aria-label={`Edit software module ${software.name}`}
+                                  className="h-8 w-8 p-0"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -1168,7 +1204,7 @@ const Admin = () => {
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => handleDeleteSoftware(software.id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                                   aria-label={`Delete software module ${software.name}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1181,8 +1217,10 @@ const Admin = () => {
                     </Table>
                     
                     {softwareModules.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No software modules found
+                      <div className="text-center py-12 text-gray-500">
+                        <Settings className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium">No software modules found</p>
+                        <p className="text-xs text-gray-400 mt-1">Create your first software module to get started</p>
                       </div>
                     )}
                   </div>
@@ -1191,68 +1229,76 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="hardware" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">Hardware Management</h2>
-                <Button onClick={() => setShowCreateHardwareDialog(true)} variant="gradient">
+              <div className="flex justify-between items-center py-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Hardware Management</h2>
+                  <p className="text-gray-600 mt-1">Manage hardware items for site deployment</p>
+                </div>
+                <Button onClick={() => setShowCreateHardwareDialog(true)} variant="gradient" className="h-10 px-6">
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Hardware Item
                 </Button>
               </div>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Hardware Items ({hardwareItems.length})</CardTitle>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Hardware Items ({hardwareItems.length})</CardTitle>
                   <CardDescription>
                     Manage hardware items for site deployment
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Model</TableHead>
-                          <TableHead>Manufacturer</TableHead>
-                          <TableHead>Estimated Cost</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Name</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Description</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Category</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Model</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Manufacturer</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Estimated Cost</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900">Status</TableHead>
+                          <TableHead className="px-6 py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {hardwareItems.map((hardware) => (
-                          <TableRow key={hardware.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <Wrench className="h-4 w-4 text-gray-400" />
-                                {hardware.name}
+                          <TableRow key={hardware.id} className="hover:bg-gray-50 transition-colors">
+                            <TableCell className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                  <Wrench className="h-4 w-4 text-purple-600" />
+                                </div>
+                                <span className="font-medium text-gray-900">{hardware.name}</span>
                               </div>
                             </TableCell>
-                            <TableCell>{hardware.description || 'No description'}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-sm">
+                            <TableCell className="px-6 py-4 text-gray-700">{hardware.description || 'No description'}</TableCell>
+                            <TableCell className="px-6 py-4">
+                              <Badge variant="outline" className="text-sm bg-purple-100">
                                 {hardware.category}
                               </Badge>
                             </TableCell>
-                            <TableCell>{hardware.model || 'N/A'}</TableCell>
-                            <TableCell>{hardware.manufacturer || 'N/A'}</TableCell>
-                            <TableCell>
-                              {hardware.estimated_cost ? `£${hardware.estimated_cost.toFixed(2)}` : 'N/A'}
+                            <TableCell className="px-6 py-4 text-gray-700">{hardware.model || 'N/A'}</TableCell>
+                            <TableCell className="px-6 py-4 text-gray-700">{hardware.manufacturer || 'N/A'}</TableCell>
+                            <TableCell className="px-6 py-4">
+                              <span className="font-medium text-gray-900">
+                                {hardware.estimated_cost ? `£${hardware.estimated_cost.toFixed(2)}` : 'N/A'}
+                              </span>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant={hardware.is_active ? "default" : "secondary"}>
+                            <TableCell className="px-6 py-4">
+                              <Badge variant={hardware.is_active ? "default" : "secondary"} className="text-sm">
                                 {hardware.is_active ? 'Active' : 'Inactive'}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
+                            <TableCell className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
                                 <Button 
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => openEditHardwareDialog(hardware)}
                                   aria-label={`Edit hardware item ${hardware.name}`}
+                                  className="h-8 w-8 p-0"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -1260,7 +1306,7 @@ const Admin = () => {
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => handleDeleteHardware(hardware.id)}
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
                                   aria-label={`Delete hardware item ${hardware.name}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1273,8 +1319,10 @@ const Admin = () => {
                     </Table>
                     
                     {hardwareItems.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        No hardware items found
+                      <div className="text-center py-12 text-gray-500">
+                        <Wrench className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium">No hardware items found</p>
+                        <p className="text-xs text-gray-400 mt-1">Create your first hardware item to get started</p>
                       </div>
                     )}
                   </div>
@@ -1294,9 +1342,9 @@ const Admin = () => {
               Add a new user to the system with appropriate role assignments.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateUser} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
+          <form onSubmit={handleCreateUser} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -1305,10 +1353,11 @@ const Admin = () => {
                 placeholder="user@example.com"
                 required
                 aria-describedby="email-help"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="full_name">Full Name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="full_name" className="text-sm font-medium">Full Name</Label>
               <Input
                 id="full_name"
                 value={createUserForm.full_name}
@@ -1316,13 +1365,14 @@ const Admin = () => {
                 placeholder="John Doe"
                 required
                 aria-describedby="name-help"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label>Roles</Label>
-              <div className="space-y-3">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Roles</Label>
+              <div className="space-y-4">
                 {Object.values(ROLES).map((role) => (
-                  <div key={role.key} className="flex items-center space-x-3">
+                  <div key={role.key} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                     <Checkbox
                       id={role.key}
                       checked={createUserForm.roles.includes(role.key)}
@@ -1340,19 +1390,22 @@ const Admin = () => {
                         }
                       }}
                       aria-describedby={`${role.key}-help`}
+                      className="mt-1"
                     />
-                    <div className="flex items-center gap-2">
-                      {getRoleIcon(role.key)}
-                      <Label htmlFor={role.key} className="text-sm font-normal cursor-pointer">
-                        {role.displayName}
-                      </Label>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {getRoleIcon(role.key)}
+                        <Label htmlFor={role.key} className="text-sm font-medium cursor-pointer">
+                          {role.displayName}
+                        </Label>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{role.description}</p>
                     </div>
-                    <p className="text-xs text-gray-500">{role.description}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowCreateUserDialog(false)}>
                 Cancel
               </Button>
@@ -1373,9 +1426,9 @@ const Admin = () => {
               Update user information and roles.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditUser} className="space-y-4">
-            <div>
-              <Label htmlFor="edit_email">Email</Label>
+          <form onSubmit={handleEditUser} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="edit_email" className="text-sm font-medium">Email</Label>
               <Input
                 id="edit_email"
                 type="email"
@@ -1383,23 +1436,25 @@ const Admin = () => {
                 onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
                 placeholder="user@example.com"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_full_name">Full Name</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_full_name" className="text-sm font-medium">Full Name</Label>
               <Input
                 id="edit_full_name"
                 value={createUserForm.full_name}
                 onChange={(e) => setCreateUserForm({ ...createUserForm, full_name: e.target.value })}
                 placeholder="John Doe"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label>Roles</Label>
-              <div className="space-y-3">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Roles</Label>
+              <div className="space-y-4">
                 {Object.values(ROLES).map((role) => (
-                  <div key={role.key} className="flex items-center space-x-3">
+                  <div key={role.key} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                     <Checkbox
                       id={`edit_${role.key}`}
                       checked={createUserForm.roles.includes(role.key)}
@@ -1416,19 +1471,22 @@ const Admin = () => {
                           });
                         }
                       }}
+                      className="mt-1"
                     />
-                    <div className="flex items-center gap-2">
-                      {getRoleIcon(role.key)}
-                      <Label htmlFor={`edit_${role.key}`} className="text-sm font-normal cursor-pointer">
-                        {role.displayName}
-                      </Label>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {getRoleIcon(role.key)}
+                        <Label htmlFor={`edit_${role.key}`} className="text-sm font-medium cursor-pointer">
+                          {role.displayName}
+                        </Label>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{role.description}</p>
                     </div>
-                    <p className="text-xs text-gray-500">{role.description}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowEditUserDialog(false)}>
                 Cancel
               </Button>
@@ -1449,33 +1507,35 @@ const Admin = () => {
               Add a new organization for site mapping.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateOrganization} className="space-y-4">
-            <div>
-              <Label htmlFor="org_name">Name</Label>
+          <form onSubmit={handleCreateOrganization} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="org_name" className="text-sm font-medium">Name</Label>
               <Input
                 id="org_name"
                 value={createOrgForm.name}
                 onChange={(e) => setCreateOrgForm({ ...createOrgForm, name: e.target.value })}
                 placeholder="Organization name"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="org_description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="org_description" className="text-sm font-medium">Description</Label>
               <Input
                 id="org_description"
                 value={createOrgForm.description}
                 onChange={(e) => setCreateOrgForm({ ...createOrgForm, description: e.target.value })}
                 placeholder="Organization description"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="org_sector">Sector</Label>
+            <div className="space-y-2">
+              <Label htmlFor="org_sector" className="text-sm font-medium">Sector</Label>
               <Select
                 value={createOrgForm.sector}
                 onValueChange={(value) => setCreateOrgForm({ ...createOrgForm, sector: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select a sector" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1487,7 +1547,7 @@ const Admin = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowCreateOrgDialog(false)}>
                 Cancel
               </Button>
@@ -1508,33 +1568,35 @@ const Admin = () => {
               Update organization information.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditOrganization} className="space-y-4">
-            <div>
-              <Label htmlFor="edit_org_name">Name</Label>
+          <form onSubmit={handleEditOrganization} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="edit_org_name" className="text-sm font-medium">Name</Label>
               <Input
                 id="edit_org_name"
                 value={createOrgForm.name}
                 onChange={(e) => setCreateOrgForm({ ...createOrgForm, name: e.target.value })}
                 placeholder="Organization name"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_org_description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_org_description" className="text-sm font-medium">Description</Label>
               <Input
                 id="edit_org_description"
                 value={createOrgForm.description}
                 onChange={(e) => setCreateOrgForm({ ...createOrgForm, description: e.target.value })}
                 placeholder="Organization description"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_org_sector">Sector</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_org_sector" className="text-sm font-medium">Sector</Label>
               <Select
                 value={createOrgForm.sector}
                 onValueChange={(value) => setCreateOrgForm({ ...createOrgForm, sector: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select a sector" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1546,7 +1608,7 @@ const Admin = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowEditOrgDialog(false)}>
                 Cancel
               </Button>
@@ -1567,37 +1629,40 @@ const Admin = () => {
               Add a new SmartQ software module for site deployment.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateSoftware} className="space-y-4">
-            <div>
-              <Label htmlFor="software_name">Name</Label>
+          <form onSubmit={handleCreateSoftware} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="software_name" className="text-sm font-medium">Name</Label>
               <Input
                 id="software_name"
                 value={createSoftwareForm.name}
                 onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, name: e.target.value })}
                 placeholder="e.g., SmartQ POS System"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="software_description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="software_description" className="text-sm font-medium">Description</Label>
               <Input
                 id="software_description"
                 value={createSoftwareForm.description}
                 onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, description: e.target.value })}
                 placeholder="Software module description"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="software_category">Category</Label>
+            <div className="space-y-2">
+              <Label htmlFor="software_category" className="text-sm font-medium">Category</Label>
               <Input
                 id="software_category"
                 value={createSoftwareForm.category}
                 onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, category: e.target.value })}
                 placeholder="e.g., POS, KMS, QR, Kiosk"
                 required
+                className="h-10"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowCreateSoftwareDialog(false)}>
                 Cancel
               </Button>
@@ -1618,37 +1683,40 @@ const Admin = () => {
               Update software module information.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditSoftware} className="space-y-4">
-            <div>
-              <Label htmlFor="edit_software_name">Name</Label>
+          <form onSubmit={handleEditSoftware} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="edit_software_name" className="text-sm font-medium">Name</Label>
               <Input
                 id="edit_software_name"
                 value={createSoftwareForm.name}
                 onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, name: e.target.value })}
                 placeholder="e.g., SmartQ POS System"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_software_description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_software_description" className="text-sm font-medium">Description</Label>
               <Input
                 id="edit_software_description"
                 value={createSoftwareForm.description}
                 onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, description: e.target.value })}
                 placeholder="Software module description"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_software_category">Category</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_software_category" className="text-sm font-medium">Category</Label>
               <Input
                 id="edit_software_category"
                 value={createSoftwareForm.category}
                 onChange={(e) => setCreateSoftwareForm({ ...createSoftwareForm, category: e.target.value })}
                 placeholder="e.g., POS, KMS, QR, Kiosk"
                 required
+                className="h-10"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowEditSoftwareDialog(false)}>
                 Cancel
               </Button>
@@ -1669,56 +1737,61 @@ const Admin = () => {
               Add a new hardware item for site deployment.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateHardware} className="space-y-4">
-            <div>
-              <Label htmlFor="hardware_name">Name</Label>
+          <form onSubmit={handleCreateHardware} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="hardware_name" className="text-sm font-medium">Name</Label>
               <Input
                 id="hardware_name"
                 value={createHardwareForm.name}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, name: e.target.value })}
                 placeholder="e.g., Android Tablet"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="hardware_description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hardware_description" className="text-sm font-medium">Description</Label>
               <Input
                 id="hardware_description"
                 value={createHardwareForm.description}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, description: e.target.value })}
                 placeholder="Hardware item description"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="hardware_category">Category</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hardware_category" className="text-sm font-medium">Category</Label>
               <Input
                 id="hardware_category"
                 value={createHardwareForm.category}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, category: e.target.value })}
                 placeholder="e.g., Tablet, POS Terminal, Printer"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="hardware_model">Model</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hardware_model" className="text-sm font-medium">Model</Label>
               <Input
                 id="hardware_model"
                 value={createHardwareForm.model}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, model: e.target.value })}
                 placeholder="e.g., Samsung Galaxy Tab A"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="hardware_manufacturer">Manufacturer</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hardware_manufacturer" className="text-sm font-medium">Manufacturer</Label>
               <Input
                 id="hardware_manufacturer"
                 value={createHardwareForm.manufacturer}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, manufacturer: e.target.value })}
                 placeholder="e.g., Samsung, Apple, HP"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="hardware_cost">Estimated Cost (£)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hardware_cost" className="text-sm font-medium">Estimated Cost (£)</Label>
               <Input
                 id="hardware_cost"
                 type="number"
@@ -1726,9 +1799,10 @@ const Admin = () => {
                 value={createHardwareForm.estimated_cost}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, estimated_cost: parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
+                className="h-10"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowCreateHardwareDialog(false)}>
                 Cancel
               </Button>
@@ -1749,56 +1823,61 @@ const Admin = () => {
               Update hardware item information.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditHardware} className="space-y-4">
-            <div>
-              <Label htmlFor="edit_hardware_name">Name</Label>
+          <form onSubmit={handleEditHardware} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="edit_hardware_name" className="text-sm font-medium">Name</Label>
               <Input
                 id="edit_hardware_name"
                 value={createHardwareForm.name}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, name: e.target.value })}
                 placeholder="e.g., Android Tablet"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_hardware_description">Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_hardware_description" className="text-sm font-medium">Description</Label>
               <Input
                 id="edit_hardware_description"
                 value={createHardwareForm.description}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, description: e.target.value })}
                 placeholder="Hardware item description"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_hardware_category">Category</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_hardware_category" className="text-sm font-medium">Category</Label>
               <Input
                 id="edit_hardware_category"
                 value={createHardwareForm.category}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, category: e.target.value })}
                 placeholder="e.g., Tablet, POS Terminal, Printer"
                 required
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_hardware_model">Model</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_hardware_model" className="text-sm font-medium">Model</Label>
               <Input
                 id="edit_hardware_model"
                 value={createHardwareForm.model}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, model: e.target.value })}
                 placeholder="e.g., Samsung Galaxy Tab A"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_hardware_manufacturer">Manufacturer</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_hardware_manufacturer" className="text-sm font-medium">Manufacturer</Label>
               <Input
                 id="edit_hardware_manufacturer"
                 value={createHardwareForm.manufacturer}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, manufacturer: e.target.value })}
                 placeholder="e.g., Samsung, Apple, HP"
+                className="h-10"
               />
             </div>
-            <div>
-              <Label htmlFor="edit_hardware_cost">Estimated Cost (£)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="edit_hardware_cost" className="text-sm font-medium">Estimated Cost (£)</Label>
               <Input
                 id="edit_hardware_cost"
                 type="number"
@@ -1806,9 +1885,10 @@ const Admin = () => {
                 value={createHardwareForm.estimated_cost}
                 onChange={(e) => setCreateHardwareForm({ ...createHardwareForm, estimated_cost: parseFloat(e.target.value) || 0 })}
                 placeholder="0.00"
+                className="h-10"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setShowEditHardwareDialog(false)}>
                 Cancel
               </Button>
