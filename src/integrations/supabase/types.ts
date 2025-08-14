@@ -1898,7 +1898,62 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      licenses_secure: {
+        Row: {
+          cost: number | null
+          created_at: string | null
+          created_by: string | null
+          expiry_date: string | null
+          id: string | null
+          license_key: string | null
+          license_type: string | null
+          name: string | null
+          notes: string | null
+          purchase_date: string | null
+          status: string | null
+          updated_at: string | null
+          vendor: string | null
+        }
+        Insert: {
+          cost?: never
+          created_at?: string | null
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          license_key?: never
+          license_type?: string | null
+          name?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          cost?: never
+          created_at?: string | null
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          license_key?: never
+          license_type?: string | null
+          name?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       audit_rls_policies: {
@@ -1959,6 +2014,10 @@ export type Database = {
           retired_items: number
           total_items: number
         }[]
+      }
+      get_license_key_secure: {
+        Args: { p_license_id: string }
+        Returns: string
       }
       get_safe_profile_data: {
         Args: { target_user_id?: string }
