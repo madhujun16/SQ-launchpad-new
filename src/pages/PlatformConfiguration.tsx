@@ -77,6 +77,9 @@ interface SoftwareModule {
   description: string | null;
   category: string;
   is_active: boolean;
+  monthly_fee: number | null;
+  setup_fee: number | null;
+  license_fee: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -88,7 +91,9 @@ interface HardwareItem {
   category: string;
   model: string | null;
   manufacturer: string | null;
-  estimated_cost: number | null;
+  unit_cost: number | null;
+  installation_cost: number | null;
+  maintenance_cost: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -102,17 +107,36 @@ interface RecommendationRule {
   isRequired: boolean;
   reason: string;
   costMultiplier: number;
+  minQuantity: number;
+  maxQuantity: number;
+  conditionalLogic: string | null;
 }
 
 interface BusinessRule {
   id: string;
   name: string;
   description: string;
-  ruleType: 'dependency' | 'exclusion' | 'quantity' | 'cost';
+  ruleType: 'dependency' | 'exclusion' | 'quantity' | 'cost' | 'bundle';
   softwareModuleIds: string[];
   hardwareItemIds: string[];
   ruleValue: string;
   priority: number;
+  costImpact: number | null;
+  conditionalLogic: string | null;
+}
+
+// Enhanced interface for unified software-hardware management
+interface SoftwareHardwareMapping {
+  id: string;
+  softwareModule: SoftwareModule;
+  recommendedHardware: Array<{
+    hardwareItem: HardwareItem;
+    rule: RecommendationRule;
+  }>;
+  businessRules: BusinessRule[];
+  totalEstimatedCost: number;
+  monthlyRecurringCost: number;
+  oneTimeCost: number;
 }
 
 export default function PlatformConfiguration() {
@@ -132,6 +156,8 @@ export default function PlatformConfiguration() {
   const [editingBusinessRule, setEditingBusinessRule] = useState<BusinessRule | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
+  const [editingSoftwareModule, setEditingSoftwareModule] = useState<SoftwareModule | null>(null);
+  const [editingHardwareItem, setEditingHardwareItem] = useState<HardwareItem | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
 
@@ -204,7 +230,14 @@ export default function PlatformConfiguration() {
         console.error('Error loading software modules:', softwareError);
         toast.error('Failed to load software modules');
       } else {
-        setSoftwareModules(softwareData || []);
+        // Map database fields to enhanced interface with defaults
+        const mappedSoftware = (softwareData || []).map(software => ({
+          ...software,
+          monthly_fee: (software as any).monthly_fee || 0,
+          setup_fee: (software as any).setup_fee || 0,
+          license_fee: (software as any).license_fee || 0
+        }));
+        setSoftwareModules(mappedSoftware);
       }
 
       // Load hardware items
@@ -216,7 +249,14 @@ export default function PlatformConfiguration() {
         console.error('Error loading hardware items:', hardwareError);
         toast.error('Failed to load hardware items');
       } else {
-        setHardwareItems(hardwareData || []);
+        // Map database fields to enhanced interface with defaults
+        const mappedHardware = (hardwareData || []).map(hardware => ({
+          ...hardware,
+          unit_cost: (hardware as any).unit_cost || (hardware as any).estimated_cost || 0,
+          installation_cost: (hardware as any).installation_cost || 0,
+          maintenance_cost: (hardware as any).maintenance_cost || 0
+        }));
+        setHardwareItems(mappedHardware);
       }
 
       // For now, keep some sample recommendation rules and business rules
@@ -229,7 +269,10 @@ export default function PlatformConfiguration() {
           defaultQuantity: 1,
           isRequired: true,
           reason: 'Core POS functionality',
-          costMultiplier: 1.0
+          costMultiplier: 1.0,
+          minQuantity: 1,
+          maxQuantity: 5,
+          conditionalLogic: null
         }
       ];
 
@@ -242,7 +285,9 @@ export default function PlatformConfiguration() {
           softwareModuleIds: ['pos-system'],
           hardwareItemIds: ['pos-terminal', 'printer', 'cash-drawer'],
           ruleValue: 'required',
-          priority: 1
+          priority: 1,
+          costImpact: null,
+          conditionalLogic: null
         }
       ];
 
@@ -263,9 +308,92 @@ export default function PlatformConfiguration() {
       defaultQuantity: 1,
       isRequired: true,
       reason: '',
-      costMultiplier: 1.0
+      costMultiplier: 1.0,
+      minQuantity: 1,
+      maxQuantity: 5,
+      conditionalLogic: null
     };
     setEditingRule(newRule);
+  };
+
+  const addSoftwareModule = () => {
+    const newSoftware: SoftwareModule = {
+      id: 'new',
+      name: '',
+      description: '',
+      category: '',
+      is_active: true,
+      monthly_fee: 0,
+      setup_fee: 0,
+      license_fee: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setEditingSoftwareModule(newSoftware);
+  };
+
+  const editSoftwareModule = (software: SoftwareModule) => {
+    setEditingSoftwareModule(software);
+  };
+
+  const deleteSoftwareModule = async (softwareId: string) => {
+    try {
+      const { error } = await supabase
+        .from('software_modules')
+        .delete()
+        .eq('id', softwareId);
+      
+      if (error) {
+        toast.error('Failed to delete software module');
+      } else {
+        setSoftwareModules(prev => prev.filter(s => s.id !== softwareId));
+        toast.success('Software module deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting software module:', error);
+      toast.error('Failed to delete software module');
+    }
+  };
+
+  const addHardwareItem = () => {
+    const newHardware: HardwareItem = {
+      id: 'new',
+      name: '',
+      description: '',
+      category: '',
+      model: '',
+      manufacturer: '',
+      unit_cost: 0,
+      installation_cost: 0,
+      maintenance_cost: 0,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setEditingHardwareItem(newHardware);
+  };
+
+  const editHardwareItem = (hardware: HardwareItem) => {
+    setEditingHardwareItem(hardware);
+  };
+
+  const deleteHardwareItem = async (hardwareId: string) => {
+    try {
+      const { error } = await supabase
+        .from('hardware_items')
+        .delete()
+        .eq('id', hardwareId);
+      
+      if (error) {
+        toast.error('Failed to delete hardware item');
+      } else {
+        setHardwareItems(prev => prev.filter(h => h.id !== hardwareId));
+        toast.success('Hardware item deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting hardware item:', error);
+      toast.error('Failed to delete hardware item');
+    }
   };
 
   const editRecommendationRule = (rule: RecommendationRule) => {
@@ -301,7 +429,9 @@ export default function PlatformConfiguration() {
       softwareModuleIds: [],
       hardwareItemIds: [],
       ruleValue: '',
-      priority: 1
+      priority: 1,
+      costImpact: null,
+      conditionalLogic: null
     };
     setEditingBusinessRule(newRule);
   };
@@ -514,10 +644,6 @@ export default function PlatformConfiguration() {
             <TabsTrigger value="software" className="flex items-center space-x-2">
               <Database className="h-4 w-4" />
               <span>Software & Hardware</span>
-            </TabsTrigger>
-            <TabsTrigger value="recommendations" className="flex items-center space-x-2">
-              <Settings className="h-4 w-4" />
-              <span>Recommendation Rules</span>
             </TabsTrigger>
             <TabsTrigger value="audit" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
@@ -750,55 +876,12 @@ export default function PlatformConfiguration() {
             </Card>
           </TabsContent>
 
-          {/* Software & Hardware Tab */}
+          {/* Software & Hardware Management Tab - Unified */}
           <TabsContent value="software" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Database className="h-4 w-4" />
-                  <span>Software & Hardware Catalog</span>
-                </CardTitle>
-                <CardDescription>
-                  Manage software modules and hardware inventory
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Software Modules</h3>
-                      <div className="space-y-2">
-                        {softwareModules.map(software => (
-                          <div key={software.id} className="flex items-center justify-between p-2 border rounded">
-                            <span>{software.name}</span>
-                            <Badge variant="outline">{software.is_active ? 'Active' : 'Inactive'}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Hardware Items</h3>
-                      <div className="space-y-2">
-                        {hardwareItems.map(hardware => (
-                          <div key={hardware.id} className="flex items-center justify-between p-2 border rounded">
-                            <span>{hardware.name}</span>
-                            <Badge variant="outline">{hardware.is_active ? 'Available' : 'Discontinued'}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Recommendation Rules Tab */}
-          <TabsContent value="recommendations" className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Recommendation Rules</h2>
-                <p className="text-gray-600 mt-1">Manage hardware/software mappings, dependencies, and business logic</p>
+                <h2 className="text-2xl font-bold text-gray-900">Software & Hardware Management</h2>
+                <p className="text-gray-600 mt-1">Unified management of software modules, hardware items, and their relationships with costing</p>
               </div>
               <Button onClick={saveAllConfigurations} className="flex items-center space-x-2">
                 <Save className="h-4 w-4" />
@@ -806,21 +889,155 @@ export default function PlatformConfiguration() {
               </Button>
             </div>
 
-            {/* Recommendation Rules */}
+            {/* Software Modules Management */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Package className="h-4 w-4" />
-                  <span>Hardware-Software Mappings</span>
+                  <span>Software Modules</span>
                 </CardTitle>
                 <CardDescription>
-                  Define which hardware items are recommended for each software module
+                  Manage software modules with pricing and licensing information
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Recommendation Rules</h3>
+                    <h3 className="text-lg font-medium">Software Catalog ({softwareModules.length})</h3>
+                    <Button onClick={addSoftwareModule}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Software
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {softwareModules.map(software => (
+                      <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                        <div className="flex-1 grid grid-cols-5 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium">Name</Label>
+                            <p className="text-sm text-gray-900">{software.name}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Category</Label>
+                            <p className="text-sm text-gray-600">{software.category}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Monthly Fee</Label>
+                            <p className="text-sm text-gray-600">£{software.monthly_fee || 0}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Setup Fee</Label>
+                            <p className="text-sm text-gray-600">£{software.setup_fee || 0}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Status</Label>
+                            <Badge variant={software.is_active ? "default" : "secondary"}>
+                              {software.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => editSoftwareModule(software)}>
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteSoftwareModule(software.id)}>
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Hardware Items Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Database className="h-4 w-4" />
+                  <span>Hardware Items</span>
+                </CardTitle>
+                <CardDescription>
+                  Manage hardware inventory with detailed costing information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Hardware Catalog ({hardwareItems.length})</h3>
+                    <Button onClick={addHardwareItem}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Hardware
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {hardwareItems.map(hardware => (
+                      <div key={hardware.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                        <div className="flex-1 grid grid-cols-6 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium">Name</Label>
+                            <p className="text-sm text-gray-900">{hardware.name}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Category</Label>
+                            <p className="text-sm text-gray-600">{hardware.category}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Unit Cost</Label>
+                            <p className="text-sm text-gray-600">£{hardware.unit_cost || 0}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Installation</Label>
+                            <p className="text-sm text-gray-600">£{hardware.installation_cost || 0}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Maintenance</Label>
+                            <p className="text-sm text-gray-600">£{hardware.maintenance_cost || 0}/month</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Status</Label>
+                            <Badge variant={hardware.is_active ? "default" : "secondary"}>
+                              {hardware.is_active ? 'Available' : 'Discontinued'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => editHardwareItem(hardware)}>
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteHardwareItem(hardware.id)}>
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recommendation Rules */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Hardware-Software Mappings</span>
+                </CardTitle>
+                <CardDescription>
+                  Define which hardware items are recommended for each software module with quantities and costing
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Recommendation Rules ({recommendationRules.length})</h3>
                     <Button onClick={addRecommendationRule}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Rule
@@ -840,23 +1057,33 @@ export default function PlatformConfiguration() {
                         const hardware = hardwareItems.find(h => h.id === rule.hardwareItemId);
                         
                         return (
-                          <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex-1 grid grid-cols-4 gap-4">
+                          <div key={rule.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                            <div className="flex-1 grid grid-cols-6 gap-4">
                               <div>
                                 <Label className="text-sm font-medium">Software</Label>
-                                <p className="text-sm text-gray-600">{software?.name || 'Unknown'}</p>
+                                <p className="text-sm text-gray-900">{software?.name || 'Unknown'}</p>
                               </div>
                               <div>
                                 <Label className="text-sm font-medium">Hardware</Label>
-                                <p className="text-sm text-gray-600">{hardware?.name || 'Unknown'}</p>
+                                <p className="text-sm text-gray-900">{hardware?.name || 'Unknown'}</p>
                               </div>
                               <div>
                                 <Label className="text-sm font-medium">Default Qty</Label>
                                 <p className="text-sm text-gray-600">{rule.defaultQuantity}</p>
                               </div>
                               <div>
+                                <Label className="text-sm font-medium">Min-Max</Label>
+                                <p className="text-sm text-gray-600">{rule.minQuantity}-{rule.maxQuantity}</p>
+                              </div>
+                              <div>
                                 <Label className="text-sm font-medium">Required</Label>
-                                <Badge variant="default">{rule.isRequired ? 'Yes' : 'No'}</Badge>
+                                <Badge variant={rule.isRequired ? "default" : "secondary"}>
+                                  {rule.isRequired ? 'Yes' : 'No'}
+                                </Badge>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium">Cost Multiplier</Label>
+                                <p className="text-sm text-gray-600">x{rule.costMultiplier}</p>
                               </div>
                             </div>
                             <div className="flex space-x-2">
@@ -882,17 +1109,17 @@ export default function PlatformConfiguration() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
+                  <Calculator className="h-4 w-4" />
                   <span>Business Rules & Dependencies</span>
                 </CardTitle>
                 <CardDescription>
-                  Define complex business logic, dependencies, and exclusions
+                  Define complex business logic, dependencies, and cost impacts
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Business Rules</h3>
+                    <h3 className="text-lg font-medium">Business Rules ({businessRules.length})</h3>
                     <Button onClick={addBusinessRule}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Rule
@@ -902,20 +1129,23 @@ export default function PlatformConfiguration() {
                   <div className="space-y-3">
                     {businessRules.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
-                        <Settings className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <Calculator className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                         <p className="text-sm">No business rules found</p>
                         <p className="text-xs">Create your first business rule to get started</p>
                       </div>
                     ) : (
                       businessRules.map(rule => (
-                        <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div key={rule.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                           <div className="flex-1">
-                            <h4 className="font-medium">{rule.name}</h4>
-                            <p className="text-sm text-gray-600">{rule.description}</p>
+                            <h4 className="font-medium text-gray-900">{rule.name}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{rule.description}</p>
                             <div className="flex items-center space-x-4 mt-2 text-sm">
                               <Badge variant="outline">{rule.ruleType}</Badge>
-                              <span>Priority: {rule.priority}</span>
-                              <span>Value: {rule.ruleValue}</span>
+                              <span className="text-gray-600">Priority: {rule.priority}</span>
+                              <span className="text-gray-600">Value: {rule.ruleValue}</span>
+                              {rule.costImpact && (
+                                <span className="text-gray-600">Cost Impact: £{rule.costImpact}</span>
+                              )}
                             </div>
                           </div>
                           <div className="flex space-x-2">

@@ -5,21 +5,28 @@ export interface SoftwareModule {
   id: string;
   name: string;
   description: string;
-  monthlyFee: number;
-  setupFee: number;
   category: string;
-  status: 'active' | 'inactive';
+  is_active: boolean;
+  monthly_fee: number;
+  setup_fee: number;
+  license_fee: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface HardwareItem {
   id: string;
   name: string;
   description: string;
-  manufacturer: string;
-  model: string;
-  unitCost: number;
   category: string;
-  status: 'available' | 'discontinued';
+  model: string;
+  manufacturer: string;
+  unit_cost: number;
+  installation_cost: number;
+  maintenance_cost: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RecommendationRule {
@@ -41,6 +48,8 @@ export interface BusinessRule {
   hardwareItemIds: string[];
   ruleValue: string;
   priority: number;
+  costImpact: number;
+  conditionalLogic: any; // Placeholder for more complex logic
 }
 
 export interface PlatformConfiguration {
@@ -58,37 +67,49 @@ const mockSoftwareModules: SoftwareModule[] = [
     id: 'pos-system',
     name: 'POS System',
     description: 'Point of Sale system for transactions',
-    monthlyFee: 25,
-    setupFee: 150,
     category: 'Payment Processing',
-    status: 'active'
+    is_active: true,
+    monthly_fee: 25,
+    setup_fee: 150,
+    license_fee: 50,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'kiosk-software',
     name: 'Kiosk Software',
     description: 'Self-service kiosk software',
-    monthlyFee: 20,
-    setupFee: 100,
     category: 'Self-Service',
-    status: 'active'
+    is_active: true,
+    monthly_fee: 20,
+    setup_fee: 100,
+    license_fee: 30,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'kitchen-display',
     name: 'Kitchen Display',
     description: 'Kitchen display system for orders',
-    monthlyFee: 20,
-    setupFee: 100,
     category: 'Kitchen Management',
-    status: 'active'
+    is_active: true,
+    monthly_fee: 20,
+    setup_fee: 100,
+    license_fee: 25,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'inventory-management',
     name: 'Inventory Management',
     description: 'Inventory tracking and management',
-    monthlyFee: 15,
-    setupFee: 75,
     category: 'Inventory',
-    status: 'active'
+    is_active: true,
+    monthly_fee: 15,
+    setup_fee: 75,
+    license_fee: 20,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 ];
 
@@ -97,81 +118,85 @@ const mockHardwareItems: HardwareItem[] = [
     id: 'pos-terminal',
     name: 'POS Terminal',
     description: 'Ingenico Telium 2 POS terminal',
-    manufacturer: 'Ingenico',
-    model: 'Telium 2',
-    unitCost: 2500,
     category: 'Payment Processing',
-    status: 'available'
+    model: 'Telium 2',
+    manufacturer: 'Ingenico',
+    unit_cost: 2500,
+    installation_cost: 100,
+    maintenance_cost: 25,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'printer',
     name: 'Thermal Printer',
     description: 'Receipt and kitchen order printer',
-    manufacturer: 'Epson',
-    model: 'TM-T88VI',
-    unitCost: 350,
     category: 'Printing',
-    status: 'available'
+    model: 'TM-T88VI',
+    manufacturer: 'Epson',
+    unit_cost: 350,
+    installation_cost: 50,
+    maintenance_cost: 15,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'cash-drawer',
     name: 'Cash Drawer',
     description: 'Electronic cash drawer',
-    manufacturer: 'APG',
-    model: 'CashDrawer-2000',
-    unitCost: 200,
     category: 'Payment Processing',
-    status: 'available'
+    model: 'CashDrawer-2000',
+    manufacturer: 'APG',
+    unit_cost: 200,
+    installation_cost: 30,
+    maintenance_cost: 10,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'kiosk-display',
     name: 'Kiosk Display',
     description: 'Touch screen display for kiosk',
-    manufacturer: 'Elo',
-    model: 'TouchScreen-22',
-    unitCost: 800,
     category: 'Display',
-    status: 'available'
+    model: 'TouchScreen-22',
+    manufacturer: 'Elo',
+    unit_cost: 800,
+    installation_cost: 150,
+    maintenance_cost: 20,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'touch-screen',
     name: 'Touch Screen',
     description: 'Touch screen interface',
-    manufacturer: 'Elo',
-    model: 'TouchScreen-15',
-    unitCost: 600,
     category: 'Display',
-    status: 'available'
+    model: 'TouchScreen-15',
+    manufacturer: 'Elo',
+    unit_cost: 600,
+    installation_cost: 100,
+    maintenance_cost: 15,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   },
   {
     id: 'kitchen-display',
     name: 'Kitchen Display',
     description: 'Digital display for kitchen orders',
-    manufacturer: 'Sony',
-    model: 'KD-55X80K',
-    unitCost: 1200,
     category: 'Display',
-    status: 'available'
-  },
-  {
-    id: 'tablet',
-    name: 'Tablet',
-    description: 'iPad for inventory management',
-    manufacturer: 'Apple',
-    model: 'iPad Air',
-    unitCost: 800,
-    category: 'Mobile Device',
-    status: 'available'
-  },
-  {
-    id: 'barcode-scanner',
-    name: 'Barcode Scanner',
-    description: 'USB barcode scanner',
-    manufacturer: 'Honeywell',
-    model: 'Scanner-1900',
-    unitCost: 150,
-    category: 'Input Device',
-    status: 'available'
+    model: 'KitchenDisplay-15',
+    manufacturer: 'KitchenTech',
+    unit_cost: 450,
+    installation_cost: 75,
+    maintenance_cost: 12,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 ];
 
@@ -183,7 +208,10 @@ const mockRecommendationRules: RecommendationRule[] = [
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Core POS functionality',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 5,
+    conditionalLogic: null
   },
   {
     id: '2',
@@ -192,7 +220,10 @@ const mockRecommendationRules: RecommendationRule[] = [
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Receipt printing',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 3,
+    conditionalLogic: null
   },
   {
     id: '3',
@@ -201,7 +232,10 @@ const mockRecommendationRules: RecommendationRule[] = [
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Cash management',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 2,
+    conditionalLogic: null
   },
   {
     id: '4',
@@ -210,7 +244,10 @@ const mockRecommendationRules: RecommendationRule[] = [
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Kiosk interface',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 4,
+    conditionalLogic: null
   },
   {
     id: '5',
@@ -219,7 +256,10 @@ const mockRecommendationRules: RecommendationRule[] = [
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Touch interaction',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 4,
+    conditionalLogic: null
   },
   {
     id: '6',
@@ -228,25 +268,22 @@ const mockRecommendationRules: RecommendationRule[] = [
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Kitchen order display',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 3,
+    conditionalLogic: null
   },
   {
     id: '7',
     softwareModuleId: 'inventory-management',
-    hardwareItemId: 'tablet',
+    hardwareItemId: 'touch-screen',
     defaultQuantity: 1,
     isRequired: true,
     reason: 'Mobile inventory management',
-    costMultiplier: 1.0
-  },
-  {
-    id: '8',
-    softwareModuleId: 'inventory-management',
-    hardwareItemId: 'barcode-scanner',
-    defaultQuantity: 1,
-    isRequired: true,
-    reason: 'Barcode scanning',
-    costMultiplier: 1.0
+    costMultiplier: 1.0,
+    minQuantity: 1,
+    maxQuantity: 2,
+    conditionalLogic: null
   }
 ];
 
@@ -259,7 +296,9 @@ const mockBusinessRules: BusinessRule[] = [
     softwareModuleIds: ['pos-system'],
     hardwareItemIds: ['pos-terminal', 'printer', 'cash-drawer'],
     ruleValue: 'required',
-    priority: 1
+    priority: 1,
+    costImpact: 2849,
+    conditionalLogic: null
   },
   {
     id: '2',
@@ -269,7 +308,9 @@ const mockBusinessRules: BusinessRule[] = [
     softwareModuleIds: ['kiosk-software'],
     hardwareItemIds: ['kiosk-display', 'touch-screen'],
     ruleValue: 'required',
-    priority: 2
+    priority: 2,
+    costImpact: 1400,
+    conditionalLogic: null
   },
   {
     id: '3',
@@ -279,7 +320,9 @@ const mockBusinessRules: BusinessRule[] = [
     softwareModuleIds: ['kitchen-display'],
     hardwareItemIds: ['kitchen-display'],
     ruleValue: '1',
-    priority: 3
+    priority: 3,
+    costImpact: 450,
+    conditionalLogic: null
   }
 ];
 
