@@ -951,9 +951,9 @@ export default function PlatformConfiguration() {
                   </div>
                   
                   {/* User Statistics */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Card>
-                      <CardContent className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 items-stretch">
+                    <Card className="h-full">
+                      <CardContent className="p-4 h-full">
                         <div className="flex items-center space-x-2">
                           <Users className="h-5 w-5 text-blue-600" />
                           <div>
@@ -963,8 +963,8 @@ export default function PlatformConfiguration() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="p-4">
+                    <Card className="h-full">
+                      <CardContent className="p-4 h-full">
                         <div className="flex items-center space-x-2">
                           <Crown className="h-5 w-5 text-green-600" />
                           <div>
@@ -974,8 +974,8 @@ export default function PlatformConfiguration() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="p-4">
+                    <Card className="h-full">
+                      <CardContent className="p-4 h-full">
                         <div className="flex items-center space-x-2">
                           <Wrench className="h-5 w-5 text-orange-600" />
                           <div>
@@ -985,8 +985,8 @@ export default function PlatformConfiguration() {
                         </div>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="p-4">
+                    <Card className="h-full">
+                      <CardContent className="p-4 h-full">
                         <div className="flex items-center space-x-2">
                           <Truck className="h-5 w-5 text-purple-600" />
                           <div>
@@ -999,7 +999,7 @@ export default function PlatformConfiguration() {
                   </div>
 
                   {/* User Search and Filter */}
-                  <div className="flex space-x-4 mb-4">
+                  <div className="flex items-center gap-4 mb-4">
                     <div className="flex-1">
                       <Input
                         placeholder="Search by email or name..."
@@ -1009,7 +1009,7 @@ export default function PlatformConfiguration() {
                       />
                     </div>
                     <Select value={selectedRole} onValueChange={setSelectedRole}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-48 h-10">
                         <SelectValue placeholder="Filter by role" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1022,15 +1022,15 @@ export default function PlatformConfiguration() {
                   </div>
 
                   {/* Users Table */}
-                  <div className="border rounded-lg">
+                  <div className="border rounded-lg overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Roles</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="w-[28%] whitespace-nowrap">Name</TableHead>
+                          <TableHead className="w-[28%] whitespace-nowrap">Email</TableHead>
+                          <TableHead className="w-[22%] whitespace-nowrap">Roles</TableHead>
+                          <TableHead className="w-[14%] whitespace-nowrap">Created</TableHead>
+                          <TableHead className="w-[8%] text-right whitespace-nowrap">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1043,28 +1043,36 @@ export default function PlatformConfiguration() {
                             return matchesSearch && matchesRole;
                           })
                           .map(user => (
-                            <TableRow key={user.id}>
-                              <TableCell className="flex items-center space-x-2">
+                            <TableRow key={user.id} className="align-middle">
+                              <TableCell className="align-middle">
+                                <div className="flex items-center space-x-2 min-w-0">
                                 <User className="h-4 w-4 text-gray-400" />
-                                <span>{user.full_name}</span>
+                                  <span className="truncate">{user.full_name}</span>
+                                </div>
                               </TableCell>
-                              <TableCell className="flex items-center space-x-2">
+                              <TableCell className="align-middle">
+                                <div className="flex items-center space-x-2 min-w-0">
                                 <Mail className="h-4 w-4 text-gray-400" />
-                                <span>{user.email}</span>
+                                  <span className="truncate">{user.email}</span>
+                                </div>
                               </TableCell>
-                              <TableCell>
-                                {user.user_roles.map((role, index) => (
-                                  <Badge key={index} variant="outline" className="mr-1">
-                                    {role.role.replace('_', ' ')}
-                                  </Badge>
-                                ))}
+                              <TableCell className="align-middle">
+                                <div className="flex flex-wrap gap-1">
+                                  {user.user_roles.map((role, index) => (
+                                    <Badge key={index} variant="outline">
+                                      {role.role.replace('_', ' ')}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </TableCell>
-                              <TableCell className="flex items-center space-x-2">
-                                <Calendar className="h-4 w-4 text-gray-400" />
-                                <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                              <TableCell className="align-middle">
+                                <div className="flex items-center space-x-2">
+                                  <Calendar className="h-4 w-4 text-gray-400" />
+                                  <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                                </div>
                               </TableCell>
-                              <TableCell>
-                                <div className="flex space-x-2">
+                              <TableCell className="text-right align-middle">
+                                <div className="inline-flex space-x-2">
                                   <Button variant="outline" size="sm" onClick={() => editUser(user)}>
                                     <Edit className="h-3 w-3 mr-1" />
                                     Edit
