@@ -61,6 +61,16 @@ interface Organization {
   updated_at: string;
 }
 
+// Predefined sector options
+const sectorOptions = [
+  'Business & Industry',
+  'Healthcare & Senior Living',
+  'Education',
+  'Sports & Leisure',
+  'Defence',
+  'Offshore & Remote'
+];
+
 interface SoftwareModule {
   id: string;
   name: string;
@@ -351,10 +361,10 @@ export default function PlatformConfiguration() {
   // Organization management functions
   const addOrganization = () => {
     const newOrg: Organization = {
-      id: crypto.randomUUID(),
+      id: 'new',
       name: '',
       description: '',
-      sector: '',
+      sector: 'Business & Industry', // Set default sector
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -1155,11 +1165,21 @@ export default function PlatformConfiguration() {
               
               <div>
                 <Label htmlFor="orgSector">Sector</Label>
-                <Input
+                <Select
                   value={editingOrganization.sector}
-                  onChange={(e) => setEditingOrganization({...editingOrganization, sector: e.target.value})}
-                  placeholder="Enter sector (e.g., Retail, Healthcare)"
-                />
+                  onValueChange={(value) => setEditingOrganization({...editingOrganization, sector: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectorOptions.map(option => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="flex space-x-2">
