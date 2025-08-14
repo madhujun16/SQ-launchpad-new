@@ -212,8 +212,41 @@ const Dashboard = () => {
 
     setMetrics(baseMetrics);
 
-    // No standalone widgets; we render Quick Links and Recent Activity at the top-level layout
+    // Widgets remain, but we add role sections below metrics grid
     const roleWidgets: DashboardWidget[] = [];
+
+    // Common recent activity widget
+    roleWidgets.push(
+      {
+        id: 'recent-activity',
+        title: 'Recent Activity',
+        description: 'Latest updates and actions',
+        size: 'medium',
+        content: (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-sm font-medium">Site "London Central" deployed successfully</p>
+                  <p className="text-xs text-gray-500">2 hours ago</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <FileText className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium">Site study completed for "Manchester North"</p>
+                  <p className="text-xs text-gray-500">4 hours ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    );
+
     setWidgets(roleWidgets);
   };
 
@@ -463,58 +496,27 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Quick Links + Recent Activities side-by-side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Quick Links</CardTitle>
-            <CardDescription>Navigate to core workflows</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={() => navigate('/sites')}>Sites</Button>
-              <Button variant="outline" onClick={() => navigate('/approvals-procurement')}>Approvals</Button>
-              <Button variant="outline" onClick={() => navigate('/assets/inventory')}>Inventory</Button>
-              <Button onClick={() => navigate('/platform-configuration')}>Platform Configuration</Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
-            <CardDescription>Latest updates and actions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium">Site "London Central" deployed successfully</p>
-                    <p className="text-xs text-gray-500">2 hours ago</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium">Site study completed for "Manchester North"</p>
-                    <p className="text-xs text-gray-500">4 hours ago</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Role-specific sections */}
       {currentRole === 'deployment_engineer' && renderDeploymentEngineerSection()}
       {currentRole === 'ops_manager' && renderOpsManagerSection()}
       {currentRole === 'admin' && renderAdminSection()}
 
-      {/* No extra widgets below; content focused on role sections */}
+      {/* Widgets Grid */}
+      {widgets.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {widgets.map((widget) => (
+            <Card key={widget.id} className={`${getWidgetSizeClass(widget.size)} hover:shadow-md transition-shadow`}>
+              <CardHeader>
+                <CardTitle className="text-lg">{widget.title}</CardTitle>
+                <CardDescription>{widget.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {widget.content}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
       
     </div>
   );
