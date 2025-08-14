@@ -447,6 +447,34 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
+              <CardDescription>Latest updates and actions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium">Site "London Central" deployed successfully</p>
+                      <p className="text-xs text-gray-500">2 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium">Site study completed for "Manchester North"</p>
+                      <p className="text-xs text-gray-500">4 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </>
     );
