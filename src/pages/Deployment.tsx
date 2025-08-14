@@ -396,14 +396,14 @@ const Deployment = () => {
       </Card>
 
       {/* Main Content - simplified: one list of deployments; click a card to open details dialog */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Deployment Status Progress</CardTitle>
+          <Card>
+            <CardHeader>
+              <CardTitle>Deployment Status Progress</CardTitle>
           <CardDescription>Click a site to see full details and actions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {filteredDeployments.map((deployment) => (
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {filteredDeployments.map((deployment) => (
               <button
                 key={deployment.id}
                 className="w-full text-left border rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -412,62 +412,62 @@ const Deployment = () => {
                   setShowDetailsDialog(true);
                 }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-medium">{deployment.site_name}</h3>
-                    <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
-                  </div>
-                  <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-medium">{deployment.site_name}</h3>
+                        <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
+                      </div>
+                      <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
                     {React.createElement(getStatusConfig(deployment.status).icon, { className: 'h-3 w-3' })}
-                    <span>{getStatusConfig(deployment.status).label}</span>
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      deployment.hardware_delivered ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                      <Truck className="h-4 w-4" />
+                        <span>{getStatusConfig(deployment.status).label}</span>
+                      </Badge>
                     </div>
-                    <div className="text-xs font-medium">Hardware Delivered</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      deployment.installation_started ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                      <Wrench className="h-4 w-4" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                          deployment.hardware_delivered ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <Truck className="h-4 w-4" />
+                        </div>
+                        <div className="text-xs font-medium">Hardware Delivered</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                          deployment.installation_started ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <Wrench className="h-4 w-4" />
+                        </div>
+                        <div className="text-xs font-medium">Installation Started</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                          deployment.testing_completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                        <div className="text-xs font-medium">Testing Completed</div>
+                      </div>
+                      <div className="text-center">
+                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                          deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <Activity className="h-4 w-4" />
+                        </div>
+                        <div className="text-xs font-medium">Go-Live Ready</div>
+                      </div>
                     </div>
-                    <div className="text-xs font-medium">Installation Started</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      deployment.testing_completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                      <CheckCircle className="h-4 w-4" />
+                    <div className="mt-4">
+                      <div className="flex justify-between text-sm mb-2">
+                        <span>Overall Progress</span>
+                        <span>{deployment.progress_percentage}%</span>
+                      </div>
+                      <Progress value={deployment.progress_percentage} className="h-2" />
                     </div>
-                    <div className="text-xs font-medium">Testing Completed</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                      deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                      <Activity className="h-4 w-4" />
-                    </div>
-                    <div className="text-xs font-medium">Go-Live Ready</div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span>Overall Progress</span>
-                    <span>{deployment.progress_percentage}%</span>
-                  </div>
-                  <Progress value={deployment.progress_percentage} className="h-2" />
-                </div>
               </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Checklist Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
@@ -489,7 +489,7 @@ const Deployment = () => {
                   <Badge variant="secondary">Go-Live: {new Date(selectedDeployment.deployment_date).toLocaleDateString()}</Badge>
                   <Badge variant="outline">Ops: {selectedDeployment.assigned_ops_manager}</Badge>
                   <Badge variant="outline">Engineer: {selectedDeployment.assigned_deployment_engineer}</Badge>
-                </div>
+                      </div>
                 <div className="flex items-center gap-2">
                   {isOps && selectedDeployment.approval.status === 'pending' && (
                     <>
@@ -509,8 +509,8 @@ const Deployment = () => {
                   )}
                   {isAdmin && (
                     <Button variant="outline" size="sm" onClick={() => toast.info('Exporting CSV...')}><Download className="h-4 w-4 mr-1" />Export</Button>
-                  )}
-                </div>
+                    )}
+                  </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -612,8 +612,8 @@ const Deployment = () => {
                             {h.comments && <div className="text-xs text-gray-600">{h.comments}</div>}
                           </div>
                           <div className="text-xs text-gray-500">{new Date(h.date).toLocaleString()}</div>
-                        </div>
-                      ))}
+                </div>
+              ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -648,7 +648,7 @@ const Deployment = () => {
                           <Button size="sm" onClick={() => toast.success('Note added')}>Add</Button>
                         </div>
                       )}
-                    </div>
+                </div>
                   </CardContent>
                 </Card>
               </div>

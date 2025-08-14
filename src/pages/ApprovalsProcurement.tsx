@@ -122,19 +122,19 @@ const ApprovalsProcurement = () => {
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const mockRequests: HardwareRequest[] = [
-        {
-          id: '1',
-          site_name: 'Birmingham South',
-          site_id: '3',
-          requested_by: 'Tom Wilson',
-          requested_at: '2024-01-16T10:30:00Z',
-          status: 'pending',
-          priority: 'high',
-          items_count: 2,
-          total_value: 4500,
-          assigned_ops_manager: 'Emma Davis',
-          assigned_deployment_engineer: 'Tom Wilson',
+    const mockRequests: HardwareRequest[] = [
+      {
+        id: '1',
+        site_name: 'Birmingham South',
+        site_id: '3',
+        requested_by: 'Tom Wilson',
+        requested_at: '2024-01-16T10:30:00Z',
+        status: 'pending',
+        priority: 'high',
+        items_count: 2,
+        total_value: 4500,
+        assigned_ops_manager: 'Emma Davis',
+        assigned_deployment_engineer: 'Tom Wilson',
           comments: 'Need additional POS terminals for peak hours',
           history: [
             { id: crypto.randomUUID(), action: 'submitted', user: 'Tom Wilson', timestamp: '2024-01-16T10:30:00Z' }
@@ -143,21 +143,21 @@ const ApprovalsProcurement = () => {
             software: [ { name: 'POS System', monthlyFee: 25, setupFee: 150 }, { name: 'Kiosk Software', monthlyFee: 20, setupFee: 100 } ],
             hardware: [ { name: 'POS Terminals', units: 2, unitCost: 700 }, { name: 'Receipt Printers', units: 1, unitCost: 120 } ]
           }
-        },
-        {
-          id: '2',
-          site_name: 'Leeds Central',
-          site_id: '4',
-          requested_by: 'Chris Taylor',
-          requested_at: '2024-01-17T14:20:00Z',
-          status: 'approved',
-          priority: 'medium',
-          items_count: 5,
-          total_value: 12000,
-          assigned_ops_manager: 'Lisa Anderson',
-          assigned_deployment_engineer: 'Chris Taylor',
-          comments: 'Complete hardware setup for new cafeteria',
-          procurement_status: 'ordered',
+      },
+      {
+        id: '2',
+        site_name: 'Leeds Central',
+        site_id: '4',
+        requested_by: 'Chris Taylor',
+        requested_at: '2024-01-17T14:20:00Z',
+        status: 'approved',
+        priority: 'medium',
+        items_count: 5,
+        total_value: 12000,
+        assigned_ops_manager: 'Lisa Anderson',
+        assigned_deployment_engineer: 'Chris Taylor',
+        comments: 'Complete hardware setup for new cafeteria',
+        procurement_status: 'ordered',
           expected_delivery: '2024-01-25',
           history: [
             { id: crypto.randomUUID(), action: 'submitted', user: 'Chris Taylor', timestamp: '2024-01-17T14:20:00Z' },
@@ -167,20 +167,20 @@ const ApprovalsProcurement = () => {
             software: [ { name: 'POS System', monthlyFee: 25, setupFee: 150 }, { name: 'Kitchen Display', monthlyFee: 20, setupFee: 100 } ],
             hardware: [ { name: 'POS Terminals', units: 4, unitCost: 700 } ]
           }
-        },
-        {
-          id: '3',
-          site_name: 'Liverpool East',
-          site_id: '5',
-          requested_by: 'Anna Garcia',
-          requested_at: '2024-01-18T09:15:00Z',
-          status: 'rejected',
-          priority: 'low',
-          items_count: 1,
-          total_value: 800,
-          assigned_ops_manager: 'Mark Thompson',
-          assigned_deployment_engineer: 'Anna Garcia',
-          comments: 'Request for additional display screen',
+      },
+      {
+        id: '3',
+        site_name: 'Liverpool East',
+        site_id: '5',
+        requested_by: 'Anna Garcia',
+        requested_at: '2024-01-18T09:15:00Z',
+        status: 'rejected',
+        priority: 'low',
+        items_count: 1,
+        total_value: 800,
+        assigned_ops_manager: 'Mark Thompson',
+        assigned_deployment_engineer: 'Anna Garcia',
+        comments: 'Request for additional display screen',
           rejection_reason: 'Budget constraints - alternative solution available',
           history: [
             { id: crypto.randomUUID(), action: 'submitted', user: 'Anna Garcia', timestamp: '2024-01-18T09:15:00Z' },
@@ -190,21 +190,21 @@ const ApprovalsProcurement = () => {
             software: [ { name: 'Self-Service Kiosks', monthlyFee: 15, setupFee: 80 } ],
             hardware: [ { name: 'Tablets', units: 1, unitCost: 250 } ]
           }
-        },
-        {
-          id: '4',
-          site_name: 'Manchester North',
-          site_id: '2',
-          requested_by: 'David Brown',
-          requested_at: '2024-01-19T11:45:00Z',
-          status: 'procurement',
-          priority: 'urgent',
-          items_count: 3,
-          total_value: 7500,
-          assigned_ops_manager: 'Sarah Wilson',
-          assigned_deployment_engineer: 'David Brown',
-          comments: 'Critical hardware for deployment next week',
-          procurement_status: 'in_progress',
+      },
+      {
+        id: '4',
+        site_name: 'Manchester North',
+        site_id: '2',
+        requested_by: 'David Brown',
+        requested_at: '2024-01-19T11:45:00Z',
+        status: 'procurement',
+        priority: 'urgent',
+        items_count: 3,
+        total_value: 7500,
+        assigned_ops_manager: 'Sarah Wilson',
+        assigned_deployment_engineer: 'David Brown',
+        comments: 'Critical hardware for deployment next week',
+        procurement_status: 'in_progress',
           expected_delivery: '2024-01-22',
           history: [
             { id: crypto.randomUUID(), action: 'submitted', user: 'David Brown', timestamp: '2024-01-19T11:45:00Z' },
@@ -214,21 +214,21 @@ const ApprovalsProcurement = () => {
             software: [ { name: 'Kitchen Display', monthlyFee: 20, setupFee: 100 } ],
             hardware: [ { name: 'KDS Screens', units: 3, unitCost: 300 } ]
           }
-        },
-        {
-          id: '5',
-          site_name: 'London Central',
-          site_id: '1',
-          requested_by: 'Mike Johnson',
-          requested_at: '2024-01-20T16:30:00Z',
-          status: 'dispatched',
-          priority: 'medium',
-          items_count: 4,
-          total_value: 9800,
-          assigned_ops_manager: 'John Smith',
-          assigned_deployment_engineer: 'Mike Johnson',
-          comments: 'Replacement hardware for maintenance',
-          procurement_status: 'shipped',
+      },
+      {
+        id: '5',
+        site_name: 'London Central',
+        site_id: '1',
+        requested_by: 'Mike Johnson',
+        requested_at: '2024-01-20T16:30:00Z',
+        status: 'dispatched',
+        priority: 'medium',
+        items_count: 4,
+        total_value: 9800,
+        assigned_ops_manager: 'John Smith',
+        assigned_deployment_engineer: 'Mike Johnson',
+        comments: 'Replacement hardware for maintenance',
+        procurement_status: 'shipped',
           expected_delivery: '2024-01-23',
           history: [
             { id: crypto.randomUUID(), action: 'submitted', user: 'Mike Johnson', timestamp: '2024-01-20T16:30:00Z' },
@@ -241,30 +241,30 @@ const ApprovalsProcurement = () => {
         }
       ];
 
-      let filteredRequestsData = mockRequests;
-      if (currentRole === 'deployment_engineer') {
-        const currentUserName = profile?.full_name || profile?.email || '';
-        filteredRequestsData = mockRequests.filter(request => 
-          request.requested_by === currentUserName || 
-          request.assigned_deployment_engineer === currentUserName
-        );
-      } else if (currentRole === 'ops_manager') {
-        const currentUserName = profile?.full_name || profile?.email || '';
-        filteredRequestsData = mockRequests.filter(request => 
-          request.assigned_ops_manager === currentUserName
-        );
-      }
+    let filteredRequestsData = mockRequests;
+    if (currentRole === 'deployment_engineer') {
+      const currentUserName = profile?.full_name || profile?.email || '';
+      filteredRequestsData = mockRequests.filter(request => 
+        request.requested_by === currentUserName || 
+        request.assigned_deployment_engineer === currentUserName
+      );
+    } else if (currentRole === 'ops_manager') {
+      const currentUserName = profile?.full_name || profile?.email || '';
+      filteredRequestsData = mockRequests.filter(request => 
+        request.assigned_ops_manager === currentUserName
+      );
+    }
 
       if (!isMounted) return;
-      setRequests(filteredRequestsData);
-      setFilteredRequests(filteredRequestsData);
-
+    setRequests(filteredRequestsData);
+    setFilteredRequests(filteredRequestsData);
+    
       if (isMounted && (currentRole === 'ops_manager' || currentRole === 'admin')) {
         try {
-          const approvals = await CostingService.getCostingApprovals();
+      const approvals = await CostingService.getCostingApprovals();
           if (!isMounted) return;
-          setCostingApprovals(approvals);
-          setFilteredCostingApprovals(approvals);
+      setCostingApprovals(approvals);
+      setFilteredCostingApprovals(approvals);
         } catch (e) {
           // swallow error for mock/demo
         }
@@ -461,61 +461,61 @@ const ApprovalsProcurement = () => {
       </div>
       <div className="divider-soft" />
 
-      {/* Filters */}
+          {/* Filters */}
       <Card className="pro-card">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by site or requester..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by priority" />
-              </SelectTrigger>
-              <SelectContent>
-                {priorityOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by site or requester..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
             <Button variant="light-outline" className="flex items-center space-x-2 hover-glow-green" onClick={() => { setSearchTerm(''); setStatusFilter('all'); setPriorityFilter('all'); }}>
-              <Filter className="h-4 w-4" />
-              <span>Clear Filters</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+                  <Filter className="h-4 w-4" />
+                  <span>Clear Filters</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Consolidated list of all requests */}
       <Card className="pro-card">
-        <CardHeader>
+                <CardHeader>
           <div className="flex items-center gap-2">
             <span className="icon-badge-green"><List className="nav-icon" color="#1CB255" /></span>
             <CardTitle className="pro-h3">All Hardware Requests</CardTitle>
           </div>
           <CardDescription className="pro-subtle">All requests including pending and resubmissions</CardDescription>
-        </CardHeader>
-        <CardContent>
+                </CardHeader>
+                <CardContent>
           <AppTable
             headers={[
               'Site',
@@ -528,13 +528,13 @@ const ApprovalsProcurement = () => {
               'Actions',
             ]}
           >
-              {filteredRequests.map((request) => {
-                const statusConfig = getStatusConfig(request.status);
-                const priorityConfig = getPriorityConfig(request.priority);
-                const StatusIcon = statusConfig.icon;
-                const PriorityIcon = priorityConfig.icon;
-                return (
-                  <TableRow key={request.id}>
+                      {filteredRequests.map((request) => {
+                        const statusConfig = getStatusConfig(request.status);
+                        const priorityConfig = getPriorityConfig(request.priority);
+                        const StatusIcon = statusConfig.icon;
+                        const PriorityIcon = priorityConfig.icon;
+                        return (
+                          <TableRow key={request.id}>
                     <TableCell><div className="font-medium">{request.site_name}</div></TableCell>
                     <TableCell><div className="flex items-center gap-1"><User className="h-3 w-3 text-gray-400" /><span>{request.requested_by}</span></div></TableCell>
                     <TableCell><div className="flex items-center gap-1"><Calendar className="h-3 w-3 text-gray-400" /><span>{new Date(request.requested_at).toLocaleDateString()}</span></div></TableCell>
@@ -542,7 +542,7 @@ const ApprovalsProcurement = () => {
                     <TableCell><Badge className={`${priorityConfig.color} flex items-center gap-1`}><PriorityIcon className="h-3 w-3" />{priorityConfig.label}</Badge></TableCell>
                     <TableCell><div className="flex items-center gap-1"><Package className="h-3 w-3 text-gray-400" /><span>{request.items_count} items</span></div></TableCell>
                     <TableCell><div className="flex items-center gap-1"><DollarSign className="h-3 w-3 text-gray-400" /><span>£{request.total_value.toLocaleString()}</span></div></TableCell>
-                    <TableCell>
+                            <TableCell>
                       <div className="flex items-center gap-2">
                         {currentRole === 'ops_manager' && (
                           <>
@@ -551,14 +551,14 @@ const ApprovalsProcurement = () => {
                           </>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => { setSelectedRequest(request); setShowOutcomeDialog(true); }}><Eye className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
           </AppTable>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
       {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
