@@ -7,13 +7,57 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      approval_actions: {
+        Row: {
+          action: string
+          approval_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          performed_at: string
+          performed_by: string
+          performed_by_role: string
+        }
+        Insert: {
+          action: string
+          approval_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          performed_at?: string
+          performed_by: string
+          performed_by_role: string
+        }
+        Update: {
+          action?: string
+          approval_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          performed_at?: string
+          performed_by?: string
+          performed_by_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_actions_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "scoping_approvals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assets: {
         Row: {
           assigned_to: string | null
@@ -255,6 +299,217 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      costing_approval_audit_log: {
+        Row: {
+          action: string
+          comment: string | null
+          costing_approval_id: string
+          id: string
+          metadata: Json | null
+          timestamp: string
+          user_id: string
+          user_role: string
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          costing_approval_id: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id: string
+          user_role: string
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          costing_approval_id?: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id?: string
+          user_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costing_approval_audit_log_costing_approval_id_fkey"
+            columns: ["costing_approval_id"]
+            isOneToOne: false
+            referencedRelation: "costing_approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costing_approval_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      costing_approvals: {
+        Row: {
+          created_at: string
+          deployment_engineer_id: string
+          grand_total: number | null
+          id: string
+          ops_manager_id: string
+          procurement_status:
+            | Database["public"]["Enums"]["procurement_status"]
+            | null
+          rejection_reason: string | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          site_id: string
+          status: Database["public"]["Enums"]["costing_approval_status"] | null
+          submitted_at: string
+          total_hardware_cost: number | null
+          total_license_cost: number | null
+          total_monthly_fees: number | null
+          total_software_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deployment_engineer_id: string
+          grand_total?: number | null
+          id?: string
+          ops_manager_id: string
+          procurement_status?:
+            | Database["public"]["Enums"]["procurement_status"]
+            | null
+          rejection_reason?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          site_id: string
+          status?: Database["public"]["Enums"]["costing_approval_status"] | null
+          submitted_at?: string
+          total_hardware_cost?: number | null
+          total_license_cost?: number | null
+          total_monthly_fees?: number | null
+          total_software_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deployment_engineer_id?: string
+          grand_total?: number | null
+          id?: string
+          ops_manager_id?: string
+          procurement_status?:
+            | Database["public"]["Enums"]["procurement_status"]
+            | null
+          rejection_reason?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          site_id?: string
+          status?: Database["public"]["Enums"]["costing_approval_status"] | null
+          submitted_at?: string
+          total_hardware_cost?: number | null
+          total_license_cost?: number | null
+          total_monthly_fees?: number | null
+          total_software_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costing_approvals_deployment_engineer_id_fkey"
+            columns: ["deployment_engineer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "costing_approvals_ops_manager_id_fkey"
+            columns: ["ops_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "costing_approvals_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "costing_approvals_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      costing_items: {
+        Row: {
+          annual_fee: number | null
+          category: string | null
+          costing_approval_id: string
+          created_at: string
+          id: string
+          is_required: boolean | null
+          item_description: string | null
+          item_name: string
+          item_type: string
+          manufacturer: string | null
+          model: string | null
+          monthly_fee: number | null
+          quantity: number
+          total_cost: number
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          annual_fee?: number | null
+          category?: string | null
+          costing_approval_id: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          item_description?: string | null
+          item_name: string
+          item_type: string
+          manufacturer?: string | null
+          model?: string | null
+          monthly_fee?: number | null
+          quantity?: number
+          total_cost?: number
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          annual_fee?: number | null
+          category?: string | null
+          costing_approval_id?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          item_description?: string | null
+          item_name?: string
+          item_type?: string
+          manufacturer?: string | null
+          model?: string | null
+          monthly_fee?: number | null
+          quantity?: number
+          total_cost?: number
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "costing_items_costing_approval_id_fkey"
+            columns: ["costing_approval_id"]
+            isOneToOne: false
+            referencedRelation: "costing_approvals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deployment_checklist_items: {
         Row: {
@@ -868,6 +1123,87 @@ export type Database = {
           },
         ]
       }
+      scoping_approvals: {
+        Row: {
+          cost_breakdown: Json
+          created_at: string
+          deployment_engineer_id: string
+          deployment_engineer_name: string
+          id: string
+          ops_manager_id: string | null
+          ops_manager_name: string | null
+          previous_version_id: string | null
+          rejection_reason: string | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scoping_data: Json
+          site_id: string
+          site_name: string
+          status: string
+          submitted_at: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          cost_breakdown: Json
+          created_at?: string
+          deployment_engineer_id: string
+          deployment_engineer_name: string
+          id?: string
+          ops_manager_id?: string | null
+          ops_manager_name?: string | null
+          previous_version_id?: string | null
+          rejection_reason?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scoping_data: Json
+          site_id: string
+          site_name: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          cost_breakdown?: Json
+          created_at?: string
+          deployment_engineer_id?: string
+          deployment_engineer_name?: string
+          id?: string
+          ops_manager_id?: string | null
+          ops_manager_name?: string | null
+          previous_version_id?: string | null
+          rejection_reason?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scoping_data?: Json
+          site_id?: string
+          site_name?: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoping_approvals_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "scoping_approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scoping_approvals_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sectors: {
         Row: {
           created_at: string
@@ -1151,6 +1487,7 @@ export type Database = {
       }
       site_studies: {
         Row: {
+          additional_site_details: string | null
           conducted_by: string
           counter_count: number | null
           created_at: string
@@ -1161,11 +1498,14 @@ export type Database = {
           id: string
           site_id: string
           site_map_url: string | null
+          site_notes: string | null
+          stakeholders: Json | null
           status: string | null
           study_date: string
           updated_at: string
         }
         Insert: {
+          additional_site_details?: string | null
           conducted_by: string
           counter_count?: number | null
           created_at?: string
@@ -1176,11 +1516,14 @@ export type Database = {
           id?: string
           site_id: string
           site_map_url?: string | null
+          site_notes?: string | null
+          stakeholders?: Json | null
           status?: string | null
           study_date: string
           updated_at?: string
         }
         Update: {
+          additional_site_details?: string | null
           conducted_by?: string
           counter_count?: number | null
           created_at?: string
@@ -1191,6 +1534,8 @@ export type Database = {
           id?: string
           site_id?: string
           site_map_url?: string | null
+          site_notes?: string | null
+          stakeholders?: Json | null
           status?: string | null
           study_date?: string
           updated_at?: string
@@ -1292,6 +1637,8 @@ export type Database = {
           name: string
           postcode: string | null
           procurement_started_at: string | null
+          scoping_approved_at: string | null
+          scoping_approved_by: string | null
           sector_id: string | null
           status: string | null
           study_completed_at: string | null
@@ -1329,6 +1676,8 @@ export type Database = {
           name: string
           postcode?: string | null
           procurement_started_at?: string | null
+          scoping_approved_at?: string | null
+          scoping_approved_by?: string | null
           sector_id?: string | null
           status?: string | null
           study_completed_at?: string | null
@@ -1366,6 +1715,8 @@ export type Database = {
           name?: string
           postcode?: string | null
           procurement_started_at?: string | null
+          scoping_approved_at?: string | null
+          scoping_approved_by?: string | null
           sector_id?: string | null
           status?: string | null
           study_completed_at?: string | null
@@ -1523,10 +1874,10 @@ export type Database = {
       audit_rls_policies: {
         Args: Record<PropertyKey, never>
         Returns: {
-          table_name: string
-          policy_name: string
-          policy_definition: string
           is_secure: boolean
+          policy_definition: string
+          policy_name: string
+          table_name: string
         }[]
       }
       check_email_exists: {
@@ -1539,10 +1890,10 @@ export type Database = {
       }
       get_filtered_inventory: {
         Args: {
-          p_site_id?: string
-          p_inventory_type?: Database["public"]["Enums"]["inventory_type"]
-          p_status?: Database["public"]["Enums"]["inventory_status"]
           p_assigned_to?: string
+          p_inventory_type?: Database["public"]["Enums"]["inventory_type"]
+          p_site_id?: string
+          p_status?: Database["public"]["Enums"]["inventory_status"]
         }
         Returns: {
           assigned_to: string | null
@@ -1564,45 +1915,45 @@ export type Database = {
       get_inventory_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
-          total_items: number
           available_items: number
           deployed_items: number
           maintenance_items: number
           retired_items: number
+          total_items: number
         }[]
       }
       get_site_with_details: {
         Args: { site_uuid: string }
         Returns: {
-          id: string
-          name: string
-          food_court_unit: string
           address: string
-          postcode: string
           cafeteria_type: Database["public"]["Enums"]["cafeteria_type"]
           capacity: number
-          expected_footfall: number
-          description: string
-          status: string
-          created_at: string
-          updated_at: string
-          created_by: string
-          sector_name: string
           city_name: string
-          ops_manager_name: string
-          deployment_engineer_name: string
-          study_status: string
           cost_approval_status: string
-          inventory_status: string
-          products_status: string
+          created_at: string
+          created_by: string
+          deployment_engineer_name: string
           deployment_status: string
+          description: string
+          expected_footfall: number
+          food_court_unit: string
+          id: string
+          inventory_status: string
+          name: string
+          ops_manager_name: string
           overall_status: Database["public"]["Enums"]["site_status"]
+          postcode: string
+          products_status: string
+          sector_name: string
+          status: string
+          study_status: string
+          updated_at: string
         }[]
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1611,7 +1962,16 @@ export type Database = {
         Returns: boolean
       }
       log_audit_event: {
-        Args: { p_entity: string; p_action: string; p_details?: string }
+        Args: { p_action: string; p_details?: string; p_entity: string }
+        Returns: undefined
+      }
+      log_costing_approval_action: {
+        Args: {
+          p_action: string
+          p_approval_id: string
+          p_comment?: string
+          p_metadata?: Json
+        }
         Returns: undefined
       }
     }
@@ -1619,9 +1979,21 @@ export type Database = {
       app_role: "admin" | "ops_manager" | "deployment_engineer"
       app_role_new: "admin" | "ops_manager" | "deployment_engineer"
       cafeteria_type: "staff" | "visitor" | "mixed"
+      costing_approval_status:
+        | "pending_review"
+        | "approved"
+        | "rejected"
+        | "resubmitted"
       group_type: "hardware" | "software" | "network" | "accessories"
       inventory_status: "available" | "deployed" | "maintenance" | "retired"
       inventory_type: "counter" | "tablet" | "router" | "cable" | "other"
+      procurement_status:
+        | "pending"
+        | "approved"
+        | "ordered"
+        | "in_transit"
+        | "delivered"
+        | "installed"
       site_status: "new" | "in-progress" | "active" | "deployed"
     }
     CompositeTypes: {
@@ -1753,9 +2125,23 @@ export const Constants = {
       app_role: ["admin", "ops_manager", "deployment_engineer"],
       app_role_new: ["admin", "ops_manager", "deployment_engineer"],
       cafeteria_type: ["staff", "visitor", "mixed"],
+      costing_approval_status: [
+        "pending_review",
+        "approved",
+        "rejected",
+        "resubmitted",
+      ],
       group_type: ["hardware", "software", "network", "accessories"],
       inventory_status: ["available", "deployed", "maintenance", "retired"],
       inventory_type: ["counter", "tablet", "router", "cable", "other"],
+      procurement_status: [
+        "pending",
+        "approved",
+        "ordered",
+        "in_transit",
+        "delivered",
+        "installed",
+      ],
       site_status: ["new", "in-progress", "active", "deployed"],
     },
   },
