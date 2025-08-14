@@ -140,13 +140,6 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "assets_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "assets_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
@@ -195,13 +188,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "audit_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
           },
         ]
@@ -360,13 +346,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
-          {
-            foreignKeyName: "costing_approval_audit_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       costing_approvals: {
@@ -445,29 +424,8 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "costing_approvals_deployment_engineer_id_fkey"
-            columns: ["deployment_engineer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "costing_approvals_ops_manager_id_fkey"
             columns: ["ops_manager_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "costing_approvals_ops_manager_id_fkey"
-            columns: ["ops_manager_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "costing_approvals_reviewed_by_fkey"
-            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -476,7 +434,7 @@ export type Database = {
             foreignKeyName: "costing_approvals_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "profiles_safe"
+            referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
           {
@@ -596,13 +554,6 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "deployment_checklist_items_completed_by_fkey"
-            columns: ["completed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "deployment_checklist_items_deployment_id_fkey"
             columns: ["deployment_id"]
             isOneToOne: false
@@ -672,24 +623,10 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "deployments_assigned_deployment_engineer_fkey"
-            columns: ["assigned_deployment_engineer"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "deployments_assigned_ops_manager_fkey"
             columns: ["assigned_ops_manager"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "deployments_assigned_ops_manager_fkey"
-            columns: ["assigned_ops_manager"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
           },
           {
@@ -855,29 +792,8 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "hardware_requests_assigned_deployment_engineer_fkey"
-            columns: ["assigned_deployment_engineer"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "hardware_requests_assigned_ops_manager_fkey"
             columns: ["assigned_ops_manager"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "hardware_requests_assigned_ops_manager_fkey"
-            columns: ["assigned_ops_manager"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "hardware_requests_requested_by_fkey"
-            columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
@@ -886,7 +802,7 @@ export type Database = {
             foreignKeyName: "hardware_requests_requested_by_fkey"
             columns: ["requested_by"]
             isOneToOne: false
-            referencedRelation: "profiles_safe"
+            referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
           {
@@ -956,24 +872,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inventory_items_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "inventory_items_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_items_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["id"]
           },
           {
@@ -1039,13 +941,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "licenses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["id"]
-          },
         ]
       }
       maintenance_logs: {
@@ -1101,13 +996,6 @@ export type Database = {
             columns: ["performed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "maintenance_logs_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1175,6 +1063,36 @@ export type Database = {
           updated_at?: string
           user_id?: string
           welcome_email_sent?: boolean | null
+        }
+        Relationships: []
+      }
+      profiles_safe: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          last_login_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_login_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_login_at?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1380,29 +1298,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "site_assignments_assigned_by_fkey"
-            columns: ["assigned_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "site_assignments_deployment_engineer_id_fkey"
             columns: ["deployment_engineer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_assignments_deployment_engineer_id_fkey"
-            columns: ["deployment_engineer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "site_assignments_ops_manager_id_fkey"
-            columns: ["ops_manager_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1411,7 +1308,7 @@ export type Database = {
             foreignKeyName: "site_assignments_ops_manager_id_fkey"
             columns: ["ops_manager_id"]
             isOneToOne: false
-            referencedRelation: "profiles_safe"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1485,13 +1382,6 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "site_hardware_scoping_scoped_by_fkey"
-            columns: ["scoped_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "site_hardware_scoping_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
@@ -1553,13 +1443,6 @@ export type Database = {
             columns: ["scoped_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "site_software_scoping_scoped_by_fkey"
-            columns: ["scoped_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
           },
           {
@@ -1630,13 +1513,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "site_status_tracking_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["id"]
-          },
         ]
       }
       site_studies: {
@@ -1703,13 +1579,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "site_studies_conducted_by_fkey"
-            columns: ["conducted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "site_studies_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
@@ -1761,13 +1630,6 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "site_workflow_stages_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
           },
           {
@@ -1906,24 +1768,10 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
-            foreignKeyName: "sites_assigned_deployment_engineer_fkey"
-            columns: ["assigned_deployment_engineer"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "sites_assigned_ops_manager_fkey"
             columns: ["assigned_ops_manager"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "sites_assigned_ops_manager_fkey"
-            columns: ["assigned_ops_manager"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["user_id"]
           },
           {
@@ -1938,13 +1786,6 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sites_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles_safe"
             referencedColumns: ["id"]
           },
           {
@@ -2057,36 +1898,7 @@ export type Database = {
       }
     }
     Views: {
-      profiles_safe: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          full_name: string | null
-          id: string | null
-          last_login_at: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          email?: never
-          full_name?: never
-          id?: string | null
-          last_login_at?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          email?: never
-          full_name?: never
-          id?: string | null
-          last_login_at?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       audit_rls_policies: {
@@ -2148,6 +1960,18 @@ export type Database = {
           total_items: number
         }[]
       }
+      get_safe_profile_data: {
+        Args: { target_user_id?: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_login_at: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_site_with_details: {
         Args: { site_uuid: string }
         Returns: {
@@ -2195,6 +2019,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      list_safe_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_login_at: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       log_admin_profile_access: {
         Args: { p_action: string; p_target_user_id: string }
         Returns: undefined
@@ -2211,6 +2047,10 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: undefined
+      }
+      validate_email_access: {
+        Args: { requesting_user_id: string; target_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
