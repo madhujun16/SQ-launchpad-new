@@ -1,3 +1,59 @@
+import {
+  Home,
+  Building,
+  FileText,
+  Package,
+  Wrench,
+  BarChart3,
+  Users,
+  Settings,
+  StickyNote,
+  AlertTriangle,
+  Bell,
+  Upload,
+  Download,
+  Eye,
+  Edit3,
+  Trash2,
+  Calendar,
+  DollarSign,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Info,
+} from 'lucide-react';
+
+export const AppIcons = {
+  dashboard: Home,
+  sites: Building,
+  approvals: FileText,
+  inventory: Package,
+  deployment: Wrench,
+  forecast: BarChart3,
+  users: Users,
+  settings: Settings,
+  notes: StickyNote,
+  alert: AlertTriangle,
+  bell: Bell,
+  upload: Upload,
+  download: Download,
+  view: Eye,
+  edit: Edit3,
+  delete: Trash2,
+  calendar: Calendar,
+  cost: DollarSign,
+  success: CheckCircle2,
+  pending: Clock,
+  error: XCircle,
+  info: Info,
+} as const;
+
+export type AppIconKey = keyof typeof AppIcons;
+
+export function getIcon(name: AppIconKey) {
+  return AppIcons[name];
+}
+
 // Centralized icon imports for better tree-shaking
 export {
   Building,

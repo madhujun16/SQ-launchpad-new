@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AppTable } from '@/components/ui/AppTable';
+import { AppIcons } from '@/lib/icons';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Search, 
@@ -392,19 +394,17 @@ const Sites = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Site Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Target Go-Live</TableHead>
-                  <TableHead>Assigned Team</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <AppTable
+              headers={[
+                'Site Name',
+                'Type',
+                'Location',
+                'Status',
+                'Target Go-Live',
+                'Assigned Team',
+                'Actions',
+              ]}
+            >
                 {filteredSites.map((site) => {
                   const statusConfig = getStatusConfig(site.status);
                   const StatusIcon = statusConfig.icon;
@@ -467,8 +467,7 @@ const Sites = () => {
                     </TableRow>
                   );
                 })}
-              </TableBody>
-            </Table>
+            </AppTable>
           </CardContent>
         </Card>
       </div>

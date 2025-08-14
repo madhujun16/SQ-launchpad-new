@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AppTable } from '@/components/ui/AppTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -515,20 +516,18 @@ const ApprovalsProcurement = () => {
           <CardDescription className="pro-subtle">All requests including pending and resubmissions</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table className="pro-table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Site</TableHead>
-                <TableHead>Requester</TableHead>
-                <TableHead>Requested</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total Value</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <AppTable
+            headers={[
+              'Site',
+              'Requester',
+              'Requested',
+              'Status',
+              'Priority',
+              'Items',
+              'Total Value',
+              'Actions',
+            ]}
+          >
               {filteredRequests.map((request) => {
                 const statusConfig = getStatusConfig(request.status);
                 const priorityConfig = getPriorityConfig(request.priority);
@@ -557,8 +556,7 @@ const ApprovalsProcurement = () => {
                   </TableRow>
                 );
               })}
-            </TableBody>
-          </Table>
+          </AppTable>
         </CardContent>
       </Card>
 
