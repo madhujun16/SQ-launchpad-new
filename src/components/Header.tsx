@@ -154,8 +154,8 @@ const Header = () => {
           variant="ghost"
           className={`px-3 py-2 text-sm font-medium transition-all duration-200 ${
             isActivePage(item.path) 
-              ? 'border-2 border-green-600 text-green-700 bg-gradient-to-r from-green-50 to-green-100' 
-              : 'text-gray-700 hover:text-green-700 hover:bg-green-50'
+              ? 'border-2 border-blue-600 text-blue-700 bg-gradient-to-r from-blue-50 to-indigo-100' 
+              : 'text-gray-700 hover:text-blue-700 hover:bg-blue-50'
           }`}
           onClick={() => navigate(item.path)}
         >
@@ -174,7 +174,7 @@ const Header = () => {
           variant="ghost"
           className={`w-full justify-start text-left h-12 px-4 ${
             isActivePage(item.path) 
-              ? 'bg-green-100 text-green-700 border-l-4 border-green-600' 
+              ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-600' 
               : 'hover:bg-gray-100'
           }`}
           onClick={() => handleMobileNavigation(item.path)}
@@ -188,30 +188,59 @@ const Header = () => {
     </div>
   );
 
-
-
   return (
     <>
       {/* Main Header */}
-      <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-black to-green-900 shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            {/* Left Side - Logo and Search */}
-            <div className="flex items-center space-x-4 lg:space-x-6">
-              <Link to="/dashboard" className="flex items-center space-x-2 lg:space-x-3">
-                <RocketIcon className="h-8 w-8 sm:h-10 sm:w-10" />
-                <div className="hidden sm:block">
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Launchpad</h1>
+      <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-blue-900 via-indigo-900 to-purple-900 shadow-xl border-b border-white/10">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo and Brand */}
+            <div className="flex items-center space-x-4">
+              <Link to="/dashboard" className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                    <RocketIcon size={24} className="text-white" />
+                  </div>
+                  <div className="absolute -inset-1 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full blur opacity-30"></div>
                 </div>
+                <span className="text-xl font-bold text-white hidden sm:block">
+                  Launchpad
+                </span>
               </Link>
-              
-
             </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {getNavigationStructure().map((item) => {
+                if (item.type === 'link' && item.canAccess) {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`
+                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                        ${isActive
+                          ? 'border-2 border-blue-400 text-blue-100 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 shadow-lg'
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </div>
+                    </Link>
+                  );
+                }
+                return null;
+              })}
+            </nav>
 
             {/* Right Side - Actions and User */}
             <div className="flex items-center space-x-2 lg:space-x-3">
-
-
               {/* Notifications */}
               <Button 
                 variant="ghost" 
@@ -340,8 +369,6 @@ const Header = () => {
                     </SheetDescription>
                   </SheetHeader>
                   
-
-                  
                   <div className="px-6 py-4">
                     {!loading && currentRole && renderMobileNavigation()}
                   </div>
@@ -398,15 +425,13 @@ const Header = () => {
               </Sheet>
             </div>
           </div>
-
-
         </div>
       </header>
 
       {/* Navigation Tabs - Second Level */}
       {!loading && currentRole && navigationStructure.length > 0 && (
-        <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg">
-          <div className="container mx-auto px-4">
+        <div className="sticky top-16 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-lg">
+          <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-center lg:justify-start overflow-x-auto">
               <div className="flex items-center space-x-1 py-3 min-w-max">
                 {renderDesktopNavigation()}
