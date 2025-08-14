@@ -1961,6 +1961,14 @@ export type Database = {
         Args: { _user_id?: string }
         Returns: boolean
       }
+      is_verified_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      log_admin_profile_access: {
+        Args: { p_action: string; p_target_user_id: string }
+        Returns: undefined
+      }
       log_audit_event: {
         Args: { p_action: string; p_details?: string; p_entity: string }
         Returns: undefined
