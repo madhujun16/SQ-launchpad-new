@@ -1,37 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ScopingSelection, ScopingCostBreakdown } from './scopingService';
-
-// Approval workflow interfaces
-export interface ScopingApproval {
-  id: string;
-  siteId: string;
-  siteName: string;
-  deploymentEngineerId: string;
-  deploymentEngineerName: string;
-  opsManagerId: string | null;
-  opsManagerName: string | null;
-  status: 'pending' | 'approved' | 'rejected' | 'changes_requested';
-  submittedAt: string;
-  reviewedAt: string | null;
-  reviewedBy: string | null;
-  reviewComment: string | null;
-  rejectionReason: string | null;
-  scopingData: ScopingSelection;
-  costBreakdown: ScopingCostBreakdown;
-  version: number;
-  previousVersionId: string | null;
-}
-
-export interface ApprovalAction {
-  id: string;
-  approvalId: string;
-  action: 'submit' | 'approve' | 'reject' | 'request_changes' | 'resubmit';
-  performedBy: string;
-  performedByRole: string;
-  performedAt: string;
-  comment: string | null;
-  metadata: Record<string, any>;
-}
+import { 
+  ScopingApproval, 
+  ApprovalAction, 
+  ScopingApprovalRow, 
+  ApprovalActionRow,
+  convertApprovalRowToApproval,
+  convertActionRowToAction,
+  convertApprovalToRow
+} from '@/types/scopingApproval';
 
 export interface ApprovalDashboard {
   pendingApprovals: ScopingApproval[];
@@ -74,9 +51,11 @@ export const submitScopingForApproval = async (
       previousVersionId: null
     };
 
+    const approvalRow = convertApprovalToRow(approval);
+
     const { data, error } = await supabase
       .from('scoping_approvals')
-      .insert([approval])
+      .insert([approvalRow])
       .select()
       .single();
 
@@ -93,7 +72,7 @@ export const submitScopingForApproval = async (
       metadata: { siteId, siteName }
     });
 
-    return data;
+    return convertApprovalRowToApproval(data);
   } catch (error) {
     console.error('Error submitting scoping for approval:', error);
     throw error;
@@ -102,8 +81,8 @@ export const submitScopingForApproval = async (
 
 export const getApprovalDashboard = async (userId: string, userRole: string): Promise<ApprovalDashboard> => {
   try {
-    let pendingApprovals: ScopingApproval[] = [];
-    let myApprovals: ScopingApproval[] = [];
+    let pendingApprovals: ScopingApprovalRow[] = [];
+    let myApprovals: ScopingApprovalRow[] = [];
 
     if (userRole === 'ops_manager') {
       // Get all pending approvals for Ops Managers
@@ -111,7 +90,7 @@ export const getApprovalDashboard = async (userId: string, userRole: string): Pr
         .from('scoping_approvals')
         .select('*')
         .eq('status', 'pending')
-        .order('submittedAt', { ascending: false });
+        .order('submitted_at', { ascending: false });
 
       if (pendingError) throw pendingError;
       pendingApprovals = pendingData || [];
@@ -120,8 +99,8 @@ export const getApprovalDashboard = async (userId: string, userRole: string): Pr
       const { data: assignedData, error: assignedError } = await supabase
         .from('scoping_approvals')
         .select('*')
-        .eq('opsManagerId', userId)
-        .order('submittedAt', { ascending: false });
+        .eq('ops_manager_id', userId)
+        .order('submitted_at', { ascending: false });
 
       if (assignedError) throw assignedError;
       myApprovals = assignedData || [];
@@ -130,8 +109,8 @@ export const getApprovalDashboard = async (userId: string, userRole: string): Pr
       const { data: submittedData, error: submittedError } = await supabase
         .from('scoping_approvals')
         .select('*')
-        .eq('deploymentEngineerId', userId)
-        .order('submittedAt', { ascending: false });
+        .eq('deployment_engineer_id', userId)
+        .order('submitted_at', { ascending: false });
 
       if (submittedError) throw submittedError;
       myApprovals = submittedData || [];
@@ -141,18 +120,23 @@ export const getApprovalDashboard = async (userId: string, userRole: string): Pr
     const { data: activityData, error: activityError } = await supabase
       .from('approval_actions')
       .select('*')
-      .order('performedAt', { ascending: false })
+      .order('performed_at', { ascending: false })
       .limit(20);
 
     if (activityError) throw activityError;
 
+    // Convert raw data to typed objects
+    const convertedPendingApprovals = pendingApprovals.map(convertApprovalRowToApproval);
+    const convertedMyApprovals = myApprovals.map(convertApprovalRowToApproval);
+    const convertedRecentActivity = (activityData || []).map(convertActionRowToAction);
+
     // Calculate statistics
-    const totalPending = pendingApprovals.length;
-    const totalApproved = myApprovals.filter(a => a.status === 'approved').length;
-    const totalRejected = myApprovals.filter(a => a.status === 'rejected').length;
+    const totalPending = convertedPendingApprovals.length;
+    const totalApproved = convertedMyApprovals.filter(a => a.status === 'approved').length;
+    const totalRejected = convertedMyApprovals.filter(a => a.status === 'rejected').length;
 
     // Calculate average response time (simplified)
-    const approvedApprovals = myApprovals.filter(a => a.status === 'approved' && a.reviewedAt);
+    const approvedApprovals = convertedMyApprovals.filter(a => a.status === 'approved' && a.reviewedAt);
     const totalResponseTime = approvedApprovals.reduce((total, approval) => {
       const submitted = new Date(approval.submittedAt).getTime();
       const reviewed = new Date(approval.reviewedAt!).getTime();
@@ -161,9 +145,9 @@ export const getApprovalDashboard = async (userId: string, userRole: string): Pr
     const averageResponseTime = approvedApprovals.length > 0 ? totalResponseTime / approvedApprovals.length : 0;
 
     return {
-      pendingApprovals,
-      myApprovals,
-      recentActivity: activityData || [],
+      pendingApprovals: convertedPendingApprovals,
+      myApprovals: convertedMyApprovals,
+      recentActivity: convertedRecentActivity,
       statistics: {
         totalPending,
         totalApproved,
@@ -188,11 +172,11 @@ export const approveScoping = async (
       .from('scoping_approvals')
       .update({
         status: 'approved',
-        reviewedAt: new Date().toISOString(),
-        reviewedBy: opsManagerId,
-        reviewComment: comment,
-        opsManagerId,
-        opsManagerName
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: opsManagerId,
+        review_comment: comment,
+        ops_manager_id: opsManagerId,
+        ops_manager_name: opsManagerName
       })
       .eq('id', approvalId);
 
@@ -212,7 +196,7 @@ export const approveScoping = async (
     // Update site status to "Ready for Procurement"
     const { data: approval } = await supabase
       .from('scoping_approvals')
-      .select('siteId')
+      .select('site_id')
       .eq('id', approvalId)
       .single();
 
@@ -224,7 +208,7 @@ export const approveScoping = async (
           scoping_approved_at: new Date().toISOString(),
           scoping_approved_by: opsManagerId
         })
-        .eq('id', approval.siteId);
+        .eq('id', approval.site_id);
     }
   } catch (error) {
     console.error('Error approving scoping:', error);
@@ -244,12 +228,12 @@ export const rejectScoping = async (
       .from('scoping_approvals')
       .update({
         status: 'rejected',
-        reviewedAt: new Date().toISOString(),
-        reviewedBy: opsManagerId,
-        reviewComment: comment,
-        rejectionReason,
-        opsManagerId,
-        opsManagerName
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: opsManagerId,
+        review_comment: comment,
+        rejection_reason: rejectionReason,
+        ops_manager_id: opsManagerId,
+        ops_manager_name: opsManagerName
       })
       .eq('id', approvalId);
 
@@ -282,11 +266,11 @@ export const requestScopingChanges = async (
       .from('scoping_approvals')
       .update({
         status: 'changes_requested',
-        reviewedAt: new Date().toISOString(),
-        reviewedBy: opsManagerId,
-        reviewComment: comment,
-        opsManagerId,
-        opsManagerName
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: opsManagerId,
+        review_comment: comment,
+        ops_manager_id: opsManagerId,
+        ops_manager_name: opsManagerName
       })
       .eq('id', approvalId);
 
@@ -347,9 +331,11 @@ export const resubmitScoping = async (
       previousVersionId: previousApprovalId
     };
 
+    const approvalRow = convertApprovalToRow(approval);
+
     const { data, error } = await supabase
       .from('scoping_approvals')
-      .insert([approval])
+      .insert([approvalRow])
       .select()
       .single();
 
@@ -371,7 +357,7 @@ export const resubmitScoping = async (
       }
     });
 
-    return data;
+    return convertApprovalRowToApproval(data);
   } catch (error) {
     console.error('Error resubmitting scoping:', error);
     throw error;
@@ -383,26 +369,35 @@ export const getApprovalHistory = async (approvalId: string): Promise<ApprovalAc
     const { data, error } = await supabase
       .from('approval_actions')
       .select('*')
-      .eq('approvalId', approvalId)
-      .order('performedAt', { ascending: true });
+      .eq('approval_id', approvalId)
+      .order('performed_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(convertActionRowToAction);
   } catch (error) {
     console.error('Error getting approval history:', error);
     throw error;
   }
 };
 
+// Private helper function to log approval actions
 const logApprovalAction = async (action: Omit<ApprovalAction, 'id'>): Promise<void> => {
   try {
     const { error } = await supabase
       .from('approval_actions')
-      .insert([action]);
+      .insert([{
+        approval_id: action.approvalId,
+        action: action.action,
+        performed_by: action.performedBy,
+        performed_by_role: action.performedByRole,
+        performed_at: action.performedAt,
+        comment: action.comment,
+        metadata: action.metadata
+      }]);
 
     if (error) throw error;
   } catch (error) {
     console.error('Error logging approval action:', error);
-    // Don't throw here as this is a logging function
+    throw error;
   }
 };

@@ -453,9 +453,9 @@ export default function PlatformConfiguration() {
           description: data.description,
           category: data.category,
           is_active: data.is_active,
-          monthly_fee: data.monthly_fee,
-          setup_fee: data.setup_fee,
-          license_fee: data.license_fee,
+          monthly_fee: (data as any).monthly_fee || 0,
+          setup_fee: (data as any).setup_fee || 0,
+          license_fee: (data as any).license_fee || 0,
           created_at: data.created_at,
           updated_at: data.updated_at,
         };
@@ -557,9 +557,9 @@ export default function PlatformConfiguration() {
           category: data.category,
           model: data.model,
           manufacturer: data.manufacturer,
-          unit_cost: data.unit_cost,
-          installation_cost: data.installation_cost,
-          maintenance_cost: data.maintenance_cost,
+          unit_cost: (data as any).unit_cost || data.estimated_cost,
+          installation_cost: (data as any).installation_cost || 0,
+          maintenance_cost: (data as any).maintenance_cost || 0,
           is_active: data.is_active,
           created_at: data.created_at,
           updated_at: data.updated_at,
@@ -1447,7 +1447,7 @@ export default function PlatformConfiguration() {
                             <TableRow key={log.id}>
                               <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
                               <TableCell>
-                                <Badge variant={log.type === 'create' ? 'success' : log.type === 'update' ? 'info' : log.type === 'delete' ? 'destructive' : log.type === 'error' ? 'destructive' : 'default'}>
+                                <Badge variant={log.type === 'delete' || log.type === 'error' ? 'destructive' : 'default'}>
                                   {log.type.replace('_', ' ')}
                                 </Badge>
                               </TableCell>

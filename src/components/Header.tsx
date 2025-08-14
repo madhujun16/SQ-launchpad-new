@@ -20,7 +20,7 @@ import {
   Users
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getRoleConfig } from '@/lib/roles';
+import { getRoleConfig, type UserRole } from '@/lib/roles';
 import { canAccessPage } from '@/lib/roles';
 import { RocketIcon } from '@/components/ui/RocketIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -298,14 +298,14 @@ const Header = () => {
                         <DropdownMenuGroup>
                           <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
                           {rolesForSwitch.map((role) => {
-                            const config = getRoleConfig(role);
-                            const RoleIconComponent = config.icon;       
+                            const config = getRoleConfig(role as UserRole);
+                            const RoleIconComponent = config.icon;
                             return (
                               <DropdownMenuItem
                                 key={role}
                                 onClick={() => {
                                   switchRole(role as UserRole);
-                                  handleRoleBasedNavigation(role as UserRole);
+                                  handleRoleBasedNavigation(role);
                                 }}
                                 className={`${currentRole === role ? 'bg-muted' : ''} flex items-center`}
                               >
@@ -413,7 +413,7 @@ const Header = () => {
                       <p className="text-sm font-medium mb-2">Switch Role</p>
                       <div className="space-y-2">
                         {rolesForSwitch.map((role) => {
-                          const config = getRoleConfig(role);
+                          const config = getRoleConfig(role as UserRole);
                           const Icon = config.icon;
                           const isActive = currentRole === role;
                           return (
@@ -423,7 +423,7 @@ const Header = () => {
                               className="w-full justify-start h-10"
                               onClick={() => {
                                 switchRole(role as UserRole);
-                                handleRoleBasedNavigation(role as UserRole);
+                                handleRoleBasedNavigation(role);
                                 setIsMobileMenuOpen(false);
                               }}
                             >

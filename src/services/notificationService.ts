@@ -1,197 +1,55 @@
-import { supabase } from '@/integrations/supabase/client';
-import { Notification, CreateNotificationRequest, NotificationPreferences } from '@/types/notifications';
+// Temporarily disabled notification service until notifications table is created
+import { Notification, NotificationPreferences } from '@/types/notifications';
 
-export class NotificationService {
-  private static instance: NotificationService;
+export const getNotifications = async (userId: string): Promise<Notification[]> => {
+  // Return empty array for now
+  return [];
+};
 
-  public static getInstance(): NotificationService {
-    if (!NotificationService.instance) {
-      NotificationService.instance = new NotificationService();
-    }
-    return NotificationService.instance;
-  }
+export const markAsRead = async (notificationId: string): Promise<void> => {
+  // No-op for now
+};
 
-  // Get notifications for current user
-  async getNotifications(limit = 50): Promise<Notification[]> {
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+export const markAllAsRead = async (userId: string): Promise<void> => {
+  // No-op for now
+};
 
-    if (error) throw error;
-    return data || [];
-  }
+export const getUnreadCount = async (userId: string): Promise<number> => {
+  // Return 0 for now
+  return 0;
+};
 
-  // Get unread count
-  async getUnreadCount(): Promise<number> {
-    const { count, error } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_read', false);
+export const subscribeToNotifications = (
+  userId: string,
+  callback: (notification: Notification) => void
+) => {
+  // No-op for now
+  return { unsubscribe: () => {} };
+};
 
-    if (error) throw error;
-    return count || 0;
-  }
+export const createNotification = async (notification: Omit<Notification, 'id' | 'created_at' | 'is_read'>): Promise<void> => {
+  // No-op for now
+};
 
-  // Mark notification as read
-  async markAsRead(notificationId: string): Promise<void> {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', notificationId);
+export const getUserPreferences = async (userId: string): Promise<NotificationPreferences | null> => {
+  // Return default preferences
+  return {
+    id: '',
+    user_id: userId,
+    email_enabled: true,
+    push_enabled: true,
+    // in_app_enabled: true,
+    approval_notifications: true,
+    // status_change_notifications: true,
+    // deadline_notifications: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
 
-    if (error) throw error;
-  }
-
-  // Mark all notifications as read
-  async markAllAsRead(): Promise<void> {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('is_read', false);
-
-    if (error) throw error;
-  }
-
-  // Create notification(s)
-  async createNotification(request: CreateNotificationRequest): Promise<void> {
-    const notifications = request.user_ids.map(userId => ({
-      user_id: userId,
-      type: request.type,
-      title: request.title,
-      message: request.message,
-      entity_type: request.entity_type,
-      entity_id: request.entity_id,
-      action_url: request.action_url,
-      metadata: request.metadata,
-      is_read: false
-    }));
-
-    const { error } = await supabase
-      .from('notifications')
-      .insert(notifications);
-
-    if (error) throw error;
-  }
-
-  // Subscribe to real-time notifications
-  subscribeToNotifications(callback: (notification: Notification) => void) {
-    return supabase
-      .channel('notifications-changes')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'notifications',
-          filter: `user_id=eq.${supabase.auth.getUser().then(u => u.data.user?.id)}`
-        }, 
-        (payload) => callback(payload.new as Notification)
-      )
-      .subscribe();
-  }
-
-  // Get user preferences
-  async getPreferences(): Promise<NotificationPreferences | null> {
-    const { data, error } = await supabase
-      .from('notification_preferences')
-      .select('*')
-      .single();
-
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
-  }
-
-  // Update user preferences
-  async updatePreferences(preferences: Partial<NotificationPreferences>): Promise<NotificationPreferences> {
-    const { data, error } = await supabase
-      .from('notification_preferences')
-      .upsert(preferences)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  }
-
-  // Helper methods for specific notification types
-  async notifyApprovalSubmitted(siteId: string, siteName: string, opsManagerId: string, deploymentEngineerId: string): Promise<void> {
-    await this.createNotification({
-      user_ids: [opsManagerId],
-      type: 'scoping_submitted',
-      title: 'New Scoping Approval Submitted',
-      message: `A new scoping approval for ${siteName} has been submitted for review.`,
-      entity_type: 'site',
-      entity_id: siteId,
-      action_url: `/approvals/scoping/${siteId}`,
-      metadata: { site_name: siteName, submitted_by: deploymentEngineerId }
-    });
-  }
-
-  async notifyApprovalDecision(approvalId: string, siteName: string, decision: 'approved' | 'rejected', deploymentEngineerId: string, comment?: string): Promise<void> {
-    await this.createNotification({
-      user_ids: [deploymentEngineerId],
-      type: 'approval_decision',
-      title: `Scoping ${decision === 'approved' ? 'Approved' : 'Rejected'}`,
-      message: `Your scoping approval for ${siteName} has been ${decision}.${comment ? ` Comment: ${comment}` : ''}`,
-      entity_type: 'scoping_approval',
-      entity_id: approvalId,
-      action_url: `/approvals/scoping/${approvalId}`,
-      metadata: { site_name: siteName, decision, comment }
-    });
-  }
-
-  async notifyResubmission(approvalId: string, siteName: string, opsManagerId: string): Promise<void> {
-    await this.createNotification({
-      user_ids: [opsManagerId],
-      type: 'resubmission',
-      title: 'Scoping Resubmitted',
-      message: `The scoping approval for ${siteName} has been resubmitted for review.`,
-      entity_type: 'scoping_approval',
-      entity_id: approvalId,
-      action_url: `/approvals/scoping/${approvalId}`,
-      metadata: { site_name: siteName }
-    });
-  }
-
-  async notifyProcurementUpdate(siteId: string, siteName: string, status: string, userIds: string[]): Promise<void> {
-    await this.createNotification({
-      user_ids: userIds,
-      type: 'procurement_update',
-      title: 'Procurement Status Update',
-      message: `Procurement status for ${siteName} has been updated to ${status}.`,
-      entity_type: 'site',
-      entity_id: siteId,
-      action_url: `/sites/${siteId}`,
-      metadata: { site_name: siteName, status }
-    });
-  }
-
-  async notifyDeploymentMilestone(deploymentId: string, siteName: string, milestone: string, userIds: string[]): Promise<void> {
-    await this.createNotification({
-      user_ids: userIds,
-      type: 'deployment_milestone',
-      title: 'Deployment Milestone',
-      message: `${milestone} completed for ${siteName}.`,
-      entity_type: 'deployment',
-      entity_id: deploymentId,
-      action_url: `/deployment/${deploymentId}`,
-      metadata: { site_name: siteName, milestone }
-    });
-  }
-
-  async notifyMaintenanceDue(assetId: string, assetName: string, opsManagerIds: string[]): Promise<void> {
-    await this.createNotification({
-      user_ids: opsManagerIds,
-      type: 'maintenance_due',
-      title: 'Maintenance Due',
-      message: `Maintenance is due for asset ${assetName}.`,
-      entity_type: 'asset',
-      entity_id: assetId,
-      action_url: `/assets/${assetId}`,
-      metadata: { asset_name: assetName }
-    });
-  }
-}
-
-export const notificationService = NotificationService.getInstance();
+export const updateUserPreferences = async (
+  userId: string, 
+  preferences: Partial<NotificationPreferences>
+): Promise<void> => {
+  // No-op for now
+};

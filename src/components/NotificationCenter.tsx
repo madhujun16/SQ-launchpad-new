@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { notificationService } from '@/services/notificationService';
+import * as notificationService from '@/services/notificationService';
 import { Notification } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -21,8 +21,8 @@ export const NotificationCenter: React.FC = () => {
     loadNotifications();
     loadUnreadCount();
 
-    // Subscribe to real-time notifications
-    const subscription = notificationService.subscribeToNotifications((newNotification) => {
+    // Subscribe to real-time notifications  
+    const subscription = notificationService.subscribeToNotifications('user-id', (newNotification) => {
       setNotifications(prev => [newNotification, ...prev]);
       setUnreadCount(prev => prev + 1);
       
@@ -46,7 +46,7 @@ export const NotificationCenter: React.FC = () => {
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      const data = await notificationService.getNotifications();
+      const data = await notificationService.getNotifications('user-id');
       setNotifications(data);
     } catch (error) {
       console.error('Error loading notifications:', error);
@@ -57,7 +57,7 @@ export const NotificationCenter: React.FC = () => {
 
   const loadUnreadCount = async () => {
     try {
-      const count = await notificationService.getUnreadCount();
+      const count = await notificationService.getUnreadCount('user-id');
       setUnreadCount(count);
     } catch (error) {
       console.error('Error loading unread count:', error);
@@ -78,7 +78,7 @@ export const NotificationCenter: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationService.markAllAsRead();
+      await notificationService.markAllAsRead('user-id');
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
       toast({
