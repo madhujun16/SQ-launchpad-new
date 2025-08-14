@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AppTable } from '@/components/ui/AppTable';
 import { 
   Building, 
   Users, 
@@ -278,20 +279,15 @@ const Dashboard = () => {
             {pendingOrRejected.length === 0 ? (
               <p className="text-sm text-gray-600">Nothing needs your attention right now.</p>
             ) : (
-              <div className="space-y-2">
+              <AppTable headers={[ 'Site', 'Submitted', 'Status', 'Action' ]}>
                 {pendingOrRejected.map(r => (
-                  <div key={r.id} className="p-3 border rounded flex items-center justify-between">
-                    <div>
+                  <tr key={r.id} className="border-b last:border-0">
+                    <td className="p-3">
                       <div className="font-medium">{r.siteName}</div>
-                      <div className="text-xs text-gray-500">Submitted {new Date(r.submittedAt).toLocaleDateString()}</div>
-                      <div className="mt-1 flex items-center gap-2">
-                        {getStatusBadge(r.status)}
-                        {r.status === 'rejected' && (
-                          <span className="text-xs text-red-700">{r.rejectionReason}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    </td>
+                    <td className="p-3 text-sm text-gray-600">{new Date(r.submittedAt).toLocaleDateString()}</td>
+                    <td className="p-3">{getStatusBadge(r.status)}</td>
+                    <td className="p-3">
                       {r.status === 'rejected' ? (
                         <Button size="sm" onClick={() => navigate(`/sites/${r.siteId}/study`)}>
                           <Edit className="h-4 w-4 mr-1" /> Edit & Resubmit
@@ -301,10 +297,10 @@ const Dashboard = () => {
                           <Eye className="h-4 w-4 mr-1" /> View
                         </Button>
                       )}
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </AppTable>
             )}
           </CardContent>
         </Card>
@@ -317,17 +313,17 @@ const Dashboard = () => {
             {upcoming.length === 0 ? (
               <p className="text-sm text-gray-600">No approved scopes at the moment.</p>
             ) : (
-              <div className="space-y-2">
+              <AppTable headers={[ 'Site', 'Value', 'Stage' ]}>
                 {upcoming.map(r => (
-                  <div key={r.id} className="p-3 border rounded flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{r.siteName}</div>
-                      <div className="text-xs text-gray-500">Value £{r.totalValue.toLocaleString()}</div>
-                    </div>
-                    <Badge variant="secondary">{r.status === 'procurement' ? 'In Procurement' : 'Approved'}</Badge>
-                  </div>
+                  <tr key={r.id} className="border-b last:border-0">
+                    <td className="p-3 font-medium">{r.siteName}</td>
+                    <td className="p-3 text-sm">£{r.totalValue.toLocaleString()}</td>
+                    <td className="p-3">
+                      <Badge variant="secondary">{r.status === 'procurement' ? 'In Procurement' : 'Approved'}</Badge>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </AppTable>
             )}
           </CardContent>
         </Card>
@@ -350,37 +346,24 @@ const Dashboard = () => {
             {pending.length === 0 ? (
               <p className="text-sm text-gray-600">No pending approvals.</p>
             ) : (
-              <div className="space-y-2">
+              <AppTable headers={[ 'Site', 'Submitted', 'Summary', 'Total', 'Actions' ]}>
                 {pending.map(r => (
-                  <div key={r.id} className="p-3 border rounded">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="font-medium">{r.siteName}</div>
-                        <div className="text-xs text-gray-500">Submitted {new Date(r.submittedAt).toLocaleDateString()}</div>
-                      </div>
+                  <tr key={r.id} className="border-b last:border-0">
+                    <td className="p-3 font-medium">{r.siteName}</td>
+                    <td className="p-3 text-sm text-gray-600">{new Date(r.submittedAt).toLocaleDateString()}</td>
+                    <td className="p-3 text-xs text-gray-700">
+                      Software: {r.summary.software.map(s => s.name).join(', ')} | Hardware: {r.summary.hardware.map(h => `${h.name}${h.units?`(${h.units})`:''}`).join(', ')}
+                    </td>
+                    <td className="p-3 text-sm">£{r.totalValue.toLocaleString()}</td>
+                    <td className="p-3">
                       <div className="flex items-center gap-2">
                         <Button size="sm" onClick={() => approveInline(r.id)}><CheckCircle className="h-4 w-4 mr-1" />Approve</Button>
                         <Button size="sm" variant="outline" onClick={() => rejectInline(r.id)}><AlertCircle className="h-4 w-4 mr-1" />Reject</Button>
                       </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <div className="p-2 border rounded">
-                        <p className="text-xs font-medium mb-1">Software</p>
-                        {r.summary.software.map((s, i) => (
-                          <div key={i} className="text-xs text-gray-700">• {s.name}</div>
-                        ))}
-                      </div>
-                      <div className="p-2 border rounded">
-                        <p className="text-xs font-medium mb-1">Hardware</p>
-                        {r.summary.hardware.map((h, i) => (
-                          <div key={i} className="text-xs text-gray-700">• {h.name} {h.units ? `(${h.units})` : ''}</div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2">Total Cost: £{r.totalValue.toLocaleString()}</div>
-                  </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </AppTable>
             )}
           </CardContent>
         </Card>
@@ -412,34 +395,75 @@ const Dashboard = () => {
   };
 
   const renderAdminSection = () => {
+    const totalSites = 42;
+    const activeLicenses = 120;
+    const inventoryItems = 340;
+    const procurementSpend = 248000;
+    const auditSummary = [
+      { id: 'a1', ts: '2024-01-19T09:10:00Z', msg: 'User role updated', type: 'update' },
+      { id: 'a2', ts: '2024-01-19T08:55:00Z', msg: 'New hardware item added', type: 'create' },
+      { id: 'a3', ts: '2024-01-18T16:12:00Z', msg: 'Software pricing adjusted', type: 'update' },
+    ];
     return (
       <>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Platform Health</CardTitle>
-            <CardDescription>Overview of platform metrics</CardDescription>
+            <CardTitle className="text-lg">Key Metrics</CardTitle>
+            <CardDescription>Platform-wide overview</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">98%</div>
-                <div className="text-sm text-gray-500">Uptime</div>
+              <div className="p-3 border rounded">
+                <div className="text-sm text-gray-600">Total Sites</div>
+                <div className="text-2xl font-bold">{totalSites}</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">24</div>
-                <div className="text-sm text-gray-500">Active Users</div>
+              <div className="p-3 border rounded">
+                <div className="text-sm text-gray-600">Active Licenses</div>
+                <div className="text-2xl font-bold">{activeLicenses}</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">37</div>
-                <div className="text-sm text-gray-500">Active Sites</div>
+              <div className="p-3 border rounded">
+                <div className="text-sm text-gray-600">Inventory Items</div>
+                <div className="text-2xl font-bold">{inventoryItems}</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">5</div>
-                <div className="text-sm text-gray-500">Alerts</div>
+              <div className="p-3 border rounded">
+                <div className="text-sm text-gray-600">Procurement Spend</div>
+                <div className="text-2xl font-bold">£{procurementSpend.toLocaleString()}</div>
               </div>
             </div>
           </CardContent>
         </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Audit Summary</CardTitle>
+              <CardDescription>Recent platform changes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AppTable headers={[ 'Timestamp', 'Event' ]}>
+                {auditSummary.map(e => (
+                  <tr key={e.id} className="border-b last:border-0">
+                    <td className="p-3 text-sm text-gray-600">{new Date(e.ts).toLocaleString()}</td>
+                    <td className="p-3">{e.msg}</td>
+                  </tr>
+                ))}
+              </AppTable>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Links</CardTitle>
+              <CardDescription>Navigate to core workflows</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="outline" onClick={() => navigate('/sites')}>Sites</Button>
+                <Button variant="outline" onClick={() => navigate('/approvals-procurement')}>Approvals</Button>
+                <Button variant="outline" onClick={() => navigate('/assets/inventory')}>Inventory</Button>
+                <Button onClick={() => navigate('/platform-configuration')}>Platform Configuration</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </>
     );
   };
@@ -492,20 +516,22 @@ const Dashboard = () => {
       {currentRole === 'ops_manager' && renderOpsManagerSection()}
       {currentRole === 'admin' && renderAdminSection()}
 
-      {/* Widgets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {widgets.map((widget) => (
-          <Card key={widget.id} className={`${getWidgetSizeClass(widget.size)} hover:shadow-md transition-shadow`}>
-            <CardHeader>
-              <CardTitle className="text-lg">{widget.title}</CardTitle>
-              <CardDescription>{widget.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {widget.content}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Widgets Grid (recent activity remains as a single widget) */}
+      {widgets.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {widgets.map((widget) => (
+            <Card key={widget.id} className={`${getWidgetSizeClass(widget.size)} hover:shadow-md transition-shadow`}>
+              <CardHeader>
+                <CardTitle className="text-lg">{widget.title}</CardTitle>
+                <CardDescription>{widget.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {widget.content}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Quick Actions */}
       <Card>
