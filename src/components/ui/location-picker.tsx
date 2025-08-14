@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Search, MapPin, Navigation } from 'lucide-react';
+import { Search, MapPin, Navigation, Edit, X, Check } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './input';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
@@ -51,6 +51,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [searchSuggestions, setSearchSuggestions] = useState<LocationIQSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(!initialLocation); // Start collapsed if location exists
+  const [isEditing, setIsEditing] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close suggestions
@@ -196,6 +198,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       setMarker(newLocation);
       
       onLocationSelect(location);
+      
+      // Auto-collapse after selection
+      setIsExpanded(false);
+      setIsEditing(false);
     } catch (error) {
       console.error('Error selecting suggestion:', error);
       setError('Failed to select location');
@@ -216,6 +222,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         
         onLocationSelect(location);
         setSearchAddress(location.address);
+        
+        // Auto-collapse after selection
+        setIsExpanded(false);
+        setIsEditing(false);
       } else {
         setError('Location not found. Please try a different search term.');
       }
@@ -244,6 +254,10 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             const address = await reverseGeocode(lat, lng);
             onLocationSelect({ lat, lng, address });
             setSearchAddress(address);
+            
+            // Auto-collapse after selection
+            setIsExpanded(false);
+            setIsEditing(false);
           } catch (error) {
             console.error('Error processing current location:', error);
             setError('Failed to process current location');
@@ -278,6 +292,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         const location = { lat, lng, address };
         onLocationSelect(location);
         setMarker({ lat, lng });
+        setSearchAddress(address);
+        
+        // Auto-collapse after selection
+        setIsExpanded(false);
+        setIsEditing(false);
       } else {
         setError('Please enter valid coordinates');
       }
@@ -287,12 +306,93 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   };
 
+  const handleEdit = () => {
+    setIsExpanded(true);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsExpanded(false);
+    setIsEditing(false);
+    setError(null);
+  };
+
+  const handleSaveEdit = () => {
+    setIsExpanded(false);
+    setIsEditing(false);
+    setError(null);
+  };
+
+  // If location is selected and not editing, show compact view
+  if (marker && !isExpanded) {
+    return (
+      <Card className={className}>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <MapPin className="mr-2 h-5 w-5 text-green-600" />
+              <span>Selected Location</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEdit}
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-900">{searchAddress}</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Coordinates: {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Expanded Location Picker
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <MapPin className="mr-2 h-5 w-5" />
-          Location Picker
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <MapPin className="mr-2 h-5 w-5" />
+            {isEditing ? 'Edit Location' : 'Location Picker'}
+          </div>
+          {isEditing && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelEdit}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdit}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Check className="h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -400,27 +500,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             Set Location
           </Button>
         </div>
-
-        {/* Current Location Display */}
-        {marker && (
-          <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Selected Location</h4>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">Coordinates:</span>
-                <span className="text-sm text-gray-600">
-                  {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
-                </span>
-              </div>
-              {searchAddress && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Address:</span> {searchAddress}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Instructions */}
         <div className="text-sm text-gray-600 space-y-2">
