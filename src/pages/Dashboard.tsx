@@ -447,34 +447,7 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Activity</CardTitle>
-              <CardDescription>Latest updates and actions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium">Site "London Central" deployed successfully</p>
-                      <p className="text-xs text-gray-500">2 hours ago</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-medium">Site study completed for "Manchester North"</p>
-                      <p className="text-xs text-gray-500">4 hours ago</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
       </>
     );
@@ -528,7 +501,7 @@ const Dashboard = () => {
       {currentRole === 'ops_manager' && renderOpsManagerSection()}
       {currentRole === 'admin' && renderAdminSection()}
 
-      {/* Widgets Grid (recent activity remains as a single widget) */}
+      {/* Widgets Grid */}
       {widgets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {widgets.map((widget) => (
@@ -544,27 +517,7 @@ const Dashboard = () => {
           ))}
         </div>
       )}
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks and shortcuts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2" onClick={() => navigate('/sites')}>
-              <Building className="h-6 w-6" />
-              <span className="text-sm font-medium">View Sites</span>
-            </Button>
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2" onClick={() => navigate('/approvals-procurement')}>
-              <Package className="h-6 w-6" />
-              <span className="text-sm font-medium">Approvals</span>
-            </Button>
-            
-          </div>
-        </CardContent>
-      </Card>
+      
     </div>
   );
 };
