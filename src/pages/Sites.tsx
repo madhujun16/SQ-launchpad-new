@@ -446,14 +446,6 @@ const Sites = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/sites/${site.id}/study`)}
-                            title="Site Study"
-                          >
-                            <FileTextIcon className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
                             onClick={() => {
                               setSelectedSite(site);
                               setShowNotesModal(true);
