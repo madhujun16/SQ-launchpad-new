@@ -435,22 +435,6 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Audit Summary</CardTitle>
-              <CardDescription>Recent platform changes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AppTable headers={[ 'Timestamp', 'Event' ]}>
-                {auditSummary.map(e => (
-                  <tr key={e.id} className="border-b last:border-0">
-                    <td className="p-3 text-sm text-gray-600">{new Date(e.ts).toLocaleString()}</td>
-                    <td className="p-3">{e.msg}</td>
-                  </tr>
-                ))}
-              </AppTable>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
               <CardTitle className="text-lg">Quick Links</CardTitle>
               <CardDescription>Navigate to core workflows</CardDescription>
             </CardHeader>
