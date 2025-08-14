@@ -2048,6 +2048,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_license_access: {
+        Args: { p_action: string; p_license_id: string }
+        Returns: undefined
+      }
       validate_email_access: {
         Args: { requesting_user_id: string; target_user_id: string }
         Returns: boolean
