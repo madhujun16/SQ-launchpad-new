@@ -1880,6 +1880,10 @@ export type Database = {
           table_name: string
         }[]
       }
+      can_access_sites: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_email_exists: {
         Args: { email_to_check: string }
         Returns: boolean
@@ -1959,6 +1963,10 @@ export type Database = {
       }
       is_admin: {
         Args: { _user_id?: string }
+        Returns: boolean
+      }
+      is_assigned_to_site: {
+        Args: { site_uuid: string }
         Returns: boolean
       }
       is_verified_admin: {
