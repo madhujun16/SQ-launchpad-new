@@ -1,7 +1,7 @@
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'scoping_submitted' | 'approval_decision' | 'resubmission' | 'procurement_update' | 'deployment_milestone' | 'maintenance_due' | 'forecast_risk';
+  type: 'scoping_submitted' | 'approval_decision' | 'resubmission' | 'procurement_update' | 'deployment_milestone' | 'maintenance_due' | 'forecast_risk' | 'system_alert';
   title: string;
   message: string;
   entity_type: 'site' | 'scoping_approval' | 'costing_approval' | 'deployment' | 'asset';
@@ -11,6 +11,7 @@ export interface Notification {
   created_at: string;
   created_by: string;
   metadata?: Record<string, any>;
+  priority?: string;
 }
 
 export interface NotificationPreferences {

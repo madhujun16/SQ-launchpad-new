@@ -943,6 +943,44 @@ export type Database = {
           },
         ]
       }
+      licenses_secure: {
+        Row: {
+          created_at: string | null
+          id: string
+          license_key: string | null
+          owner_id: string | null
+          product: string | null
+          updated_at: string | null
+          vendor: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          license_key?: string | null
+          owner_id?: string | null
+          product?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          license_key?: string | null
+          owner_id?: string | null
+          product?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_secure_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_logs: {
         Row: {
           asset_id: string | null
@@ -999,6 +1037,96 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          approval_notifications: boolean | null
+          created_at: string | null
+          deployment_notifications: boolean | null
+          email_enabled: boolean | null
+          forecast_notifications: boolean | null
+          id: string
+          maintenance_notifications: boolean | null
+          push_enabled: boolean | null
+          scoping_notifications: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approval_notifications?: boolean | null
+          created_at?: string | null
+          deployment_notifications?: boolean | null
+          email_enabled?: boolean | null
+          forecast_notifications?: boolean | null
+          id?: string
+          maintenance_notifications?: boolean | null
+          push_enabled?: boolean | null
+          scoping_notifications?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approval_notifications?: boolean | null
+          created_at?: string | null
+          deployment_notifications?: boolean | null
+          email_enabled?: boolean | null
+          forecast_notifications?: boolean | null
+          id?: string
+          maintenance_notifications?: boolean | null
+          push_enabled?: boolean | null
+          scoping_notifications?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string | null
+          created_by: string
+          entity_id: string
+          entity_type: string
+          id: string
+          is_read: boolean | null
+          message: string
+          metadata: Json | null
+          priority: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string | null
+          created_by: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          metadata?: Json | null
+          priority?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string | null
+          created_by?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          metadata?: Json | null
+          priority?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       organizations: {
         Row: {
@@ -1898,62 +2026,7 @@ export type Database = {
       }
     }
     Views: {
-      licenses_secure: {
-        Row: {
-          cost: number | null
-          created_at: string | null
-          created_by: string | null
-          expiry_date: string | null
-          id: string | null
-          license_key: string | null
-          license_type: string | null
-          name: string | null
-          notes: string | null
-          purchase_date: string | null
-          status: string | null
-          updated_at: string | null
-          vendor: string | null
-        }
-        Insert: {
-          cost?: never
-          created_at?: string | null
-          created_by?: string | null
-          expiry_date?: string | null
-          id?: string | null
-          license_key?: never
-          license_type?: string | null
-          name?: string | null
-          notes?: string | null
-          purchase_date?: string | null
-          status?: string | null
-          updated_at?: string | null
-          vendor?: string | null
-        }
-        Update: {
-          cost?: never
-          created_at?: string | null
-          created_by?: string | null
-          expiry_date?: string | null
-          id?: string | null
-          license_key?: never
-          license_type?: string | null
-          name?: string | null
-          notes?: string | null
-          purchase_date?: string | null
-          status?: string | null
-          updated_at?: string | null
-          vendor?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "licenses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       audit_rls_policies: {
@@ -1976,6 +2049,20 @@ export type Database = {
       check_email_exists_secure: {
         Args: { email_to_check: string }
         Returns: boolean
+      }
+      create_notification: {
+        Args: {
+          _action_url?: string
+          _entity_id: string
+          _entity_type: string
+          _message: string
+          _metadata?: Json
+          _priority?: string
+          _title: string
+          _type: string
+          _user_ids: string[]
+        }
+        Returns: undefined
       }
       get_current_user_roles: {
         Args: Record<PropertyKey, never>
@@ -2014,10 +2101,6 @@ export type Database = {
           retired_items: number
           total_items: number
         }[]
-      }
-      get_license_key_secure: {
-        Args: { p_license_id: string }
-        Returns: string
       }
       get_safe_profile_data: {
         Args: { target_user_id?: string }
@@ -2059,6 +2142,27 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_unread_notification_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_user_notifications: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          action_url: string
+          created_at: string
+          created_by: string
+          entity_id: string
+          entity_type: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json
+          priority: string
+          title: string
+          type: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2095,8 +2199,17 @@ export type Database = {
         Returns: undefined
       }
       log_audit_event: {
-        Args: { p_action: string; p_details?: string; p_entity: string }
-        Returns: undefined
+        Args:
+          | {
+              _action: string
+              _metadata?: Json
+              _new_values?: Json
+              _old_values?: Json
+              _record_id?: string
+              _table_name: string
+            }
+          | { p_action: string; p_details?: string; p_entity: string }
+        Returns: string
       }
       log_costing_approval_action: {
         Args: {
@@ -2109,6 +2222,14 @@ export type Database = {
       }
       log_license_access: {
         Args: { p_action: string; p_license_id: string }
+        Returns: undefined
+      }
+      mark_notification_read: {
+        Args: { _notification_id: string }
+        Returns: boolean
+      }
+      seed_notification_preferences: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       validate_email_access: {
