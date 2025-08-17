@@ -58,7 +58,6 @@ interface Organization {
   id: string;
   name: string;
   description: string;
-  sector: string;
   created_at: string;
   updated_at: string;
 }
@@ -193,61 +192,78 @@ export default function PlatformConfiguration() {
     loadConfigurationData();
   }, []);
 
-  const logAudit = (entry: Omit<AuditLog, 'id' | 'created_at'>) => {
-    setAuditLogs(prev => [
-      { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
-      ...prev,
-    ]);
+  const logAudit = async (entry: Omit<AuditLog, 'id' | 'created_at'>) => {
+    try {
+      // Log to database
+      await supabase.rpc('log_audit_event', {
+        _action: entry.type,
+        _table_name: 'platform_configuration',
+        _metadata: { message: entry.message, actor: entry.actor }
+      });
+      
+      // Also update local state for immediate UI feedback
+      setAuditLogs(prev => [
+        { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
+        ...prev,
+      ]);
+    } catch (error) {
+      console.error('Failed to log audit event:', error);
+      // Fallback to local state only
+      setAuditLogs(prev => [
+        { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
+        ...prev,
+      ]);
+    }
   };
 
   // Helper to seed default software options
   const seedDefaultSoftware = () => {
     const defaults: SoftwareModule[] = [
       {
-        id: 'pos-system',
-        name: 'POS System',
-        description: 'Point of Sale system for transactions',
+        id: 'sw-pos-system',
+        name: 'SmartQ POS Pro',
+        description: 'Advanced point-of-sale system with inventory management',
         category: 'POS',
         is_active: true,
         monthly_fee: 25,
         setup_fee: 150,
-        license_fee: null,
+        license_fee: 50,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
-        id: 'kiosk-software',
-        name: 'Kiosk Software',
-        description: 'Self-service kiosk software',
+        id: 'sw-kiosk-software',
+        name: 'Self-Service Kiosk Suite',
+        description: 'Touch-screen kiosk software for customer interactions',
         category: 'Kiosk',
         is_active: true,
         monthly_fee: 20,
         setup_fee: 100,
-        license_fee: null,
+        license_fee: 30,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
-        id: 'kitchen-display',
-        name: 'Kitchen Display',
-        description: 'Kitchen display system for orders',
-        category: 'Back-of-house',
+        id: 'sw-kitchen-display',
+        name: 'Kitchen Display System',
+        description: 'Real-time order management for kitchen staff',
+        category: 'Kitchen',
         is_active: true,
         monthly_fee: 20,
         setup_fee: 100,
-        license_fee: null,
+        license_fee: 25,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
-        id: 'inventory-management',
-        name: 'Inventory Management',
-        description: 'Inventory tracking and management',
+        id: 'sw-inventory-mgmt',
+        name: 'Inventory Management Pro',
+        description: 'Comprehensive inventory tracking and forecasting',
         category: 'Inventory',
         is_active: true,
-        monthly_fee: 0,
-        setup_fee: 0,
-        license_fee: null,
+        monthly_fee: 15,
+        setup_fee: 75,
+        license_fee: 20,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
@@ -344,8 +360,8 @@ export default function PlatformConfiguration() {
       const sampleRecommendationRules: RecommendationRule[] = [
         {
           id: '1',
-          softwareModuleId: 'pos-system',
-          hardwareItemId: 'pos-terminal',
+          softwareModuleId: 'sw-pos-system',
+          hardwareItemId: 'hw-pos-terminal',
           defaultQuantity: 1,
           isRequired: true,
           reason: 'Core POS functionality',
@@ -362,8 +378,8 @@ export default function PlatformConfiguration() {
           name: 'POS Hardware Dependency',
           description: 'POS System requires POS Terminal, Printer, and Cash Drawer',
           ruleType: 'dependency',
-          softwareModuleIds: ['pos-system'],
-          hardwareItemIds: ['pos-terminal', 'printer', 'cash-drawer'],
+          softwareModuleIds: ['sw-pos-system'],
+          hardwareItemIds: ['hw-pos-terminal', 'hw-receipt-printer', 'hw-cash-drawer'],
           ruleValue: 'required',
           priority: 1,
           costImpact: null,
@@ -696,7 +712,6 @@ export default function PlatformConfiguration() {
       id: 'new',
       name: '',
       description: '',
-      sector: 'Business & Industry', // Set default sector
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -736,7 +751,6 @@ export default function PlatformConfiguration() {
             .update({
               name: editingOrganization.name,
               description: editingOrganization.description,
-              sector: editingOrganization.sector,
               updated_at: new Date().toISOString()
             })
             .eq('id', editingOrganization.id);
@@ -751,16 +765,30 @@ export default function PlatformConfiguration() {
           );
         } else {
           // Add new organization
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('organizations')
-            .insert([editingOrganization]);
+            .insert([{
+              name: editingOrganization.name,
+              description: editingOrganization.description
+            }])
+            .select()
+            .single();
           
           if (error) {
             toast.error('Failed to create organization');
             return;
           }
           
-          setOrganizations(prev => [...prev, editingOrganization]);
+          // Create the new organization object with the returned data
+          const newOrg: Organization = {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          };
+          
+          setOrganizations(prev => [...prev, newOrg]);
         }
         
         setEditingOrganization(null);
@@ -902,7 +930,6 @@ export default function PlatformConfiguration() {
                               <h4 className="font-medium">{org.name}</h4>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">{org.description}</p>
-                            <p className="text-xs text-gray-500 mb-3">Sector: {org.sector}</p>
                             <div className="flex space-x-2">
                               <Button variant="outline" size="sm" onClick={() => editOrganization(org)}>
                                 <Edit className="h-3 w-3 mr-1" />
@@ -1632,25 +1659,6 @@ export default function PlatformConfiguration() {
                   onChange={(e) => setEditingOrganization({...editingOrganization, description: e.target.value})}
                   placeholder="Enter organization description"
                 />
-              </div>
-              
-              <div>
-                <Label htmlFor="orgSector">Sector</Label>
-                <Select
-                  value={editingOrganization.sector}
-                  onValueChange={(value) => setEditingOrganization({...editingOrganization, sector: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select sector" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sectorOptions.map(option => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
               
               <div className="flex space-x-2">
