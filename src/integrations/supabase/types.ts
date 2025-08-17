@@ -2026,7 +2026,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      licenses_public: {
+        Row: {
+          cost: string | null
+          created_at: string | null
+          created_by: string | null
+          expiry_date: string | null
+          id: string | null
+          license_key: string | null
+          license_type: string | null
+          name: string | null
+          purchase_date: string | null
+          status: string | null
+          updated_at: string | null
+          vendor: string | null
+        }
+        Insert: {
+          cost?: never
+          created_at?: string | null
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          license_key?: never
+          license_type?: string | null
+          name?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          cost?: never
+          created_at?: string | null
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          license_key?: never
+          license_type?: string | null
+          name?: string | null
+          purchase_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       audit_rls_policies: {
@@ -2100,6 +2152,34 @@ export type Database = {
           maintenance_items: number
           retired_items: number
           total_items: number
+        }[]
+      }
+      get_license_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_licenses: number
+          by_type: Json
+          expired_licenses: number
+          expiring_soon: number
+          total_licenses: number
+        }[]
+      }
+      get_license_with_sensitive_data: {
+        Args: { license_id: string }
+        Returns: {
+          cost: number
+          created_at: string
+          created_by: string
+          expiry_date: string
+          id: string
+          license_key: string
+          license_type: string
+          name: string
+          notes: string
+          purchase_date: string
+          status: string
+          updated_at: string
+          vendor: string
         }[]
       }
       get_safe_profile_data: {
