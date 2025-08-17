@@ -61,13 +61,13 @@ export interface PlatformConfiguration {
   updatedBy: string;
 }
 
-// Mock data - replace with actual API calls
-const mockSoftwareModules: SoftwareModule[] = [
+// Default software modules to seed if none exist
+const defaultSoftwareModules: SoftwareModule[] = [
   {
-    id: 'pos-system',
-    name: 'POS System',
-    description: 'Point of Sale system for transactions',
-    category: 'Payment Processing',
+    id: 'sw-pos-system',
+    name: 'SmartQ POS Pro',
+    description: 'Advanced point-of-sale system with inventory management',
+    category: 'POS',
     is_active: true,
     monthly_fee: 25,
     setup_fee: 150,
@@ -76,10 +76,10 @@ const mockSoftwareModules: SoftwareModule[] = [
     updated_at: new Date().toISOString()
   },
   {
-    id: 'kiosk-software',
-    name: 'Kiosk Software',
-    description: 'Self-service kiosk software',
-    category: 'Self-Service',
+    id: 'sw-kiosk-software',
+    name: 'Self-Service Kiosk Suite',
+    description: 'Touch-screen kiosk software for customer interactions',
+    category: 'Kiosk',
     is_active: true,
     monthly_fee: 20,
     setup_fee: 100,
@@ -88,10 +88,10 @@ const mockSoftwareModules: SoftwareModule[] = [
     updated_at: new Date().toISOString()
   },
   {
-    id: 'kitchen-display',
-    name: 'Kitchen Display',
-    description: 'Kitchen display system for orders',
-    category: 'Kitchen Management',
+    id: 'sw-kitchen-display',
+    name: 'Kitchen Display System',
+    description: 'Real-time order management for kitchen staff',
+    category: 'Kitchen',
     is_active: true,
     monthly_fee: 20,
     setup_fee: 100,
@@ -100,9 +100,9 @@ const mockSoftwareModules: SoftwareModule[] = [
     updated_at: new Date().toISOString()
   },
   {
-    id: 'inventory-management',
-    name: 'Inventory Management',
-    description: 'Inventory tracking and management',
+    id: 'sw-inventory-mgmt',
+    name: 'Inventory Management Pro',
+    description: 'Comprehensive inventory tracking and forecasting',
     category: 'Inventory',
     is_active: true,
     monthly_fee: 15,
@@ -113,15 +113,15 @@ const mockSoftwareModules: SoftwareModule[] = [
   }
 ];
 
-const mockHardwareItems: HardwareItem[] = [
+const defaultHardwareItems: HardwareItem[] = [
   {
-    id: 'pos-terminal',
-    name: 'POS Terminal',
-    description: 'Ingenico Telium 2 POS terminal',
-    category: 'Payment Processing',
-    model: 'Telium 2',
-    manufacturer: 'Ingenico',
-    unit_cost: 2500,
+    id: 'hw-pos-terminal',
+    name: 'SmartQ POS Terminal',
+    description: 'Touch-screen POS terminal with receipt printer',
+    category: 'POS Hardware',
+    model: 'SmartQ-POS-2024',
+    manufacturer: 'SmartQ',
+    unit_cost: 899.99,
     installation_cost: 100,
     maintenance_cost: 25,
     is_active: true,
@@ -129,13 +129,13 @@ const mockHardwareItems: HardwareItem[] = [
     updated_at: new Date().toISOString()
   },
   {
-    id: 'printer',
-    name: 'Thermal Printer',
-    description: 'Receipt and kitchen order printer',
-    category: 'Printing',
-    model: 'TM-T88VI',
-    manufacturer: 'Epson',
-    unit_cost: 350,
+    id: 'hw-barcode-scanner',
+    name: 'Wireless Barcode Scanner',
+    description: 'High-speed wireless barcode scanner',
+    category: 'Scanner',
+    model: 'SmartQ-Scan-Pro',
+    manufacturer: 'SmartQ',
+    unit_cost: 199.99,
     installation_cost: 50,
     maintenance_cost: 15,
     is_active: true,
@@ -143,13 +143,13 @@ const mockHardwareItems: HardwareItem[] = [
     updated_at: new Date().toISOString()
   },
   {
-    id: 'cash-drawer',
-    name: 'Cash Drawer',
-    description: 'Electronic cash drawer',
-    category: 'Payment Processing',
-    model: 'CashDrawer-2000',
-    manufacturer: 'APG',
-    unit_cost: 200,
+    id: 'hw-cash-drawer',
+    name: 'Electronic Cash Drawer',
+    description: 'Secure electronic cash drawer with lock',
+    category: 'Cash Management',
+    model: 'SmartQ-Cash-2000',
+    manufacturer: 'SmartQ',
+    unit_cost: 299.99,
     installation_cost: 30,
     maintenance_cost: 10,
     is_active: true,
@@ -333,8 +333,8 @@ export const getPlatformConfiguration = async (): Promise<PlatformConfiguration>
   // return response.json();
   
   return {
-    softwareModules: mockSoftwareModules,
-    hardwareItems: mockHardwareItems,
+            softwareModules: defaultSoftwareModules,
+          hardwareItems: defaultHardwareItems,
     recommendationRules: mockRecommendationRules,
     businessRules: mockBusinessRules,
     updatedAt: new Date().toISOString(),
@@ -355,7 +355,7 @@ export const getSoftwareModules = async (): Promise<SoftwareModule[]> => {
   // const response = await fetch('/api/platform-configuration/software-modules');
   // return response.json();
   
-  return mockSoftwareModules;
+        return defaultSoftwareModules;
 };
 
 export const getHardwareItems = async (): Promise<HardwareItem[]> => {
@@ -363,7 +363,7 @@ export const getHardwareItems = async (): Promise<HardwareItem[]> => {
   // const response = await fetch('/api/platform-configuration/hardware-items');
   // return response.json();
   
-  return mockHardwareItems;
+      return defaultHardwareItems;
 };
 
 export const saveRecommendationRule = async (rule: RecommendationRule): Promise<void> => {

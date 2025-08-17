@@ -1,70 +1,73 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 import { Notification, NotificationPreferences, CreateNotificationRequest } from '@/types/notifications';
 
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
-  const { data, error } = await supabase.rpc('get_user_notifications', {
-    _limit: 50,
-    _offset: 0
-  });
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
 
-  if (error) {
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
     console.error('Error fetching notifications:', error);
     return [];
   }
-
-  // Map the response to include user_id since it's not returned by the function
-  return (data || []).map(notification => ({
-    ...notification,
-    user_id: userId
-  } as Notification));
 };
 
 export const markAsRead = async (notificationId: string): Promise<void> => {
-  const { error } = await supabase.rpc('mark_notification_read', {
-    _notification_id: notificationId
-  });
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', notificationId);
 
-  if (error) {
+    if (error) throw error;
+  } catch (error) {
     console.error('Error marking notification as read:', error);
+    throw error;
   }
 };
 
 export const markAllAsRead = async (userId: string): Promise<void> => {
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('is_read', false);
-
-  if (notifications && notifications.length > 0) {
+  try {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', userId)
       .eq('is_read', false);
 
-    if (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
   }
 };
 
 export const getUnreadCount = async (userId: string): Promise<number> => {
-  const { data, error } = await supabase.rpc('get_unread_notification_count');
+  try {
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
 
-  if (error) {
-    console.error('Error fetching unread count:', error);
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error('Error getting unread count:', error);
     return 0;
   }
-
-  return data || 0;
 };
 
 export const subscribeToNotifications = (
   userId: string,
   callback: (notification: Notification) => void
 ) => {
-  const channel = supabase
+  const subscription = supabase
     .channel('notifications')
     .on(
       'postgres_changes',
@@ -82,85 +85,127 @@ export const subscribeToNotifications = (
 
   return {
     unsubscribe: () => {
-      supabase.removeChannel(channel);
+      subscription.unsubscribe();
     }
   };
 };
 
-export const createNotification = async (request: CreateNotificationRequest): Promise<void> => {
-  const { error } = await supabase.rpc('create_notification', {
-    _user_ids: request.user_ids,
-    _type: request.type,
-    _title: request.title,
-    _message: request.message,
-    _entity_type: request.entity_type,
-    _entity_id: request.entity_id,
-    _action_url: request.action_url,
-    _metadata: request.metadata || {}
-  });
+export const createNotification = async (notification: CreateNotificationRequest): Promise<void> => {
+  try {
+    const { error } = await supabase.rpc('create_notification', {
+      _user_ids: notification.user_ids,
+      _type: notification.type,
+      _title: notification.title,
+      _message: notification.message,
+      _entity_type: notification.entity_type,
+      _entity_id: notification.entity_id,
+      _action_url: notification.action_url,
+      _metadata: notification.metadata || {},
+      _priority: 'normal'
+    });
 
-  if (error) {
+    if (error) throw error;
+  } catch (error) {
     console.error('Error creating notification:', error);
     throw error;
   }
 };
 
 export const getUserPreferences = async (userId: string): Promise<NotificationPreferences | null> => {
-  const { data, error } = await supabase
-    .from('notification_preferences')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('notification_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No preferences found, create default ones
-      const defaultPreferences = {
-        user_id: userId,
-        email_enabled: true,
-        push_enabled: true,
-        scoping_notifications: true,
-        approval_notifications: true,
-        deployment_notifications: true,
-        maintenance_notifications: true,
-        forecast_notifications: true
-      };
-
-      const { data: newData, error: insertError } = await supabase
-        .from('notification_preferences')
-        .insert(defaultPreferences)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating default preferences:', insertError);
-        return null;
-      }
-
-      return newData;
-    }
-    
+    if (error) throw error;
+    return data;
+  } catch (error) {
     console.error('Error fetching notification preferences:', error);
     return null;
   }
-
-  return data;
 };
 
 export const updateUserPreferences = async (
   userId: string, 
   preferences: Partial<NotificationPreferences>
 ): Promise<void> => {
-  const { error } = await supabase
-    .from('notification_preferences')
-    .update({
-      ...preferences,
-      updated_at: new Date().toISOString()
-    })
-    .eq('user_id', userId);
+  try {
+    const { error } = await supabase
+      .from('notification_preferences')
+      .upsert({
+        user_id: userId,
+        ...preferences,
+        updated_at: new Date().toISOString()
+      });
 
-  if (error) {
+    if (error) throw error;
+  } catch (error) {
     console.error('Error updating notification preferences:', error);
+    throw error;
+  }
+};
+
+// Additional utility functions for role-based notifications
+export const getNotificationsByRole = async (
+  userId: string, 
+  role: string, 
+  organizationId?: string
+): Promise<Notification[]> => {
+  try {
+    let query = supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    // If admin, get all notifications for their organization
+    if (role === 'admin' && organizationId) {
+      query = supabase
+        .from('notifications')
+        .select('*')
+        .eq('metadata->>organization_id', organizationId)
+        .order('created_at', { ascending: false });
+    }
+
+    const { data, error } = await query.limit(100);
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching role-based notifications:', error);
+    return [];
+  }
+};
+
+export const createSystemNotification = async (
+  message: string,
+  type: Notification['type'] = 'system_alert',
+  priority: 'low' | 'normal' | 'high' | 'urgent' = 'normal'
+): Promise<void> => {
+  try {
+    // Get all users for system-wide notification
+    const { data: users, error: userError } = await supabase
+      .from('profiles')
+      .select('id');
+
+    if (userError) throw userError;
+
+    const userIds = users?.map(u => u.id) || [];
+    
+    if (userIds.length > 0) {
+      await createNotification({
+        user_ids: userIds,
+        type,
+        title: 'System Alert',
+        message,
+        entity_type: 'system',
+        entity_id: 'system',
+        metadata: { system_wide: true }
+      });
+    }
+  } catch (error) {
+    console.error('Error creating system notification:', error);
     throw error;
   }
 };

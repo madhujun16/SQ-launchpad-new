@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
-  Bell, 
   User, 
   FileText, 
   Plus, 
@@ -19,6 +18,7 @@ import {
   BarChart3,
   Users
 } from 'lucide-react';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig, type UserRole } from '@/lib/roles';
 import { canAccessPage } from '@/lib/roles';
@@ -242,16 +242,7 @@ const Header = () => {
             {/* Right Side - Actions and User */}
             <div className="flex items-center space-x-2 lg:space-x-3">
               {/* Notifications */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative text-white hover:bg-white/10 h-10 w-10"
-              >
-                <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                  3
-                </Badge>
-              </Button>
+              <NotificationBell className="text-white hover:bg-white/10" />
 
               {/* User Menu */}
               {!loading && profile && (

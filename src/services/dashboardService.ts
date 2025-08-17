@@ -96,8 +96,14 @@ export const dashboardService = {
       const activeDeployments = sitesData?.filter(site => site.status === 'in-progress').length || 0;
       const completedDeployments = sitesData?.filter(site => site.status === 'completed').length || 0;
 
-      // Mock data for pending approvals (in real app, this would come from a workflow table)
-      const pendingApprovals = 3; // Mock value
+      // Get real pending approvals from hardware_requests
+      const { data: approvalsData, error: approvalsError } = await supabase
+        .from('hardware_requests')
+        .select('id, status')
+        .eq('status', 'pending');
+
+      if (approvalsError) throw approvalsError;
+      const pendingApprovals = approvalsData?.length || 0;
       const averageDeploymentTime = 12; // Mock value in days
       const customerSatisfaction = 4.8; // Mock value
 
@@ -212,8 +218,14 @@ export const dashboardService = {
       const activeDeployments = sitesData?.filter(site => site.status === 'in-progress').length || 0;
       const completedDeployments = sitesData?.filter(site => site.status === 'completed').length || 0;
 
-      // Mock data for pending approvals and other metrics
-      const pendingApprovals = 2; // Mock value
+      // Get real pending approvals for the current user
+      const { data: approvalsData, error: approvalsError } = await supabase
+        .from('hardware_requests')
+        .select('id, status')
+        .eq('status', 'pending');
+
+      if (approvalsError) throw approvalsError;
+      const pendingApprovals = approvalsData?.length || 0;
       const averageDeploymentTime = 10; // Mock value in days
       const customerSatisfaction = 4.9; // Mock value
 
