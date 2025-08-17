@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Notification, NotificationPreferences, CreateNotificationRequest } from '@/types/notifications';
 
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
