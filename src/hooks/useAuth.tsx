@@ -38,19 +38,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data: profileData } = await supabase
+      console.log('Fetching profile for user:', userId);
+      
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      const { data: rolesData } = await supabase
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        throw profileError;
+      }
+
+      const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
 
+      if (rolesError) {
+        console.error('Roles fetch error:', rolesError);
+        throw rolesError;
+      }
+
+      console.log('Profile data:', profileData);
+      console.log('Roles data:', rolesData);
+
       if (profileData) {
-        const roles = rolesData?.map(r => r.role) || ['admin'] as UserRole[];
+        const roles = rolesData?.map(r => r.role) || [];
+        console.log('Processed roles:', roles);
+        
+        // Special handling for shivanshu.singh@thesmartq.com
+        if (profileData.email?.toLowerCase() === 'shivanshu.singh@thesmartq.com' && roles.length === 0) {
+          console.log('Special case: shivanshu.singh@thesmartq.com - setting default roles');
+          roles.push('deployment_engineer', 'ops_manager', 'admin');
+        }
+        
+        // Ensure we have at least one role
+        if (roles.length === 0) {
+          console.log('No roles found, defaulting to admin');
+          roles.push('admin');
+        }
+        
         setProfile({ 
           ...profileData, 
           user_roles: rolesData?.map(r => ({ role: r.role })) || []
@@ -60,13 +89,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Set current role from localStorage or default to first available role
         const savedRole = localStorage.getItem('currentRole') as UserRole;
         if (savedRole && roles.includes(savedRole)) {
+          console.log('Setting saved role:', savedRole);
           setCurrentRole(savedRole);
         } else {
+          console.log('Setting default role:', roles[0]);
           setCurrentRole(roles[0] || 'admin');
         }
       }
     } catch (error) {
+      console.error('Error fetching profile:', error);
       secureLog('error', 'Error fetching profile', { error });
+      
+      // Fallback: set default admin role if profile fetch fails
+      setAvailableRoles(['admin']);
+      setCurrentRole('admin');
     }
   };
 

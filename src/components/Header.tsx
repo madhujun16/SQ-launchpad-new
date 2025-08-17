@@ -82,12 +82,21 @@ const Header = () => {
   const RoleIcon = roleConfig?.icon || User;
 
   // Ensure role switcher appears for users with multiple roles.
-  // Fallback: explicitly enable all three roles for the given email if roles are not loaded.
-  const rolesForSwitch = (availableRoles && availableRoles.length > 0)
-    ? availableRoles
-    : ((profile?.email?.toLowerCase() === 'shivanshu.singh@thesmartq.com')
-      ? ['deployment_engineer', 'ops_manager', 'admin']
-      : []);
+  // For shivanshu.singh@thesmartq.com, always show all three roles
+  const rolesForSwitch = (() => {
+    // If we have available roles from the database, use them
+    if (availableRoles && availableRoles.length > 1) {
+      return availableRoles;
+    }
+    
+    // Special case for shivanshu.singh@thesmartq.com - always show all roles
+    if (profile?.email?.toLowerCase() === 'shivanshu.singh@thesmartq.com') {
+      return ['deployment_engineer', 'ops_manager', 'admin'] as UserRole[];
+    }
+    
+    // For other users, only show if they have multiple roles
+    return availableRoles && availableRoles.length > 1 ? availableRoles : [];
+  })();
 
   // Navigation structure with 6 primary tabs - role-based visibility
   const getNavigationStructure = () => {
@@ -310,6 +319,25 @@ const Header = () => {
                               </DropdownMenuItem>
                             );
                           })}
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+
+                    {/* Debug Info - Only show for development */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <>
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel>Debug Info</DropdownMenuLabel>
+                          <DropdownMenuItem disabled className="text-xs">
+                            <span>Current Role: {currentRole}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled className="text-xs">
+                            <span>Available Roles: {availableRoles?.join(', ') || 'None'}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled className="text-xs">
+                            <span>Roles for Switch: {rolesForSwitch?.join(', ') || 'None'}</span>
+                          </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                       </>

@@ -175,9 +175,13 @@ export const hasPermission = (userRole: UserRole, permission: string): boolean =
 export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => {
   const roleConfig = getRoleConfig(userRole);
   
+  // Admin has access to everything
+  if (userRole === 'admin') {
+    return true;
+  }
+  
   // First check for exact matches
   if (roleConfig.accessiblePages.includes(pagePath)) {
-    // Exact match found
     return true;
   }
   
@@ -191,13 +195,19 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
       
       const regex = new RegExp(`^${pattern}$`);
       if (regex.test(pagePath)) {
-        // Pattern match found
         return true;
       }
     }
   }
   
-  // Also check for legacy routes that might still be in use
+  // Check if the page path starts with any of the accessible pages (for nested routes)
+  for (const accessiblePage of roleConfig.accessiblePages) {
+    if (pagePath.startsWith(accessiblePage) && accessiblePage !== '/dashboard') {
+      return true;
+    }
+  }
+  
+  // Legacy routes that should be accessible to all authenticated users
   const legacyRoutes = [
     '/site-study',
     '/site-creation', 
@@ -207,20 +217,23 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
     '/inventory',
     '/license-management',
     '/admin',
-    // Note: Integrations and Forecast routes removed - not integrated into main navigation
+    '/forecast',
+    '/deployment'
   ];
   
   if (legacyRoutes.includes(pagePath)) {
-    // Legacy route match found
     return true;
   }
   
-  // Check if the page path starts with any of the accessible pages (for nested routes)
-  for (const accessiblePage of roleConfig.accessiblePages) {
-    if (pagePath.startsWith(accessiblePage) && accessiblePage !== '/dashboard') {
-      // Nested route match found
-      return true;
-    }
+  // Special case: allow access to common pages for all roles
+  const commonPages = [
+    '/dashboard',
+    '/sites',
+    '/approvals-procurement'
+  ];
+  
+  if (commonPages.includes(pagePath)) {
+    return true;
   }
   
   // No access found
