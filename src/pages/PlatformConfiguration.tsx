@@ -276,7 +276,7 @@ export default function PlatformConfiguration() {
     try {
       setLoading(true);
       
-      // Load users
+      // Load users with their actual roles
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select(`
@@ -292,11 +292,21 @@ export default function PlatformConfiguration() {
         console.error('Error loading users:', usersError);
         toast.error('Failed to load users');
       } else {
-        // For now, assign a default role - in production this would come from a roles table
-        const usersWithRoles = (usersData || []).map(user => ({
-          ...user,
-          user_roles: [{ role: 'admin' as const }] // Default role
-        }));
+        // Fetch actual roles for each user from user_roles table
+        const usersWithRoles = await Promise.all(
+          (usersData || []).map(async (user) => {
+            const { data: rolesData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', user.user_id);
+            
+            return {
+              ...user,
+              user_roles: rolesData?.map(r => ({ role: r.role })) || []
+            };
+          })
+        );
+        
         setUsers(usersWithRoles);
       }
 
@@ -687,8 +697,75 @@ export default function PlatformConfiguration() {
     setEditingUser(user);
   };
 
+  const saveUser = async () => {
+    if (!editingUser) return;
+    
+    try {
+      // Update user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editingUser.full_name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingUser.id);
+      
+      if (profileError) {
+        toast.error('Failed to update user profile');
+        return;
+      }
+      
+      // Update user roles
+      if (editingUser.user_roles.length > 0) {
+        // First, delete existing roles
+        await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', editingUser.user_id);
+        
+        // Then insert new roles
+        const rolesToInsert = editingUser.user_roles.map(role => ({
+          user_id: editingUser.user_id,
+          role: role.role,
+          assigned_by: editingUser.user_id // Self-assigned for now
+        }));
+        
+        const { error: rolesError } = await supabase
+          .from('user_roles')
+          .insert(rolesToInsert);
+        
+        if (rolesError) {
+          toast.error('Failed to update user roles');
+          return;
+        }
+      }
+      
+      // Update local state
+      setUsers(prev => prev.map(u => u.id === editingUser.id ? editingUser : u));
+      setEditingUser(null);
+      toast.success('User updated successfully');
+      
+      // Reload users to get fresh data
+      loadConfigurationData();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error('Failed to update user');
+    }
+  };
+
   const deleteUser = async (userId: string) => {
     try {
+      // First delete user roles
+      const { error: rolesError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+      
+      if (rolesError) {
+        console.error('Error deleting user roles:', rolesError);
+      }
+      
+      // Then delete user profile
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -1085,11 +1162,18 @@ export default function PlatformConfiguration() {
                               </TableCell>
                               <TableCell className="align-middle">
                                 <div className="flex flex-wrap gap-1">
-                                  {user.user_roles.map((role, index) => (
-                                    <Badge key={index} variant="outline">
-                                      {role.role.replace('_', ' ')}
-                                    </Badge>
-                                  ))}
+                                  {user.user_roles.map((role, index) => {
+                                    const roleConfig = getRoleConfig(role.role);
+                                    return (
+                                      <Badge 
+                                        key={index} 
+                                        variant="outline"
+                                        className={`${roleConfig.color} border-current`}
+                                      >
+                                        {roleConfig.displayName}
+                                      </Badge>
+                                    );
+                                  })}
                                 </div>
                               </TableCell>
                               <TableCell className="align-middle">
@@ -1756,6 +1840,90 @@ export default function PlatformConfiguration() {
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={()=>setEditingHardwareItem(null)}>Cancel</Button>
                 <Button onClick={saveHardwareItem}>Save</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Dialog */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">Edit User</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="userName">Full Name</Label>
+                <Input
+                  id="userName"
+                  value={editingUser.full_name}
+                  onChange={(e) => setEditingUser({...editingUser, full_name: e.target.value})}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="userEmail">Email</Label>
+                <Input
+                  id="userEmail"
+                  value={editingUser.email}
+                  onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                  placeholder="Enter email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="userRoles">Roles</Label>
+                <div className="space-y-2">
+                  {editingUser.user_roles.map((role, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <Select 
+                        value={role.role} 
+                        onValueChange={(value) => {
+                          const newRoles = [...editingUser.user_roles];
+                          newRoles[index] = { role: value as 'admin' | 'ops_manager' | 'deployment_engineer' };
+                          setEditingUser({...editingUser, user_roles: newRoles});
+                        }}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="ops_manager">Ops Manager</SelectItem>
+                          <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newRoles = editingUser.user_roles.filter((_, i) => i !== index);
+                          setEditingUser({...editingUser, user_roles: newRoles});
+                        }}
+                        className="px-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingUser({
+                        ...editingUser,
+                        user_roles: [...editingUser.user_roles, { role: 'admin' }]
+                      });
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Role
+                  </Button>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={saveUser} className="flex-1">Save</Button>
+                <Button variant="outline" onClick={() => setEditingUser(null)} className="flex-1">Cancel</Button>
               </div>
             </div>
           </div>
