@@ -2026,59 +2026,7 @@ export type Database = {
       }
     }
     Views: {
-      licenses_public: {
-        Row: {
-          cost: string | null
-          created_at: string | null
-          created_by: string | null
-          expiry_date: string | null
-          id: string | null
-          license_key: string | null
-          license_type: string | null
-          name: string | null
-          purchase_date: string | null
-          status: string | null
-          updated_at: string | null
-          vendor: string | null
-        }
-        Insert: {
-          cost?: never
-          created_at?: string | null
-          created_by?: string | null
-          expiry_date?: string | null
-          id?: string | null
-          license_key?: never
-          license_type?: string | null
-          name?: string | null
-          purchase_date?: string | null
-          status?: string | null
-          updated_at?: string | null
-          vendor?: string | null
-        }
-        Update: {
-          cost?: never
-          created_at?: string | null
-          created_by?: string | null
-          expiry_date?: string | null
-          id?: string | null
-          license_key?: never
-          license_type?: string | null
-          name?: string | null
-          purchase_date?: string | null
-          status?: string | null
-          updated_at?: string | null
-          vendor?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "licenses_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       audit_rls_policies: {
@@ -2168,6 +2116,28 @@ export type Database = {
         Args: { license_id: string }
         Returns: {
           cost: number
+          created_at: string
+          created_by: string
+          expiry_date: string
+          id: string
+          license_key: string
+          license_type: string
+          name: string
+          notes: string
+          purchase_date: string
+          status: string
+          updated_at: string
+          vendor: string
+        }[]
+      }
+      get_licenses_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_licenses_secure: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          cost: string
           created_at: string
           created_by: string
           expiry_date: string
@@ -2302,6 +2272,10 @@ export type Database = {
       }
       log_license_access: {
         Args: { p_action: string; p_license_id: string }
+        Returns: undefined
+      }
+      log_license_function_access: {
+        Args: { p_function_name: string; p_user_role: string }
         Returns: undefined
       }
       mark_notification_read: {

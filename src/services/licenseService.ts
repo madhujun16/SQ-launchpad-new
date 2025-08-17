@@ -51,18 +51,21 @@ export const licenseService = {
 
   async getLicenseManagementItems(filters: Record<string, unknown> = {}, page = 1, limit = 20) {
     try {
-      // Use public view for non-sensitive data - license keys and costs are redacted
-      const { data, error, count } = await supabase
-        .from('licenses_public')
-        .select('*', { count: 'exact' })
-        .range((page - 1) * limit, page * limit - 1)
-        .order('created_at', { ascending: false });
+      // Use secure function that automatically masks sensitive data based on user role
+      const { data, error } = await supabase.rpc('get_licenses_secure', {
+        p_limit: limit,
+        p_offset: (page - 1) * limit
+      });
 
       if (error) throw error;
 
+      // Get total count for pagination
+      const { data: countData, error: countError } = await supabase.rpc('get_licenses_count');
+      if (countError) throw countError;
+
       return {
         data: data || [],
-        total: count || 0,
+        total: countData || 0,
         page,
         limit,
       };
@@ -79,10 +82,11 @@ export const licenseService = {
 
   async getLicenseByType() {
     try {
-      const { data, error } = await supabase
-        .from('licenses_public')
-        .select('license_type')
-        .not('license_type', 'is', null);
+      // Use secure function to get aggregated data without sensitive information
+      const { data, error } = await supabase.rpc('get_licenses_secure', {
+        p_limit: 1000, // Get all for aggregation
+        p_offset: 0
+      });
 
       if (error) throw error;
 
@@ -101,10 +105,10 @@ export const licenseService = {
 
   async getLicenseByStatus() {
     try {
-      const { data, error } = await supabase
-        .from('licenses_public')
-        .select('status')
-        .not('status', 'is', null);
+      const { data, error } = await supabase.rpc('get_licenses_secure', {
+        p_limit: 1000,
+        p_offset: 0
+      });
 
       if (error) throw error;
 
@@ -123,10 +127,10 @@ export const licenseService = {
 
   async getLicenseByOrganisation() {
     try {
-      const { data, error } = await supabase
-        .from('licenses_public')
-        .select('vendor')
-        .not('vendor', 'is', null);
+      const { data, error } = await supabase.rpc('get_licenses_secure', {
+        p_limit: 1000,
+        p_offset: 0
+      });
 
       if (error) throw error;
 
