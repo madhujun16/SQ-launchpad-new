@@ -23,7 +23,8 @@ import {
   Settings,
   PlusCircle,
   FileText as FileTextIcon,
-  StickyNote
+  StickyNote,
+  Edit
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -390,7 +391,7 @@ const Sites = () => {
           <CardHeader>
             <CardTitle>Sites Overview</CardTitle>
             <CardDescription>
-              Manage and track all client sites in the deployment pipeline
+              Manage and track all client sites in the deployment pipeline.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -435,14 +436,33 @@ const Sites = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/sites/${site.id}`)}
-                            title="View Site Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          {/* View Button - Only shown for Live sites (read-only access) */}
+                          {site.status === 'live' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/sites/${site.id}`)}
+                              title="View Site Details (Read Only)"
+                              className="text-gray-600 hover:text-gray-800"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          {/* Edit Button - Only shown for non-Live sites */}
+                          {site.status !== 'live' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/sites/${site.id}`)}
+                              title="Edit Site"
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          {/* Site Notes Button - Always shown */}
                           <Button
                             variant="ghost"
                             size="sm"

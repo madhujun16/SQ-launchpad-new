@@ -662,6 +662,11 @@ const SiteDetail = () => {
       // Only admins can edit anything at any stage
       if (currentRole === 'admin') return true;
       
+      // Live sites are completely read-only for non-admin users
+      if (site.status === 'live') {
+        return false;
+      }
+      
       // For non-admin users, check specific step logic
       const currentStepIndex = getStepperStepFromStatus(site.status);
       
@@ -701,6 +706,11 @@ const SiteDetail = () => {
       // Admin can edit any field at any stage
       if (currentRole === 'admin') return true;
       
+      // Live sites are completely read-only for non-admin users
+      if (site.status === 'live') {
+        return false;
+      }
+      
       // These fields are always read-only for non-admins
       const readOnlyFields = ['organization', 'foodCourt', 'unitCode'];
       if (readOnlyFields.includes(fieldName)) {
@@ -729,6 +739,11 @@ const SiteDetail = () => {
     // Check if the Site Study form should show as read-only
     const isSiteStudyFormReadOnly = () => {
       if (currentRole === 'admin') return false;
+      
+      // Live sites are completely read-only for non-admin users
+      if (site.status === 'live') {
+        return true;
+      }
       
       const currentStepIndex = getStepperStepFromStatus(site.status);
       
