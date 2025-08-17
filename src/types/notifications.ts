@@ -1,16 +1,16 @@
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'scoping_submitted' | 'approval_decision' | 'resubmission' | 'procurement_update' | 'deployment_milestone' | 'maintenance_due' | 'forecast_risk' | 'system_alert';
+  type: string;
   title: string;
   message: string;
-  entity_type: 'site' | 'scoping_approval' | 'costing_approval' | 'deployment' | 'asset';
+  entity_type: string;
   entity_id: string;
   action_url?: string;
   is_read: boolean;
   created_at: string;
   created_by: string;
-  metadata?: Record<string, any>;
+  metadata?: any;
   priority?: string;
 }
 
@@ -29,10 +29,10 @@ export interface NotificationPreferences {
 
 export interface CreateNotificationRequest {
   user_ids: string[];
-  type: Notification['type'];
+  type: string;
   title: string;
   message: string;
-  entity_type: Notification['entity_type'];
+  entity_type: string;
   entity_id: string;
   action_url?: string;
   metadata?: Record<string, any>;
