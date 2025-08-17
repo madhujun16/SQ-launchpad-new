@@ -2236,6 +2236,10 @@ export type Database = {
         Args: { requesting_user_id: string; target_user_id: string }
         Returns: boolean
       }
+      validate_profile_access: {
+        Args: { action: string; target_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "ops_manager" | "deployment_engineer"
