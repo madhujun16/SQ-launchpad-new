@@ -171,6 +171,12 @@ export default function PlatformConfiguration() {
   const [selectedRole, setSelectedRole] = useState('all');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [logFilter, setLogFilter] = useState<'all' | AuditLog['type']>('all');
+  const [userStats, setUserStats] = useState({
+    total_users: 0,
+    admin_count: 0,
+    ops_manager_count: 0,
+    deployment_engineer_count: 0
+  });
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -276,25 +282,16 @@ export default function PlatformConfiguration() {
     try {
       setLoading(true);
       
-      // Load users with their actual roles
-      const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_id,
-          email,
-          full_name,
-          created_at,
-          updated_at
-        `);
+      // Load users with their actual roles using the new secure function
+      const { data: usersData, error: usersError } = await supabase.rpc('list_safe_profiles');
       
       if (usersError) {
         console.error('Error loading users:', usersError);
         toast.error('Failed to load users');
-      } else {
+      } else if (usersData && usersData.length > 0) {
         // Fetch actual roles for each user from user_roles table
         const usersWithRoles = await Promise.all(
-          (usersData || []).map(async (user) => {
+          usersData.map(async (user) => {
             const { data: rolesData } = await supabase
               .from('user_roles')
               .select('role')
@@ -308,6 +305,17 @@ export default function PlatformConfiguration() {
         );
         
         setUsers(usersWithRoles);
+      } else {
+        // No users found, show empty state
+        setUsers([]);
+      }
+
+      // Load user statistics
+      const { data: statsData, error: statsError } = await supabase.rpc('get_user_management_stats');
+      if (statsError) {
+        console.error('Error loading user stats:', statsError);
+      } else if (statsData && statsData.length > 0) {
+        setUserStats(statsData[0]);
       }
 
       // Load organizations
@@ -1061,7 +1069,7 @@ export default function PlatformConfiguration() {
                         <div className="flex items-center space-x-2">
                           <Users className="h-5 w-5 text-blue-600" />
                           <div>
-                            <p className="text-2xl font-bold">{users.length}</p>
+                            <p className="text-2xl font-bold">{userStats.total_users}</p>
                             <p className="text-sm text-gray-600">Total Users</p>
                           </div>
                         </div>
@@ -1072,7 +1080,7 @@ export default function PlatformConfiguration() {
                         <div className="flex items-center space-x-2">
                           <Crown className="h-5 w-5 text-green-600" />
                           <div>
-                            <p className="text-2xl font-bold">{users.filter(u => u.user_roles.some(r => r.role === 'admin')).length}</p>
+                            <p className="text-2xl font-bold">{userStats.admin_count}</p>
                             <p className="text-sm text-gray-600">Admins</p>
                           </div>
                         </div>
@@ -1083,7 +1091,7 @@ export default function PlatformConfiguration() {
                         <div className="flex items-center space-x-2">
                           <Wrench className="h-5 w-5 text-orange-600" />
                           <div>
-                            <p className="text-2xl font-bold">{users.filter(u => u.user_roles.some(r => r.role === 'ops_manager')).length}</p>
+                            <p className="text-2xl font-bold">{userStats.ops_manager_count}</p>
                             <p className="text-sm text-gray-600">Ops Managers</p>
                           </div>
                         </div>
@@ -1094,7 +1102,7 @@ export default function PlatformConfiguration() {
                         <div className="flex items-center space-x-2">
                           <Truck className="h-5 w-5 text-purple-600" />
                           <div>
-                            <p className="text-2xl font-bold">{users.filter(u => u.user_roles.some(r => r.role === 'deployment_engineer')).length}</p>
+                            <p className="text-2xl font-bold">{userStats.deployment_engineer_count}</p>
                             <p className="text-sm text-gray-600">Deployment Engineers</p>
                           </div>
                         </div>

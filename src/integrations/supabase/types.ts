@@ -2196,6 +2196,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_user_management_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          admin_count: number
+          deployment_engineer_count: number
+          ops_manager_count: number
+          total_users: number
+        }[]
+      }
       get_user_notifications: {
         Args: { _limit?: number; _offset?: number }
         Returns: {
