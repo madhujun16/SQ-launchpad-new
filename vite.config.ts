@@ -4,149 +4,46 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    // Optimize dev server performance
-    hmr: {
-      overlay: false,
-      // Faster HMR for better dev experience
-      port: 24678
-    },
-    // Enable faster refresh
-    watch: {
-      usePolling: false,
-      interval: 100
-    },
-    // Optimize middleware
-    middlewareMode: false,
-    // Better caching headers
-    headers: {
-      'Cache-Control': 'public, max-age=31536000, immutable'
-    }
-  },
-  plugins: [
-    react({
-      // Optimize React refresh
-      fastRefresh: true
-    }),
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Optimize development performance
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'lucide-react',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-toast',
-      '@radix-ui/react-tooltip',
-      'clsx',
-      'class-variance-authority',
-      'tailwind-merge',
-      '@supabase/supabase-js'
-    ],
-    // Exclude heavy libraries from pre-bundling
-    exclude: ['recharts', 'embla-carousel-react'],
-    // Force pre-bundling for better performance
-    force: true
+  server: {
+    port: 8080,
+    hmr: {
+      port: 24678,
+      fastRefresh: true
+    },
+    watch: {
+      usePolling: false,
+      interval: 100
+    },
+    middlewareMode: false,
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
   },
-  // Enable CSS code splitting
-  css: {
-    devSourcemap: false
-  },
-  // Optimize development performance
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' },
-    // Faster builds
-    target: 'esnext'
-  },
-  // Development-specific optimizations
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React chunks
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          
-          // UI component chunks
-          'ui-core': [
-            '@radix-ui/react-dialog', 
-            '@radix-ui/react-dropdown-menu', 
-            '@radix-ui/react-select', 
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-tooltip'
-          ],
-          'ui-forms': [
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-radio-group',
-            '@radix-ui/react-switch',
-            'react-hook-form',
-            '@hookform/resolvers',
-            'zod'
-          ],
-          'ui-layout': [
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-collapsible',
-            '@radix-ui/react-scroll-area',
-            'react-resizable-panels'
-          ],
-          
-          // Utility chunks
-          'utils': ['date-fns', 'clsx', 'class-variance-authority', 'tailwind-merge'],
-          'icons': ['lucide-react'],
-          
-          // Feature chunks - split by functionality
-          'dashboard': [
-            './src/components/dashboards/SimpleAdminDashboard.tsx',
-            './src/components/dashboards/SimpleOpsManagerDashboard.tsx',
-            './src/components/dashboards/SimpleDeploymentEngineerDashboard.tsx'
-          ],
-          'inventory': [
-            './src/components/inventory/DeployInventoryForm.tsx',
-            './src/components/inventory/SimpleInventoryFiltersPanel.tsx',
-            './src/components/inventory/SimpleInventoryItemDetails.tsx',
-            './src/components/inventory/SimpleInventoryItemForm.tsx',
-            './src/components/inventory/LicenseForm.tsx'
-          ],
-          'services': [
-            './src/services/dashboardService.ts',
-            './src/services/inventoryService.ts'
-          ],
-          
-          // Heavy libraries that should be loaded separately
-          'charts': ['recharts'],
-          'carousel': ['embla-carousel-react'],
-          'auth': ['@supabase/supabase-js'],
-          'query': ['@tanstack/react-query']
-        },
-        // Optimize chunk naming
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        entryFileNames: `assets/[name]-[hash].js`,
+        chunkFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash].[ext]`
       }
-    },
-    chunkSizeWarningLimit: 1000,
-    sourcemap: false,
-    minify: 'esbuild',
-    esbuild: {
-      drop: ['console', 'debugger']
-    },
-    // Optimize asset handling
-    assetsInlineLimit: 4096, // 4kb - inline small assets
+    }
   },
-  // Development optimizations
+  optimizeDeps: {
+    include: ['@supabase/supabase-js'],
+    force: true
+  },
+  esbuild: {
+    target: 'esnext'
+  },
   define: {
     __DEV__: mode === 'development'
   }
-}));
+}))

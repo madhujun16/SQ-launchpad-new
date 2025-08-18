@@ -8,7 +8,6 @@ import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
 import { Suspense, lazy, useEffect } from "react";
 import { PageLoader } from "@/components/ui/loader";
-import { performanceService } from "@/services/performanceService";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -66,18 +65,17 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Initialize performance service
-  useEffect(() => {
-    // TEMPORARILY DISABLED: Performance service causing 404 errors
-    // performanceService.preloadCriticalResources();
-    // performanceService.optimizeBundleLoading();
+  // TEMPORARILY DISABLED: Performance service causing issues
+  // useEffect(() => {
+  //   performanceService.preloadCriticalResources();
+  //   performanceService.optimizeBundleLoading();
     
-    // const interval = setInterval(() => {
-    //   performanceService.optimizeMemory();
-    // }, 30000);
+  //   const interval = setInterval(() => {
+  //     performanceService.optimizeMemory();
+  //   }, 30000);
     
-    // return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
