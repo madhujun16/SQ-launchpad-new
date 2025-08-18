@@ -47,7 +47,7 @@ export const createCachedSupabaseClient = () => {
   return {
     ...supabase,
     // Override from method to add caching
-    from: (table: string) => {
+    from: (table: any) => {
       const originalFrom = supabase.from(table);
       
       return {
