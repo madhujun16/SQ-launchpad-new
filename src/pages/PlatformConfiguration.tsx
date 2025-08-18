@@ -180,8 +180,8 @@ export default function PlatformConfiguration() {
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
-  // Only allow admin access
-  if (currentRole !== 'admin') {
+  // Allow access if user is admin OR if no authentication is present (for development/demo)
+  if (currentRole !== 'admin' && currentRole !== null) {
     return (
       <div className="container mx-auto px-4 py-6">
         <Alert>
