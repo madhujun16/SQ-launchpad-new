@@ -94,15 +94,12 @@ const Header = () => {
 
   // Navigation structure with 6 primary tabs - role-based visibility
   const getNavigationStructure = () => {
-    if (!currentRole) {
-      console.warn('No current role found in Header component');
-      return [];
-    }
-
+    // TEMPORARY: Bypass role check for debugging
     console.log('=== HEADER DEBUG INFO ===');
     console.log('Current role:', currentRole);
     console.log('Profile:', profile);
     console.log('Available roles:', availableRoles);
+    console.log('BYPASSING ROLE CHECK FOR DEBUGGING');
 
     const baseNavigation = [
       {
@@ -110,74 +107,53 @@ const Header = () => {
         path: '/dashboard',
         label: 'Dashboard',
         icon: Home,
-        canAccess: canAccessPage(currentRole, '/dashboard')
+        canAccess: true // Force access for debugging
       },
       {
         type: 'link' as const,
         path: '/sites',
         label: 'Sites',
         icon: Building,
-        canAccess: canAccessPage(currentRole, '/sites')
+        canAccess: true // Force access for debugging
       },
       {
         type: 'link' as const,
         path: '/approvals-procurement',
         label: 'Approvals',
         icon: FileText,
-        canAccess: canAccessPage(currentRole, '/approvals-procurement')
+        canAccess: true // Force access for debugging
       },
       {
         type: 'link' as const,
         path: '/assets',
         label: 'Assets',
         icon: Package,
-        canAccess: canAccessPage(currentRole, '/assets')
+        canAccess: true // Force access for debugging
       },
       {
         type: 'link' as const,
         path: '/deployment',
         label: 'Deployment',
         icon: Users,
-        canAccess: canAccessPage(currentRole, '/deployment')
+        canAccess: true // Force access for debugging
       },
       {
         type: 'link' as const,
         path: '/forecast',
         label: 'Forecast',
         icon: BarChart3,
-        canAccess: canAccessPage(currentRole, '/forecast')
+        canAccess: true // Force access for debugging
       }
     ];
 
-    // For debugging, let's log what's happening
     console.log('Navigation items:', baseNavigation.map(item => ({
       path: item.path,
       label: item.label,
       canAccess: item.canAccess
     })));
 
-    // TEMPORARY: Force all navigation items to be visible for debugging
-    console.log('TEMPORARILY SHOWING ALL NAVIGATION ITEMS FOR DEBUGGING');
-    return baseNavigation.map(item => ({
-      ...item,
-      canAccess: true
-    }));
-
-    // Original filtering logic (commented out for debugging)
-    /*
-    // Filter navigation items based on access
-    const filteredNavigation = baseNavigation.filter(item => item.canAccess);
-    console.log('Filtered navigation:', filteredNavigation);
-
-    // If no navigation items are accessible, show all items for debugging
-    if (filteredNavigation.length === 0) {
-      console.warn('No navigation items accessible for role:', currentRole);
-      console.warn('Showing all navigation items for debugging');
-      return baseNavigation;
-    }
-
-    return filteredNavigation;
-    */
+    // Always return all navigation items for debugging
+    return baseNavigation;
   };
 
   const navigationStructure = getNavigationStructure();
