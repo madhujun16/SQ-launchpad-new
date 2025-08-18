@@ -2032,9 +2032,9 @@ export type Database = {
       audit_rls_policies: {
         Args: Record<PropertyKey, never>
         Returns: {
-          is_secure: boolean
           policy_definition: string
           policy_name: string
+          security_status: string
           table_name: string
         }[]
       }
