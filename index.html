@@ -113,7 +113,7 @@
       <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f9fa;">
         <div style="text-align: center;">
           <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-          <p style="color: #666; margin: 0;">Loading SmartQ Launchpad...</p>
+          <p style="color: #666; margin: 0;"></p>
         </div>
       </div>
     </div>
@@ -144,7 +144,7 @@
       // Remove loading fallback when app loads
       window.addEventListener('load', () => {
         const loadingFallback = document.querySelector('#root > div');
-        if (loadingFallback && loadingFallback.innerHTML.includes('Loading SmartQ Launchpad')) {
+        if (loadingFallback) {
           loadingFallback.remove();
         }
       });

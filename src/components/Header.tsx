@@ -95,8 +95,14 @@ const Header = () => {
   // Navigation structure with 6 primary tabs - role-based visibility
   const getNavigationStructure = () => {
     if (!currentRole) {
+      console.warn('No current role found in Header component');
       return [];
     }
+
+    console.log('=== HEADER DEBUG INFO ===');
+    console.log('Current role:', currentRole);
+    console.log('Profile:', profile);
+    console.log('Available roles:', availableRoles);
 
     const baseNavigation = [
       {
@@ -143,7 +149,35 @@ const Header = () => {
       }
     ];
 
-    return baseNavigation.filter(item => item.canAccess);
+    // For debugging, let's log what's happening
+    console.log('Navigation items:', baseNavigation.map(item => ({
+      path: item.path,
+      label: item.label,
+      canAccess: item.canAccess
+    })));
+
+    // TEMPORARY: Force all navigation items to be visible for debugging
+    console.log('TEMPORARILY SHOWING ALL NAVIGATION ITEMS FOR DEBUGGING');
+    return baseNavigation.map(item => ({
+      ...item,
+      canAccess: true
+    }));
+
+    // Original filtering logic (commented out for debugging)
+    /*
+    // Filter navigation items based on access
+    const filteredNavigation = baseNavigation.filter(item => item.canAccess);
+    console.log('Filtered navigation:', filteredNavigation);
+
+    // If no navigation items are accessible, show all items for debugging
+    if (filteredNavigation.length === 0) {
+      console.warn('No navigation items accessible for role:', currentRole);
+      console.warn('Showing all navigation items for debugging');
+      return baseNavigation;
+    }
+
+    return filteredNavigation;
+    */
   };
 
   const navigationStructure = getNavigationStructure();
