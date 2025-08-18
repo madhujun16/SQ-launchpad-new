@@ -1,6 +1,6 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -34,7 +34,16 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`
       }
-    }
+    },
+    // Production optimizations
+    minify: 'esbuild',
+    sourcemap: false,
+    // Ensure proper chunk splitting
+    chunkSizeWarningLimit: 1000,
+    // Optimize CSS
+    cssCodeSplit: true,
+    // Optimize assets
+    assetsInlineLimit: 4096
   },
   optimizeDeps: {
     include: ['@supabase/supabase-js'],
@@ -45,5 +54,28 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     __DEV__: mode === 'development'
-  }
+  },
+  // Production-specific optimizations
+  ...(mode === 'production' && {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom'],
+            'router-vendor': ['react-router-dom'],
+            'ui-vendor': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-toast',
+              '@radix-ui/react-tooltip'
+            ],
+            'supabase-vendor': ['@supabase/supabase-js'],
+            'query-vendor': ['@tanstack/react-query']
+          }
+        }
+      }
+    }
+  })
 }))
