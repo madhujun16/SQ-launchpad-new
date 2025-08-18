@@ -26,13 +26,13 @@ class PerformanceService {
             if (entry.entryType === 'largest-contentful-paint') {
               console.log('LCP:', entry.startTime);
             }
-            if (entry.entryType === 'first-input-delay') {
+            if (entry.entryType === 'first-input') {
               console.log('FID:', entry.processingStart - entry.startTime);
             }
           }
         });
         
-        observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input-delay'] });
+        observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input'] });
       } catch (e) {
         console.warn('Performance monitoring not supported');
       }
