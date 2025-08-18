@@ -180,7 +180,7 @@ export const getNotificationsByRole = async (
 
 export const createSystemNotification = async (
   message: string,
-  type: Notification['type'] = 'system_alert',
+  type: string = 'system_alert',
   priority: 'low' | 'normal' | 'high' | 'urgent' = 'normal'
 ): Promise<void> => {
   try {
@@ -199,7 +199,7 @@ export const createSystemNotification = async (
         type,
         title: 'System Alert',
         message,
-        entity_type: 'system',
+        entity_type: 'site',
         entity_id: 'system',
         metadata: { system_wide: true }
       });

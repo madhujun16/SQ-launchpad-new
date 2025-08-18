@@ -2102,6 +2102,56 @@ export type Database = {
           total_items: number
         }[]
       }
+      get_license_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_licenses: number
+          by_type: Json
+          expired_licenses: number
+          expiring_soon: number
+          total_licenses: number
+        }[]
+      }
+      get_license_with_sensitive_data: {
+        Args: { license_id: string }
+        Returns: {
+          cost: number
+          created_at: string
+          created_by: string
+          expiry_date: string
+          id: string
+          license_key: string
+          license_type: string
+          name: string
+          notes: string
+          purchase_date: string
+          status: string
+          updated_at: string
+          vendor: string
+        }[]
+      }
+      get_licenses_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_licenses_secure: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          cost: string
+          created_at: string
+          created_by: string
+          expiry_date: string
+          id: string
+          license_key: string
+          license_type: string
+          name: string
+          notes: string
+          purchase_date: string
+          status: string
+          updated_at: string
+          vendor: string
+        }[]
+      }
       get_safe_profile_data: {
         Args: { target_user_id?: string }
         Returns: {
@@ -2145,6 +2195,15 @@ export type Database = {
       get_unread_notification_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_user_management_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          admin_count: number
+          deployment_engineer_count: number
+          ops_manager_count: number
+          total_users: number
+        }[]
       }
       get_user_notifications: {
         Args: { _limit?: number; _offset?: number }
@@ -2224,6 +2283,10 @@ export type Database = {
         Args: { p_action: string; p_license_id: string }
         Returns: undefined
       }
+      log_license_function_access: {
+        Args: { p_function_name: string; p_user_role: string }
+        Returns: undefined
+      }
       mark_notification_read: {
         Args: { _notification_id: string }
         Returns: boolean
@@ -2234,6 +2297,10 @@ export type Database = {
       }
       validate_email_access: {
         Args: { requesting_user_id: string; target_user_id: string }
+        Returns: boolean
+      }
+      validate_profile_access: {
+        Args: { action: string; target_user_id: string }
         Returns: boolean
       }
     }

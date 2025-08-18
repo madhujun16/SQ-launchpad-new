@@ -208,7 +208,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
                     <div className="flex gap-1 mt-2">
                       {Object.entries(notification.metadata).map(([key, value]) => (
                         <Badge key={key} variant="secondary" className="text-xs">
-                          {key}: {value}
+                          {key}: {String(value)}
                         </Badge>
                       ))}
                     </div>

@@ -79,9 +79,14 @@ export function LicenseForm({
                 <Label htmlFor="license_key">License Key</Label>
                 <Input
                   id="license_key"
+                  type="password"
                   {...register('license_key')}
-                  placeholder="Enter license key"
+                  placeholder="Enter license key (admin only)"
+                  className="font-mono"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  License keys are encrypted and only visible to administrators
+                </p>
               </div>
 
               <div>
@@ -182,6 +187,9 @@ export function LicenseForm({
                   {...register('cost', { valueAsNumber: true })}
                   placeholder="0.00"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cost information is restricted to administrators
+                </p>
               </div>
 
               <div>
