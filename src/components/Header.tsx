@@ -16,7 +16,9 @@ import {
   Package,
   Settings,
   BarChart3,
-  Users
+  Users,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
@@ -410,6 +412,38 @@ const Header = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Quick Actions */}
+                  <div className="px-6 py-4 border-t">
+                    <p className="text-sm font-medium mb-2">Quick Actions</p>
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          // Force refresh authentication
+                          window.location.reload();
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Force Refresh
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          // Clear localStorage and reload
+                          localStorage.clear();
+                          window.location.reload();
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear Cache & Reload
+                      </Button>
+                    </div>
+                  </div>
 
                   {/* Switch Role (mobile) */}
                   {/* TEMPORARY: Always show role switching for debugging */}

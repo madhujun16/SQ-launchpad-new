@@ -24,6 +24,7 @@ interface AuthContextType {
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: string | null }>;
   loading: boolean;
+  forceRefresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,13 +63,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       console.log('Fetching profile for user:', userId);
       
-      // Batch fetch profile and roles in a single query using joins
-      const { data: profileData, error: profileError } = await supabaseCached
+      // Fetch profile first
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `)
+        .select('*')
         .eq('user_id', userId)
         .single();
 
@@ -79,17 +77,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       console.log('Profile data:', profileData);
 
+      // Fetch user roles separately
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.error('Roles fetch error:', rolesError);
+        throw rolesError;
+      }
+
+      const roles = rolesData?.map(r => r.role) || [];
+      console.log('Processed roles:', roles);
+
       if (profileData) {
-        const roles = profileData.user_roles?.map(r => r.role) || [];
-        console.log('Processed roles:', roles);
-        
         // Only users with assigned roles in the database can access the system
         if (roles.length === 0) {
           console.error('No roles found for user - access denied');
           
           // TEMPORARY: Fallback for debugging - assign admin role if none exists
           console.warn('TEMPORARY: Assigning fallback admin role for debugging');
-          const fallbackRoles = ['admin'];
+          const fallbackRoles: UserRole[] = ['admin'];
           setAvailableRoles(fallbackRoles);
           setCurrentRole('admin');
           
@@ -111,7 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         const profileWithRoles = { 
           ...profileData, 
-          user_roles: profileData.user_roles?.map(r => ({ role: r.role })) || []
+          user_roles: roles.map(role => ({ role }))
         };
         
         setProfile(profileWithRoles);
@@ -196,6 +205,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  // Force refresh function to clear cache and refetch data
+  const forceRefresh = useCallback(async () => {
+    try {
+      console.log('Force refreshing authentication data...');
+      
+      // Clear all caches
+      profileCache.clear();
+      localStorage.removeItem('currentRole');
+      
+      // Refetch profile if user exists
+      if (user) {
+        await fetchProfile(user.id);
+      }
+    } catch (error) {
+      console.error('Error during force refresh:', error);
+    }
+  }, [user, fetchProfile]);
+
   // Memoized context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     user,
@@ -208,10 +235,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signInWithOtp,
     verifyOtp,
     createUserAsAdmin,
-    loading
+    loading,
+    forceRefresh
   }), [
     user, session, profile, currentRole, availableRoles,
-    switchRole, signOut, signInWithOtp, verifyOtp, createUserAsAdmin, loading
+    switchRole, signOut, signInWithOtp, verifyOtp, createUserAsAdmin, loading, forceRefresh
   ]);
 
   useEffect(() => {
