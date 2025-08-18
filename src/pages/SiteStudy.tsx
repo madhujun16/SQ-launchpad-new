@@ -76,10 +76,10 @@ export default function SiteStudy() {
       foodCourtName: 'JLR Whitley',
       unitManagerName: 'Sarah Johnson',
       jobTitle: 'Operations Manager',
-      unitManagerEmail: 'sarah.johnson@jlr.com',
-      unitManagerMobile: '+44 7700 900123',
+      unitManagerEmail: 'sarah.johnson@company.com',
+      unitManagerMobile: '+44 20 7123 4567',
       additionalContactName: 'John Smith',
-      additionalContactEmail: 'john.smith@jlr.com',
+      additionalContactEmail: 'john.smith@company.com',
       siteStudyDate: new Date().toISOString().split('T')[0]
     },
     location: {
@@ -462,7 +462,7 @@ export default function SiteStudy() {
                         ...prev,
                         generalInfo: { ...prev.generalInfo, unitManagerMobile: e.target.value }
                       }))}
-                      placeholder="e.g., +44 7700 900123"
+                      placeholder="e.g., +44 20 7123 4567"
                       disabled={!isEditMode}
                       className={!isEditMode ? "bg-gray-50" : ""}
                     />

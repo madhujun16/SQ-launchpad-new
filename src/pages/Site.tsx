@@ -291,21 +291,21 @@ const SiteDetail = () => {
           assignedOpsManager: 'Jessica Cleaver',
           assignedDeploymentEngineer: 'John Smith',
           stakeholders: [
-            { 
+            {
               id: '1',
-              name: 'Sarah Johnson', 
-              role: 'Operations Manager', 
-              email: 'sarah.johnson@asda.com', 
-              phone: '+44 7700 900123',
-              organization: 'ASDA'
+              name: 'Sarah Johnson',
+              role: 'Unit Manager',
+              email: 'sarah.johnson@company.com',
+              phone: '+44 20 7123 4567',
+              organization: 'Company Ltd'
             },
-            { 
+            {
               id: '2',
-              name: 'Mike Wilson', 
-              role: 'IT Manager', 
-              email: 'mike.wilson@asda.com', 
-              phone: '+44 7700 900456',
-              organization: 'ASDA'
+              name: 'Mike Wilson',
+              role: 'IT Manager',
+              email: 'mike.wilson@company.com',
+              phone: '+44 20 7123 4568',
+              organization: 'Company Ltd'
             }
           ],
           notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
@@ -1070,7 +1070,7 @@ const SiteDetail = () => {
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Email</label>
                         <Input 
-                          defaultValue="sarah.johnson@jlr.com"
+                          defaultValue="sarah.johnson@company.com"
                           placeholder="Enter email address"
                           type="email"
                           className={`w-full ${!canEditField('email', 1) ? "bg-gray-50" : ""}`}

@@ -108,16 +108,18 @@ const SiteCreation = () => {
     { id: '5', name: 'HSBC Canary Wharf', location: 'London', capacity: 400, unitCode: 'HC005' }
   ];
 
+  // Mock data for Ops Managers
   const opsManagers: User[] = [
-    { id: '1', name: 'Jessica Cleaver', role: 'ops_manager', email: 'jessica.cleaver@smartq.com' },
-    { id: '2', name: 'Mike Thompson', role: 'ops_manager', email: 'mike.thompson@smartq.com' },
-    { id: '3', name: 'Sarah Johnson', role: 'ops_manager', email: 'sarah.johnson@smartq.com' }
+    { id: '1', name: 'Jessica Cleaver', role: 'ops_manager', email: 'jessica.cleaver@company.com' },
+    { id: '2', name: 'Mike Thompson', role: 'ops_manager', email: 'mike.thompson@company.com' },
+    { id: '3', name: 'Sarah Johnson', role: 'ops_manager', email: 'sarah.johnson@company.com' }
   ];
 
+  // Mock data for Deployment Engineers
   const deploymentEngineers: User[] = [
-    { id: '1', name: 'John Smith', role: 'deployment_engineer', email: 'john.smith@smartq.com' },
-    { id: '2', name: 'Emma Wilson', role: 'deployment_engineer', email: 'emma.wilson@smartq.com' },
-    { id: '3', name: 'David Brown', role: 'deployment_engineer', email: 'david.brown@smartq.com' }
+    { id: '1', name: 'John Smith', role: 'deployment_engineer', email: 'john.smith@company.com' },
+    { id: '2', name: 'Emma Wilson', role: 'deployment_engineer', email: 'emma.wilson@company.com' },
+    { id: '3', name: 'David Brown', role: 'deployment_engineer', email: 'david.brown@company.com' }
   ];
 
   const handleInputChange = (field: keyof SiteData, value: any) => {
