@@ -68,16 +68,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const roles = rolesData?.map(r => r.role) || [];
         console.log('Processed roles:', roles);
         
-        // Special handling for shivanshu.singh@thesmartq.com
-        if (profileData.email?.toLowerCase() === 'shivanshu.singh@thesmartq.com' && roles.length === 0) {
-          console.log('Special case: shivanshu.singh@thesmartq.com - setting default roles');
-          roles.push('deployment_engineer', 'ops_manager', 'admin');
-        }
-        
-        // Ensure we have at least one role
+        // Only users with assigned roles in the database can access the system
         if (roles.length === 0) {
-          console.log('No roles found, defaulting to admin');
-          roles.push('admin');
+          console.error('No roles found for user - access denied');
+          setProfile(null);
+          setCurrentRole(null);
+          setAvailableRoles([]);
+          return;
         }
         
         setProfile({ 
@@ -100,9 +97,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Error fetching profile:', error);
       secureLog('error', 'Error fetching profile', { error });
       
-      // Fallback: set default admin role if profile fetch fails
-      setAvailableRoles(['admin']);
-      setCurrentRole('admin');
+      // No fallback roles - if profile fetch fails, user cannot access system
+      setProfile(null);
+      setCurrentRole(null);
+      setAvailableRoles([]);
     }
   };
 
