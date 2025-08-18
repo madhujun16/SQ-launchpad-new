@@ -96,12 +96,7 @@ const Header = () => {
 
   // Navigation structure with 6 primary tabs - role-based visibility
   const getNavigationStructure = () => {
-    // TEMPORARY: Bypass role check for debugging
-    console.log('=== HEADER DEBUG INFO ===');
-    console.log('Current role:', currentRole);
-    console.log('Profile:', profile);
-    console.log('Available roles:', availableRoles);
-    console.log('BYPASSING ROLE CHECK FOR DEBUGGING');
+    if (!currentRole) return [];
 
     const baseNavigation = [
       {
@@ -109,53 +104,46 @@ const Header = () => {
         path: '/dashboard',
         label: 'Dashboard',
         icon: Home,
-        canAccess: true // Force access for debugging
+        canAccess: canAccessPage(currentRole, '/dashboard')
       },
       {
         type: 'link' as const,
         path: '/sites',
         label: 'Sites',
         icon: Building,
-        canAccess: true // Force access for debugging
+        canAccess: canAccessPage(currentRole, '/sites')
       },
       {
         type: 'link' as const,
         path: '/approvals-procurement',
         label: 'Approvals',
         icon: FileText,
-        canAccess: true // Force access for debugging
+        canAccess: canAccessPage(currentRole, '/approvals-procurement')
       },
       {
         type: 'link' as const,
         path: '/assets',
         label: 'Assets',
         icon: Package,
-        canAccess: true // Force access for debugging
+        canAccess: canAccessPage(currentRole, '/assets')
       },
       {
         type: 'link' as const,
         path: '/deployment',
         label: 'Deployment',
         icon: Users,
-        canAccess: true // Force access for debugging
+        canAccess: canAccessPage(currentRole, '/deployment')
       },
       {
         type: 'link' as const,
         path: '/forecast',
         label: 'Forecast',
         icon: BarChart3,
-        canAccess: true // Force access for debugging
+        canAccess: canAccessPage(currentRole, '/forecast')
       }
     ];
 
-    console.log('Navigation items:', baseNavigation.map(item => ({
-      path: item.path,
-      label: item.label,
-      canAccess: item.canAccess
-    })));
-
-    // Always return all navigation items for debugging
-    return baseNavigation;
+    return baseNavigation.filter(item => item.canAccess);
   };
 
   const navigationStructure = getNavigationStructure();
@@ -288,12 +276,12 @@ const Header = () => {
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
 
-                      {canAccessPage(currentRole || 'admin', '/sites/create') && (
-                        <DropdownMenuItem onClick={() => navigate('/sites/create')}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          <span>Create Site</span>
-                        </DropdownMenuItem>
-                      )}
+                        {currentRole && canAccessPage(currentRole, '/sites/create') && (
+                          <DropdownMenuItem onClick={() => navigate('/sites/create')}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            <span>Create Site</span>
+                          </DropdownMenuItem>
+                        )}
                     </DropdownMenuGroup>
 
                     <DropdownMenuSeparator />
@@ -330,7 +318,7 @@ const Header = () => {
                       </>
                     )}
 
-                    {canAccessPage(currentRole || 'admin', '/admin') && (
+                    {currentRole && canAccessPage(currentRole, '/platform-configuration') && (
                       <DropdownMenuItem onClick={handleAdminClick}>
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Platform Configuration</span>
@@ -369,7 +357,6 @@ const Header = () => {
                   </SheetHeader>
                   
                   <div className="px-6 py-4">
-                    {/* TEMPORARY: Bypass role check for debugging */}
                     {renderMobileNavigation()}
                   </div>
 
@@ -391,24 +378,27 @@ const Header = () => {
                       {/* Mobile Quick Actions */}
                       <div className="space-y-2">
                         
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start h-12"
-                          onClick={() => handleMobileNavigation('/sites/create')}
-                        >
-                          <Plus className="mr-3 h-4 w-4" />
-                          Create Site
-                        </Button>
+                        {currentRole && canAccessPage(currentRole, '/sites/create') && (
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start h-12"
+                            onClick={() => handleMobileNavigation('/sites/create')}
+                          >
+                            <Plus className="mr-3 h-4 w-4" />
+                            Create Site
+                          </Button>
+                        )}
 
-                        {/* TEMPORARY: Always show Platform Configuration for debugging */}
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start h-12"
-                          onClick={() => handleMobileNavigation('/platform-configuration')}
-                        >
-                          <Settings className="mr-3 h-4 w-4" />
-                          Platform Configuration
-                        </Button>
+                        {currentRole && canAccessPage(currentRole, '/platform-configuration') && (
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start h-12"
+                            onClick={() => handleMobileNavigation('/platform-configuration')}
+                          >
+                            <Settings className="mr-3 h-4 w-4" />
+                            Platform Configuration
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -446,36 +436,36 @@ const Header = () => {
                   </div>
 
                   {/* Switch Role (mobile) */}
-                  {/* TEMPORARY: Always show role switching for debugging */}
-                  <div className="px-6 py-4 border-t">
-                    <p className="text-sm font-medium mb-2">Switch Role</p>
-                    <div className="space-y-2">
-                      {/* Show all available roles for debugging */}
-                      {['admin', 'ops_manager', 'deployment_engineer'].map((role) => {
-                        const config = getRoleConfig(role as UserRole);
-                        const Icon = config.icon;
-                        const isActive = currentRole === role;
-                        return (
-                          <Button
-                            key={role}
-                            variant={isActive ? 'gradient' : 'outline'}
-                            className="w-full justify-start h-10"
-                            onClick={() => {
-                              switchRole(role as UserRole);
-                              handleRoleBasedNavigation(role);
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            <Icon className="mr-3 h-4 w-4" />
-                            <span>{config.displayName}</span>
-                            {isActive && (
-                              <Badge variant="secondary" className="ml-auto">Active</Badge>
-                            )}
-                          </Button>
-                        );
-                      })}
+                  {rolesForSwitch.length > 1 && (
+                    <div className="px-6 py-4 border-t">
+                      <p className="text-sm font-medium mb-2">Switch Role</p>
+                      <div className="space-y-2">
+                        {rolesForSwitch.map((role) => {
+                          const config = getRoleConfig(role as UserRole);
+                          const Icon = config.icon;
+                          const isActive = currentRole === role;
+                          return (
+                            <Button
+                              key={role}
+                              variant={isActive ? 'gradient' : 'outline'}
+                              className="w-full justify-start h-10"
+                              onClick={() => {
+                                switchRole(role as UserRole);
+                                handleRoleBasedNavigation(role);
+                                setIsMobileMenuOpen(false);
+                              }}
+                            >
+                              <Icon className="mr-3 h-4 w-4" />
+                              <span>{config.displayName}</span>
+                              {isActive && (
+                                <Badge variant="secondary" className="ml-auto">Active</Badge>
+                              )}
+                            </Button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </SheetContent>
               </Sheet>
             </div>

@@ -62,18 +62,14 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   // Check if user can access the current page
   const hasAccess = canAccessPage(currentRole, location.pathname);
   
-  // TEMPORARY: Bypass access control for debugging
-  console.log('=== ROLE ACCESS DEBUG ===');
-  console.log('Current role:', currentRole);
-  console.log('Page path:', location.pathname);
-  console.log('Has access:', hasAccess);
-  console.log('BYPASSING ACCESS CONTROL FOR DEBUGGING');
-  
   if (!hasAccess) {
     console.error(`Access denied for role ${currentRole} to page ${location.pathname}`);
-    // TEMPORARY: Allow access for debugging
-    console.warn('TEMPORARY: Allowing access despite permission check');
-    return <>{children}</>;
+    return (
+      <AccessDenied 
+        pageName={location.pathname}
+        customMessage={`Access denied. Your role (${currentRole}) does not have permission to access this page.`}
+      />
+    );
   }
 
   // Access granted
