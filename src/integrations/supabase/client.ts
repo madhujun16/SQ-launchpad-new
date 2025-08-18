@@ -17,5 +17,67 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     // Set session to last 30 days
     storageKey: 'smartq-launchpad-auth',
     detectSessionInUrl: true,
+    // Optimize token refresh
+    flowType: 'pkce',
+    debug: false
+  },
+  // Optimize database performance
+  db: {
+    schema: 'public'
+  },
+  // Optimize realtime performance
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  },
+  // Global headers for better caching
+  global: {
+    headers: {
+      'Cache-Control': 'public, max-age=300, s-maxage=600'
+    }
   }
 });
+
+// Create a cached version for better performance
+export const createCachedSupabaseClient = () => {
+  // Cache for database queries
+  const queryCache = new Map();
+  
+  return {
+    ...supabase,
+    // Override from method to add caching
+    from: (table: string) => {
+      const originalFrom = supabase.from(table);
+      
+      return {
+        ...originalFrom,
+        select: (columns: string = '*') => {
+          const cacheKey = `${table}:${columns}`;
+          
+          // Check cache first
+          if (queryCache.has(cacheKey)) {
+            const cached = queryCache.get(cacheKey);
+            if (Date.now() - cached.timestamp < 300000) { // 5 minutes cache
+              return Promise.resolve(cached.data);
+            }
+          }
+          
+          // If not cached, make the request
+          return originalFrom.select(columns).then(result => {
+            if (result.data && !result.error) {
+              queryCache.set(cacheKey, {
+                data: result,
+                timestamp: Date.now()
+              });
+            }
+            return result;
+          });
+        }
+      };
+    }
+  };
+};
+
+// Export the cached client
+export const supabaseCached = createCachedSupabaseClient();

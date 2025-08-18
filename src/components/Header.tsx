@@ -101,8 +101,11 @@ const Header = () => {
   // Navigation structure with 6 primary tabs - role-based visibility
   const getNavigationStructure = () => {
     if (!currentRole) {
+      console.warn('No current role found');
       return [];
     }
+
+    console.log('Building navigation for role:', currentRole);
 
     const baseNavigation = [
       {
@@ -110,46 +113,72 @@ const Header = () => {
         path: '/dashboard',
         label: 'Dashboard',
         icon: Home,
-        canAccess: canAccessPage(currentRole, '/dashboard')
+        canAccess: (() => {
+          const canAccess = canAccessPage(currentRole, '/dashboard');
+          console.log(`Dashboard access for ${currentRole}:`, canAccess);
+          return canAccess;
+        })()
       },
       {
         type: 'link' as const,
         path: '/sites',
         label: 'Sites',
         icon: Building,
-        canAccess: canAccessPage(currentRole, '/sites')
+        canAccess: (() => {
+          const canAccess = canAccessPage(currentRole, '/sites');
+          console.log(`Sites access for ${currentRole}:`, canAccess);
+          return canAccess;
+        })()
       },
       {
         type: 'link' as const,
         path: '/approvals-procurement',
         label: 'Approvals',
         icon: FileText,
-        canAccess: canAccessPage(currentRole, '/approvals-procurement')
+        canAccess: (() => {
+          const canAccess = canAccessPage(currentRole, '/approvals-procurement');
+          console.log(`Approvals access for ${currentRole}:`, canAccess);
+          return canAccess;
+        })()
       },
       {
         type: 'link' as const,
-        path: '/inventory',
-        label: 'Inventory',
+        path: '/assets',
+        label: 'Assets',
         icon: Package,
-        canAccess: canAccessPage(currentRole, '/inventory')
+        canAccess: (() => {
+          const canAccess = canAccessPage(currentRole, '/assets');
+          console.log(`Assets access for ${currentRole}:`, canAccess);
+          return canAccess;
+        })()
       },
       {
         type: 'link' as const,
         path: '/deployment',
         label: 'Deployment',
         icon: Users,
-        canAccess: canAccessPage(currentRole, '/deployment')
+        canAccess: (() => {
+          const canAccess = canAccessPage(currentRole, '/deployment');
+          console.log(`Deployment access for ${currentRole}:`, canAccess);
+          return canAccess;
+        })()
       },
       {
         type: 'link' as const,
         path: '/forecast',
         label: 'Forecast',
         icon: BarChart3,
-        canAccess: canAccessPage(currentRole, '/forecast')
+        canAccess: (() => {
+          const canAccess = canAccessPage(currentRole, '/forecast');
+          console.log(`Forecast access for ${currentRole}:`, canAccess);
+          return canAccess;
+        })()
       }
     ];
 
-    return baseNavigation.filter(item => item.canAccess);
+    const filteredNavigation = baseNavigation.filter(item => item.canAccess);
+    console.log('Filtered navigation:', filteredNavigation);
+    return filteredNavigation;
   };
 
   const navigationStructure = getNavigationStructure();
@@ -222,30 +251,100 @@ const Header = () => {
             </div>
 
             {/* Desktop Navigation (primary) */}
-            <nav className="hidden lg:flex items-center space-x-1">
-              {getNavigationStructure().map((item) => {
-                if (item.type === 'link' && item.canAccess) {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-
+            <nav className="flex items-center space-x-1">
+              {(() => {
+                const navItems = getNavigationStructure();
+                console.log('Navigation items:', navItems);
+                console.log('Current role:', currentRole);
+                console.log('Available roles:', availableRoles);
+                
+                if (navItems.length === 0) {
+                  console.warn('No navigation items found!');
+                  // Temporary hardcoded navigation for debugging
                   return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`
-                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                        ${isActive ? 'nav-active' : 'text-white/85 hover:text-white hover:bg-white/10'}
-                      `}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </div>
-                    </Link>
+                    <>
+                      <Link
+                        to="/dashboard"
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 hover:text-white hover:bg-white/10"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Home className="h-4 w-4" />
+                          <span>Dashboard</span>
+                        </div>
+                      </Link>
+                      <Link
+                        to="/sites"
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 hover:text-white hover:bg-white/10"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Building className="h-4 w-4" />
+                          <span>Sites</span>
+                        </div>
+                      </Link>
+                      <Link
+                        to="/approvals-procurement"
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 hover:text-white hover:bg-white/10"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4" />
+                          <span>Approvals</span>
+                        </div>
+                      </Link>
+                      <Link
+                        to="/assets"
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 hover:text-white hover:bg-white/10"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Package className="h-4 w-4" />
+                          <span>Assets</span>
+                        </div>
+                      </Link>
+                      <Link
+                        to="/deployment"
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 hover:text-white hover:bg-white/10"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Users className="h-4 w-4" />
+                          <span>Deployment</span>
+                        </div>
+                      </Link>
+                      <Link
+                        to="/forecast"
+                        className="px-4 py-2 rounded-lg text-sm font-medium text-white/85 hover:text-white hover:bg-white/10"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <BarChart3 className="h-4 w-4" />
+                          <span>Forecast</span>
+                        </div>
+                      </Link>
+                    </>
                   );
                 }
-                return null;
-              })}
+                
+                return navItems.map((item) => {
+                  if (item.type === 'link' && item.canAccess) {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`
+                          px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                          ${isActive ? 'nav-active' : 'text-white/85 hover:text-white hover:bg-white/10'}
+                        `}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Icon className="h-4 w-4" />
+                          <span>{item.label}</span>
+                        </div>
+                      </Link>
+                    );
+                  }
+                  return null;
+                });
+              })()}
             </nav>
 
             {/* Right Side - Actions and User */}

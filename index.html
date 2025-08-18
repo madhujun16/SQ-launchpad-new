@@ -29,23 +29,31 @@
     <meta property="og:title" content="SmartQ Launchpad" />
     <meta property="og:description" content="SmartQ Launchpad - Streamline site deployment and management" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/src/assets/smartq-launchpad-logo.svg" />
+    <meta property="og:image" content="/smartq-launchpad-logo.svg" />
     <meta property="og:url" content="https://smartq-launchpad.com" />
     <meta property="og:site_name" content="SmartQ Launchpad" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@smartq" />
-    <meta name="twitter:image" content="/src/assets/smartq-launchpad-logo.svg" />
+    <meta name="twitter:image" content="/smartq-launchpad-logo.svg" />
     <meta name="twitter:title" content="SmartQ Launchpad" />
     <meta name="twitter:description" content="Streamline site deployment and management" />
 
     <!-- PWA and offline support -->
     <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/src/assets/smartq-launchpad-logo.svg" />
+    <link rel="apple-touch-icon" href="/smartq-launchpad-logo.svg" />
     
-    <!-- Preconnect to external domains for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Performance optimizations -->
+    <link rel="dns-prefetch" href="//ngzvoekvwgjinagdvdhf.supabase.co" />
+    <link rel="preconnect" href="https://ngzvoekvwgjinagdvdhf.supabase.co" crossorigin />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/smartq-launchpad-logo.svg" as="image" type="image/svg+xml" />
+    <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml" />
+    <link rel="preload" href="/manifest.json" as="fetch" crossorigin />
+    
+    <!-- Preload critical CSS and JS -->
+    <link rel="modulepreload" href="/src/main.tsx" />
     
     <!-- CSS optimization -->
     <style>
@@ -73,11 +81,73 @@
       
       /* Optimize images */
       img { max-width: 100%; height: auto; }
+      
+      /* Loading spinner styles */
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #43A047;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Optimize font rendering */
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
     </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Loading fallback for better perceived performance -->
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f9fa;">
+        <div style="text-align: center;">
+          <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+          <p style="color: #666; margin: 0;">Loading SmartQ Launchpad...</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Performance monitoring -->
+    <script>
+      // Monitor Core Web Vitals
+      if ('PerformanceObserver' in window) {
+        try {
+          const observer = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              if (entry.entryType === 'largest-contentful-paint') {
+                console.log('LCP:', entry.startTime);
+              }
+              if (entry.entryType === 'first-input-delay') {
+                console.log('FID:', entry.processingStart - entry.startTime);
+              }
+            }
+          });
+          
+          observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input-delay'] });
+        } catch (e) {
+          console.warn('Performance monitoring not supported');
+        }
+      }
+      
+      // Remove loading fallback when app loads
+      window.addEventListener('load', () => {
+        const loadingFallback = document.querySelector('#root > div');
+        if (loadingFallback && loadingFallback.innerHTML.includes('Loading SmartQ Launchpad')) {
+          loadingFallback.remove();
+        }
+      });
+    </script>
   </body>
 </html>

@@ -9,11 +9,27 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     // Optimize dev server performance
     hmr: {
-      overlay: false
+      overlay: false,
+      // Faster HMR for better dev experience
+      port: 24678
+    },
+    // Enable faster refresh
+    watch: {
+      usePolling: false,
+      interval: 100
+    },
+    // Optimize middleware
+    middlewareMode: false,
+    // Better caching headers
+    headers: {
+      'Cache-Control': 'public, max-age=31536000, immutable'
     }
   },
   plugins: [
-    react(),
+    react({
+      // Optimize React refresh
+      fastRefresh: true
+    }),
   ],
   resolve: {
     alias: {
@@ -35,10 +51,13 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-tooltip',
       'clsx',
       'class-variance-authority',
-      'tailwind-merge'
+      'tailwind-merge',
+      '@supabase/supabase-js'
     ],
     // Exclude heavy libraries from pre-bundling
-    exclude: ['recharts', 'embla-carousel-react']
+    exclude: ['recharts', 'embla-carousel-react'],
+    // Force pre-bundling for better performance
+    force: true
   },
   // Enable CSS code splitting
   css: {
@@ -46,7 +65,9 @@ export default defineConfig(({ mode }) => ({
   },
   // Optimize development performance
   esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    // Faster builds
+    target: 'esnext'
   },
   // Development-specific optimizations
   build: {
@@ -123,5 +144,9 @@ export default defineConfig(({ mode }) => ({
     },
     // Optimize asset handling
     assetsInlineLimit: 4096, // 4kb - inline small assets
+  },
+  // Development optimizations
+  define: {
+    __DEV__: mode === 'development'
   }
 }));

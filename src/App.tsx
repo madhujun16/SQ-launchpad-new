@@ -6,8 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, ProtectedRoute } from "@/components/AuthGuard";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { PageLoader } from "@/components/ui/loader";
+import { performanceService } from "@/services/performanceService";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -46,11 +47,38 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
+      // Add better caching
+      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
+    },
+    mutations: {
+      retry: 1,
+      // Optimize mutation performance
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries();
+        return { variables };
+      },
     },
   },
 });
 
 function App() {
+  useEffect(() => {
+    // Initialize performance optimizations
+    performanceService.preloadCriticalResources();
+    performanceService.optimizeBundleLoading();
+    
+    // Set up memory optimization interval
+    const memoryInterval = setInterval(() => {
+      performanceService.optimizeMemory();
+    }, 60000); // Every minute
+    
+    return () => clearInterval(memoryInterval);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

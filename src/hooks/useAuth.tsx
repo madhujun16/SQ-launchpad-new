@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseCached } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { secureLog } from '@/config/security';
 
@@ -28,6 +28,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Cache for user profiles and roles
+const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
+const ROLES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -36,13 +40,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  // Memoized fetch function to prevent unnecessary re-renders
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
+      // Check cache first
+      const cached = profileCache.get(userId);
+      if (cached && Date.now() - cached.timestamp < ROLES_CACHE_DURATION) {
+        console.log('Using cached profile for user:', userId);
+        setProfile(cached.profile);
+        setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || []);
+        
+        // Set current role from localStorage or default to first available role
+        const savedRole = localStorage.getItem('currentRole') as UserRole;
+        if (savedRole && cached.profile.user_roles?.some(r => r.role === savedRole)) {
+          setCurrentRole(savedRole);
+        } else {
+          setCurrentRole(cached.profile.user_roles?.[0]?.role || 'admin');
+        }
+        return;
+      }
+
       console.log('Fetching profile for user:', userId);
       
-      const { data: profileData, error: profileError } = await supabase
+      // Batch fetch profile and roles in a single query using joins
+      const { data: profileData, error: profileError } = await supabaseCached
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          user_roles!inner(role)
+        `)
         .eq('user_id', userId)
         .single();
 
@@ -51,21 +77,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw profileError;
       }
 
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (rolesError) {
-        console.error('Roles fetch error:', rolesError);
-        throw rolesError;
-      }
-
       console.log('Profile data:', profileData);
-      console.log('Roles data:', rolesData);
 
       if (profileData) {
-        const roles = rolesData?.map(r => r.role) || [];
+        const roles = profileData.user_roles?.map(r => r.role) || [];
         console.log('Processed roles:', roles);
         
         // Only users with assigned roles in the database can access the system
@@ -77,11 +92,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return;
         }
         
-        setProfile({ 
+        const profileWithRoles = { 
           ...profileData, 
-          user_roles: rolesData?.map(r => ({ role: r.role })) || []
-        });
+          user_roles: profileData.user_roles?.map(r => ({ role: r.role })) || []
+        };
+        
+        setProfile(profileWithRoles);
         setAvailableRoles(roles);
+        
+        // Cache the profile data
+        profileCache.set(userId, {
+          profile: profileWithRoles,
+          timestamp: Date.now()
+        });
         
         // Set current role from localStorage or default to first available role
         const savedRole = localStorage.getItem('currentRole') as UserRole;
@@ -102,22 +125,85 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentRole(null);
       setAvailableRoles([]);
     }
-  };
+  }, []);
 
-  const switchRole = (role: UserRole) => {
+  // Memoized switch role function
+  const switchRole = useCallback((role: UserRole) => {
     if (availableRoles.includes(role)) {
       setCurrentRole(role);
       localStorage.setItem('currentRole', role);
-      
-      // Redirect to appropriate dashboard based on new role
-      // This will be handled by the AuthGuard component
-      // We'll trigger a navigation by updating the role
     }
-  };
+  }, [availableRoles]);
+
+  // Memoized sign out function
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      // Clear cache on sign out
+      profileCache.clear();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  }, []);
+
+  // Memoized auth functions
+  const signInWithOtp = useCallback(async (email: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      return { error: error?.message || null };
+    } catch (error) {
+      return { error: 'An unexpected error occurred' };
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+      return { error: error?.message || null };
+    } catch (error) {
+      return { error: 'An unexpected error occurred' };
+    }
+  }, []);
+
+  const createUserAsAdmin = useCallback(async (email: string, password: string, role: UserRole) => {
+    try {
+      const { error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role }
+      });
+      return { error: error?.message || null };
+    } catch (error) {
+      return { error: 'An unexpected error occurred' };
+    }
+  }, []);
+
+  // Memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    session,
+    profile,
+    currentRole,
+    availableRoles,
+    switchRole,
+    signOut,
+    signInWithOtp,
+    verifyOtp,
+    createUserAsAdmin,
+    loading
+  }), [
+    user, session, profile, currentRole, availableRoles,
+    switchRole, signOut, signInWithOtp, verifyOtp, createUserAsAdmin, loading
+  ]);
 
   useEffect(() => {
+    let mounted = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
@@ -130,6 +216,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setCurrentRole(null);
           setAvailableRoles([]);
           localStorage.removeItem('currentRole');
+          // Clear cache when user signs out
+          profileCache.clear();
         }
         setLoading(false);
       }
@@ -137,6 +225,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Also check for existing session on mount
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
@@ -146,127 +236,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
 
-  const signInWithOtp = async (email: string) => {
-    secureLog('info', 'Starting OTP process', { email });
-    
-    // Use the new secure function to check if email exists
-    const { data: emailExists, error: checkError } = await supabase
-      .rpc('check_email_exists', { email_to_check: email });
-
-    secureLog('info', 'Email existence check completed');
-
-    if (checkError) {
-      secureLog('error', 'Email check error', { error: checkError });
-      return { error: checkError.message || 'Failed to verify email' };
-    }
-
-    // If user doesn't exist in profiles table, they shouldn't be able to login
-    if (!emailExists) {
-      secureLog('warn', 'User not found in profiles table');
-      return { 
-        error: 'User not found. Please contact your administrator for access.' 
-      };
-    }
-
-    secureLog('info', 'User verified, proceeding with OTP');
-
-    // User exists, proceed with OTP
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        // Allow user creation since we've verified they exist in our profiles table
-        shouldCreateUser: true,
-      },
-    });
-    
-    if (error) {
-      secureLog('error', 'OTP sending failed', { error: error.message });
-    } else {
-      secureLog('info', 'OTP sent successfully');
-    }
-    return { error: error?.message || null };
-  };
-
-  const verifyOtp = async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
-    
-    return { error: error?.message || null };
-  };
-
-  const createUserAsAdmin = async (email: string, password: string, role: UserRole) => {
-    // This function should only be called by admin users
-    // It creates a new user with the specified role
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm email for B2B
-    });
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    if (data.user) {
-      // Assign role to the new user
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: data.user.id,
-          role: role
-        });
-
-      if (roleError) {
-        return { error: roleError.message };
-      }
-
-      // Create profile for the new user
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: data.user.id,
-          email: email,
-          full_name: email.split('@')[0], // Default name from email
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (profileError) {
-        return { error: profileError.message };
-      }
-    }
-
-    return { error: null };
-  };
-
-  const signOut = async () => {
-    setCurrentRole(null);
-    setAvailableRoles([]);
-    localStorage.removeItem('currentRole');
-    await supabase.auth.signOut();
-  };
-
-  const value: AuthContextType = {
-    user,
-    session,
-    profile,
-    currentRole,
-    availableRoles,
-    switchRole,
-    signOut,
-    signInWithOtp,
-    verifyOtp,
-    createUserAsAdmin,
-    loading,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
