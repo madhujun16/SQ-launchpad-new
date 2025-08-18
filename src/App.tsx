@@ -66,17 +66,17 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Initialize performance service
   useEffect(() => {
-    // Initialize performance optimizations
-    performanceService.preloadCriticalResources();
-    performanceService.optimizeBundleLoading();
+    // TEMPORARILY DISABLED: Performance service causing 404 errors
+    // performanceService.preloadCriticalResources();
+    // performanceService.optimizeBundleLoading();
     
-    // Set up memory optimization interval
-    const memoryInterval = setInterval(() => {
-      performanceService.optimizeMemory();
-    }, 60000); // Every minute
+    // const interval = setInterval(() => {
+    //   performanceService.optimizeMemory();
+    // }, 30000);
     
-    return () => clearInterval(memoryInterval);
+    // return () => clearInterval(interval);
   }, []);
 
   return (

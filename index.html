@@ -43,17 +43,15 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/smartq-launchpad-logo.svg" />
     
-    <!-- Performance optimizations -->
-    <link rel="dns-prefetch" href="//ngzvoekvwgjinagdvdhf.supabase.co" />
-    <link rel="preconnect" href="https://ngzvoekvwgjinagdvdhf.supabase.co" crossorigin />
+    <!-- Resource hints for better performance -->
+    <link rel="dns-prefetch" href="https://ngzvoekvwgjinagdvdhf.supabase.co">
+    <link rel="preconnect" href="https://ngzvoekvwgjinagdvdhf.supabase.co">
     
-    <!-- Preload critical resources -->
-    <link rel="preload" href="/smartq-launchpad-logo.svg" as="image" type="image/svg+xml" />
-    <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml" />
-    <link rel="preload" href="/manifest.json" as="fetch" crossorigin />
-    
-    <!-- Preload critical CSS and JS -->
-    <link rel="modulepreload" href="/src/main.tsx" />
+    <!-- TEMPORARILY DISABLED: Preload links causing 404 errors -->
+    <!-- <link rel="preload" href="/smartq-launchpad-logo.svg" as="image">
+    <link rel="preload" href="/favicon.svg" as="image">
+    <link rel="preload" href="/manifest.json" as="fetch">
+    <link rel="modulepreload" href="/src/main.tsx"> -->
     
     <!-- CSS optimization -->
     <style>
