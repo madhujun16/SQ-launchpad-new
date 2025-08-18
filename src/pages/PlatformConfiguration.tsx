@@ -301,7 +301,7 @@ export default function PlatformConfiguration() {
               .eq('user_id', user.user_id);
             
             return {
-              ...user,
+          ...user,
               user_roles: rolesData?.map(r => ({ role: r.role })) || []
             };
           })
@@ -342,7 +342,7 @@ export default function PlatformConfiguration() {
           // seed defaults for first-time experience
           seedDefaultSoftware();
         } else {
-          setSoftwareModules(mappedSoftware);
+        setSoftwareModules(mappedSoftware);
         }
       }
 
@@ -1171,15 +1171,15 @@ export default function PlatformConfiguration() {
                                         className={`${roleConfig.color} border-current`}
                                       >
                                         {roleConfig.displayName}
-                                      </Badge>
+                                  </Badge>
                                     );
                                   })}
                                 </div>
                               </TableCell>
                               <TableCell className="align-middle">
                                 <div className="flex items-center space-x-2">
-                                  <Calendar className="h-4 w-4 text-gray-400" />
-                                  <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                                <Calendar className="h-4 w-4 text-gray-400" />
+                                <span>{new Date(user.created_at).toLocaleDateString()}</span>
                                 </div>
                               </TableCell>
                               <TableCell className="text-right align-middle">
@@ -1220,10 +1220,10 @@ export default function PlatformConfiguration() {
                 <Button variant="light-outline" onClick={seedDefaultSoftware} className="hover-glow-green">
                   Quick Add Default Software
                 </Button>
-                <Button onClick={saveAllConfigurations} className="flex items-center space-x-2">
-                  <Save className="h-4 w-4" />
-                  <span>Save All Changes</span>
-                </Button>
+              <Button onClick={saveAllConfigurations} className="flex items-center space-x-2">
+                <Save className="h-4 w-4" />
+                <span>Save All Changes</span>
+              </Button>
               </div>
             </div>
 
@@ -1539,8 +1539,8 @@ export default function PlatformConfiguration() {
                         <Download className="h-4 w-4" />
                         <span>Download CSV</span>
                       </Button>
-                    </div>
-                  </div>
+                        </div>
+                        </div>
                   <div className="border rounded-lg overflow-y-auto max-h-full">
                     <Table>
                       <TableHeader>
@@ -1875,7 +1875,7 @@ export default function PlatformConfiguration() {
                 <div className="space-y-2">
                   {editingUser.user_roles.map((role, index) => (
                     <div key={index} className="flex items-center space-x-2">
-                      <Select 
+                <Select
                         value={role.role} 
                         onValueChange={(value) => {
                           const newRoles = [...editingUser.user_roles];
@@ -1885,13 +1885,13 @@ export default function PlatformConfiguration() {
                       >
                         <SelectTrigger className="flex-1">
                           <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
+                  </SelectTrigger>
+                  <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="ops_manager">Ops Manager</SelectItem>
                           <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  </SelectContent>
+                </Select>
                       <Button
                         variant="outline"
                         size="sm"
@@ -1903,7 +1903,7 @@ export default function PlatformConfiguration() {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
+              </div>
                   ))}
                   <Button
                     variant="outline"
