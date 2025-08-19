@@ -84,49 +84,49 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
   return [
     {
       id: 'site-created',
-      title: 'Site Created',
+      title: 'Site Creation',
       description: 'Site has been created in the system',
       status: currentStep >= 0 ? (currentStep === 0 ? 'current' : 'completed') : 'upcoming',
       icon: Building
     },
     {
       id: 'site-study-done',
-      title: 'Site Study Done',
+      title: 'Site Study',
       description: 'On-site assessment completed',
       status: currentStep >= 1 ? (currentStep === 1 ? 'current' : 'completed') : 'upcoming',
       icon: FileText
     },
     {
       id: 'scoping-done',
-      title: 'Scoping Done',
+      title: 'Scoping',
       description: 'Software & Hardware scoping completed',
       status: currentStep >= 2 ? (currentStep === 2 ? 'current' : 'completed') : 'upcoming',
       icon: Package
     },
     {
       id: 'approved',
-      title: 'Approved',
+      title: 'Approval',
       description: 'Project approved by stakeholders',
       status: currentStep >= 3 ? (currentStep === 3 ? 'current' : 'completed') : 'upcoming',
       icon: CheckSquare
     },
     {
       id: 'procurement-done',
-      title: 'Procurement Done',
+      title: 'Procurement',
       description: 'Hardware procurement completed',
       status: currentStep >= 4 ? (currentStep === 4 ? 'current' : 'completed') : 'upcoming',
       icon: Package
     },
     {
       id: 'deployed',
-      title: 'Deployed',
+      title: 'Deployment',
       description: 'Hardware deployed and installed',
       status: currentStep >= 5 ? (currentStep === 5 ? 'current' : 'completed') : 'upcoming',
       icon: Truck
     },
     {
       id: 'live',
-      title: 'Live',
+      title: 'Go-Live',
       description: 'Site is live and operational',
       status: currentStep >= 6 ? (currentStep === 6 ? 'current' : 'completed') : 'upcoming',
       icon: CheckCircle
@@ -168,19 +168,19 @@ export const getStatusDisplayName = (status: string) => {
   switch (status) {
     // New finalized statuses
     case 'site_created':
-      return 'Site Created';
+      return 'Site Creation';
     case 'site_study_done':
-      return 'Site Study Done';
+      return 'Site Study';
     case 'scoping_done':
-      return 'Scoping Done';
+      return 'Scoping';
     case 'approved':
-      return 'Approved';
+      return 'Approval';
     case 'procurement_done':
-      return 'Procurement Done';
+      return 'Procurement';
     case 'deployed':
-      return 'Deployed';
+      return 'Deployment';
     case 'live':
-      return 'Live';
+      return 'Go-Live';
     // Legacy status mappings for backward compatibility
     case 'created':
       return 'Site Created';
