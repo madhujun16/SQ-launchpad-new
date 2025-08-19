@@ -292,6 +292,7 @@ const SiteDetail = () => {
                 organization: dbSite.organization_name || 'Unknown Organization',
                 foodCourt: dbSite.location || 'Unknown Location',
                 unitCode: 'N/A', // Not available in database schema
+                sector: 'Eurest', // Default sector
                 goLiveDate: dbSite.target_live_date || '2024-12-31',
                 priority: 'medium',
                 riskLevel: 'medium',
@@ -320,6 +321,7 @@ const SiteDetail = () => {
           organization: 'ASDA',
           foodCourt: 'ASDA Redditch',
           unitCode: 'AR004',
+          sector: 'Eurest',
           goLiveDate: '2024-11-15',
           priority: 'high',
           riskLevel: 'medium',
@@ -368,42 +370,44 @@ const SiteDetail = () => {
         
         // Try to find site in mock data based on ID
         const mockSites = [
+                     {
+             id: '1',
+             name: 'London Central',
+             organization: 'Compass Group UK',
+             foodCourt: 'London Central',
+             unitCode: 'LC001',
+             sector: 'Eurest',
+             goLiveDate: '2024-01-15',
+             priority: 'high' as const,
+             riskLevel: 'medium' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'John Smith',
+             assignedDeploymentEngineer: 'Mike Johnson',
+             stakeholders: [],
+             notes: 'London Central site implementation',
+             description: 'London Central site implementation',
+             lastUpdated: '2024-01-15',
+             hardwareScope: {
+               approvalStatus: 'approved' as const
+             }
+           },
           {
-            id: '1',
-            name: 'London Central',
-            organization: 'Compass Group UK',
-            foodCourt: 'London Central',
-            unitCode: 'LC001',
-            goLiveDate: '2024-01-15',
-            priority: 'high' as const,
-            riskLevel: 'medium' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'John Smith',
-            assignedDeploymentEngineer: 'Mike Johnson',
-            stakeholders: [],
-            notes: 'London Central site implementation',
-            description: 'London Central site implementation',
-            lastUpdated: '2024-01-15',
-            hardwareScope: {
-              approvalStatus: 'approved' as const
-            }
-          },
-          {
-            id: '2',
-            name: 'Manchester North',
-            organization: 'Compass Group UK',
-            foodCourt: 'Manchester North',
-            unitCode: 'MN002',
-            goLiveDate: '2024-01-20',
-            priority: 'medium' as const,
-            riskLevel: 'low' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'Sarah Wilson',
-            assignedDeploymentEngineer: 'David Brown',
-            stakeholders: [],
-            notes: 'Manchester North site implementation',
-            description: 'Manchester North site implementation',
-            lastUpdated: '2024-01-18'
+                         id: '2',
+             name: 'Manchester North',
+             organization: 'Compass Group UK',
+             foodCourt: 'Manchester North',
+             unitCode: 'MN002',
+             sector: 'Eurest',
+             goLiveDate: '2024-01-20',
+             priority: 'medium' as const,
+             riskLevel: 'low' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'Sarah Wilson',
+             assignedDeploymentEngineer: 'David Brown',
+             stakeholders: [],
+             notes: 'Manchester North site implementation',
+             description: 'Manchester North site implementation',
+             lastUpdated: '2024-01-18'
           },
           {
             id: '3',
@@ -851,44 +855,53 @@ const SiteDetail = () => {
                   {/* Basic Site Information */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Basic Site Information</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Organisation</label>
-                        <Input 
-                          defaultValue={site.organization} 
-                          placeholder="e.g., Compass Group UK"
-                          className={`w-full ${!canEditField('organization') ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('organization')}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Unit Code</label>
-                        <Input 
-                          defaultValue={site.unitCode} 
-                          placeholder="e.g., LC001"
-                          className={`w-full ${!canEditField('unitCode') ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('unitCode')}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Food Court Name</label>
-                        <Input 
-                          defaultValue={site.foodCourt} 
-                          placeholder="e.g., London Central"
-                          className={`w-full ${!canEditField('foodCourt') ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('foodCourt')}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Target Live Date</label>
-                        <Input 
-                          type="date"
-                          defaultValue={site.goLiveDate}
-                          className={`w-full ${!canEditField('goLiveDate') ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('goLiveDate')}
-                        />
-                      </div>
-                    </div>
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium text-gray-700">Site Name</label>
+                         <Input 
+                           defaultValue={site.foodCourt} 
+                           placeholder="e.g., London Central"
+                           className={`w-full ${!canEditField('foodCourt') ? "bg-gray-50" : ""}`}
+                           disabled={!canEditField('foodCourt')}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium text-gray-700">Organisation</label>
+                         <Input 
+                           defaultValue={site.organization} 
+                           placeholder="e.g., Compass Group UK"
+                           className={`w-full ${!canEditField('organization') ? "bg-gray-50" : ""}`}
+                           disabled={!canEditField('organization')}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium text-gray-700">Sector</label>
+                         <Input 
+                           defaultValue={site.sector || 'Eurest'} 
+                           placeholder="e.g., Eurest"
+                           className={`w-full ${!canEditField('sector') ? "bg-gray-50" : ""}`}
+                           disabled={!canEditField('sector')}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium text-gray-700">Unit Code</label>
+                         <Input 
+                           defaultValue={site.unitCode} 
+                           placeholder="e.g., LC001"
+                           className={`w-full ${!canEditField('unitCode') ? "bg-gray-50" : ""}`}
+                           disabled={!canEditField('unitCode')}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium text-gray-700">Target Live Date</label>
+                         <Input 
+                           type="date"
+                           defaultValue={site.goLiveDate}
+                           className={`w-full ${!canEditField('goLiveDate') ? "bg-gray-50" : ""}`}
+                           disabled={!canEditField('goLiveDate')}
+                         />
+                       </div>
+                     </div>
                   </div>
 
                   {/* Priority & Risk Assessment */}
@@ -2233,9 +2246,9 @@ const SiteDetail = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
           <div className="flex items-center space-x-4 mt-2">
-            <p className="text-gray-600">
-              {site.organization} • {site.foodCourt}
-            </p>
+                         <p className="text-gray-600">
+               {site.sector || 'Unknown Sector'} → {site.organization} - {new Date(site.goLiveDate).toLocaleDateString()}
+             </p>
             <div className="flex items-center space-x-2 text-gray-600">
               <Calendar className="h-4 w-4" />
               <span className="font-medium">Live Date: {new Date(site.goLiveDate).toLocaleDateString()}</span>

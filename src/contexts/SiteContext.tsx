@@ -16,6 +16,7 @@ export interface Site {
   organization: string;
   foodCourt: string;
   unitCode: string;
+  sector: string;
   goLiveDate: string;
   priority: 'low' | 'medium' | 'high';
   riskLevel: 'low' | 'medium' | 'high';
