@@ -73,6 +73,24 @@
         border-top: 4px solid #43A047;
         border-radius: 50%;
         animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+      
+      .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #f8f9fa;
+      }
+      
+      .loading-content {
+        text-align: center;
+      }
+      
+      .loading-text {
+        color: #666;
+        margin: 0;
       }
       
       @keyframes spin {
@@ -91,11 +109,11 @@
 
   <body>
     <div id="root">
-      <!-- Loading fallback for better perceived performance -->
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f9fa;">
-        <div style="text-align: center;">
-          <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-          <p style="color: #666; margin: 0;"></p>
+      <!-- Loading fallback -->
+      <div class="loading-container">
+        <div class="loading-content">
+          <div class="loading-spinner"></div>
+          <p class="loading-text"></p>
         </div>
       </div>
     </div>
