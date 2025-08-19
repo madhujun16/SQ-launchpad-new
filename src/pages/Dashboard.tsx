@@ -76,13 +76,56 @@ const Dashboard = () => {
   // Requests scoped for the dashboard role views
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
 
+  // Add timeout for loading state
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        console.warn('⚠️ Dashboard loading timeout - forcing display');
+        setLoadingTimeout(true);
+      }, 10000); // 10 second timeout
+
+      return () => clearTimeout(timer);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading]);
+
   // Show loading state while authentication is being determined
-  if (loading) {
+  if (loading && !loadingTimeout) {
     return (
       <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-xs text-gray-400 mt-2">This may take a few moments</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show timeout warning if loading takes too long
+  if (loading && loadingTimeout) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-orange-600 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
+          <p className="text-gray-600 mb-4">The dashboard is still loading. This might be due to:</p>
+          <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1">
+            <li>• Slow database connection</li>
+            <li>• Authentication service delay</li>
+            <li>• Network connectivity issues</li>
+          </ul>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
         </div>
       </div>
     );
@@ -97,14 +140,20 @@ const Dashboard = () => {
             <AlertCircle className="h-12 w-12 mx-auto" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don't have the required permissions to access this dashboard.</p>
+          <p className="text-gray-600 mb-4">You don't have the required permissions to access this dashboard.</p>
+          <div className="text-sm text-gray-500 space-y-1">
+            <p>Debug Info:</p>
+            <p>• Profile: {profile ? 'Loaded' : 'Not loaded'}</p>
+            <p>• Current Role: {currentRole || 'None'}</p>
+            <p>• Loading State: {loading ? 'True' : 'False'}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   // Debug logging
-  console.log('Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
+  console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
 
   useEffect(() => {
     // Seed requests

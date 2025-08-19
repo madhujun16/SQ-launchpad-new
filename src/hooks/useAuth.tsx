@@ -44,10 +44,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Memoized fetch function to prevent unnecessary re-renders
   const fetchProfile = useCallback(async (userId: string) => {
     try {
+      console.log('🔍 Starting fetchProfile for user:', userId);
+      
       // Check cache first
       const cached = profileCache.get(userId);
       if (cached && Date.now() - cached.timestamp < ROLES_CACHE_DURATION) {
-        console.log('Using cached profile for user:', userId);
+        console.log('✅ Using cached profile for user:', userId);
         setProfile(cached.profile);
         setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || []);
         
@@ -61,9 +63,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      console.log('Fetching profile for user:', userId);
+      console.log('🔄 Fetching fresh profile for user:', userId);
       
       // Fetch profile first
+      console.log('📊 Querying profiles table...');
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -71,33 +74,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (profileError) {
-        console.error('Profile fetch error:', profileError);
+        console.error('❌ Profile fetch error:', profileError);
+        console.error('❌ Profile error details:', {
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint
+        });
         throw profileError;
       }
 
-      console.log('Profile data:', profileData);
+      console.log('✅ Profile data fetched successfully:', profileData);
 
       // Fetch user roles separately
+      console.log('🔑 Querying user_roles table...');
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
 
       if (rolesError) {
-        console.error('Roles fetch error:', rolesError);
+        console.error('❌ Roles fetch error:', rolesError);
+        console.error('❌ Roles error details:', {
+          code: rolesError.code,
+          message: rolesError.message,
+          details: rolesError.details,
+          hint: rolesError.hint
+        });
         throw rolesError;
       }
 
       const roles = rolesData?.map(r => r.role) || [];
-      console.log('Processed roles:', roles);
+      console.log('✅ Roles data fetched successfully:', rolesData);
+      console.log('✅ Processed roles array:', roles);
 
       if (profileData) {
         // Only users with assigned roles in the database can access the system
         if (roles.length === 0) {
-          console.error('No roles found for user - access denied');
+          console.error('❌ No roles found for user - access denied');
           
           // TEMPORARY: Fallback for debugging - assign admin role if none exists
-          console.warn('TEMPORARY: Assigning fallback admin role for debugging');
+          console.warn('⚠️ TEMPORARY: Assigning fallback admin role for debugging');
           const fallbackRoles: UserRole[] = ['admin'];
           setAvailableRoles(fallbackRoles);
           setCurrentRole('admin');
@@ -115,6 +132,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             timestamp: Date.now()
           });
           
+          console.log('✅ Fallback profile set with admin role');
           return;
         }
         
@@ -123,6 +141,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           user_roles: roles.map(role => ({ role }))
         };
         
+        console.log('✅ Setting profile with roles:', profileWithRoles);
         setProfile(profileWithRoles);
         setAvailableRoles(roles);
         
@@ -135,15 +154,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Set current role from localStorage or default to first available role
         const savedRole = localStorage.getItem('currentRole') as UserRole;
         if (savedRole && roles.includes(savedRole)) {
-          console.log('Setting saved role:', savedRole);
+          console.log('✅ Setting saved role from localStorage:', savedRole);
           setCurrentRole(savedRole);
         } else {
-          console.log('Setting default role:', roles[0]);
+          console.log('✅ Setting default role:', roles[0]);
           setCurrentRole(roles[0] || 'admin');
         }
+        
+        console.log('✅ Profile setup completed successfully');
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('💥 Error fetching profile:', error);
+      console.error('💥 Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
+      });
       secureLog('error', 'Error fetching profile', { error });
       
       // No fallback roles - if profile fetch fails, user cannot access system
@@ -249,14 +275,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('Auth state change:', event, session?.user?.id);
+        console.log('🔄 Auth state change:', event, 'User ID:', session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          console.log('👤 User authenticated, fetching profile...');
           // Fetch profile immediately without setTimeout
           await fetchProfile(session.user.id);
         } else {
+          console.log('🚪 User signed out, clearing state...');
           setProfile(null);
           setCurrentRole(null);
           setAvailableRoles([]);
@@ -264,6 +292,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Clear cache when user signs out
           profileCache.clear();
         }
+        console.log('✅ Auth state change completed, setting loading to false');
         setLoading(false);
       }
     );
@@ -272,12 +301,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
       
-      console.log('Initial session check:', session?.user?.id);
+      console.log('🚀 Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log('👤 Initial session found, fetching profile...');
         await fetchProfile(session.user.id);
       }
+      console.log('✅ Initial session check completed, setting loading to false');
       setLoading(false);
     });
 
