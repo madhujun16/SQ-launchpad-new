@@ -2234,7 +2234,7 @@ const SiteDetail = () => {
           <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
           <div className="flex items-center space-x-4 mt-2">
             <p className="text-gray-600">
-              {site.organization} • {site.foodCourt} ({site.unitCode})
+              {site.organization} • {site.foodCourt}
             </p>
             <div className="flex items-center space-x-2 text-gray-600">
               <Calendar className="h-4 w-4" />
