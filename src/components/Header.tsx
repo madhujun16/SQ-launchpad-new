@@ -47,7 +47,7 @@ const NAVIGATION_ITEMS = [
 const Logo = React.memo(() => (
   <Link to="/" className="flex items-center space-x-2">
     <RocketIcon className="h-8 w-8 text-green-400" />
-    <span className="text-xl font-bold text-white">SmartQ Launchpad</span>
+    <span className="text-xl font-bold text-white">Launchpad</span>
   </Link>
 ));
 
@@ -182,7 +182,7 @@ const MobileNavigation = React.memo(({
       <SheetContent side="left" className="w-80">
         <SheetHeader>
           <SheetTitle>Navigation</SheetTitle>
-          <SheetDescription>Access your SmartQ Launchpad features</SheetDescription>
+          <SheetDescription>Access your Launchpad features</SheetDescription>
         </SheetHeader>
         
         <div className="mt-6 space-y-2">
