@@ -170,11 +170,13 @@ const MobileNavigation = React.memo(({
   isOpen, 
   navigationItems, 
   currentPath, 
+  currentRole,
   onClose 
 }: { 
   isOpen: boolean; 
   navigationItems: NavigationItem[]; 
   currentPath: string; 
+  currentRole: UserRole | null;
   onClose: () => void; 
 }) => (
   <Sheet open={isOpen} onOpenChange={onClose}>
@@ -361,6 +363,7 @@ const Header = () => {
         isOpen={isMobileMenuOpen}
         navigationItems={navigationItems}
         currentPath={currentPath}
+        currentRole={currentRole}
         onClose={handleMobileMenuClose}
       />
     </header>

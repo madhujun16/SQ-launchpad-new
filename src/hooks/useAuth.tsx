@@ -34,8 +34,8 @@ const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
 const ROLES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Constants
-const REQUEST_TIMEOUT = 10000; // 10 seconds
-const GLOBAL_TIMEOUT = 15000; // 15 seconds
+const REQUEST_TIMEOUT = 30000; // 30 seconds (increased from 10)
+const GLOBAL_TIMEOUT = 45000; // 45 seconds (increased from 15)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -118,9 +118,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       const timeoutPromise = new Promise<never>((_, reject) => {
-        addTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), REQUEST_TIMEOUT);
+        addTimeout(() => {
+          console.warn(`⚠️ Profile fetch timeout after ${REQUEST_TIMEOUT/1000} seconds for user:`, userId);
+          reject(new Error(`Profile fetch timeout after ${REQUEST_TIMEOUT/1000} seconds`));
+        }, REQUEST_TIMEOUT);
       });
 
+      console.log('🔄 Racing profile fetch against timeout...');
+      
       // Race between profile fetch and timeout
       const { data: profileData, error: profileError } = await Promise.race([
         profilePromise,
@@ -172,9 +177,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('user_id', userId);
 
       const rolesTimeoutPromise = new Promise<never>((_, reject) => {
-        addTimeout(() => reject(new Error('Roles fetch timeout after 10 seconds')), REQUEST_TIMEOUT);
+        addTimeout(() => {
+          console.warn(`⚠️ Roles fetch timeout after ${REQUEST_TIMEOUT/1000} seconds for user:`, userId);
+          reject(new Error(`Roles fetch timeout after ${REQUEST_TIMEOUT/1000} seconds`));
+        }, REQUEST_TIMEOUT);
       });
 
+      console.log('🔄 Racing roles fetch against timeout...');
+      
       const { data: rolesData, error: rolesError } = await Promise.race([
         rolesPromise,
         rolesTimeoutPromise
