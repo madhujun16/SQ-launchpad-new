@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { useAuth } from '@/hooks/useAuth';
-import { StatusBadge } from '@/components/StatusBadge';
+import StatusBadge from '@/components/StatusBadge';
 
 const Sites = () => {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const Sites = () => {
             goLiveDate: '2024-09-15',
             priority: 'high' as const,
             riskLevel: 'medium' as const,
-            status: 'site_study_completed' as const,
+            status: 'study_completed' as const,
             assignedOpsManager: 'Sarah Johnson',
             assignedDeploymentEngineer: 'Mike Chen',
             stakeholders: [],
@@ -50,7 +50,7 @@ const Sites = () => {
             goLiveDate: '2024-10-01',
             priority: 'medium' as const,
             riskLevel: 'low' as const,
-            status: 'hardware_scoping' as const,
+            status: 'hardware_scoped' as const,
             assignedOpsManager: 'David Wilson',
             assignedDeploymentEngineer: 'Lisa Zhang',
             stakeholders: [],
@@ -162,10 +162,14 @@ const Sites = () => {
         >
           <option value="all">All Status</option>
           <option value="created">Created</option>
-          <option value="site_study_completed">Site Study Completed</option>
-          <option value="hardware_scoping">Hardware Scoping</option>
+          <option value="study_in_progress">Study In Progress</option>
+          <option value="study_completed">Study Completed</option>
+          <option value="hardware_scoped">Hardware Scoped</option>
+          <option value="approved">Approved</option>
+          <option value="procurement">Procurement</option>
           <option value="deployment">Deployment</option>
-          <option value="go_live">Go Live</option>
+          <option value="activated">Activated</option>
+          <option value="live">Live</option>
         </select>
       </div>
 
