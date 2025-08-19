@@ -89,6 +89,7 @@ import { LocationPicker } from '@/components/ui/location-picker';
 import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
 import { LayoutImageUpload } from '@/components/LayoutImageUpload';
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
+import { SitesService } from '@/services/sitesService';
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -277,10 +278,45 @@ const SiteDetail = () => {
         setSelectedStep(getStepperStepFromStatus(existingSite.status as UnifiedSiteStatus));
         setLoading(false);
       } else {
-        // If not found in context, load from mock data (in real app, this would be an API call)
-        const mockSite: Site = {
+        // Try to load from database
+        const loadSiteFromDatabase = async () => {
+          try {
+            const dbSites = await SitesService.getAllSites();
+            const dbSite = dbSites.find(s => s.id === id);
+            
+            if (dbSite) {
+              // Convert database site to context site format
+              const contextSite: Site = {
+                id: dbSite.id,
+                name: dbSite.name,
+                organization: dbSite.organization_name || 'Unknown Organization',
+                foodCourt: dbSite.location || 'Unknown Location',
+                unitCode: 'N/A', // Not available in database schema
+                goLiveDate: dbSite.target_live_date || '2024-12-31',
+                priority: 'medium',
+                riskLevel: 'medium',
+                status: dbSite.status as UnifiedSiteStatus,
+                assignedOpsManager: dbSite.assigned_ops_manager || 'Unassigned',
+                assignedDeploymentEngineer: dbSite.assigned_deployment_engineer || 'Unassigned',
+                stakeholders: [],
+                notes: '', // Not available in database schema
+                description: '', // Not available in database schema
+                lastUpdated: new Date().toISOString().split('T')[0]
+              };
+              setSite(contextSite);
+              setSelectedStep(getStepperStepFromStatus(contextSite.status as UnifiedSiteStatus));
+              setLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.error('Error loading site from database:', error);
+          }
+          
+          // Fall back to mock data if database load fails
+          // If not found in context, load from mock data (in real app, this would be an API call)
+          const mockSite: Site = {
           id: id,
-          name: `Site ${id}`, // This will be overridden by actual data
+          name: `ASDA Redditch (${id.substring(0, 8)})`, // More user-friendly name with partial ID
           organization: 'ASDA',
           foodCourt: 'ASDA Redditch',
           unitCode: 'AR004',
@@ -602,14 +638,28 @@ const SiteDetail = () => {
         if (foundSite) {
           setSite(foundSite);
           setSelectedStep(getStepperStepFromStatus(foundSite.status as UnifiedSiteStatus));
-        } else {
-          setSite(mockSite);
-          setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
-        }
-        setLoading(false);
+          } else {
+            setSite(mockSite);
+            setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
+          }
+          setLoading(false);
+        };
+        
+        // Call the async function
+        loadSiteFromDatabase();
       }
     }
   }, [id, sites]);
+
+  // Update document title when site is loaded
+  useEffect(() => {
+    if (site) {
+      document.title = `${site.name} - SmartQ Launchpad`;
+    }
+    return () => {
+      document.title = 'SmartQ Launchpad';
+    };
+  }, [site]);
 
   if (loading) {
     return (
