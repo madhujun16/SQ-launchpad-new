@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { canAccessPage } from '@/lib/roles';
@@ -16,29 +17,33 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   const { currentRole, loading, availableRoles } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
 
   useEffect(() => {
-    if (!loading && currentRole) {
-      // Access check completed
+    if (!loading && currentRole && !hasCheckedAccess) {
+      console.log('🔍 RoleBasedRoute access check:', {
+        currentRole,
+        pathname: location.pathname,
+        availableRoles
+      });
       
       // Check if user can access the current page
-      if (!canAccessPage(currentRole, location.pathname)) {
-        console.warn(`Access denied for ${currentRole} to ${location.pathname}`);
-        console.log('Current role:', currentRole);
-        console.log('Available roles:', availableRoles);
-        console.log('Page path:', location.pathname);
-        
-        // Access denied, redirecting to dashboard
-        // Only redirect if it's not a loading state and we're sure they don't have access
-        if (!loading) {
-          // Add a small delay to prevent immediate redirect
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 100);
-        }
+      const hasAccess = canAccessPage(currentRole, location.pathname);
+      
+      if (!hasAccess) {
+        console.warn(`❌ Access denied for ${currentRole} to ${location.pathname}`);
+        // Only redirect if we haven't already checked to prevent loops
+        navigate('/dashboard', { replace: true });
       }
+      
+      setHasCheckedAccess(true);
     }
-  }, [currentRole, loading, location.pathname, navigate, availableRoles]);
+  }, [currentRole, loading, location.pathname, navigate, availableRoles, hasCheckedAccess]);
+
+  // Reset access check when location changes
+  useEffect(() => {
+    setHasCheckedAccess(false);
+  }, [location.pathname]);
 
   if (loading) {
     return (
@@ -49,8 +54,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   }
 
   if (!currentRole) {
-    // No current role found
-    console.error('No current role found for user');
+    console.error('❌ No current role found for user');
     return (
       <AccessDenied 
         pageName={location.pathname}
@@ -62,8 +66,8 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   // Check if user can access the current page
   const hasAccess = canAccessPage(currentRole, location.pathname);
   
-  if (!hasAccess) {
-    console.error(`Access denied for role ${currentRole} to page ${location.pathname}`);
+  if (!hasAccess && hasCheckedAccess) {
+    console.error(`❌ Access denied for role ${currentRole} to page ${location.pathname}`);
     return (
       <AccessDenied 
         pageName={location.pathname}
@@ -72,6 +76,6 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
-  // Access granted
+  // Access granted or still checking
   return <>{children}</>;
-}; 
+};
