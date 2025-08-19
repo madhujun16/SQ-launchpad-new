@@ -296,6 +296,7 @@ const SiteDetail = () => {
                 goLiveDate: dbSite.target_live_date || '2024-12-31',
                 priority: 'medium',
                 riskLevel: 'medium',
+                criticality: 'medium',
                 status: dbSite.status as UnifiedSiteStatus,
                 assignedOpsManager: dbSite.assigned_ops_manager || 'Unassigned',
                 assignedDeploymentEngineer: dbSite.assigned_deployment_engineer || 'Unassigned',
@@ -323,8 +324,9 @@ const SiteDetail = () => {
           unitCode: 'AR004',
           sector: 'Eurest',
           goLiveDate: '2024-11-15',
-          priority: 'high',
-          riskLevel: 'medium',
+                     priority: 'high',
+           riskLevel: 'medium',
+           criticality: 'high',
           status: 'scoping_done',
           assignedOpsManager: 'Jessica Cleaver',
           assignedDeploymentEngineer: 'John Smith',
@@ -380,6 +382,7 @@ const SiteDetail = () => {
              goLiveDate: '2024-01-15',
              priority: 'high' as const,
              riskLevel: 'medium' as const,
+             criticality: 'high' as const,
              status: 'live' as UnifiedSiteStatus,
              assignedOpsManager: 'John Smith',
              assignedDeploymentEngineer: 'Mike Johnson',
@@ -401,6 +404,7 @@ const SiteDetail = () => {
              goLiveDate: '2024-01-20',
              priority: 'medium' as const,
              riskLevel: 'low' as const,
+             criticality: 'medium' as const,
              status: 'live' as UnifiedSiteStatus,
              assignedOpsManager: 'Sarah Wilson',
              assignedDeploymentEngineer: 'David Brown',
@@ -925,39 +929,25 @@ const SiteDetail = () => {
                      </div>
                   </div>
 
-                  {/* Priority & Risk Assessment */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Priority & Risk Assessment</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Priority Level</label>
-                        <Select defaultValue={site.priority} disabled={!canEditSiteCreation()}>
-                          <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="low">Low Priority</SelectItem>
-                            <SelectItem value="medium">Medium Priority</SelectItem>
-                            <SelectItem value="high">High Priority</SelectItem>
-                            <SelectItem value="urgent">Urgent</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Risk Level</label>
-                        <Select defaultValue={site.riskLevel} disabled={!canEditSiteCreation()}>
-                          <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
-                            <SelectValue placeholder="Select risk level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="low">Low Risk</SelectItem>
-                            <SelectItem value="medium">Medium Risk</SelectItem>
-                            <SelectItem value="high">High Risk</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
+                                     {/* Criticality Assessment */}
+                   <div className="space-y-4">
+                     <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Criticality Assessment</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium text-gray-700">Criticality Level</label>
+                         <Select defaultValue={site.criticality || 'medium'} disabled={!canEditSiteCreation()}>
+                           <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
+                             <SelectValue placeholder="Select criticality level" />
+                           </SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="low">Low</SelectItem>
+                             <SelectItem value="medium">Medium</SelectItem>
+                             <SelectItem value="high">High</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </div>
+                     </div>
+                   </div>
 
                   {/* Team Assignment */}
                   <div className="space-y-4">

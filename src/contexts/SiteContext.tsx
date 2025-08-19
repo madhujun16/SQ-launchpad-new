@@ -20,6 +20,7 @@ export interface Site {
   goLiveDate: string;
   priority: 'low' | 'medium' | 'high';
   riskLevel: 'low' | 'medium' | 'high';
+  criticality: 'low' | 'medium' | 'high';
   status: UnifiedSiteStatus;
   assignedOpsManager: string;
   assignedDeploymentEngineer: string;
