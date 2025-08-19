@@ -5,55 +5,132 @@ export interface Organisation {
   unitCodePrefix: string;
 }
 
-// Mock organisations data
+// Actual organizations with correct sector mappings from Platform Configuration
 export const organisations: Organisation[] = [
+  // Sector: Chartwells
   {
     id: '1',
-    name: 'Compass Group UK',
-    sector: 'Eurest',
-    unitCodePrefix: 'LC'
+    name: 'University of Cumbria',
+    sector: 'Chartwells',
+    unitCodePrefix: 'UC'
   },
   {
     id: '2',
-    name: 'Sodexo',
-    sector: 'Healthcare',
-    unitCodePrefix: 'SH'
+    name: 'University of Kent',
+    sector: 'Chartwells',
+    unitCodePrefix: 'UK'
   },
   {
     id: '3',
-    name: 'Aramark',
-    sector: 'Education',
-    unitCodePrefix: 'ED'
+    name: 'Swansea University',
+    sector: 'Chartwells',
+    unitCodePrefix: 'SU'
   },
   {
     id: '4',
-    name: 'Elior',
-    sector: 'Business & Industry',
-    unitCodePrefix: 'BI'
+    name: 'Marjon',
+    sector: 'Chartwells',
+    unitCodePrefix: 'MJ'
   },
+  
+  // Sector: RA
   {
     id: '5',
-    name: 'BaxterStorey',
-    sector: 'Corporate',
-    unitCodePrefix: 'CP'
+    name: 'HSBC',
+    sector: 'RA',
+    unitCodePrefix: 'HS'
   },
   {
     id: '6',
-    name: 'Mitie',
-    sector: 'Facilities Management',
-    unitCodePrefix: 'FM'
+    name: 'Minley Station',
+    sector: 'RA',
+    unitCodePrefix: 'MS'
   },
   {
     id: '7',
-    name: 'ISS',
-    sector: 'Support Services',
-    unitCodePrefix: 'SS'
+    name: 'Peabody',
+    sector: 'RA',
+    unitCodePrefix: 'PB'
   },
   {
     id: '8',
-    name: 'Bidvest Noonan',
-    sector: 'Security & Cleaning',
-    unitCodePrefix: 'SC'
+    name: 'Morgan Stanley',
+    sector: 'RA',
+    unitCodePrefix: 'MS'
+  },
+  
+  // Sector: Levy
+  {
+    id: '9',
+    name: 'The NEC',
+    sector: 'Levy',
+    unitCodePrefix: 'NE'
+  },
+  
+  // Sector: B&I
+  {
+    id: '10',
+    name: 'SSE',
+    sector: 'B&I',
+    unitCodePrefix: 'SS'
+  },
+  {
+    id: '11',
+    name: 'Ford Dunton',
+    sector: 'B&I',
+    unitCodePrefix: 'FD'
+  },
+  {
+    id: '12',
+    name: 'Penner Road',
+    sector: 'B&I',
+    unitCodePrefix: 'PR'
+  },
+  {
+    id: '13',
+    name: 'Thatcham',
+    sector: 'B&I',
+    unitCodePrefix: 'TH'
+  },
+  {
+    id: '14',
+    name: 'Ty Calon',
+    sector: 'B&I',
+    unitCodePrefix: 'TC'
+  },
+  {
+    id: '15',
+    name: 'NEXT',
+    sector: 'B&I',
+    unitCodePrefix: 'NX'
+  },
+  {
+    id: '16',
+    name: 'Porsche',
+    sector: 'B&I',
+    unitCodePrefix: 'PC'
+  },
+  
+  // Sector: Compass One
+  {
+    id: '17',
+    name: 'Rolls Royce',
+    sector: 'Compass One',
+    unitCodePrefix: 'RR'
+  },
+  {
+    id: '18',
+    name: 'Baxter Health',
+    sector: 'Compass One',
+    unitCodePrefix: 'BH'
+  },
+  
+  // Sector: JLR - Whitley
+  {
+    id: '19',
+    name: 'JLR - Whitley',
+    sector: 'JLR - Whitley',
+    unitCodePrefix: 'JW'
   }
 ];
 
