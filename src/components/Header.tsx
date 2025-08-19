@@ -48,8 +48,8 @@ const NAVIGATION_ITEMS = [
 // Logo Component
 const Logo = React.memo(() => (
   <Link to="/" className="flex items-center space-x-2">
-    <RocketIcon className="h-8 w-8 text-green-600" />
-    <span className="text-xl font-bold text-gray-900">SmartQ Launchpad</span>
+    <RocketIcon className="h-8 w-8 text-green-400" />
+    <span className="text-xl font-bold text-white">SmartQ Launchpad</span>
   </Link>
 ));
 
@@ -68,8 +68,8 @@ const DesktopNavigation = React.memo(({
         to={item.path}
         className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
           currentPath === item.path
-            ? 'bg-green-100 text-green-700'
-            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+            ? 'bg-green-600 text-white'
+            : 'text-white/85 hover:bg-white/10 hover:text-white'
         }`}
       >
         <item.icon className="h-4 w-4 inline mr-2" />
@@ -111,13 +111,13 @@ const UserInfo = React.memo(({
   <div className="flex items-center space-x-3">
     <div className="hidden md:flex items-center space-x-2">
       <div className="text-right">
-        <p className="text-sm font-medium text-gray-900">
+        <p className="text-sm font-medium text-white">
           {profile?.full_name || profile?.email || 'User'}
         </p>
-        <p className="text-xs text-gray-500">{profile?.email}</p>
+        <p className="text-xs text-white/80">{profile?.email}</p>
       </div>
     </div>
-    <Badge variant="outline" className="flex items-center space-x-1">
+    <Badge variant="outline" className="flex items-center space-x-1 bg-white/10 text-white border-white/20">
       <RoleIcon className="h-3 w-3" />
       <span>{roleConfig?.displayName || 'User'}</span>
     </Badge>
@@ -294,12 +294,12 @@ const Header = () => {
   // Early return if no role config
   if (!roleConfig) {
     return (
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Logo />
             <div className="flex items-center space-x-4">
-              <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+              <div className="animate-pulse bg-green-200 h-8 w-32 rounded"></div>
             </div>
           </div>
         </div>
@@ -308,7 +308,7 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b" data-mobile-menu>
+    <header className="bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600" data-mobile-menu>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Logo />
@@ -336,7 +336,7 @@ const Header = () => {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
                     <User className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

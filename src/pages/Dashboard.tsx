@@ -405,23 +405,7 @@ const Dashboard = () => {
     return roleWidgets;
   }, []);
 
-  // Loading states
-  if (loading && !loadingTimeout) {
-    return <DashboardLoading />;
-  }
-
-  if (loading && loadingTimeout) {
-    return <DashboardTimeoutWarning />;
-  }
-
-  if (!currentRole) {
-    return <DashboardAccessDenied profile={profile} currentRole={currentRole} loading={loading} />;
-  }
-
-  // Debug logging
-  console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
-
-  // Role-specific section renderers
+  // Role-specific section renderers - MUST be defined before any early returns
   const renderDeploymentEngineerSection = useCallback(() => {
     const mine = allRequests.filter(r => r.assignedEngineer === (profile?.full_name || profile?.email));
     const pendingOrRejected = mine.filter(r => r.status === 'pending' || r.status === 'rejected');
@@ -594,6 +578,22 @@ const Dashboard = () => {
       </>
     );
   }, []);
+
+  // Loading states - AFTER all hooks are defined
+  if (loading && !loadingTimeout) {
+    return <DashboardLoading />;
+  }
+
+  if (loading && loadingTimeout) {
+    return <DashboardTimeoutWarning />;
+  }
+
+  if (!currentRole) {
+    return <DashboardAccessDenied profile={profile} currentRole={currentRole} loading={loading} />;
+  }
+
+  // Debug logging
+  console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
