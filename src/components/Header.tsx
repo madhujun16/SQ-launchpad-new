@@ -5,21 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
-  User, 
+  Home, 
+  Building, 
   FileText, 
-  Plus, 
-  LogOut,
+  Package, 
+  Truck, 
+  BarChart3, 
+  Settings, 
+  User, 
+  LogOut, 
   Menu,
-  X,
-  Home,
-  Building,
-  Package,
-  Settings,
-  BarChart3,
-  Users,
   RefreshCw,
-  Trash2,
-  Truck
+  X
 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
@@ -91,7 +88,7 @@ const MobileMenuButton = React.memo(({
   <Button
     variant="ghost"
     size="sm"
-    className="lg:hidden"
+    className="lg:hidden text-white hover:bg-white/10"
     onClick={onClick}
     aria-label="Toggle mobile menu"
   >
@@ -168,7 +165,7 @@ const MobileNavigation = React.memo(({
   navigationItems, 
   currentPath, 
   currentRole,
-  onClose,
+  onClose, 
   onRoleSwitch
 }: { 
   isOpen: boolean; 
@@ -176,83 +173,87 @@ const MobileNavigation = React.memo(({
   currentPath: string; 
   currentRole: UserRole | null;
   onClose: () => void; 
-  onRoleSwitch: (role: UserRole) => void;
-}) => (
-  <Sheet open={isOpen} onOpenChange={onClose}>
-    <SheetContent side="left" className="w-80">
-      <SheetHeader>
-        <SheetTitle>Navigation</SheetTitle>
-        <SheetDescription>Access your SmartQ Launchpad features</SheetDescription>
-      </SheetHeader>
-      
-      <div className="mt-6 space-y-2">
-        {navigationItems.map((item) => (
+  onRoleSwitch: (role: UserRole) => void; 
+}) => {
+  console.log('🔍 MobileNavigation render:', { isOpen, currentPath, currentRole, navigationItemsCount: navigationItems.length });
+  
+  return (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="left" className="w-80">
+        <SheetHeader>
+          <SheetTitle>Navigation</SheetTitle>
+          <SheetDescription>Access your SmartQ Launchpad features</SheetDescription>
+        </SheetHeader>
+        
+        <div className="mt-6 space-y-2">
+          {navigationItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPath === item.path
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+          
+          {/* Platform Configuration Link */}
           <Link
-            key={item.path}
-            to={item.path}
+            to="/platform-configuration"
             onClick={onClose}
             className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              currentPath === item.path
+              currentPath === '/platform-configuration'
                 ? 'bg-green-100 text-green-700'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <item.icon className="h-4 w-4" />
-            <span>{item.label}</span>
+            <Settings className="h-4 w-4" />
+            <span>Platform Configuration</span>
           </Link>
-        ))}
-        
-        {/* Platform Configuration Link */}
-        <Link
-          to="/platform-configuration"
-          onClick={onClose}
-          className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-            currentPath === '/platform-configuration'
-              ? 'bg-green-100 text-green-700'
-              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Settings className="h-4 w-4" />
-          <span>Platform Configuration</span>
-        </Link>
-      </div>
-      
-      <div className="mt-8 pt-6 border-t">
-        <div className="px-3 py-2">
-          <p className="text-sm font-medium text-gray-900">
-            {getRoleConfig(currentRole || 'admin').displayName}
-          </p>
-          <p className="text-xs text-gray-500">Current Role</p>
         </div>
         
-        {/* Role Switcher in Mobile Menu */}
-        {currentRole && (
-          <div className="mt-4 px-3">
-            <p className="text-xs text-gray-500 mb-2">Switch Role</p>
-            <div className="space-y-1">
-              {['admin', 'ops_manager', 'deployment_engineer'].map((role) => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    onRoleSwitch(role as UserRole);
-                    onClose();
-                  }}
-                  className={`w-full text-left px-2 py-1 rounded text-sm ${
-                    role === currentRole
-                      ? 'bg-green-100 text-green-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {getRoleConfig(role as UserRole).displayName}
-                </button>
-              ))}
-            </div>
+        <div className="mt-8 pt-6 border-t">
+          <div className="px-3 py-2">
+            <p className="text-sm font-medium text-gray-900">
+              {getRoleConfig(currentRole || 'admin').displayName}
+            </p>
+            <p className="text-xs text-gray-500">Current Role</p>
           </div>
-        )}
-      </div>
-    </SheetContent>
-  </Sheet>
-));
+          
+          {/* Role Switcher in Mobile Menu */}
+          {currentRole && (
+            <div className="mt-4 px-3">
+              <p className="text-xs text-gray-500 mb-2">Switch Role</p>
+              <div className="space-y-1">
+                {['admin', 'ops_manager', 'deployment_engineer'].map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => {
+                      onRoleSwitch(role as UserRole);
+                      onClose();
+                    }}
+                    className={`w-full text-left px-2 py-1 rounded text-sm ${
+                      role === currentRole
+                        ? 'bg-green-100 text-green-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {getRoleConfig(role as UserRole).displayName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+});
 
 // Main Header Component
 const Header = () => {
@@ -293,10 +294,12 @@ const Header = () => {
 
   // Memoized handlers
   const handleMobileMenuToggle = useCallback(() => {
+    console.log('🔍 Mobile menu toggle clicked, current state:', isMobileMenuOpen);
     setIsMobileMenuOpen(prev => !prev);
-  }, []);
+  }, [isMobileMenuOpen]);
 
   const handleMobileMenuClose = useCallback(() => {
+    console.log('🔍 Mobile menu close called');
     setIsMobileMenuOpen(false);
   }, []);
 
@@ -366,6 +369,17 @@ const Header = () => {
                 RoleIcon={RoleIcon} 
               />
               
+              {/* Force Refresh Button for debugging */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+                className="text-white hover:bg-white/10"
+                title="Force Refresh"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
@@ -397,9 +411,9 @@ const Header = () => {
         currentPath={currentPath}
         currentRole={currentRole}
         onClose={handleMobileMenuClose}
-        onRoleSwitch={handleRoleSwitch}
-      />
-    </header>
+                    onRoleSwitch={handleRoleSwitch}
+          />
+        </header>
   );
 };
 

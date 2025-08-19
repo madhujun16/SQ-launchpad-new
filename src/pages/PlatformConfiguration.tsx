@@ -59,7 +59,6 @@ interface Organization {
   name: string;
   description: string;
   sector: string;
-  logo_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -250,34 +249,146 @@ export default function PlatformConfiguration() {
         license_fee: 30,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'sw-kitchen-display',
-        name: 'Kitchen Display System',
-        description: 'Real-time order management for kitchen staff',
-        category: 'Kitchen',
-        is_active: true,
-        monthly_fee: 20,
-        setup_fee: 100,
-        license_fee: 25,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'sw-inventory-mgmt',
-        name: 'Inventory Management Pro',
-        description: 'Comprehensive inventory tracking and forecasting',
-        category: 'Inventory',
-        is_active: true,
-        monthly_fee: 15,
-        setup_fee: 75,
-        license_fee: 20,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
+      }
     ];
+
     setSoftwareModules(defaults);
     logAudit({ type: 'info', message: 'Default software catalog seeded', actor: currentRole });
+  };
+
+  // Helper to seed default organizations from Excel data
+  const seedDefaultOrganizations = async () => {
+    const defaults: Organization[] = [
+      {
+        id: 'org-chartwells',
+        name: 'Chartwells',
+        description: 'Leading food service provider for education sector',
+        sector: 'Education',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-hsbc',
+        name: 'HSBC',
+        description: 'Global banking and financial services',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-levy',
+        name: 'Levy',
+        description: 'Premium sports and entertainment hospitality',
+        sector: 'Sports & Leisure',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-bi',
+        name: 'B&I',
+        description: 'Business and Industry food services',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-compass-one',
+        name: 'Compass One',
+        description: 'Specialized food service solutions',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-minley-station',
+        name: 'Minley Station',
+        description: 'Defence sector food services',
+        sector: 'Defence',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-peabody',
+        name: 'Peabody',
+        description: 'Housing and community services',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-ra',
+        name: 'RA',
+        description: 'Restaurant Associates - premium dining',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-sse',
+        name: 'SSE',
+        description: 'Energy and utilities sector',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-jlr-whitley',
+        name: 'JLR - Whitley',
+        description: 'Jaguar Land Rover manufacturing',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-baxter-health',
+        name: 'Baxter Health',
+        description: 'Healthcare and medical services',
+        sector: 'Healthcare & Senior Living',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-next',
+        name: 'NEXT',
+        description: 'Retail and fashion sector',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        id: 'org-porsche',
+        name: 'Porsche',
+        description: 'Automotive luxury brand',
+        sector: 'Business & Industry',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    ];
+
+    // Try to insert into database first
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .insert(defaults);
+      
+      if (error) {
+        console.error('Error seeding organizations to database:', error);
+        // Fallback to local state
+        setOrganizations(defaults);
+      } else {
+        // Reload from database to get the actual IDs
+        const { data: orgsData } = await supabase
+          .from('organizations')
+          .select('*');
+        setOrganizations(orgsData || defaults);
+      }
+    } catch (error) {
+      console.error('Error seeding organizations:', error);
+      // Fallback to local state
+      setOrganizations(defaults);
+    }
+
+    logAudit({ type: 'info', message: 'Default organizations seeded from Excel data', actor: currentRole });
   };
 
   const loadConfigurationData = async () => {
@@ -329,7 +440,12 @@ export default function PlatformConfiguration() {
         console.error('Error loading organizations:', orgsError);
         toast.error('Failed to load organizations');
       } else {
-        setOrganizations(orgsData || []);
+        if (orgsData && orgsData.length > 0) {
+          setOrganizations(orgsData);
+        } else {
+          // No organizations found, seed defaults from Excel data
+          await seedDefaultOrganizations();
+        }
       }
 
       // Load software modules
@@ -800,7 +916,6 @@ export default function PlatformConfiguration() {
       name: '',
       description: '',
       sector: '',
-      logo_url: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -841,7 +956,6 @@ export default function PlatformConfiguration() {
               name: editingOrganization.name,
               description: editingOrganization.description,
               sector: editingOrganization.sector,
-              logo_url: editingOrganization.logo_url,
               updated_at: new Date().toISOString()
             })
             .eq('id', editingOrganization.id);
@@ -861,8 +975,7 @@ export default function PlatformConfiguration() {
             .insert([{
               name: editingOrganization.name,
               description: editingOrganization.description,
-              sector: editingOrganization.sector,
-              logo_url: editingOrganization.logo_url
+              sector: editingOrganization.sector
             }])
             .select()
             .single();
@@ -878,7 +991,6 @@ export default function PlatformConfiguration() {
             name: data.name,
             description: data.description,
             sector: data.sector || '',
-            logo_url: data.logo_url || '',
             created_at: data.created_at,
             updated_at: data.updated_at
           };
@@ -1004,10 +1116,16 @@ export default function PlatformConfiguration() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">Organizations ({organizations.length})</h3>
-                    <Button onClick={addOrganization}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Organization
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="outline" onClick={seedDefaultOrganizations}>
+                        <Database className="h-4 w-4 mr-2" />
+                        Seed from Excel Data
+                      </Button>
+                      <Button onClick={addOrganization}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Organization
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {organizations.length === 0 ? (
@@ -1021,11 +1139,7 @@ export default function PlatformConfiguration() {
                         <Card key={org.id} className="cursor-pointer hover:shadow-md transition-shadow">
                           <CardContent className="p-4">
                             <div className="flex items-center space-x-2 mb-2">
-                              {org.logo_url ? (
-                                <img src={org.logo_url} alt={`${org.name} logo`} className="h-8 w-8 rounded object-cover" />
-                              ) : (
-                                <Building className="h-5 w-5 text-blue-600" />
-                              )}
+                              <Building className="h-5 w-5 text-blue-600" />
                               <h4 className="font-medium">{org.name}</h4>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">{org.description}</p>
@@ -1786,15 +1900,6 @@ export default function PlatformConfiguration() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="orgLogo">Logo URL</Label>
-                <Input
-                  value={editingOrganization.logo_url}
-                  onChange={(e) => setEditingOrganization({...editingOrganization, logo_url: e.target.value})}
-                  placeholder="Enter logo URL"
-                />
               </div>
               
               <div className="flex space-x-2">
