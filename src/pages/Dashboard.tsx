@@ -65,7 +65,7 @@ interface RequestRow {
 }
 
 const Dashboard = () => {
-  const { currentRole, profile } = useAuth();
+  const { currentRole, profile, loading } = useAuth();
   const roleConfig = getRoleConfig(currentRole || 'admin');
   const navigate = useNavigate();
 
@@ -75,6 +75,36 @@ const Dashboard = () => {
 
   // Requests scoped for the dashboard role views
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
+
+  // Show loading state while authentication is being determined
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no role is available
+  if (!currentRole) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have the required permissions to access this dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Debug logging
+  console.log('Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
 
   useEffect(() => {
     // Seed requests
