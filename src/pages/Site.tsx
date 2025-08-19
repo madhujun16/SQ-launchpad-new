@@ -1952,7 +1952,195 @@ const SiteDetail = () => {
           </div>
         );
 
-      case 4: // Deployment
+      case 4: // Procurement
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Procurement</h2>
+                <p className="text-gray-600 mt-1">Track procurement status of approved software and hardware</p>
+              </div>
+              <div className="flex space-x-3">
+                {canEditStep(4) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Update Procurement Status</span>
+                  </Button>
+                )}
+                <Button className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Mark Procurement Complete</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Procurement Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Software Procurement Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Monitor className="mr-2 h-5 w-5" />
+                    Software Procurement Status
+                  </CardTitle>
+                  <CardDescription>
+                    Track procurement of approved software modules
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {site?.scoping?.selectedSoftware?.length > 0 ? (
+                    <div className="space-y-3">
+                      {site.scoping.selectedSoftware.map((softwareId) => {
+                        const software = softwareModules.find(s => s.id === softwareId);
+                        if (!software) return null;
+                        
+                        return (
+                          <div key={softwareId} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{software.name}</h4>
+                              <p className="text-sm text-gray-600">Software module for {software.name.toLowerCase()}</p>
+                              <div className="flex items-center space-x-4 mt-2 text-sm">
+                                <span className="text-green-600">£{software.monthlyFee}/month</span>
+                                <span className="text-blue-600">£{software.setupFee} setup</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Select defaultValue="pending" disabled={!canEditStep(4)}>
+                                <SelectTrigger className="w-32">
+                                  <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="ordered">Ordered</SelectItem>
+                                  <SelectItem value="received">Received</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No software modules selected for this site
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Hardware Procurement Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Hardware Procurement Status
+                  </CardTitle>
+                  <CardDescription>
+                    Track procurement of approved hardware items
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {site?.scoping?.selectedHardware?.length > 0 ? (
+                    <div className="space-y-3">
+                      {site.scoping.selectedHardware.map((hardware) => {
+                        const hardwareItem = hardwareItems.find(h => h.id === hardware.id);
+                        if (!hardwareItem) return null;
+                        
+                        return (
+                          <div key={hardware.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{hardwareItem.name}</h4>
+                              <p className="text-sm text-gray-600">{hardwareItem.description}</p>
+                              <div className="flex items-center space-x-4 mt-2 text-sm">
+                                <span className="text-gray-600">Qty: {hardware.quantity}</span>
+                                <span className="text-green-600">£{hardwareItem.unitCost} each</span>
+                                <span className="text-blue-600">Total: £{(hardwareItem.unitCost * hardware.quantity).toLocaleString()}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Select defaultValue="pending" disabled={!canEditStep(4)}>
+                                <SelectTrigger className="w-32">
+                                  <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="ordered">Ordered</SelectItem>
+                                  <SelectItem value="received">Received</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No hardware items selected for this site
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Procurement Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Procurement Summary
+                </CardTitle>
+                <CardDescription>
+                  Overall procurement progress and status
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {site?.scoping?.selectedSoftware?.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Software Modules</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">
+                      {site?.scoping?.selectedHardware?.length || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Hardware Items</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">0</div>
+                    <div className="text-sm text-gray-600">In Progress</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">0</div>
+                    <div className="text-sm text-gray-600">Completed</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons at Bottom */}
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <FileText className="h-4 w-4" />
+                <span>Save Progress</span>
+              </Button>
+              <Button className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4" />
+                <span>Mark Procurement Complete</span>
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 5: // Deployment
         return (
           <div className="space-y-6">
             {/* Action Buttons at Top */}
@@ -1962,7 +2150,7 @@ const SiteDetail = () => {
                 <p className="text-gray-600 mt-1">Hardware installation and system deployment</p>
               </div>
               <div className="flex space-x-3">
-                {canEditStep(4) && (
+                {canEditStep(5) && (
                   <Button 
                     variant="outline" 
                     className="flex items-center space-x-2"
