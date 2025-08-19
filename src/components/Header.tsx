@@ -202,19 +202,21 @@ const MobileNavigation = React.memo(({
             </Link>
           ))}
           
-          {/* Platform Configuration Link */}
-          <Link
-            to="/platform-configuration"
-            onClick={onClose}
-            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              currentPath === '/platform-configuration'
-                ? 'bg-green-100 text-green-700'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <Settings className="h-4 w-4" />
-            <span>Platform Configuration</span>
-          </Link>
+          {/* Platform Configuration Link - Admin Only */}
+          {currentRole === 'admin' && (
+            <Link
+              to="/platform-configuration"
+              onClick={onClose}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentPath === '/platform-configuration'
+                  ? 'bg-green-100 text-green-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Platform Configuration</span>
+            </Link>
+          )}
         </div>
         
         <div className="mt-8 pt-6 border-t">
@@ -389,6 +391,17 @@ const Header = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {currentRole === 'admin' && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/platform-configuration" className="flex items-center">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Platform Configuration
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
