@@ -130,53 +130,91 @@ const Sites = () => {
   // Map database statuses to display names and colors
   const getStatusDisplayNameFromDB = (status: string) => {
     const statusMap: Record<string, { name: string; color: string }> = {
-      'site_creation': { 
-        name: 'Site Creation', 
-        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+      // New finalized statuses
+      'site_created': { 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
       },
-      'site_study': { 
-        name: 'Site Study', 
-        color: 'bg-purple-100 text-purple-800 border-purple-200' 
-      },
-      'software_scoping': { 
-        name: 'Software Scoping', 
-        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-      },
-      'hardware_scoping': { 
-        name: 'Hardware Scoping', 
-        color: 'bg-orange-100 text-orange-800 border-orange-200' 
-      },
-      'approval': { 
-        name: 'Approval', 
+      'site_study_done': { 
+        name: 'Site Study Done', 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
       },
-      'procurement': { 
-        name: 'Procurement', 
-        color: 'bg-pink-100 text-pink-800 border-pink-200' 
+      'scoping_done': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
       },
-      'deployment': { 
-        name: 'Deployment', 
-        color: 'bg-cyan-100 text-cyan-800 border-cyan-200' 
+      'approved': { 
+        name: 'Approved', 
+        color: 'bg-purple-100 text-purple-800 border-purple-200' 
       },
-      'go_live': { 
-        name: 'Go-Live', 
+      'procurement_done': { 
+        name: 'Procurement Done', 
+        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+      },
+      'deployed': { 
+        name: 'Deployed', 
         color: 'bg-green-100 text-green-800 border-green-200' 
       },
       'live': { 
         name: 'Live', 
         color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
       },
+      // Legacy status mappings for backward compatibility
       'created': { 
-        name: 'Site Creation', 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      },
+      'site_creation': { 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      },
+      'site_study': { 
+        name: 'Site Study Done', 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+      },
+      'study_completed': { 
+        name: 'Site Study Done', 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+      },
+      'software_scoping': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'hardware_scoping': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'hardware_scoped': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'approval': { 
+        name: 'Approved', 
+        color: 'bg-purple-100 text-purple-800 border-purple-200' 
+      },
+      'procurement': { 
+        name: 'Procurement Done', 
         color: 'bg-blue-100 text-blue-800 border-blue-200' 
       },
+      'deployment': { 
+        name: 'Deployed', 
+        color: 'bg-green-100 text-green-800 border-green-200' 
+      },
+      'go_live': { 
+        name: 'Live', 
+        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+      },
+      'activated': { 
+        name: 'Live', 
+        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+      },
       'configuration_in_progress': { 
-        name: 'Software Scoping', 
+        name: 'Scoping Done', 
         color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
       },
       'on_hold': { 
-        name: 'Site Creation', 
-        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
       }
     };
     return statusMap[status] || { name: status, color: 'bg-gray-100 text-gray-800 border-gray-200' };
@@ -211,11 +249,13 @@ const Sites = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              {uniqueStatuses.map(status => (
-                <SelectItem key={status} value={status}>
-                  {getStatusDisplayNameFromDB(status).name}
-                </SelectItem>
-              ))}
+              <SelectItem value="site_created">Site Created</SelectItem>
+              <SelectItem value="site_study_done">Site Study Done</SelectItem>
+              <SelectItem value="scoping_done">Scoping Done</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="procurement_done">Procurement Done</SelectItem>
+              <SelectItem value="deployed">Deployed</SelectItem>
+              <SelectItem value="live">Live</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={clearFilters}>

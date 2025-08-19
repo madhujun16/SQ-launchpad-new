@@ -1,42 +1,67 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Building2, Clock, CheckCircle, AlertTriangle, Package, Truck, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useEffect } from "react";
+import { WorkflowService } from "@/services/workflowService";
+import { UnifiedSiteStatus } from "@/lib/siteTypes";
 
 const DashboardStats = () => {
   const { isMobile, isTablet } = useIsMobile();
+  const [workflowStats, setWorkflowStats] = useState<Record<UnifiedSiteStatus, number>>({} as Record<UnifiedSiteStatus, number>);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const stats = await WorkflowService.getWorkflowStats();
+        setWorkflowStats(stats);
+      } catch (error) {
+        console.error('Error fetching workflow stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const totalSites = Object.values(workflowStats).reduce((sum, count) => sum + count, 0);
+  const inProgressSites = (workflowStats.site_study_done || 0) + (workflowStats.scoping_done || 0) + (workflowStats.procurement_done || 0);
+  const liveSites = workflowStats.live || 0;
+  const pendingApprovals = workflowStats.approved || 0;
   
   const stats = [
     {
-      title: "Active Sites",
-      value: "127",
-      change: "+12 this month",
+      title: "Total Sites",
+      value: loading ? "..." : totalSites.toString(),
+      change: `${liveSites} live sites`,
       icon: Building2,
       color: "text-primary-dark",
       bgColor: "bg-primary/5"
     },
     {
       title: "Pending Approvals",
-      value: "8",
-      change: "3 urgent",
+      value: loading ? "..." : pendingApprovals.toString(),
+      change: "Awaiting approval",
       icon: Clock,
       color: "text-warning",
       bgColor: "bg-warning/5"
     },
     {
-      title: "Completed This Week",
-      value: "24",
-      change: "+18% vs last week",
+      title: "In Progress",
+      value: loading ? "..." : inProgressSites.toString(),
+      change: "Active deployments",
+      icon: Package,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50"
+    },
+    {
+      title: "Live Sites",
+      value: loading ? "..." : liveSites.toString(),
+      change: "Operational",
       icon: CheckCircle,
       color: "text-success",
       bgColor: "bg-success/5"
-    },
-    {
-      title: "Issues Requiring Attention",
-      value: "3",
-      change: "2 critical",
-      icon: AlertTriangle,
-      color: "text-destructive",
-      bgColor: "bg-destructive/5"
     }
   ];
 

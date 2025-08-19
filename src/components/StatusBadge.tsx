@@ -31,36 +31,57 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
       label: "Rejected",
       className: "bg-destructive/10 text-destructive border-destructive/20 shadow-soft"
     },
-    // UnifiedSiteStatus values
-    created: {
-      label: "Created",
+    // New finalized UnifiedSiteStatus values
+    site_created: {
+      label: "Site Created",
+      className: "bg-gray-100 text-gray-800 border-gray-200"
+    },
+    site_study_done: {
+      label: "Site Study Done",
+      className: "bg-yellow-100 text-yellow-800 border-yellow-200"
+    },
+    scoping_done: {
+      label: "Scoping Done",
+      className: "bg-indigo-100 text-indigo-800 border-indigo-200"
+    },
+    procurement_done: {
+      label: "Procurement Done",
       className: "bg-blue-100 text-blue-800 border-blue-200"
     },
-    study_in_progress: {
-      label: "Study In Progress",
-      className: "bg-purple-100 text-purple-800 border-purple-200"
-    },
-    study_completed: {
-      label: "Study Completed",
-      className: "bg-purple-100 text-purple-800 border-purple-200"
-    },
-    hardware_scoped: {
-      label: "Hardware Scoped",
-      className: "bg-orange-100 text-orange-800 border-orange-200"
-    },
-    procurement: {
-      label: "Procurement",
-      className: "bg-pink-100 text-pink-800 border-pink-200"
-    },
-    deployment: {
-      label: "Deployment",
-      className: "bg-cyan-100 text-cyan-800 border-cyan-200"
-    },
-    activated: {
-      label: "Activated",
+    deployed: {
+      label: "Deployed",
       className: "bg-green-100 text-green-800 border-green-200"
     },
     live: {
+      label: "Live",
+      className: "bg-emerald-100 text-emerald-800 border-emerald-200"
+    },
+    // Legacy status mappings for backward compatibility
+    created: {
+      label: "Site Created",
+      className: "bg-gray-100 text-gray-800 border-gray-200"
+    },
+    study_in_progress: {
+      label: "Site Study Done",
+      className: "bg-yellow-100 text-yellow-800 border-yellow-200"
+    },
+    study_completed: {
+      label: "Site Study Done",
+      className: "bg-yellow-100 text-yellow-800 border-yellow-200"
+    },
+    hardware_scoped: {
+      label: "Scoping Done",
+      className: "bg-indigo-100 text-indigo-800 border-indigo-200"
+    },
+    procurement: {
+      label: "Procurement Done",
+      className: "bg-blue-100 text-blue-800 border-blue-200"
+    },
+    deployment: {
+      label: "Deployed",
+      className: "bg-green-100 text-green-800 border-green-200"
+    },
+    activated: {
       label: "Live",
       className: "bg-emerald-100 text-emerald-800 border-emerald-200"
     }
