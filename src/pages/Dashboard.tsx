@@ -433,20 +433,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Links</CardTitle>
-              <CardDescription>Navigate to core workflows</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                <Button variant="outline" onClick={() => navigate('/sites')}>Sites</Button>
-                <Button variant="outline" onClick={() => navigate('/approvals-procurement')}>Approvals</Button>
-                <Button variant="outline" onClick={() => navigate('/assets/inventory')}>Inventory</Button>
-                <Button onClick={() => navigate('/platform-configuration')}>Platform Configuration</Button>
-              </div>
-            </CardContent>
-          </Card>
           
         </div>
       </>
