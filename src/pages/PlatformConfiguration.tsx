@@ -58,6 +58,8 @@ interface Organization {
   id: string;
   name: string;
   description: string;
+  sector: string;
+  logo_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -797,6 +799,8 @@ export default function PlatformConfiguration() {
       id: 'new',
       name: '',
       description: '',
+      sector: '',
+      logo_url: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -836,6 +840,8 @@ export default function PlatformConfiguration() {
             .update({
               name: editingOrganization.name,
               description: editingOrganization.description,
+              sector: editingOrganization.sector,
+              logo_url: editingOrganization.logo_url,
               updated_at: new Date().toISOString()
             })
             .eq('id', editingOrganization.id);
@@ -854,7 +860,9 @@ export default function PlatformConfiguration() {
             .from('organizations')
             .insert([{
               name: editingOrganization.name,
-              description: editingOrganization.description
+              description: editingOrganization.description,
+              sector: editingOrganization.sector,
+              logo_url: editingOrganization.logo_url
             }])
             .select()
             .single();
@@ -869,6 +877,8 @@ export default function PlatformConfiguration() {
             id: data.id,
             name: data.name,
             description: data.description,
+            sector: data.sector || '',
+            logo_url: data.logo_url || '',
             created_at: data.created_at,
             updated_at: data.updated_at
           };
@@ -1011,10 +1021,19 @@ export default function PlatformConfiguration() {
                         <Card key={org.id} className="cursor-pointer hover:shadow-md transition-shadow">
                           <CardContent className="p-4">
                             <div className="flex items-center space-x-2 mb-2">
-                              <Building className="h-5 w-5 text-blue-600" />
+                              {org.logo_url ? (
+                                <img src={org.logo_url} alt={`${org.name} logo`} className="h-8 w-8 rounded object-cover" />
+                              ) : (
+                                <Building className="h-5 w-5 text-blue-600" />
+                              )}
                               <h4 className="font-medium">{org.name}</h4>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">{org.description}</p>
+                            {org.sector && (
+                              <Badge variant="outline" className="mb-2">
+                                {org.sector}
+                              </Badge>
+                            )}
                             <div className="flex space-x-2">
                               <Button variant="outline" size="sm" onClick={() => editOrganization(org)}>
                                 <Edit className="h-3 w-3 mr-1" />
@@ -1750,6 +1769,31 @@ export default function PlatformConfiguration() {
                   value={editingOrganization.description}
                   onChange={(e) => setEditingOrganization({...editingOrganization, description: e.target.value})}
                   placeholder="Enter organization description"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="orgSector">Sector</Label>
+                <Select value={editingOrganization.sector} onValueChange={(value) => setEditingOrganization({...editingOrganization, sector: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectorOptions.map(sector => (
+                      <SelectItem key={sector} value={sector}>
+                        {sector}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="orgLogo">Logo URL</Label>
+                <Input
+                  value={editingOrganization.logo_url}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, logo_url: e.target.value})}
+                  placeholder="Enter logo URL"
                 />
               </div>
               

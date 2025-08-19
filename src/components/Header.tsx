@@ -18,7 +18,8 @@ import {
   BarChart3,
   Users,
   RefreshCw,
-  Trash2
+  Trash2,
+  Truck
 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,8 +42,9 @@ const NAVIGATION_ITEMS = [
   { path: '/sites', label: 'Sites', icon: Building },
   { path: '/approvals-procurement', label: 'Approvals', icon: FileText },
   { path: '/assets', label: 'Assets', icon: Package },
-  { path: '/deployment', label: 'Deployment', icon: RocketIcon },
-  { path: '/forecast', label: 'Forecast', icon: BarChart3 }
+  { path: '/deployment', label: 'Deployment', icon: Truck },
+  { path: '/forecast', label: 'Forecast', icon: BarChart3 },
+  { path: '/platform-configuration', label: 'Platform Config', icon: Settings }
 ] as const;
 
 // Logo Component
@@ -117,10 +119,6 @@ const UserInfo = React.memo(({
         <p className="text-xs text-white/80">{profile?.email}</p>
       </div>
     </div>
-    <Badge variant="outline" className="flex items-center space-x-1 bg-white/10 text-white border-white/20">
-      <RoleIcon className="h-3 w-3" />
-      <span>{roleConfig?.displayName || 'User'}</span>
-    </Badge>
   </div>
 ));
 

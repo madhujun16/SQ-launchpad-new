@@ -24,7 +24,8 @@ import {
   PlusCircle,
   FileText as FileTextIcon,
   StickyNote,
-  Edit
+  Edit,
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -38,7 +39,7 @@ import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 interface Site {
   id: string;
   name: string;
-  type: string;
+  organization: string;
   location: string;
   status: UnifiedSiteStatus;
   target_live_date: string;
@@ -80,7 +81,7 @@ const Sites = () => {
       {
         id: '1',
         name: 'London Central',
-        type: 'Cafeteria',
+        organization: 'Costa Coffee',
         location: 'London, UK',
         status: 'live',
         target_live_date: '2024-01-15',
@@ -92,172 +93,238 @@ const Sites = () => {
       {
         id: '2',
         name: 'Manchester North',
-        type: 'Cafeteria',
+        organization: 'Costa Coffee',
         location: 'Manchester, UK',
         status: 'live',
         target_live_date: '2024-01-20',
         assigned_ops_manager: 'Sarah Wilson',
         assigned_deployment_engineer: 'David Brown',
         created_at: '2024-01-05',
-        updated_at: '2024-01-18'
+        updated_at: '2024-01-20'
       },
       {
         id: '3',
-        name: 'Birmingham South',
-        type: 'Food Court',
+        name: 'Birmingham Central',
+        organization: 'Starbucks',
         location: 'Birmingham, UK',
         status: 'live',
         target_live_date: '2024-01-25',
         assigned_ops_manager: 'Emma Davis',
         assigned_deployment_engineer: 'Tom Wilson',
         created_at: '2024-01-10',
-        updated_at: '2024-01-19'
+        updated_at: '2024-01-25'
       },
       {
         id: '4',
-        name: 'Leeds Central',
-        type: 'Cafeteria',
+        name: 'Leeds West',
+        organization: 'Costa Coffee',
         location: 'Leeds, UK',
         status: 'live',
-        target_live_date: '2024-02-01',
-        assigned_ops_manager: 'Alex Johnson',
-        assigned_deployment_engineer: 'Lisa Brown',
+        target_live_date: '2024-01-30',
+        assigned_ops_manager: 'James Brown',
+        assigned_deployment_engineer: 'Lisa Anderson',
         created_at: '2024-01-15',
         updated_at: '2024-01-30'
       },
       {
         id: '5',
-        name: 'Liverpool Docklands',
-        type: 'Food Court',
+        name: 'Liverpool One',
+        organization: 'Starbucks',
         location: 'Liverpool, UK',
         status: 'live',
         target_live_date: '2024-02-05',
-        assigned_ops_manager: 'Michael Wilson',
-        assigned_deployment_engineer: 'Sarah Davis',
+        assigned_ops_manager: 'Michael White',
+        assigned_deployment_engineer: 'Rachel Green',
         created_at: '2024-01-20',
-        updated_at: '2024-02-01'
-      },
-      {
-        id: '6',
-        name: 'Edinburgh Castle',
-        type: 'Cafeteria',
-        location: 'Edinburgh, UK',
-        status: 'live',
-        target_live_date: '2024-02-10',
-        assigned_ops_manager: 'David Thompson',
-        assigned_deployment_engineer: 'Emma Wilson',
-        created_at: '2024-01-25',
         updated_at: '2024-02-05'
       },
       {
-        id: '7',
-        name: 'Cardiff Bay',
-        type: 'Food Court',
-        location: 'Cardiff, UK',
+        id: '6',
+        name: 'Newcastle Central',
+        organization: 'Costa Coffee',
+        location: 'Newcastle, UK',
         status: 'live',
-        target_live_date: '2024-02-15',
-        assigned_ops_manager: 'Rachel Green',
-        assigned_deployment_engineer: 'James Miller',
-        created_at: '2024-01-30',
+        target_live_date: '2024-02-10',
+        assigned_ops_manager: 'David Clark',
+        assigned_deployment_engineer: 'Sophie Turner',
+        created_at: '2024-01-25',
         updated_at: '2024-02-10'
       },
-      // Approval Pending (second largest group)
       {
-        id: '8',
-        name: 'Glasgow Central',
-        type: 'Cafeteria',
-        location: 'Glasgow, UK',
-        status: 'approved',
-        target_live_date: '2024-03-01',
-        assigned_ops_manager: 'Fiona MacDonald',
-        assigned_deployment_engineer: 'Robert Campbell',
-        created_at: '2024-02-01',
+        id: '7',
+        name: 'Sheffield South',
+        organization: 'Starbucks',
+        location: 'Sheffield, UK',
+        status: 'live',
+        target_live_date: '2024-02-15',
+        assigned_ops_manager: 'Anna Johnson',
+        assigned_deployment_engineer: 'Chris Martin',
+        created_at: '2024-01-30',
         updated_at: '2024-02-15'
       },
       {
-        id: '9',
+        id: '8',
         name: 'Bristol Harbour',
-        type: 'Food Court',
+        organization: 'Costa Coffee',
         location: 'Bristol, UK',
-        status: 'approved',
-        target_live_date: '2024-03-05',
-        assigned_ops_manager: 'Tom Anderson',
-        assigned_deployment_engineer: 'Helen White',
+        status: 'live',
+        target_live_date: '2024-02-20',
+        assigned_ops_manager: 'Robert Taylor',
+        assigned_deployment_engineer: 'Emma Wilson',
         created_at: '2024-02-05',
         updated_at: '2024-02-20'
       },
       {
-        id: '10',
-        name: 'Newcastle Quayside',
-        type: 'Cafeteria',
-        location: 'Newcastle, UK',
-        status: 'approved',
-        target_live_date: '2024-03-10',
-        assigned_ops_manager: 'Peter Mitchell',
-        assigned_deployment_engineer: 'Claire Roberts',
+        id: '9',
+        name: 'Cardiff Bay',
+        organization: 'Starbucks',
+        location: 'Cardiff, UK',
+        status: 'live',
+        target_live_date: '2024-02-25',
+        assigned_ops_manager: 'Jennifer Lee',
+        assigned_deployment_engineer: 'Mark Davis',
         created_at: '2024-02-10',
         updated_at: '2024-02-25'
       },
       {
-        id: '11',
-        name: 'Sheffield Steelworks',
-        type: 'Food Court',
-        location: 'Sheffield, UK',
-        status: 'approved',
-        target_live_date: '2024-03-15',
-        assigned_ops_manager: 'Andrew Taylor',
-        assigned_deployment_engineer: 'Natalie Clark',
+        id: '10',
+        name: 'Edinburgh Castle',
+        organization: 'Costa Coffee',
+        location: 'Edinburgh, UK',
+        status: 'live',
+        target_live_date: '2024-03-01',
+        assigned_ops_manager: 'William Scott',
+        assigned_deployment_engineer: 'Hannah Brown',
         created_at: '2024-02-15',
         updated_at: '2024-03-01'
       },
       {
-        id: '12',
-        name: 'Nottingham Castle',
-        type: 'Cafeteria',
-        location: 'Nottingham, UK',
-        status: 'approved',
-        target_live_date: '2024-03-20',
-        assigned_ops_manager: 'Daniel Wright',
-        assigned_deployment_engineer: 'Sophie Turner',
+        id: '11',
+        name: 'Glasgow Central',
+        organization: 'Starbucks',
+        location: 'Glasgow, UK',
+        status: 'live',
+        target_live_date: '2024-03-05',
+        assigned_ops_manager: 'Andrew Wilson',
+        assigned_deployment_engineer: 'Laura Smith',
         created_at: '2024-02-20',
         updated_at: '2024-03-05'
       },
-      // New Sites with pending study (third largest group)
+      {
+        id: '12',
+        name: 'Dublin Temple Bar',
+        organization: 'Costa Coffee',
+        location: 'Dublin, Ireland',
+        status: 'live',
+        target_live_date: '2024-03-10',
+        assigned_ops_manager: 'Sean O\'Connor',
+        assigned_deployment_engineer: 'Mairead Kelly',
+        created_at: '2024-02-25',
+        updated_at: '2024-03-10'
+      },
+
+      // Sites in Progress
       {
         id: '13',
-        name: 'Oxford University',
-        type: 'Cafeteria',
-        location: 'Oxford, UK',
-        status: 'created',
-        target_live_date: '2024-04-01',
-        assigned_ops_manager: 'Dr. Sarah Johnson',
-        assigned_deployment_engineer: 'Mark Wilson',
+        name: 'Belfast City',
+        organization: 'Starbucks',
+        location: 'Belfast, UK',
+        status: 'study_in_progress',
+        target_live_date: '2024-03-20',
+        assigned_ops_manager: 'Patrick Murphy',
+        assigned_deployment_engineer: 'Fiona O\'Neill',
         created_at: '2024-03-01',
         updated_at: '2024-03-01'
       },
       {
         id: '14',
-        name: 'Cambridge Science Park',
-        type: 'Food Court',
-        location: 'Cambridge, UK',
+        name: 'Aberdeen Union',
+        organization: 'Costa Coffee',
+        location: 'Aberdeen, UK',
         status: 'study_in_progress',
-        target_live_date: '2024-04-05',
-        assigned_ops_manager: 'Dr. Michael Brown',
-        assigned_deployment_engineer: 'Emma Davis',
+        target_live_date: '2024-03-25',
+        assigned_ops_manager: 'Gordon Stewart',
+        assigned_deployment_engineer: 'Morag Campbell',
         created_at: '2024-03-05',
+        updated_at: '2024-03-05'
+      },
+
+      // Sites in Planning
+      {
+        id: '15',
+        name: 'Southampton Docks',
+        organization: 'Starbucks',
+        location: 'Southampton, UK',
+        status: 'created',
+        target_live_date: '2024-04-01',
+        assigned_ops_manager: 'Thomas Jones',
+        assigned_deployment_engineer: 'Victoria Adams',
+        created_at: '2024-03-10',
         updated_at: '2024-03-10'
       },
       {
-        id: '15',
-        name: 'Durham Cathedral',
-        type: 'Cafeteria',
-        location: 'Durham, UK',
+        id: '16',
+        name: 'Plymouth Hoe',
+        organization: 'Costa Coffee',
+        location: 'Plymouth, UK',
         status: 'created',
+        target_live_date: '2024-04-05',
+        assigned_ops_manager: 'Richard Brown',
+        assigned_deployment_engineer: 'Sarah Miller',
+        created_at: '2024-03-15',
+        updated_at: '2024-03-15'
+      },
+
+      // Sites in Scoping
+      {
+        id: '17',
+        name: 'Exeter Cathedral',
+        organization: 'Starbucks',
+        location: 'Exeter, UK',
+        status: 'hardware_scoped',
         target_live_date: '2024-04-10',
-        assigned_ops_manager: 'Reverend James Smith',
-        assigned_deployment_engineer: 'Lisa Anderson',
-        created_at: '2024-03-10',
-        updated_at: '2024-03-10'
+        assigned_ops_manager: 'Daniel White',
+        assigned_deployment_engineer: 'Emily Davis',
+        created_at: '2024-03-20',
+        updated_at: '2024-03-20'
+      },
+      {
+        id: '18',
+        name: 'Truro City',
+        organization: 'Costa Coffee',
+        location: 'Truro, UK',
+        status: 'hardware_scoped',
+        target_live_date: '2024-04-15',
+        assigned_ops_manager: 'Christopher Green',
+        assigned_deployment_engineer: 'Jessica Wilson',
+        created_at: '2024-03-25',
+        updated_at: '2024-03-25'
+      },
+
+      // Sites in Procurement
+      {
+        id: '19',
+        name: 'St Austell',
+        organization: 'Starbucks',
+        location: 'St Austell, UK',
+        status: 'procurement',
+        target_live_date: '2024-04-20',
+        assigned_ops_manager: 'Matthew Taylor',
+        assigned_deployment_engineer: 'Amanda Clark',
+        created_at: '2024-03-30',
+        updated_at: '2024-03-30'
+      },
+      {
+        id: '20',
+        name: 'Falmouth Harbour',
+        organization: 'Costa Coffee',
+        location: 'Falmouth, UK',
+        status: 'procurement',
+        target_live_date: '2024-04-25',
+        assigned_ops_manager: 'Jonathan Smith',
+        assigned_deployment_engineer: 'Rebecca Brown',
+        created_at: '2024-04-05',
+        updated_at: '2024-04-05'
       }
     ];
 
@@ -285,8 +352,8 @@ const Sites = () => {
     if (searchTerm) {
       filtered = filtered.filter(site =>
         site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        site.type.toLowerCase().includes(searchTerm.toLowerCase())
+        site.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        site.location.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -298,13 +365,13 @@ const Sites = () => {
     setFilteredSites(filtered);
   }, [sites, searchTerm, statusFilter]);
 
-  const getStatusConfig = (status: string) => {
+  const getStatusConfig = (status: UnifiedSiteStatus) => {
     const configs = {
-      created: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Plus },
+      created: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: PlusCircle },
       study_in_progress: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: FileTextIcon },
-      study_completed: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: CheckCircle },
-      hardware_scoped: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Settings },
-      approved: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: AlertCircle },
+      study_completed: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: CheckSquare },
+      hardware_scoped: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Package },
+      approved: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: CheckCircle },
       procurement: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Clock },
       deployment: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Wrench },
       activated: { label: getStatusDisplayName(status), color: getStatusColor(status), icon: Activity },
@@ -362,7 +429,7 @@ const Sites = () => {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -398,7 +465,7 @@ const Sites = () => {
             <AppTable
               headers={[
                 'Site Name',
-                'Type',
+                'Organization',
                 'Location',
                 'Status',
                 'Target Go-Live',
@@ -413,7 +480,7 @@ const Sites = () => {
                   return (
                     <TableRow key={site.id}>
                       <TableCell className="font-medium">{site.name}</TableCell>
-                      <TableCell>{site.type}</TableCell>
+                      <TableCell>{site.organization}</TableCell>
                       <TableCell>{site.location}</TableCell>
                       <TableCell>
                         <Badge className={statusConfig.color}>
