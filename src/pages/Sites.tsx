@@ -40,6 +40,7 @@ interface Site {
   id: string;
   name: string;
   organization: string;
+  organization_logo?: string;
   location: string;
   status: UnifiedSiteStatus;
   target_live_date: string;
@@ -82,6 +83,7 @@ const Sites = () => {
         id: '1',
         name: 'London Central',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'London, UK',
         status: 'live',
         target_live_date: '2024-01-15',
@@ -94,6 +96,7 @@ const Sites = () => {
         id: '2',
         name: 'Manchester North',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Manchester, UK',
         status: 'live',
         target_live_date: '2024-01-20',
@@ -106,6 +109,7 @@ const Sites = () => {
         id: '3',
         name: 'Birmingham Central',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Birmingham, UK',
         status: 'live',
         target_live_date: '2024-01-25',
@@ -118,6 +122,7 @@ const Sites = () => {
         id: '4',
         name: 'Leeds West',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Leeds, UK',
         status: 'live',
         target_live_date: '2024-01-30',
@@ -130,6 +135,7 @@ const Sites = () => {
         id: '5',
         name: 'Liverpool One',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Liverpool, UK',
         status: 'live',
         target_live_date: '2024-02-05',
@@ -142,6 +148,7 @@ const Sites = () => {
         id: '6',
         name: 'Newcastle Central',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Newcastle, UK',
         status: 'live',
         target_live_date: '2024-02-10',
@@ -154,6 +161,7 @@ const Sites = () => {
         id: '7',
         name: 'Sheffield South',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Sheffield, UK',
         status: 'live',
         target_live_date: '2024-02-15',
@@ -166,6 +174,7 @@ const Sites = () => {
         id: '8',
         name: 'Bristol Harbour',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Bristol, UK',
         status: 'live',
         target_live_date: '2024-02-20',
@@ -178,6 +187,7 @@ const Sites = () => {
         id: '9',
         name: 'Cardiff Bay',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Cardiff, UK',
         status: 'live',
         target_live_date: '2024-02-25',
@@ -190,6 +200,7 @@ const Sites = () => {
         id: '10',
         name: 'Edinburgh Castle',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Edinburgh, UK',
         status: 'live',
         target_live_date: '2024-03-01',
@@ -202,6 +213,7 @@ const Sites = () => {
         id: '11',
         name: 'Glasgow Central',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Glasgow, UK',
         status: 'live',
         target_live_date: '2024-03-05',
@@ -214,6 +226,7 @@ const Sites = () => {
         id: '12',
         name: 'Dublin Temple Bar',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Dublin, Ireland',
         status: 'live',
         target_live_date: '2024-03-10',
@@ -228,6 +241,7 @@ const Sites = () => {
         id: '13',
         name: 'Belfast City',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Belfast, UK',
         status: 'study_in_progress',
         target_live_date: '2024-03-20',
@@ -240,6 +254,7 @@ const Sites = () => {
         id: '14',
         name: 'Aberdeen Union',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Aberdeen, UK',
         status: 'study_in_progress',
         target_live_date: '2024-03-25',
@@ -254,6 +269,7 @@ const Sites = () => {
         id: '15',
         name: 'Southampton Docks',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Southampton, UK',
         status: 'created',
         target_live_date: '2024-04-01',
@@ -266,6 +282,7 @@ const Sites = () => {
         id: '16',
         name: 'Plymouth Hoe',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Plymouth, UK',
         status: 'created',
         target_live_date: '2024-04-05',
@@ -280,6 +297,7 @@ const Sites = () => {
         id: '17',
         name: 'Exeter Cathedral',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'Exeter, UK',
         status: 'hardware_scoped',
         target_live_date: '2024-04-10',
@@ -292,6 +310,7 @@ const Sites = () => {
         id: '18',
         name: 'Truro City',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Truro, UK',
         status: 'hardware_scoped',
         target_live_date: '2024-04-15',
@@ -306,6 +325,7 @@ const Sites = () => {
         id: '19',
         name: 'St Austell',
         organization: 'Starbucks',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
         location: 'St Austell, UK',
         status: 'procurement',
         target_live_date: '2024-04-20',
@@ -318,6 +338,7 @@ const Sites = () => {
         id: '20',
         name: 'Falmouth Harbour',
         organization: 'Costa Coffee',
+        organization_logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Costa_Coffee_logo.svg/1200px-Costa_Coffee_logo.svg.png',
         location: 'Falmouth, UK',
         status: 'procurement',
         target_live_date: '2024-04-25',
@@ -353,7 +374,8 @@ const Sites = () => {
       filtered = filtered.filter(site =>
         site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         site.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        site.location.toLowerCase().includes(searchTerm.toLowerCase())
+        site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (site.organization_logo && site.organization_logo.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -479,7 +501,12 @@ const Sites = () => {
                   
                   return (
                     <TableRow key={site.id}>
-                      <TableCell className="font-medium">{site.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {site.organization_logo && (
+                          <img src={site.organization_logo} alt={site.organization} className="h-6 w-6 mr-2 rounded-full" />
+                        )}
+                        {site.name}
+                      </TableCell>
                       <TableCell>{site.organization}</TableCell>
                       <TableCell>{site.location}</TableCell>
                       <TableCell>

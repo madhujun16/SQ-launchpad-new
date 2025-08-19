@@ -43,8 +43,7 @@ const NAVIGATION_ITEMS = [
   { path: '/approvals-procurement', label: 'Approvals', icon: FileText },
   { path: '/assets', label: 'Assets', icon: Package },
   { path: '/deployment', label: 'Deployment', icon: Truck },
-  { path: '/forecast', label: 'Forecast', icon: BarChart3 },
-  { path: '/platform-configuration', label: 'Platform Config', icon: Settings }
+  { path: '/forecast', label: 'Forecast', icon: BarChart3 }
 ] as const;
 
 // Logo Component
@@ -169,13 +168,15 @@ const MobileNavigation = React.memo(({
   navigationItems, 
   currentPath, 
   currentRole,
-  onClose 
+  onClose,
+  onRoleSwitch
 }: { 
   isOpen: boolean; 
   navigationItems: NavigationItem[]; 
   currentPath: string; 
   currentRole: UserRole | null;
   onClose: () => void; 
+  onRoleSwitch: (role: UserRole) => void;
 }) => (
   <Sheet open={isOpen} onOpenChange={onClose}>
     <SheetContent side="left" className="w-80">
@@ -200,6 +201,20 @@ const MobileNavigation = React.memo(({
             <span>{item.label}</span>
           </Link>
         ))}
+        
+        {/* Platform Configuration Link */}
+        <Link
+          to="/platform-configuration"
+          onClick={onClose}
+          className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            currentPath === '/platform-configuration'
+              ? 'bg-green-100 text-green-700'
+              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+          }`}
+        >
+          <Settings className="h-4 w-4" />
+          <span>Platform Configuration</span>
+        </Link>
       </div>
       
       <div className="mt-8 pt-6 border-t">
@@ -209,6 +224,31 @@ const MobileNavigation = React.memo(({
           </p>
           <p className="text-xs text-gray-500">Current Role</p>
         </div>
+        
+        {/* Role Switcher in Mobile Menu */}
+        {currentRole && (
+          <div className="mt-4 px-3">
+            <p className="text-xs text-gray-500 mb-2">Switch Role</p>
+            <div className="space-y-1">
+              {['admin', 'ops_manager', 'deployment_engineer'].map((role) => (
+                <button
+                  key={role}
+                  onClick={() => {
+                    onRoleSwitch(role as UserRole);
+                    onClose();
+                  }}
+                  className={`w-full text-left px-2 py-1 rounded text-sm ${
+                    role === currentRole
+                      ? 'bg-green-100 text-green-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {getRoleConfig(role as UserRole).displayName}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </SheetContent>
   </Sheet>
@@ -320,12 +360,6 @@ const Header = () => {
             <NotificationBell />
             
             <div className="hidden md:flex items-center space-x-3">
-              <RoleSwitcher
-                availableRoles={rolesForSwitch}
-                currentRole={currentRole}
-                onRoleSwitch={handleRoleSwitch}
-              />
-              
               <UserInfo 
                 profile={profile} 
                 roleConfig={roleConfig} 
@@ -363,6 +397,7 @@ const Header = () => {
         currentPath={currentPath}
         currentRole={currentRole}
         onClose={handleMobileMenuClose}
+        onRoleSwitch={handleRoleSwitch}
       />
     </header>
   );
