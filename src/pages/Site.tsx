@@ -370,7 +370,7 @@ const SiteDetail = () => {
           priority: 'high',
           riskLevel: 'medium',
            criticality: 'high',
-          status: 'scoping_done',
+          status: 'site_created',
           assignedOpsManager: 'Jessica Cleaver',
           assignedDeploymentEngineer: 'John Smith',
           stakeholders: [
@@ -692,6 +692,25 @@ const SiteDetail = () => {
             notes: 'Durham Cathedral site implementation',
             description: 'Durham Cathedral site implementation',
             lastUpdated: '2024-03-15'
+          },
+          {
+            id: '7cef2b8f-6c1d-45a6-a8ab-3bb205f97989', // Use the actual ID from the URL
+            name: 'Baxter Health Restaurant',
+            organization: 'Baxter Health',
+            foodCourt: 'Baxter Health Restaurant',
+            unitCode: 'BH001',
+            sector: 'Compass One',
+            goLiveDate: '2025-05-05',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+            criticality: 'medium' as const,
+            status: 'site_created' as UnifiedSiteStatus, // Start at site_created for Site Creation step
+            assignedOpsManager: 'Dr. Sarah Johnson',
+            assignedDeploymentEngineer: 'Mark Wilson',
+            stakeholders: [],
+            notes: 'Baxter Health Restaurant site implementation',
+            description: 'Baxter Health Restaurant site implementation',
+            lastUpdated: '2024-08-19'
           }
         ];
         
@@ -948,11 +967,32 @@ const SiteDetail = () => {
             throw new Error('Invalid step index');
         }
 
-        // Validate status progression
-        const validation = validateStatusProgression(site.status as UnifiedSiteStatus, newStatus);
-        if (!validation.valid) {
-          toast.error(validation.message || 'Invalid status transition');
+        // For Site Creation (step 0), we can always proceed as it's the initial step
+        if (stepIndex === 0) {
+          // Update site status
+          const updatedSite = { ...site, status: newStatus };
+          setSite(updatedSite);
+          
+          // Update sites context
+          setSites((prevSites: Site[]) => 
+            prevSites.map(s => s.id === site.id ? updatedSite : s)
+          );
+          
+          // Move to next step
+          setSelectedStep(1);
+          
+          // Show success message
+          toast.success('Site Creation completed successfully!');
           return;
+        }
+
+        // For other steps, validate status progression
+        if (site.status && site.status !== 'site_created') {
+          const validation = validateStatusProgression(site.status as UnifiedSiteStatus, newStatus);
+          if (!validation.valid) {
+            toast.error(validation.message || 'Invalid status transition');
+            return;
+          }
         }
 
         // Update site status
@@ -1756,9 +1796,9 @@ const SiteDetail = () => {
                     className="flex items-center space-x-2"
                     onClick={() => markStepAsCompleted(2)}
                   >
-                    <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                     <span>Mark as Completed</span>
-                  </Button>
+                </Button>
                 )}
 
               </div>
@@ -2076,9 +2116,9 @@ const SiteDetail = () => {
                     className="flex items-center space-x-2"
                     onClick={() => markStepAsCompleted(3)}
                   >
-                    <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                     <span>Mark as Completed</span>
-                  </Button>
+                </Button>
                 )}
 
               </div>
@@ -2396,9 +2436,9 @@ const SiteDetail = () => {
                     className="flex items-center space-x-2"
                     onClick={() => markStepAsCompleted(5)}
                   >
-                    <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                     <span>Mark as Completed</span>
-                  </Button>
+                </Button>
                 )}
 
               </div>
@@ -2535,9 +2575,9 @@ const SiteDetail = () => {
                     className="flex items-center space-x-2"
                     onClick={() => markStepAsCompleted(6)}
                   >
-                    <CheckCircle className="h-4 w-4" />
+                <CheckCircle className="h-4 w-4" />
                     <span>Mark as Completed</span>
-                  </Button>
+              </Button>
                 )}
               </div>
             </div>
