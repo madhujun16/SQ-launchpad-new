@@ -1007,8 +1007,8 @@ const SiteDetail = () => {
               <div className="flex space-x-3">
                   {/* Show Mark as Completed button only when Site Creation is editable */}
                   {canEditSiteCreation() && canMarkStepAsCompleted(0) && (
-                    <Button 
-                      className="flex items-center space-x-2"
+                  <Button 
+                    className="flex items-center space-x-2"
                       onClick={() => {
                         const validation = validateSiteCreationFields();
                         if (validation.isValid) {
@@ -1018,9 +1018,9 @@ const SiteDetail = () => {
                         }
                       }}
                     >
-                      <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                       <span>Mark as Completed</span>
-                    </Button>
+                </Button>
                   )}
               </div>
             </div>
@@ -1760,10 +1760,7 @@ const SiteDetail = () => {
                     <span>Mark as Completed</span>
                   </Button>
                 )}
-                <Button className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Submit for Approval</span>
-                </Button>
+
               </div>
             </div>
 
@@ -2083,10 +2080,7 @@ const SiteDetail = () => {
                     <span>Mark as Completed</span>
                   </Button>
                 )}
-                <Button className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Approve</span>
-                </Button>
+
               </div>
             </div>
 
@@ -2215,10 +2209,7 @@ const SiteDetail = () => {
                     <span>Mark as Completed</span>
                   </Button>
                 )}
-                <Button className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Mark Procurement Complete</span>
-                </Button>
+
               </div>
             </div>
 
@@ -2375,10 +2366,7 @@ const SiteDetail = () => {
                 <FileText className="h-4 w-4" />
                 <span>Save Progress</span>
               </Button>
-              <Button className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Mark Procurement Complete</span>
-              </Button>
+
             </div>
           </div>
         );
@@ -2412,10 +2400,7 @@ const SiteDetail = () => {
                     <span>Mark as Completed</span>
                   </Button>
                 )}
-                <Button className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Mark Complete</span>
-                </Button>
+
               </div>
             </div>
 
@@ -2520,10 +2505,7 @@ const SiteDetail = () => {
                 <FileText className="h-4 w-4" />
                 <span>Update Progress</span>
               </Button>
-              <Button className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Mark Complete</span>
-              </Button>
+
             </div>
           </div>
         );
