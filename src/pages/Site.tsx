@@ -413,91 +413,101 @@ const SiteDetail = () => {
              description: 'Manchester North site implementation',
              lastUpdated: '2024-01-18'
           },
-          {
-            id: '3',
-            name: 'Birmingham South',
-            organization: 'Compass Group UK',
-            foodCourt: 'Birmingham South',
-            unitCode: 'BS003',
-            goLiveDate: '2024-01-25',
-            priority: 'high' as const,
-            riskLevel: 'medium' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'Emma Davis',
-            assignedDeploymentEngineer: 'Tom Wilson',
-            stakeholders: [],
-            notes: 'Birmingham South site implementation',
-            description: 'Birmingham South site implementation',
-            lastUpdated: '2024-01-19'
-          },
-          {
-            id: '4',
-            name: 'Leeds Central',
-            organization: 'Compass Group UK',
-            foodCourt: 'Leeds Central',
-            unitCode: 'LC004',
-            goLiveDate: '2024-02-01',
-            priority: 'medium' as const,
-            riskLevel: 'low' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'Alex Johnson',
-            assignedDeploymentEngineer: 'Lisa Brown',
-            stakeholders: [],
-            notes: 'Leeds Central site implementation',
-            description: 'Leeds Central site implementation',
-            lastUpdated: '2024-01-30'
-          },
-          {
-            id: '5',
-            name: 'Liverpool Docklands',
-            organization: 'Compass Group UK',
-            foodCourt: 'Liverpool Docklands',
-            unitCode: 'LD005',
-            goLiveDate: '2024-02-05',
-            priority: 'high' as const,
-            riskLevel: 'medium' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'Michael Wilson',
-            assignedDeploymentEngineer: 'Sarah Davis',
-            stakeholders: [],
-            notes: 'Liverpool Docklands site implementation',
-            description: 'Liverpool Docklands site implementation',
-            lastUpdated: '2024-02-01'
-          },
-          {
-            id: '6',
-            name: 'Edinburgh Castle',
-            organization: 'Compass Group UK',
-            foodCourt: 'Edinburgh Castle',
-            unitCode: 'EC006',
-            goLiveDate: '2024-02-10',
-            priority: 'medium' as const,
-            riskLevel: 'low' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'David Thompson',
-            assignedDeploymentEngineer: 'Emma Wilson',
-            stakeholders: [],
-            notes: 'Edinburgh Castle site implementation',
-            description: 'Edinburgh Castle site implementation',
-            lastUpdated: '2024-02-05'
-          },
-          {
-            id: '7',
-            name: 'Cardiff Bay',
-            organization: 'Compass Group UK',
-            foodCourt: 'Cardiff Bay',
-            unitCode: 'CB007',
-            goLiveDate: '2024-02-15',
-            priority: 'high' as const,
-            riskLevel: 'medium' as const,
-            status: 'live' as UnifiedSiteStatus,
-            assignedOpsManager: 'Rachel Green',
-            assignedDeploymentEngineer: 'James Miller',
-            stakeholders: [],
-            notes: 'Cardiff Bay site implementation',
-            description: 'Cardiff Bay site implementation',
-            lastUpdated: '2024-02-10'
-          },
+                     {
+             id: '3',
+             name: 'Birmingham South',
+             organization: 'Compass Group UK',
+             foodCourt: 'Birmingham South',
+             unitCode: 'BS003',
+             sector: 'Eurest',
+             goLiveDate: '2024-01-25',
+             priority: 'high' as const,
+             riskLevel: 'medium' as const,
+             criticality: 'high' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'Emma Davis',
+             assignedDeploymentEngineer: 'Tom Wilson',
+             stakeholders: [],
+             notes: 'Birmingham South site implementation',
+             description: 'Birmingham South site implementation',
+             lastUpdated: '2024-01-19'
+           },
+                     {
+             id: '4',
+             name: 'Leeds Central',
+             organization: 'Compass Group UK',
+             foodCourt: 'Leeds Central',
+             unitCode: 'LC004',
+             sector: 'Eurest',
+             goLiveDate: '2024-02-01',
+             priority: 'medium' as const,
+             riskLevel: 'low' as const,
+             criticality: 'medium' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'Alex Johnson',
+             assignedDeploymentEngineer: 'Lisa Brown',
+             stakeholders: [],
+             notes: 'Leeds Central site implementation',
+             description: 'Leeds Central site implementation',
+             lastUpdated: '2024-01-30'
+           },
+                     {
+             id: '5',
+             name: 'Liverpool Docklands',
+             organization: 'Compass Group UK',
+             foodCourt: 'Liverpool Docklands',
+             unitCode: 'LD005',
+             sector: 'Eurest',
+             goLiveDate: '2024-02-05',
+             priority: 'high' as const,
+             riskLevel: 'medium' as const,
+             criticality: 'high' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'Michael Wilson',
+             assignedDeploymentEngineer: 'Sarah Davis',
+             stakeholders: [],
+             notes: 'Liverpool Docklands site implementation',
+             description: 'Liverpool Docklands site implementation',
+             lastUpdated: '2024-02-01'
+           },
+           {
+             id: '6',
+             name: 'Edinburgh Castle',
+             organization: 'Compass Group UK',
+             foodCourt: 'Edinburgh Castle',
+             unitCode: 'EC006',
+             sector: 'Eurest',
+             goLiveDate: '2024-02-10',
+             priority: 'medium' as const,
+             riskLevel: 'low' as const,
+             criticality: 'medium' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'David Thompson',
+             assignedDeploymentEngineer: 'Emma Wilson',
+             stakeholders: [],
+             notes: 'Edinburgh Castle site implementation',
+             description: 'Edinburgh Castle site implementation',
+             lastUpdated: '2024-02-05'
+           },
+           {
+             id: '7',
+             name: 'Cardiff Bay',
+             organization: 'Compass Group UK',
+             foodCourt: 'Cardiff Bay',
+             unitCode: 'CB007',
+             sector: 'Eurest',
+             goLiveDate: '2024-02-15',
+             priority: 'high' as const,
+             riskLevel: 'medium' as const,
+             criticality: 'high' as const,
+             status: 'live' as UnifiedSiteStatus,
+             assignedOpsManager: 'Rachel Green',
+             assignedDeploymentEngineer: 'James Miller',
+             stakeholders: [],
+             notes: 'Cardiff Bay site implementation',
+             description: 'Cardiff Bay site implementation',
+             lastUpdated: '2024-02-10'
+           },
           {
             id: '8',
             name: 'Glasgow Central',
@@ -915,38 +925,31 @@ const SiteDetail = () => {
                             disabled={!canEditSiteCreation()}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Target Live Date <span className="text-red-500">*</span>
-                          </label>
-                          <Input 
-                            type="date"
-                            defaultValue={site.goLiveDate}
-                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                            disabled={!canEditSiteCreation()}
-                          />
-                        </div>
-                     </div>
-                  </div>
-
-                                     {/* Criticality Assessment */}
-                   <div className="space-y-4">
-                     <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Criticality Assessment</h4>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">Criticality Level</label>
-                         <Select defaultValue={site.criticality || 'medium'} disabled={!canEditSiteCreation()}>
-                           <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
-                             <SelectValue placeholder="Select criticality level" />
-                           </SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="low">Low</SelectItem>
-                             <SelectItem value="medium">Medium</SelectItem>
-                             <SelectItem value="high">High</SelectItem>
-                           </SelectContent>
-                         </Select>
-                       </div>
-                     </div>
+                                                 <div className="space-y-2">
+                           <label className="text-sm font-medium text-gray-700">
+                             Target Live Date <span className="text-red-500">*</span>
+                           </label>
+                           <Input 
+                             type="date"
+                             defaultValue={site.goLiveDate}
+                             className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                             disabled={!canEditSiteCreation()}
+                           />
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-sm font-medium text-gray-700">Criticality Level</label>
+                           <Select defaultValue={site.criticality || 'medium'} disabled={!canEditSiteCreation()}>
+                             <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
+                               <SelectValue placeholder="Select criticality level" />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="low">Low</SelectItem>
+                               <SelectItem value="medium">Medium</SelectItem>
+                               <SelectItem value="high">High</SelectItem>
+                             </SelectContent>
+                           </Select>
+                         </div>
+                      </div>
                    </div>
 
                   {/* Team Assignment */}
