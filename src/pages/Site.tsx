@@ -2245,15 +2245,11 @@ const SiteDetail = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
-          <div className="flex items-center space-x-4 mt-2">
-                         <p className="text-gray-600">
+                     <div className="flex items-center space-x-4 mt-2">
+             <p className="text-gray-600">
                {site.sector || 'Unknown Sector'} → {site.organization} - {new Date(site.goLiveDate).toLocaleDateString()}
              </p>
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Calendar className="h-4 w-4" />
-              <span className="font-medium">Live Date: {new Date(site.goLiveDate).toLocaleDateString()}</span>
-            </div>
-          </div>
+           </div>
         </div>
         <div className="flex items-center space-x-2">
           <Button 
