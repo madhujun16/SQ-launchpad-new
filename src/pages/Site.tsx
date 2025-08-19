@@ -83,13 +83,14 @@ import {
 } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperStepFromStatus, type UnifiedSiteStatus } from '@/lib/siteTypes';
+import { createStepperSteps, getStatusColor, getStatusDisplayName, getStepperStepFromStatus, validateStatusProgression, type UnifiedSiteStatus } from '@/lib/siteTypes';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
 import { LayoutImageUpload } from '@/components/LayoutImageUpload';
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 import { SitesService } from '@/services/sitesService';
+import { getOrganisations, type Organisation } from '@/services/organisationsService';
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -240,6 +241,8 @@ const SiteDetail = () => {
     address: string;
   } | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [organisations, setOrganisations] = useState<Organisation[]>([]);
+  const [selectedOrganisation, setSelectedOrganisation] = useState<Organisation | null>(null);
 
   // Handler for layout images updates
   const handleLayoutImagesUpdated = (images: any[]) => {
@@ -259,6 +262,24 @@ const SiteDetail = () => {
     }
   };
 
+  // Handler for organisation selection
+  const handleOrganisationChange = (organisationId: string) => {
+    const selectedOrg = organisations.find(org => org.id === organisationId);
+    if (selectedOrg) {
+      setSelectedOrganisation(selectedOrg);
+      
+      // Auto-update sector and unit code based on selected organisation
+      if (site) {
+        setSite({
+          ...site,
+          organization: selectedOrg.name,
+          sector: selectedOrg.sector,
+          unitCode: `${selectedOrg.unitCodePrefix}001` // Generate unit code with prefix
+        });
+      }
+    }
+  };
+
   // Check if user has permission to access sites
   useEffect(() => {
     if (currentRole && !hasPermission(currentRole, 'view_sites')) {
@@ -266,6 +287,28 @@ const SiteDetail = () => {
       navigate('/dashboard');
     }
   }, [currentRole, navigate]);
+
+  // Load organisations data
+  useEffect(() => {
+    const loadOrganisations = async () => {
+      try {
+        const orgs = await getOrganisations();
+        setOrganisations(orgs);
+        
+        // If we have a site, try to find and set the selected organisation
+        if (site) {
+          const org = orgs.find(o => o.name === site.organization);
+          if (org) {
+            setSelectedOrganisation(org);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading organisations:', error);
+      }
+    };
+    
+    loadOrganisations();
+  }, [site]);
 
   // Load site data
   useEffect(() => {
@@ -315,8 +358,8 @@ const SiteDetail = () => {
           }
           
           // Fall back to mock data if database load fails
-          // If not found in context, load from mock data (in real app, this would be an API call)
-          const mockSite: Site = {
+        // If not found in context, load from mock data (in real app, this would be an API call)
+        const mockSite: Site = {
           id: id,
           name: `ASDA Redditch (${id.substring(0, 8)})`, // More user-friendly name with partial ID
           organization: 'ASDA',
@@ -324,8 +367,8 @@ const SiteDetail = () => {
           unitCode: 'AR004',
           sector: 'Eurest',
           goLiveDate: '2024-11-15',
-                     priority: 'high',
-           riskLevel: 'medium',
+          priority: 'high',
+          riskLevel: 'medium',
            criticality: 'high',
           status: 'scoping_done',
           assignedOpsManager: 'Jessica Cleaver',
@@ -372,142 +415,142 @@ const SiteDetail = () => {
         
         // Try to find site in mock data based on ID
         const mockSites = [
-                     {
-             id: '1',
-             name: 'London Central',
-             organization: 'Compass Group UK',
-             foodCourt: 'London Central',
-             unitCode: 'LC001',
-             sector: 'Eurest',
-             goLiveDate: '2024-01-15',
-             priority: 'high' as const,
-             riskLevel: 'medium' as const,
-             criticality: 'high' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'John Smith',
-             assignedDeploymentEngineer: 'Mike Johnson',
-             stakeholders: [],
-             notes: 'London Central site implementation',
-             description: 'London Central site implementation',
-             lastUpdated: '2024-01-15',
-             hardwareScope: {
-               approvalStatus: 'approved' as const
-             }
-           },
           {
-                         id: '2',
-             name: 'Manchester North',
-             organization: 'Compass Group UK',
-             foodCourt: 'Manchester North',
-             unitCode: 'MN002',
+            id: '1',
+            name: 'London Central',
+            organization: 'Compass Group UK',
+            foodCourt: 'London Central',
+            unitCode: 'LC001',
              sector: 'Eurest',
-             goLiveDate: '2024-01-20',
-             priority: 'medium' as const,
-             riskLevel: 'low' as const,
-             criticality: 'medium' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'Sarah Wilson',
-             assignedDeploymentEngineer: 'David Brown',
-             stakeholders: [],
-             notes: 'Manchester North site implementation',
-             description: 'Manchester North site implementation',
-             lastUpdated: '2024-01-18'
+            goLiveDate: '2024-01-15',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+             criticality: 'high' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'John Smith',
+            assignedDeploymentEngineer: 'Mike Johnson',
+            stakeholders: [],
+            notes: 'London Central site implementation',
+            description: 'London Central site implementation',
+            lastUpdated: '2024-01-15',
+            hardwareScope: {
+              approvalStatus: 'approved' as const
+            }
           },
-                     {
-             id: '3',
-             name: 'Birmingham South',
-             organization: 'Compass Group UK',
-             foodCourt: 'Birmingham South',
-             unitCode: 'BS003',
+          {
+            id: '2',
+            name: 'Manchester North',
+            organization: 'Compass Group UK',
+            foodCourt: 'Manchester North',
+            unitCode: 'MN002',
              sector: 'Eurest',
-             goLiveDate: '2024-01-25',
-             priority: 'high' as const,
-             riskLevel: 'medium' as const,
-             criticality: 'high' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'Emma Davis',
-             assignedDeploymentEngineer: 'Tom Wilson',
-             stakeholders: [],
-             notes: 'Birmingham South site implementation',
-             description: 'Birmingham South site implementation',
-             lastUpdated: '2024-01-19'
-           },
-                     {
-             id: '4',
-             name: 'Leeds Central',
-             organization: 'Compass Group UK',
-             foodCourt: 'Leeds Central',
-             unitCode: 'LC004',
-             sector: 'Eurest',
-             goLiveDate: '2024-02-01',
-             priority: 'medium' as const,
-             riskLevel: 'low' as const,
+            goLiveDate: '2024-01-20',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
              criticality: 'medium' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'Alex Johnson',
-             assignedDeploymentEngineer: 'Lisa Brown',
-             stakeholders: [],
-             notes: 'Leeds Central site implementation',
-             description: 'Leeds Central site implementation',
-             lastUpdated: '2024-01-30'
-           },
-                     {
-             id: '5',
-             name: 'Liverpool Docklands',
-             organization: 'Compass Group UK',
-             foodCourt: 'Liverpool Docklands',
-             unitCode: 'LD005',
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Sarah Wilson',
+            assignedDeploymentEngineer: 'David Brown',
+            stakeholders: [],
+            notes: 'Manchester North site implementation',
+            description: 'Manchester North site implementation',
+            lastUpdated: '2024-01-18'
+          },
+          {
+            id: '3',
+            name: 'Birmingham South',
+            organization: 'Compass Group UK',
+            foodCourt: 'Birmingham South',
+            unitCode: 'BS003',
              sector: 'Eurest',
-             goLiveDate: '2024-02-05',
-             priority: 'high' as const,
-             riskLevel: 'medium' as const,
+            goLiveDate: '2024-01-25',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
              criticality: 'high' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'Michael Wilson',
-             assignedDeploymentEngineer: 'Sarah Davis',
-             stakeholders: [],
-             notes: 'Liverpool Docklands site implementation',
-             description: 'Liverpool Docklands site implementation',
-             lastUpdated: '2024-02-01'
-           },
-           {
-             id: '6',
-             name: 'Edinburgh Castle',
-             organization: 'Compass Group UK',
-             foodCourt: 'Edinburgh Castle',
-             unitCode: 'EC006',
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Emma Davis',
+            assignedDeploymentEngineer: 'Tom Wilson',
+            stakeholders: [],
+            notes: 'Birmingham South site implementation',
+            description: 'Birmingham South site implementation',
+            lastUpdated: '2024-01-19'
+          },
+          {
+            id: '4',
+            name: 'Leeds Central',
+            organization: 'Compass Group UK',
+            foodCourt: 'Leeds Central',
+            unitCode: 'LC004',
              sector: 'Eurest',
-             goLiveDate: '2024-02-10',
-             priority: 'medium' as const,
-             riskLevel: 'low' as const,
+            goLiveDate: '2024-02-01',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
              criticality: 'medium' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'David Thompson',
-             assignedDeploymentEngineer: 'Emma Wilson',
-             stakeholders: [],
-             notes: 'Edinburgh Castle site implementation',
-             description: 'Edinburgh Castle site implementation',
-             lastUpdated: '2024-02-05'
-           },
-           {
-             id: '7',
-             name: 'Cardiff Bay',
-             organization: 'Compass Group UK',
-             foodCourt: 'Cardiff Bay',
-             unitCode: 'CB007',
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Alex Johnson',
+            assignedDeploymentEngineer: 'Lisa Brown',
+            stakeholders: [],
+            notes: 'Leeds Central site implementation',
+            description: 'Leeds Central site implementation',
+            lastUpdated: '2024-01-30'
+          },
+          {
+            id: '5',
+            name: 'Liverpool Docklands',
+            organization: 'Compass Group UK',
+            foodCourt: 'Liverpool Docklands',
+            unitCode: 'LD005',
              sector: 'Eurest',
-             goLiveDate: '2024-02-15',
-             priority: 'high' as const,
-             riskLevel: 'medium' as const,
+            goLiveDate: '2024-02-05',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
              criticality: 'high' as const,
-             status: 'live' as UnifiedSiteStatus,
-             assignedOpsManager: 'Rachel Green',
-             assignedDeploymentEngineer: 'James Miller',
-             stakeholders: [],
-             notes: 'Cardiff Bay site implementation',
-             description: 'Cardiff Bay site implementation',
-             lastUpdated: '2024-02-10'
-           },
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Michael Wilson',
+            assignedDeploymentEngineer: 'Sarah Davis',
+            stakeholders: [],
+            notes: 'Liverpool Docklands site implementation',
+            description: 'Liverpool Docklands site implementation',
+            lastUpdated: '2024-02-01'
+          },
+          {
+            id: '6',
+            name: 'Edinburgh Castle',
+            organization: 'Compass Group UK',
+            foodCourt: 'Edinburgh Castle',
+            unitCode: 'EC006',
+             sector: 'Eurest',
+            goLiveDate: '2024-02-10',
+            priority: 'medium' as const,
+            riskLevel: 'low' as const,
+             criticality: 'medium' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'David Thompson',
+            assignedDeploymentEngineer: 'Emma Wilson',
+            stakeholders: [],
+            notes: 'Edinburgh Castle site implementation',
+            description: 'Edinburgh Castle site implementation',
+            lastUpdated: '2024-02-05'
+          },
+          {
+            id: '7',
+            name: 'Cardiff Bay',
+            organization: 'Compass Group UK',
+            foodCourt: 'Cardiff Bay',
+            unitCode: 'CB007',
+             sector: 'Eurest',
+            goLiveDate: '2024-02-15',
+            priority: 'high' as const,
+            riskLevel: 'medium' as const,
+             criticality: 'high' as const,
+            status: 'live' as UnifiedSiteStatus,
+            assignedOpsManager: 'Rachel Green',
+            assignedDeploymentEngineer: 'James Miller',
+            stakeholders: [],
+            notes: 'Cardiff Bay site implementation',
+            description: 'Cardiff Bay site implementation',
+            lastUpdated: '2024-02-10'
+          },
           {
             id: '8',
             name: 'Glasgow Central',
@@ -656,11 +699,11 @@ const SiteDetail = () => {
         if (foundSite) {
           setSite(foundSite);
           setSelectedStep(getStepperStepFromStatus(foundSite.status as UnifiedSiteStatus));
-          } else {
-            setSite(mockSite);
-            setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
-          }
-          setLoading(false);
+        } else {
+          setSite(mockSite);
+          setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
+        }
+        setLoading(false);
         };
         
         // Call the async function
@@ -804,25 +847,25 @@ const SiteDetail = () => {
       return true;
     };
 
-         // Check if the Site Study form should show as read-only
-     const isSiteStudyFormReadOnly = () => {
-       if (currentRole === 'admin') return false;
-       
-       // Live sites are completely read-only for non-admin users
-       if (site.status === 'live') {
-         return true;
-       }
-       
-       const currentStepIndex = getStepperStepFromStatus(site.status);
-       
-       // Deployment Engineer can edit until Scoping starts
-       if (currentRole === 'deployment_engineer') {
-         return currentStepIndex >= 2;
-       }
-       
-       // Other roles can only edit during Site Study step
-       return currentStepIndex > 1;
-     };
+    // Check if the Site Study form should show as read-only
+    const isSiteStudyFormReadOnly = () => {
+      if (currentRole === 'admin') return false;
+      
+      // Live sites are completely read-only for non-admin users
+      if (site.status === 'live') {
+        return true;
+      }
+      
+      const currentStepIndex = getStepperStepFromStatus(site.status);
+      
+      // Deployment Engineer can edit until Scoping starts
+      if (currentRole === 'deployment_engineer') {
+        return currentStepIndex >= 2;
+      }
+      
+      // Other roles can only edit during Site Study step
+      return currentStepIndex > 1;
+    };
 
      // Check if Site Creation step is editable
      const canEditSiteCreation = () => {
@@ -839,29 +882,148 @@ const SiteDetail = () => {
        return site.status === 'site_created';
      };
 
+    // Validate mandatory fields for Site Creation step
+    const validateSiteCreationFields = (): { isValid: boolean; errors: string[] } => {
+      const errors: string[] = [];
+      
+      if (!site.foodCourt || site.foodCourt.trim() === '') {
+        errors.push('Site Name is required');
+      }
+      
+      if (!selectedOrganisation?.id) {
+        errors.push('Organisation is required');
+      }
+      
+      if (!site.goLiveDate) {
+        errors.push('Target Live Date is required');
+      }
+      
+      if (!site.assignedOpsManager) {
+        errors.push('Operations Manager is required');
+      }
+      
+      if (!site.assignedDeploymentEngineer) {
+        errors.push('Deployment Engineer is required');
+      }
+      
+      if (!locationData) {
+        errors.push('Location Information is required');
+      }
+      
+      return {
+        isValid: errors.length === 0,
+        errors
+      };
+    };
+
+    // Update site status and move to next step
+    const markStepAsCompleted = async (stepIndex: number) => {
+      try {
+        let newStatus: UnifiedSiteStatus;
+        
+        // Map step index to new status
+        switch (stepIndex) {
+          case 0: // Site Creation
+            newStatus = 'site_created';
+            break;
+          case 1: // Site Study
+            newStatus = 'site_study_done';
+            break;
+          case 2: // Scoping
+            newStatus = 'scoping_done';
+            break;
+          case 3: // Approval
+            newStatus = 'approved';
+            break;
+          case 4: // Procurement
+            newStatus = 'procurement_done';
+            break;
+          case 5: // Deployment
+            newStatus = 'deployed';
+            break;
+          case 6: // Go-Live
+            newStatus = 'live';
+            break;
+          default:
+            throw new Error('Invalid step index');
+        }
+
+        // Validate status progression
+        const validation = validateStatusProgression(site.status as UnifiedSiteStatus, newStatus);
+        if (!validation.valid) {
+          toast.error(validation.message || 'Invalid status transition');
+          return;
+        }
+
+        // Update site status
+        const updatedSite = { ...site, status: newStatus };
+        setSite(updatedSite);
+        
+        // Update sites context
+        setSites((prevSites: Site[]) => 
+          prevSites.map(s => s.id === site.id ? updatedSite : s)
+        );
+        
+        // Move to next step if not the last step
+        if (stepIndex < 6) {
+          setSelectedStep(stepIndex + 1);
+        }
+        
+        // Show success message
+        const stepNames = ['Site Creation', 'Site Study', 'Scoping', 'Approval', 'Procurement', 'Deployment', 'Go-Live'];
+        toast.success(`${stepNames[stepIndex]} completed successfully!`);
+        
+      } catch (error) {
+        console.error('Error marking step as completed:', error);
+        toast.error('Failed to mark step as completed');
+      }
+    };
+
+    // Check if a step can be marked as completed
+    const canMarkStepAsCompleted = (stepIndex: number): boolean => {
+      // Admin can mark any step as completed
+      if (currentRole === 'admin') return true;
+      
+      // Live sites cannot be modified
+      if (site.status === 'live') return false;
+      
+      // Check if this is the current step or next available step
+      const currentStepIndex = getStepperStepFromStatus(site.status);
+      
+      // Can only mark the current step as completed
+      return stepIndex === currentStepIndex;
+    };
+
     switch (selectedStep) {
       case 0: // Site Creation
         return (
           <div className="space-y-6">
-                         {/* Action Buttons at Top */}
-             <div className="flex justify-between items-center">
-               <div>
-                 <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
-                 <p className="text-gray-600 mt-1">Basic site information and configuration</p>
-               </div>
-                               <div className="flex space-x-3">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
+                <p className="text-gray-600 mt-1">Basic site information and configuration</p>
+              </div>
+              <div className="flex space-x-3">
                   {/* Show Mark as Completed button only when Site Creation is editable */}
-                  {canEditSiteCreation() && (
+                  {canEditSiteCreation() && canMarkStepAsCompleted(0) && (
                     <Button 
                       className="flex items-center space-x-2"
-                      onClick={() => {/* TODO: Implement mark as completed functionality */}}
+                      onClick={() => {
+                        const validation = validateSiteCreationFields();
+                        if (validation.isValid) {
+                          markStepAsCompleted(0);
+                        } else {
+                          toast.error(`Please fill in all mandatory fields: ${validation.errors.join(', ')}`);
+                        }
+                      }}
                     >
                       <CheckCircle className="h-4 w-4" />
                       <span>Mark as Completed</span>
                     </Button>
                   )}
-                </div>
-             </div>
+              </div>
+            </div>
 
             {/* Site Creation Form */}
             <div className="grid grid-cols-1 gap-6">
@@ -880,77 +1042,87 @@ const SiteDetail = () => {
                   {/* Basic Site Information */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Basic Site Information</h4>
-                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                               <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
                           <label className="text-sm font-medium text-gray-700">
                             Site Name <span className="text-red-500">*</span>
                           </label>
-                          <Input 
+                        <Input 
                             defaultValue={site.foodCourt} 
                             placeholder="e.g., London Central"
                             className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
                             disabled={!canEditSiteCreation()}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Organisation <span className="text-red-500">*</span>
-                          </label>
-                          <Input 
-                            defaultValue={site.organization} 
-                            placeholder="e.g., Compass Group UK"
-                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                            disabled={!canEditSiteCreation()}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Sector <span className="text-red-500">*</span>
-                          </label>
-                          <Input 
-                            defaultValue={site.sector || 'Eurest'} 
-                            placeholder="e.g., Eurest"
-                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                            disabled={!canEditSiteCreation()}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">
-                            Unit Code <span className="text-red-500">*</span>
-                          </label>
-                          <Input 
-                            defaultValue={site.unitCode} 
-                            placeholder="e.g., LC001"
-                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                            disabled={!canEditSiteCreation()}
-                          />
-                        </div>
-                                                 <div className="space-y-2">
+                        />
+                      </div>
+                      <div className="space-y-2">
+                           <label className="text-sm font-medium text-gray-700">
+                             Organisation <span className="text-red-500">*</span>
+                           </label>
+                           <Select 
+                             value={selectedOrganisation?.id || ''} 
+                             onValueChange={handleOrganisationChange}
+                             disabled={!canEditSiteCreation()}
+                           >
+                             <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
+                               <SelectValue placeholder="Select organisation" />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {organisations.map((org) => (
+                                 <SelectItem key={org.id} value={org.id}>
+                                   {org.name}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-sm font-medium text-gray-700">
+                             Sector <span className="text-red-500">*</span>
+                           </label>
+                        <Input 
+                             value={selectedOrganisation?.sector || site.sector || ''} 
+                             placeholder="Auto-filled from organisation"
+                             className="w-full bg-gray-50"
+                             readOnly
+                        />
+                      </div>
+                      <div className="space-y-2">
+                           <label className="text-sm font-medium text-gray-700">
+                             Unit Code <span className="text-red-500">*</span>
+                           </label>
+                        <Input 
+                             value={selectedOrganisation ? `${selectedOrganisation.unitCodePrefix}001` : site.unitCode} 
+                             placeholder="Auto-generated from organisation"
+                             className="w-full bg-gray-50"
+                             readOnly
+                        />
+                      </div>
+                      <div className="space-y-2">
                            <label className="text-sm font-medium text-gray-700">
                              Target Live Date <span className="text-red-500">*</span>
                            </label>
-                           <Input 
-                             type="date"
-                             defaultValue={site.goLiveDate}
+                        <Input 
+                          type="date"
+                          defaultValue={site.goLiveDate}
                              className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
                              disabled={!canEditSiteCreation()}
-                           />
-                         </div>
-                         <div className="space-y-2">
+                        />
+                      </div>
+                      <div className="space-y-2">
                            <label className="text-sm font-medium text-gray-700">Criticality Level</label>
                            <Select defaultValue={site.criticality || 'medium'} disabled={!canEditSiteCreation()}>
                              <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
                                <SelectValue placeholder="Select criticality level" />
-                             </SelectTrigger>
-                             <SelectContent>
+                          </SelectTrigger>
+                          <SelectContent>
                                <SelectItem value="low">Low</SelectItem>
                                <SelectItem value="medium">Medium</SelectItem>
                                <SelectItem value="high">High</SelectItem>
-                             </SelectContent>
-                           </Select>
-                         </div>
+                          </SelectContent>
+                        </Select>
                       </div>
-                   </div>
+                    </div>
+                  </div>
 
                   {/* Team Assignment */}
                   <div className="space-y-4">
@@ -1000,21 +1172,38 @@ const SiteDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <MapPin className="mr-2 h-5 w-5" />
-                    Location Information <span className="text-red-500">*</span>
+                     Location Information <span className="text-red-500">*</span>
                   </CardTitle>
                   <CardDescription>
                     Site location details and coordinates
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {locationData && (
+                   {locationData ? (
+                     // Show selected location with edit option
+                     <div className="space-y-4">
+                       <div className="flex items-center justify-between">
+                         <label className="text-sm font-medium text-gray-700">Selected Location</label>
+                         {canEditSiteCreation() && (
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => setLocationData(null)}
+                             className="h-8 px-2 text-gray-600 hover:text-gray-900"
+                           >
+                             <Edit className="h-4 w-4 mr-1" />
+                             Edit
+                           </Button>
+                         )}
+                       </div>
+                       
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Selected Address</label>
+                           <label className="text-sm font-medium text-gray-700">Address</label>
                         <Input 
                           value={locationData.address}
                           readOnly
-                          className="w-full"
+                             className="w-full bg-gray-50"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
@@ -1023,7 +1212,7 @@ const SiteDetail = () => {
                           <Input 
                             value={locationData.lat.toFixed(6)}
                             readOnly
-                            className="w-full"
+                               className="w-full bg-gray-50"
                           />
                         </div>
                         <div className="space-y-2">
@@ -1031,15 +1220,22 @@ const SiteDetail = () => {
                           <Input 
                             value={locationData.lng.toFixed(6)}
                             readOnly
-                            className="w-full"
+                               className="w-full bg-gray-50"
                           />
                         </div>
                       </div>
                     </div>
-                  )}
-                  
-                  {/* Location Picker for updating location */}
-                  <div className="pt-4 border-t">
+                     </div>
+                   ) : (
+                     // Show location picker widget when no location is selected
+                     <div className="space-y-4">
+                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                         <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                         <p className="text-gray-600 mb-2">No location selected</p>
+                         <p className="text-sm text-gray-500">Use the location picker below to select a site location</p>
+                       </div>
+                       
+                       {/* Location Picker for selecting location */}
                     <LocationPicker
                       onLocationSelect={(location) => {
                         setLocationData({
@@ -1048,9 +1244,10 @@ const SiteDetail = () => {
                           address: location.address
                         });
                       }}
-                      initialLocation={locationData ? { lat: locationData.lat, lng: locationData.lng } : undefined}
+                         initialLocation={undefined}
                     />
                   </div>
+                   )}
                 </CardContent>
               </Card>
 
@@ -1079,6 +1276,15 @@ const SiteDetail = () => {
                   >
                     <Edit className="h-4 w-4" />
                     <span>Edit Site Study</span>
+                  </Button>
+                )}
+                {canMarkStepAsCompleted(1) && (
+                  <Button 
+                    className="flex items-center space-x-2"
+                    onClick={() => markStepAsCompleted(1)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Completed</span>
                   </Button>
                 )}
                 <Button className="flex items-center space-x-2">
@@ -1545,6 +1751,15 @@ const SiteDetail = () => {
                     <span>Edit Scoping</span>
                   </Button>
                 )}
+                {canMarkStepAsCompleted(2) && (
+                  <Button 
+                    className="flex items-center space-x-2"
+                    onClick={() => markStepAsCompleted(2)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Completed</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Submit for Approval</span>
@@ -1859,6 +2074,15 @@ const SiteDetail = () => {
                     <span>Edit Approval</span>
                   </Button>
                 )}
+                {canMarkStepAsCompleted(3) && (
+                  <Button 
+                    className="flex items-center space-x-2"
+                    onClick={() => markStepAsCompleted(3)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Completed</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Approve</span>
@@ -1980,6 +2204,15 @@ const SiteDetail = () => {
                   >
                     <Edit className="h-4 w-4" />
                     <span>Update Procurement Status</span>
+                  </Button>
+                )}
+                {canMarkStepAsCompleted(4) && (
+                  <Button 
+                    className="flex items-center space-x-2"
+                    onClick={() => markStepAsCompleted(4)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Completed</span>
                   </Button>
                 )}
                 <Button className="flex items-center space-x-2">
@@ -2170,6 +2403,15 @@ const SiteDetail = () => {
                     <span>Update Progress</span>
                   </Button>
                 )}
+                {canMarkStepAsCompleted(5) && (
+                  <Button 
+                    className="flex items-center space-x-2"
+                    onClick={() => markStepAsCompleted(5)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Completed</span>
+                  </Button>
+                )}
                 <Button className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4" />
                   <span>Mark Complete</span>
@@ -2282,6 +2524,141 @@ const SiteDetail = () => {
                 <CheckCircle className="h-4 w-4" />
                 <span>Mark Complete</span>
               </Button>
+            </div>
+          </div>
+        );
+
+      case 6: // Go-Live
+        return (
+          <div className="space-y-6">
+            {/* Action Buttons at Top */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Go-Live</h2>
+                <p className="text-gray-600 mt-1">Final system activation and go-live preparation</p>
+              </div>
+              <div className="flex space-x-3">
+                {canEditStep(6) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {/* TODO: Implement edit mode toggle */}}
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Update Go-Live Status</span>
+                  </Button>
+                )}
+                {canMarkStepAsCompleted(6) && (
+                  <Button 
+                    className="flex items-center space-x-2"
+                    onClick={() => markStepAsCompleted(6)}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Completed</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Go-Live Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Go-Live Checklist Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Go-Live Checklist
+                  </CardTitle>
+                  <CardDescription>
+                    Final verification checklist before going live
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Hardware Installation Complete</h4>
+                          <p className="text-sm text-gray-600">All hardware installed and tested</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="h-3 w-3 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Software Configuration Complete</h4>
+                          <p className="text-sm text-gray-600">All software modules configured</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Clock className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Staff Training</h4>
+                          <p className="text-sm text-gray-600">Team training in progress</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center">
+                          <AlertTriangle className="h-3 w-3 text-gray-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Final Testing</h4>
+                          <p className="text-sm text-gray-600">End-to-end system testing</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Go-Live Timeline Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Calendar className="mr-2 h-5 w-5" />
+                    Go-Live Timeline
+                  </CardTitle>
+                  <CardDescription>
+                    Key dates and milestones for go-live
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Target Go-Live Date:</span>
+                      <span className="font-medium">{site.goLiveDate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Final Testing:</span>
+                      <span className="font-medium">2 days before</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Staff Training:</span>
+                      <span className="font-medium">1 week before</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">System Handover:</span>
+                      <span className="font-medium">Go-Live day</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         );
@@ -2443,11 +2820,11 @@ const SiteDetail = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
-                     <div className="flex items-center space-x-4 mt-2">
-             <p className="text-gray-600">
+          <div className="flex items-center space-x-4 mt-2">
+            <p className="text-gray-600">
                {site.sector || 'Unknown Sector'} → {site.organization} - {new Date(site.goLiveDate).toLocaleDateString()}
-             </p>
-           </div>
+            </p>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <Button 
@@ -2488,13 +2865,13 @@ const SiteDetail = () => {
           <div className="mb-6">
             <Stepper 
               steps={stepperSteps} 
-              currentStep={selectedStep}
+              currentStep={getStepperStepFromStatus(site.status)}
               onStepClick={setSelectedStep}
             />
           </div>
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Step {selectedStep + 1} of {stepperSteps.length}
+              Step {getStepperStepFromStatus(site.status) + 1} of {stepperSteps.length}
             </div>
           </div>
           
