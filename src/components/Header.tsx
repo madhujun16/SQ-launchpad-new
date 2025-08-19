@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,194 @@ import { canAccessPage } from '@/lib/roles';
 import { RocketIcon } from '@/components/ui/RocketIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+// Types
+interface NavigationItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  canAccess: boolean;
+}
+
+// Constants
+const NAVIGATION_ITEMS = [
+  { path: '/dashboard', label: 'Dashboard', icon: Home },
+  { path: '/sites', label: 'Sites', icon: Building },
+  { path: '/approvals-procurement', label: 'Approvals', icon: FileText },
+  { path: '/assets', label: 'Assets', icon: Package },
+  { path: '/deployment', label: 'Deployment', icon: RocketIcon },
+  { path: '/forecast', label: 'Forecast', icon: BarChart3 }
+] as const;
+
+// Logo Component
+const Logo = React.memo(() => (
+  <Link to="/" className="flex items-center space-x-2">
+    <RocketIcon className="h-8 w-8 text-green-600" />
+    <span className="text-xl font-bold text-gray-900">SmartQ Launchpad</span>
+  </Link>
+));
+
+// Desktop Navigation Component
+const DesktopNavigation = React.memo(({ 
+  navigationItems, 
+  currentPath 
+}: { 
+  navigationItems: NavigationItem[]; 
+  currentPath: string; 
+}) => (
+  <nav className="hidden lg:flex items-center space-x-1">
+    {navigationItems.map((item) => (
+      <Link
+        key={item.path}
+        to={item.path}
+        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+          currentPath === item.path
+            ? 'bg-green-100 text-green-700'
+            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+        }`}
+      >
+        <item.icon className="h-4 w-4 inline mr-2" />
+        {item.label}
+      </Link>
+    ))}
+  </nav>
+));
+
+// Mobile Menu Button Component
+const MobileMenuButton = React.memo(({ 
+  isOpen, 
+  onClick 
+}: { 
+  isOpen: boolean; 
+  onClick: () => void; 
+}) => (
+  <Button
+    variant="ghost"
+    size="sm"
+    className="lg:hidden"
+    onClick={onClick}
+    aria-label="Toggle mobile menu"
+  >
+    {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+  </Button>
+));
+
+// User Info Component
+const UserInfo = React.memo(({ 
+  profile, 
+  roleConfig, 
+  RoleIcon 
+}: { 
+  profile: any; 
+  roleConfig: any; 
+  RoleIcon: React.ComponentType<{ className?: string }>; 
+}) => (
+  <div className="flex items-center space-x-3">
+    <div className="hidden md:flex items-center space-x-2">
+      <div className="text-right">
+        <p className="text-sm font-medium text-gray-900">
+          {profile?.full_name || profile?.email || 'User'}
+        </p>
+        <p className="text-xs text-gray-500">{profile?.email}</p>
+      </div>
+    </div>
+    <Badge variant="outline" className="flex items-center space-x-1">
+      <RoleIcon className="h-3 w-3" />
+      <span>{roleConfig?.displayName || 'User'}</span>
+    </Badge>
+  </div>
+));
+
+// Role Switcher Component
+const RoleSwitcher = React.memo(({ 
+  availableRoles, 
+  currentRole, 
+  onRoleSwitch 
+}: { 
+  availableRoles: UserRole[]; 
+  currentRole: UserRole | null; 
+  onRoleSwitch: (role: UserRole) => void; 
+}) => {
+  if (availableRoles.length <= 1) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Settings className="h-4 w-4 mr-2" />
+          Switch Role
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Available Roles</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {availableRoles.map((role) => (
+          <DropdownMenuItem
+            key={role}
+            onClick={() => onRoleSwitch(role)}
+            className={role === currentRole ? 'bg-green-50 text-green-700' : ''}
+          >
+            <User className="h-4 w-4 mr-2" />
+            {getRoleConfig(role).displayName}
+            {role === currentRole && (
+              <Badge variant="secondary" className="ml-2">Current</Badge>
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+});
+
+// Mobile Navigation Component
+const MobileNavigation = React.memo(({ 
+  isOpen, 
+  navigationItems, 
+  currentPath, 
+  onClose 
+}: { 
+  isOpen: boolean; 
+  navigationItems: NavigationItem[]; 
+  currentPath: string; 
+  onClose: () => void; 
+}) => (
+  <Sheet open={isOpen} onOpenChange={onClose}>
+    <SheetContent side="left" className="w-80">
+      <SheetHeader>
+        <SheetTitle>Navigation</SheetTitle>
+        <SheetDescription>Access your SmartQ Launchpad features</SheetDescription>
+      </SheetHeader>
+      
+      <div className="mt-6 space-y-2">
+        {navigationItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            onClick={onClose}
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              currentPath === item.path
+                ? 'bg-green-100 text-green-700'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            <span>{item.label}</span>
+          </Link>
+        ))}
+      </div>
+      
+      <div className="mt-8 pt-6 border-t">
+        <div className="px-3 py-2">
+          <p className="text-sm font-medium text-gray-900">
+            {getRoleConfig(currentRole || 'admin').displayName}
+          </p>
+          <p className="text-xs text-gray-500">Current Role</p>
+        </div>
+      </div>
+    </SheetContent>
+  </Sheet>
+));
+
+// Main Header Component
 const Header = () => {
   const { currentRole, profile, signOut, switchRole, availableRoles } = useAuth();
   const navigate = useNavigate();
@@ -34,12 +222,58 @@ const Header = () => {
   const { isMobile, isTablet, isTouchDevice } = useIsMobile();
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  // Memoized values
+  const roleConfig = useMemo(() => {
+    if (!currentRole) return null;
+    return getRoleConfig(currentRole);
+  }, [currentRole]);
+
+  const RoleIcon = useMemo(() => roleConfig?.icon || User, [roleConfig]);
+
+  const currentPath = useMemo(() => location.pathname, [location.pathname]);
+
+  // Memoized navigation structure
+  const navigationItems = useMemo(() => {
+    if (!currentRole) return [];
+
+    return NAVIGATION_ITEMS.map(item => ({
+      ...item,
+      canAccess: canAccessPage(currentRole, item.path)
+    })).filter(item => item.canAccess);
+  }, [currentRole]);
+
+  // Memoized roles for switching
+  const rolesForSwitch = useMemo(() => {
+    if (availableRoles && availableRoles.length > 1) {
+      return availableRoles;
+    }
+    return [];
+  }, [availableRoles]);
+
+  // Memoized handlers
+  const handleMobileMenuToggle = useCallback(() => {
+    setIsMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const handleMobileMenuClose = useCallback(() => {
+    setIsMobileMenuOpen(false);
+  }, []);
+
+  const handleRoleSwitch = useCallback((role: UserRole) => {
+    switchRole(role);
+    setIsMobileMenuOpen(false);
+  }, [switchRole]);
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    navigate('/auth');
+  }, [signOut, navigate]);
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  }, [currentPath]);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -55,424 +289,81 @@ const Header = () => {
     }
   }, [isMobileMenuOpen]);
 
-  const handleAdminClick = () => {
-    navigate('/platform-configuration');
-  };
-
-  const handleRoleBasedNavigation = (role: string) => {
-    switch (role) {
-      case 'ops_manager':
-        navigate('/dashboard');
-        break;
-      case 'deployment_engineer':
-        navigate('/dashboard');
-        break;
-      case 'admin':
-        navigate('/admin');
-        break;
-      default:
-        navigate('/dashboard');
-    }
-  };
-
-  const getCurrentRoleConfig = () => {
-    if (!currentRole) return null;
-    return getRoleConfig(currentRole);
-  };
-
-  const roleConfig = getCurrentRoleConfig();
-  const RoleIcon = roleConfig?.icon || User;
-
-  // Ensure role switcher appears for users with multiple roles
-  const rolesForSwitch = (() => {
-    // If we have available roles from the database, use them
-    if (availableRoles && availableRoles.length > 1) {
-      return availableRoles;
-    }
-    
-    // For other users, only show if they have multiple roles
-    return availableRoles && availableRoles.length > 1 ? availableRoles : [];
-  })();
-
-  // Navigation structure with 6 primary tabs - role-based visibility
-  const getNavigationStructure = () => {
-    if (!currentRole) return [];
-
-    const baseNavigation = [
-      {
-        type: 'link' as const,
-        path: '/dashboard',
-        label: 'Dashboard',
-        icon: Home,
-        canAccess: canAccessPage(currentRole, '/dashboard')
-      },
-      {
-        type: 'link' as const,
-        path: '/sites',
-        label: 'Sites',
-        icon: Building,
-        canAccess: canAccessPage(currentRole, '/sites')
-      },
-      {
-        type: 'link' as const,
-        path: '/approvals-procurement',
-        label: 'Approvals',
-        icon: FileText,
-        canAccess: canAccessPage(currentRole, '/approvals-procurement')
-      },
-      {
-        type: 'link' as const,
-        path: '/assets',
-        label: 'Assets',
-        icon: Package,
-        canAccess: canAccessPage(currentRole, '/assets')
-      },
-      {
-        type: 'link' as const,
-        path: '/deployment',
-        label: 'Deployment',
-        icon: Users,
-        canAccess: canAccessPage(currentRole, '/deployment')
-      },
-      {
-        type: 'link' as const,
-        path: '/forecast',
-        label: 'Forecast',
-        icon: BarChart3,
-        canAccess: canAccessPage(currentRole, '/forecast')
-      }
-    ];
-
-    return baseNavigation.filter(item => item.canAccess);
-  };
-
-  const navigationStructure = getNavigationStructure();
-
-  const isActivePage = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
-  };
-
-  const handleMobileNavigation = (path: string) => {
-    navigate(path);
-    setIsMobileMenuOpen(false);
-  };
-
-  const renderDesktopNavigation = () => (
-    <div className="hidden lg:flex items-center space-x-1">
-      {navigationStructure.map((item) => (
-        <Button
-          key={item.path}
-          variant="ghost"
-          className={`px-3 py-2 text-sm font-medium transition-all duration-200 ${
-            isActivePage(item.path)
-              ? 'nav-active'
-              : 'text-white/85 hover:text-white hover:bg-white/10'
-          }`}
-          onClick={() => navigate(item.path)}
-        >
-          <item.icon className="mr-2 h-4 w-4" />
-          {item.label}
-        </Button>
-      ))}
-    </div>
-  );
-
-  const renderMobileNavigation = () => (
-    <div className="space-y-2">
-      {navigationStructure.map((item) => (
-        <Button
-          key={item.path}
-          variant="ghost"
-          className={`w-full justify-start text-left h-12 px-4 ${
-            isActivePage(item.path)
-              ? 'bg-emerald-900/40 text-white border-l-4 border-emerald-400'
-              : 'hover:bg-white/10 text-white'
-          }`}
-          onClick={() => handleMobileNavigation(item.path)}
-        >
-          <item.icon className="mr-3 h-5 w-5" />
-          <div className="text-left">
-            <div className="font-medium">{item.label}</div>
-          </div>
-        </Button>
-      ))}
-    </div>
-  );
-
-  return (
-    <>
-      {/* Main Header */}
-      <header className="sticky top-0 z-50 w-full header-black-green">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo and Brand */}
+  // Early return if no role config
+  if (!roleConfig) {
+    return (
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Logo />
             <div className="flex items-center space-x-4">
-              <Link to="/dashboard" className="flex items-center space-x-3">
-                <RocketIcon size={56} className="text-white" />
-                <span className="text-xl font-bold text-white hidden sm:block">
-                  SmartQ Launchpad
-                </span>
-              </Link>
-            </div>
-
-            {/* Desktop Navigation (primary) */}
-            <nav className="flex items-center space-x-1">
-              {getNavigationStructure().map((item) => {
-                if (item.type === 'link' && item.canAccess) {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`
-                        px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                        ${isActive ? 'nav-active' : 'text-white/85 hover:text-white hover:bg-white/10'}
-                      `}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </div>
-                    </Link>
-                  );
-                }
-                return null;
-              })}
-            </nav>
-
-            {/* Right Side - Actions and User */}
-            <div className="flex items-center space-x-2 lg:space-x-3">
-              {/* Notifications */}
-              <NotificationBell className="text-white hover:bg-white/10" />
-
-              {/* User Menu */}
-              {!loading && profile && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2 text-white hover:bg-white/10 h-10 px-3">
-                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <RoleIcon className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="hidden md:block text-left">        
-                        <p className="text-sm font-medium text-white">
-                          {profile?.full_name || 'User'}
-                        </p>
-                        <p className="text-xs text-white/80">
-                          {roleConfig?.displayName || 'User'}
-                        </p>
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">     
-                    <DropdownMenuItem disabled>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>{profile?.email}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-
-                    {/* Quick Actions */}
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-
-                        {currentRole && canAccessPage(currentRole, '/sites/create') && (
-                          <DropdownMenuItem onClick={() => navigate('/sites/create')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            <span>Create Site</span>
-                          </DropdownMenuItem>
-                        )}
-                    </DropdownMenuGroup>
-
-                    <DropdownMenuSeparator />
-
-                    {/* Role Switching */}
-                    {rolesForSwitch.length > 1 && (
-                      <>
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
-                          {rolesForSwitch.map((role) => {
-                            const config = getRoleConfig(role as UserRole);
-                            const RoleIconComponent = config.icon;
-                            return (
-                              <DropdownMenuItem
-                                key={role}
-                                onClick={() => {
-                                  switchRole(role as UserRole);
-                                  handleRoleBasedNavigation(role);
-                                }}
-                                className={`${currentRole === role ? 'bg-muted' : ''} flex items-center`}
-                              >
-                                <RoleIconComponent className={`mr-2 h-4 w-4 ${config.color}`} />
-                                <span>{config.displayName}</span>        
-                                {currentRole === role && (
-                                  <Badge variant="secondary" className="ml-auto text-xs">
-                                    Active
-                                  </Badge>
-                                )}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-
-                    {currentRole && canAccessPage(currentRole, '/platform-configuration') && (
-                      <DropdownMenuItem onClick={handleAdminClick}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Platform Configuration</span>
-                      </DropdownMenuItem>
-                    )}
-
-                    <DropdownMenuItem onClick={signOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sign Out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-              {/* Mobile Menu Button */}
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="lg:hidden text-white hover:bg-white/10 h-10 w-10"
-                    data-mobile-menu
-                  >
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80 p-0" data-mobile-menu>
-                  <SheetHeader className="px-6 py-4 border-b">
-                    <SheetTitle className="flex items-center space-x-2">
-                      <RocketIcon className="h-6 w-6" />
-                      <span>Navigation</span>
-                    </SheetTitle>
-                    <SheetDescription>
-                      Access all available features and pages
-                    </SheetDescription>
-                  </SheetHeader>
-                  
-                  <div className="px-6 py-4">
-                    {renderMobileNavigation()}
-                  </div>
-
-                  {/* Mobile User Info */}
-                  {!loading && profile && (
-                    <div className="px-6 py-4 border-t">
-                      <div className="flex items-center space-x-3 mb-4"> 
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                          <RoleIcon className="h-5 w-5 text-primary-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{profile?.full_name || 'User'}</p>
-                          <p className={`text-sm ${roleConfig?.color || 'text-muted-foreground'}`}>
-                            {roleConfig?.displayName || 'User'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Mobile Quick Actions */}
-                      <div className="space-y-2">
-                        
-                        {currentRole && canAccessPage(currentRole, '/sites/create') && (
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start h-12"
-                            onClick={() => handleMobileNavigation('/sites/create')}
-                          >
-                            <Plus className="mr-3 h-4 w-4" />
-                            Create Site
-                          </Button>
-                        )}
-
-                        {currentRole && canAccessPage(currentRole, '/platform-configuration') && (
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start h-12"
-                            onClick={() => handleMobileNavigation('/platform-configuration')}
-                          >
-                            <Settings className="mr-3 h-4 w-4" />
-                            Platform Configuration
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quick Actions */}
-                  <div className="px-6 py-4 border-t">
-                    <p className="text-sm font-medium mb-2">Quick Actions</p>
-                    <div className="space-y-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          // Force refresh authentication
-                          window.location.reload();
-                        }}
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Force Refresh
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          // Clear localStorage and reload
-                          localStorage.clear();
-                          window.location.reload();
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Clear Cache & Reload
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Switch Role (mobile) */}
-                  {rolesForSwitch.length > 1 && (
-                    <div className="px-6 py-4 border-t">
-                      <p className="text-sm font-medium mb-2">Switch Role</p>
-                      <div className="space-y-2">
-                        {rolesForSwitch.map((role) => {
-                          const config = getRoleConfig(role as UserRole);
-                          const Icon = config.icon;
-                          const isActive = currentRole === role;
-                          return (
-                            <Button
-                              key={role}
-                              variant={isActive ? 'gradient' : 'outline'}
-                              className="w-full justify-start h-10"
-                              onClick={() => {
-                                switchRole(role as UserRole);
-                                handleRoleBasedNavigation(role);
-                                setIsMobileMenuOpen(false);
-                              }}
-                            >
-                              <Icon className="mr-3 h-4 w-4" />
-                              <span>{config.displayName}</span>
-                              {isActive && (
-                                <Badge variant="secondary" className="ml-auto">Active</Badge>
-                              )}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </SheetContent>
-              </Sheet>
+              <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
             </div>
           </div>
         </div>
       </header>
-    </>
+    );
+  }
+
+  return (
+    <header className="bg-white shadow-sm border-b" data-mobile-menu>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Logo />
+          
+          <DesktopNavigation 
+            navigationItems={navigationItems} 
+            currentPath={currentPath} 
+          />
+          
+          <div className="flex items-center space-x-4">
+            <NotificationBell />
+            
+            <div className="hidden md:flex items-center space-x-3">
+              <RoleSwitcher
+                availableRoles={rolesForSwitch}
+                currentRole={currentRole}
+                onRoleSwitch={handleRoleSwitch}
+              />
+              
+              <UserInfo 
+                profile={profile} 
+                roleConfig={roleConfig} 
+                RoleIcon={RoleIcon} 
+              />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <MobileMenuButton 
+              isOpen={isMobileMenuOpen} 
+              onClick={handleMobileMenuToggle} 
+            />
+          </div>
+        </div>
+      </div>
+      
+      <MobileNavigation
+        isOpen={isMobileMenuOpen}
+        navigationItems={navigationItems}
+        currentPath={currentPath}
+        onClose={handleMobileMenuClose}
+      />
+    </header>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// Types
 interface DashboardMetric {
   title: string;
   value: string | number;
@@ -46,8 +47,15 @@ interface DashboardWidget {
   size: 'small' | 'medium' | 'large';
 }
 
-interface RequestSummaryItem { name: string; units?: number }
-interface RequestSummary { software: RequestSummaryItem[]; hardware: RequestSummaryItem[] }
+interface RequestSummaryItem { 
+  name: string; 
+  units?: number; 
+}
+
+interface RequestSummary { 
+  software: RequestSummaryItem[]; 
+  hardware: RequestSummaryItem[]; 
+}
 
 interface RequestRow {
   id: string;
@@ -64,27 +72,162 @@ interface RequestRow {
   summary: RequestSummary;
 }
 
+// Constants
+const LOADING_TIMEOUT = 10000; // 10 seconds
+
+// Loading Component
+const DashboardLoading = () => (
+  <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading dashboard...</p>
+      <p className="text-xs text-gray-400 mt-2">This may take a few moments</p>
+    </div>
+  </div>
+);
+
+// Timeout Warning Component
+const DashboardTimeoutWarning = () => (
+  <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="text-orange-600 mb-4">
+        <AlertCircle className="h-12 w-12 mx-auto" />
+      </div>
+      <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
+      <p className="text-gray-600 mb-4">The dashboard is still loading. This might be due to:</p>
+      <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1">
+        <li>• Slow database connection</li>
+        <li>• Authentication service delay</li>
+        <li>• Network connectivity issues</li>
+      </ul>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Refresh Page
+      </button>
+    </div>
+  </div>
+);
+
+// Access Denied Component
+const DashboardAccessDenied = ({ profile, currentRole, loading }: { 
+  profile: any; 
+  currentRole: any; 
+  loading: boolean; 
+}) => (
+  <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="text-red-600 mb-4">
+        <AlertCircle className="h-12 w-12 mx-auto" />
+      </div>
+      <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+      <p className="text-gray-600 mb-4">You don't have the required permissions to access this dashboard.</p>
+      <div className="text-sm text-gray-500 space-y-1">
+        <p>Debug Info:</p>
+        <p>• Profile: {profile ? 'Loaded' : 'Not loaded'}</p>
+        <p>• Current Role: {currentRole || 'None'}</p>
+        <p>• Loading State: {loading ? 'True' : 'False'}</p>
+      </div>
+    </div>
+  </div>
+);
+
+// Dashboard Header Component
+const DashboardHeader = React.memo(({ profile, roleConfig }: { 
+  profile: any; 
+  roleConfig: any; 
+}) => (
+  <div className="flex items-center justify-between">
+    <div>
+      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <p className="text-gray-600 mt-1">
+        Welcome back, {profile?.full_name || 'User'}. Here's your {roleConfig.displayName} overview.
+      </p>
+    </div>
+    <div className="flex items-center space-x-2">
+      <Badge variant="outline" className="flex items-center space-x-1">
+        <roleConfig.icon className="h-3 w-3" />
+        <span>{roleConfig.displayName}</span>
+      </Badge>
+    </div>
+  </div>
+));
+
+// Metrics Grid Component
+const MetricsGrid = React.memo(({ metrics }: { metrics: DashboardMetric[] }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {metrics.map((metric, index) => (
+      <Card key={index} className="hover:shadow-md transition-shadow">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">{metric.title}</p>
+              <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
+              {metric.change && (
+                <p className="text-xs text-green-600 mt-1">{metric.change}</p>
+              )}
+            </div>
+            <div className={`p-3 rounded-full bg-gray-100 ${metric.color}`}>
+              <metric.icon className="h-6 w-6" />
+            </div>
+          </div>
+          {metric.description && (
+            <p className="text-xs text-gray-500 mt-2">{metric.description}</p>
+          )}
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+));
+
+// Widgets Grid Component
+const WidgetsGrid = React.memo(({ widgets }: { widgets: DashboardWidget[] }) => {
+  const getWidgetSizeClass = useCallback((size: string) => {
+    switch (size) {
+      case 'small': return 'col-span-1';
+      case 'medium': return 'col-span-1 md:col-span-2';
+      case 'large': return 'col-span-1 md:col-span-2 lg:col-span-3';
+      default: return 'col-span-1';
+    }
+  }, []);
+
+  if (widgets.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {widgets.map((widget) => (
+        <Card key={widget.id} className={`${getWidgetSizeClass(widget.size)} hover:shadow-md transition-shadow`}>
+          <CardHeader>
+            <CardTitle className="text-lg">{widget.title}</CardTitle>
+            <CardDescription>{widget.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {widget.content}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+});
+
+// Main Dashboard Component
 const Dashboard = () => {
   const { currentRole, profile, loading } = useAuth();
   const roleConfig = getRoleConfig(currentRole || 'admin');
   const navigate = useNavigate();
 
-  // Mock data - in real app, this would come from API
-  const [metrics, setMetrics] = useState<DashboardMetric[]>([]);
-  const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
-
-  // Requests scoped for the dashboard role views
+  // State
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
-
-  // Add timeout for loading state
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
+  // Timeout handling
   useEffect(() => {
     if (loading) {
       const timer = setTimeout(() => {
         console.warn('⚠️ Dashboard loading timeout - forcing display');
         setLoadingTimeout(true);
-      }, 10000); // 10 second timeout
+      }, LOADING_TIMEOUT);
 
       return () => clearTimeout(timer);
     } else {
@@ -92,71 +235,8 @@ const Dashboard = () => {
     }
   }, [loading]);
 
-  // Show loading state while authentication is being determined
-  if (loading && !loadingTimeout) {
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-          <p className="text-xs text-gray-400 mt-2">This may take a few moments</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show timeout warning if loading takes too long
-  if (loading && loadingTimeout) {
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-orange-600 mb-4">
-            <AlertCircle className="h-12 w-12 mx-auto" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
-          <p className="text-gray-600 mb-4">The dashboard is still loading. This might be due to:</p>
-          <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1">
-            <li>• Slow database connection</li>
-            <li>• Authentication service delay</li>
-            <li>• Network connectivity issues</li>
-          </ul>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if no role is available
-  if (!currentRole) {
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <AlertCircle className="h-12 w-12 mx-auto" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-4">You don't have the required permissions to access this dashboard.</p>
-          <div className="text-sm text-gray-500 space-y-1">
-            <p>Debug Info:</p>
-            <p>• Profile: {profile ? 'Loaded' : 'Not loaded'}</p>
-            <p>• Current Role: {currentRole || 'None'}</p>
-            <p>• Loading State: {loading ? 'True' : 'False'}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Debug logging
-  console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
-
+  // Mock data initialization
   useEffect(() => {
-    // Seed requests
     const seed: RequestRow[] = [
       {
         id: 'r1', siteId: '3', siteName: 'Birmingham South', requestedBy: 'Tom Wilson',
@@ -186,12 +266,8 @@ const Dashboard = () => {
     setAllRequests(seed);
   }, []);
 
-  useEffect(() => {
-    // Generate role-specific metrics and widgets
-    generateDashboardContent();
-  }, [currentRole]);
-
-  const getStatusBadge = (status: RequestRow['status']) => {
+  // Memoized helper functions
+  const getStatusBadge = useCallback((status: RequestRow['status']) => {
     switch (status) {
       case 'pending': return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>;
       case 'approved': return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
@@ -199,18 +275,20 @@ const Dashboard = () => {
       case 'procurement': return <Badge className="bg-blue-100 text-blue-800">Procurement</Badge>;
       default: return <Badge>Unknown</Badge>;
     }
-  };
+  }, []);
 
-  const approveInline = (id: string) => {
+  const approveInline = useCallback((id: string) => {
     setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
     toast.success('Request approved');
-  };
-  const rejectInline = (id: string) => {
+  }, []);
+
+  const rejectInline = useCallback((id: string) => {
     setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected', rejectionReason: 'Rejected from dashboard' } : r));
     toast.success('Request rejected');
-  };
+  }, []);
 
-  const generateDashboardContent = () => {
+  // Memoized metrics generation
+  const metrics = useMemo(() => {
     const baseMetrics: DashboardMetric[] = [
       {
         title: 'Active Sites',
@@ -240,16 +318,14 @@ const Dashboard = () => {
 
     // Role-specific metrics
     if (currentRole === 'admin') {
-      baseMetrics.push(
-        {
-          title: 'Active Users',
-          value: 24,
-          change: '+3 this month',
-          icon: Users,
-          color: 'text-purple-600',
-          description: 'Active platform users'
-        }
-      );
+      baseMetrics.push({
+        title: 'Active Users',
+        value: 24,
+        change: '+3 this month',
+        icon: Users,
+        color: 'text-purple-600',
+        description: 'Active platform users'
+      });
     } else if (currentRole === 'ops_manager') {
       baseMetrics.push(
         {
@@ -289,64 +365,68 @@ const Dashboard = () => {
       );
     }
 
-    setMetrics(baseMetrics);
+    return baseMetrics;
+  }, [currentRole, allRequests]);
 
-    // Widgets remain, but we add role sections below metrics grid
+  // Memoized widgets generation
+  const widgets = useMemo(() => {
     const roleWidgets: DashboardWidget[] = [];
 
     // Common recent activity widget
-    roleWidgets.push(
-      {
-        id: 'recent-activity',
-        title: 'Recent Activity',
-        description: 'Latest updates and actions',
-        size: 'medium',
-        content: (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">Site "London Central" deployed successfully</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium">Site study completed for "Manchester North"</p>
-                  <p className="text-xs text-gray-500">4 hours ago</p>
-                </div>
+    roleWidgets.push({
+      id: 'recent-activity',
+      title: 'Recent Activity',
+      description: 'Latest updates and actions',
+      size: 'medium',
+      content: (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Site "London Central" deployed successfully</p>
+                <p className="text-xs text-gray-500">2 hours ago</p>
               </div>
             </div>
           </div>
-        )
-      }
-    );
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Site study completed for "Manchester North"</p>
+                <p className="text-xs text-gray-500">4 hours ago</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    });
 
-    setWidgets(roleWidgets);
-  };
+    return roleWidgets;
+  }, []);
 
-  const getWidgetSizeClass = (size: string) => {
-    switch (size) {
-      case 'small':
-        return 'col-span-1';
-      case 'medium':
-        return 'col-span-1 md:col-span-2';
-      case 'large':
-        return 'col-span-1 md:col-span-2 lg:col-span-3';
-      default:
-        return 'col-span-1';
-    }
-  };
+  // Loading states
+  if (loading && !loadingTimeout) {
+    return <DashboardLoading />;
+  }
 
-  // Role-specific sections
-  const renderDeploymentEngineerSection = () => {
+  if (loading && loadingTimeout) {
+    return <DashboardTimeoutWarning />;
+  }
+
+  if (!currentRole) {
+    return <DashboardAccessDenied profile={profile} currentRole={currentRole} loading={loading} />;
+  }
+
+  // Debug logging
+  console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
+
+  // Role-specific section renderers
+  const renderDeploymentEngineerSection = useCallback(() => {
     const mine = allRequests.filter(r => r.assignedEngineer === (profile?.full_name || profile?.email));
     const pendingOrRejected = mine.filter(r => r.status === 'pending' || r.status === 'rejected');
     const upcoming = mine.filter(r => r.status === 'approved' || r.status === 'procurement');
+    
     return (
       <>
         <Card>
@@ -408,12 +488,13 @@ const Dashboard = () => {
         </Card>
       </>
     );
-  };
+  }, [allRequests, profile, getStatusBadge, navigate]);
 
-  const renderOpsManagerSection = () => {
+  const renderOpsManagerSection = useCallback(() => {
     const mine = allRequests.filter(r => r.assignedOps === (profile?.full_name || profile?.email));
     const pending = mine.filter(r => r.status === 'pending');
     const recent = mine.filter(r => r.status !== 'pending').slice(0, 5);
+    
     return (
       <>
         <Card>
@@ -471,18 +552,14 @@ const Dashboard = () => {
         </Card>
       </>
     );
-  };
+  }, [allRequests, profile, approveInline, rejectInline, getStatusBadge]);
 
-  const renderAdminSection = () => {
+  const renderAdminSection = useCallback(() => {
     const totalSites = 42;
     const activeLicenses = 120;
     const inventoryItems = 340;
     const procurementSpend = 248000;
-    const auditSummary = [
-      { id: 'a1', ts: '2024-01-19T09:10:00Z', msg: 'User role updated', type: 'update' },
-      { id: 'a2', ts: '2024-01-19T08:55:00Z', msg: 'New hardware item added', type: 'create' },
-      { id: 'a3', ts: '2024-01-18T16:12:00Z', msg: 'Software pricing adjusted', type: 'update' },
-    ];
+    
     return (
       <>
         <Card>
@@ -516,73 +593,19 @@ const Dashboard = () => {
         </div>
       </>
     );
-  };
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Welcome back, {profile?.full_name || 'User'}. Here's your {roleConfig.displayName} overview.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="flex items-center space-x-1">
-            <roleConfig.icon className="h-3 w-3" />
-            <span>{roleConfig.displayName}</span>
-          </Badge>
-        </div>
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {metrics.map((metric, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{metric.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-                  {metric.change && (
-                    <p className="text-xs text-green-600 mt-1">{metric.change}</p>
-                  )}
-                </div>
-                <div className={`p-3 rounded-full bg-gray-100 ${metric.color}`}>
-                  <metric.icon className="h-6 w-6" />
-                </div>
-              </div>
-              {metric.description && (
-                <p className="text-xs text-gray-500 mt-2">{metric.description}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
+      <DashboardHeader profile={profile} roleConfig={roleConfig} />
+      <MetricsGrid metrics={metrics} />
+      
       {/* Role-specific sections */}
       {currentRole === 'deployment_engineer' && renderDeploymentEngineerSection()}
       {currentRole === 'ops_manager' && renderOpsManagerSection()}
       {currentRole === 'admin' && renderAdminSection()}
 
-      {/* Widgets Grid */}
-      {widgets.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {widgets.map((widget) => (
-            <Card key={widget.id} className={`${getWidgetSizeClass(widget.size)} hover:shadow-md transition-shadow`}>
-              <CardHeader>
-                <CardTitle className="text-lg">{widget.title}</CardTitle>
-                <CardDescription>{widget.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {widget.content}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-      
+      <WidgetsGrid widgets={widgets} />
     </div>
   );
 };

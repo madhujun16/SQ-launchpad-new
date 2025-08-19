@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, supabaseCached } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { secureLog } from '@/config/security';
 
@@ -33,6 +33,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
 const ROLES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Constants
+const REQUEST_TIMEOUT = 10000; // 10 seconds
+const GLOBAL_TIMEOUT = 15000; // 15 seconds
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -40,40 +44,81 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Use refs to track mounted state and prevent memory leaks
+  const mountedRef = useRef(true);
+  const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  // Helper function to create fallback profile
+  const createFallbackProfile = useCallback((userId: string): Profile => ({
+    id: userId,
+    user_id: userId,
+    full_name: 'User',
+    email: userId,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    invited_at: new Date().toISOString(),
+    invited_by: 'system',
+    last_login_at: new Date().toISOString(),
+    welcome_email_sent: false,
+    user_roles: [{ role: 'admin' as UserRole }]
+  }), []);
+
+  // Helper function to add timeout with cleanup
+  const addTimeout = useCallback((callback: () => void, delay: number) => {
+    const timeout = setTimeout(() => {
+      if (mountedRef.current) {
+        callback();
+      }
+      timeoutRefs.current.delete(timeout);
+    }, delay);
+    timeoutRefs.current.add(timeout);
+    return timeout;
+  }, []);
+
+  // Helper function to clear all timeouts
+  const clearAllTimeouts = useCallback(() => {
+    timeoutRefs.current.forEach(clearTimeout);
+    timeoutRefs.current.clear();
+  }, []);
 
   // Memoized fetch function to prevent unnecessary re-renders
   const fetchProfile = useCallback(async (userId: string) => {
     try {
+      if (!mountedRef.current) return;
+      
       console.log('🔍 Starting fetchProfile for user:', userId);
       
       // Check cache first
       const cached = profileCache.get(userId);
       if (cached && Date.now() - cached.timestamp < ROLES_CACHE_DURATION) {
         console.log('✅ Using cached profile for user:', userId);
-        setProfile(cached.profile);
-        setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || []);
-        
-        // Set current role from localStorage or default to first available role
-        const savedRole = localStorage.getItem('currentRole') as UserRole;
-        if (savedRole && cached.profile.user_roles?.some(r => r.role === savedRole)) {
-          setCurrentRole(savedRole);
-        } else {
-          setCurrentRole(cached.profile.user_roles?.[0]?.role || 'admin');
+        if (mountedRef.current) {
+          setProfile(cached.profile);
+          setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || []);
+          
+          // Set current role from localStorage or default to first available role
+          const savedRole = localStorage.getItem('currentRole') as UserRole;
+          if (savedRole && cached.profile.user_roles?.some(r => r.role === savedRole)) {
+            setCurrentRole(savedRole);
+          } else {
+            setCurrentRole(cached.profile.user_roles?.[0]?.role || 'admin');
+          }
         }
         return;
       }
 
       console.log('🔄 Fetching fresh profile for user:', userId);
       
-      // Add timeout to prevent hanging requests
+      // Fetch profile with timeout
       const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), 10000);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        addTimeout(() => reject(new Error('Profile fetch timeout after 10 seconds')), REQUEST_TIMEOUT);
       });
 
       // Race between profile fetch and timeout
@@ -81,6 +126,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         profilePromise,
         timeoutPromise
       ]) as any;
+
+      if (!mountedRef.current) return;
 
       if (profileError) {
         console.error('❌ Profile fetch error:', profileError);
@@ -94,30 +141,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Handle specific error cases
         if (profileError.code === 'PGRST116') {
           console.warn('⚠️ No profile found for user, creating fallback');
-          // Profile doesn't exist - create fallback
-          const fallbackProfile: Profile = {
-            id: userId,
-            user_id: userId,
-            full_name: 'User',
-            email: userId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            invited_at: new Date().toISOString(),
-            invited_by: 'system',
-            last_login_at: new Date().toISOString(),
-            welcome_email_sent: false,
-            user_roles: [{ role: 'admin' as UserRole }]
-          };
+          const fallbackProfile = createFallbackProfile(userId);
           
-          setProfile(fallbackProfile);
-          setAvailableRoles(['admin']);
-          setCurrentRole('admin');
-          
-          // Cache the fallback profile
-          profileCache.set(userId, {
-            profile: fallbackProfile,
-            timestamp: Date.now()
-          });
+          if (mountedRef.current) {
+            setProfile(fallbackProfile);
+            setAvailableRoles(['admin']);
+            setCurrentRole('admin');
+            
+            // Cache the fallback profile
+            profileCache.set(userId, {
+              profile: fallbackProfile,
+              timestamp: Date.now()
+            });
+          }
           
           console.log('✅ Fallback profile created and set');
           return;
@@ -135,14 +171,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .select('role')
         .eq('user_id', userId);
 
-      const rolesTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Roles fetch timeout after 10 seconds')), 10000);
+      const rolesTimeoutPromise = new Promise<never>((_, reject) => {
+        addTimeout(() => reject(new Error('Roles fetch timeout after 10 seconds')), REQUEST_TIMEOUT);
       });
 
       const { data: rolesData, error: rolesError } = await Promise.race([
         rolesPromise,
         rolesTimeoutPromise
       ]) as any;
+
+      if (!mountedRef.current) return;
 
       if (rolesError) {
         console.error('❌ Roles fetch error:', rolesError);
@@ -156,21 +194,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // If roles fetch fails, use fallback admin role
         console.warn('⚠️ Roles fetch failed, using fallback admin role');
         const fallbackRoles: UserRole[] = ['admin'];
-        setAvailableRoles(fallbackRoles);
-        setCurrentRole('admin');
         
-        const profileWithFallbackRoles: Profile = { 
-          ...profileData, 
-          user_roles: fallbackRoles.map(role => ({ role }))
-        };
-        
-        setProfile(profileWithFallbackRoles);
-        
-        // Cache the fallback profile
-        profileCache.set(userId, {
-          profile: profileWithFallbackRoles,
-          timestamp: Date.now()
-        });
+        if (mountedRef.current) {
+          setAvailableRoles(fallbackRoles);
+          setCurrentRole('admin');
+          
+          const profileWithFallbackRoles: Profile = { 
+            ...profileData, 
+            user_roles: fallbackRoles.map(role => ({ role }))
+          };
+          
+          setProfile(profileWithFallbackRoles);
+          
+          // Cache the fallback profile
+          profileCache.set(userId, {
+            profile: profileWithFallbackRoles,
+            timestamp: Date.now()
+          });
+        }
         
         console.log('✅ Profile set with fallback admin role');
         return;
@@ -180,7 +221,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('✅ Roles data fetched successfully:', rolesData);
       console.log('✅ Processed roles array:', roles);
 
-      if (profileData) {
+      if (profileData && mountedRef.current) {
         // Only users with assigned roles in the database can access the system
         if (roles.length === 0) {
           console.error('❌ No roles found for user - access denied');
@@ -236,6 +277,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('✅ Profile setup completed successfully');
       }
     } catch (error) {
+      if (!mountedRef.current) return;
+      
       console.error('💥 Error fetching profile:', error);
       console.error('💥 Error details:', {
         name: error?.name,
@@ -246,33 +289,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Always set loading to false and provide fallback
       console.warn('⚠️ Using fallback profile due to error');
-      const fallbackProfile: Profile = {
-        id: userId,
-        user_id: userId,
-        full_name: 'User',
-        email: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        invited_at: new Date().toISOString(),
-        invited_by: 'system',
-        last_login_at: new Date().toISOString(),
-        welcome_email_sent: false,
-        user_roles: [{ role: 'admin' as UserRole }]
-      };
+      const fallbackProfile = createFallbackProfile(userId);
       
-      setProfile(fallbackProfile);
-      setAvailableRoles(['admin']);
-      setCurrentRole('admin');
-      
-      // Cache the fallback profile
-      profileCache.set(userId, {
-        profile: fallbackProfile,
-        timestamp: Date.now()
-      });
+      if (mountedRef.current) {
+        setProfile(fallbackProfile);
+        setAvailableRoles(['admin']);
+        setCurrentRole('admin');
+        
+        // Cache the fallback profile
+        profileCache.set(userId, {
+          profile: fallbackProfile,
+          timestamp: Date.now()
+        });
+      }
       
       console.log('✅ Fallback profile set after error');
     }
-  }, []);
+  }, [createFallbackProfile, addTimeout]);
 
   // Memoized switch role function
   const switchRole = useCallback((role: UserRole) => {
@@ -336,7 +369,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.removeItem('currentRole');
       
       // Refetch profile if user exists
-      if (user) {
+      if (user && mountedRef.current) {
         await fetchProfile(user.id);
       }
     } catch (error) {
@@ -364,11 +397,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   ]);
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
+        if (!mountedRef.current) return;
         
         console.log('🔄 Auth state change:', event, 'User ID:', session?.user?.id);
         setSession(session);
@@ -380,21 +413,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await fetchProfile(session.user.id);
         } else {
           console.log('🚪 User signed out, clearing state...');
-          setProfile(null);
-          setCurrentRole(null);
-          setAvailableRoles([]);
-          localStorage.removeItem('currentRole');
-          // Clear cache when user signs out
-          profileCache.clear();
+          if (mountedRef.current) {
+            setProfile(null);
+            setCurrentRole(null);
+            setAvailableRoles([]);
+            localStorage.removeItem('currentRole');
+            // Clear cache when user signs out
+            profileCache.clear();
+          }
         }
-        console.log('✅ Auth state change completed, setting loading to false');
-        setLoading(false);
+        if (mountedRef.current) {
+          console.log('✅ Auth state change completed, setting loading to false');
+          setLoading(false);
+        }
       }
     );
 
     // Also check for existing session on mount
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       
       console.log('🚀 Initial session check:', session?.user?.id);
       setSession(session);
@@ -403,24 +440,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('👤 Initial session found, fetching profile...');
         await fetchProfile(session.user.id);
       }
-      console.log('✅ Initial session check completed, setting loading to false');
-      setLoading(false);
+      if (mountedRef.current) {
+        console.log('✅ Initial session check completed, setting loading to false');
+        setLoading(false);
+      }
     });
 
     // Global timeout to prevent infinite loading
-    const globalTimeout = setTimeout(() => {
-      if (mounted && loading) {
+    addTimeout(() => {
+      if (mountedRef.current && loading) {
         console.warn('⚠️ Global auth timeout - forcing loading to false');
         setLoading(false);
       }
-    }, 15000); // 15 second global timeout
+    }, GLOBAL_TIMEOUT);
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
-      clearTimeout(globalTimeout);
+      clearAllTimeouts();
     };
-  }, [fetchProfile, loading]);
+  }, [fetchProfile, loading, addTimeout, clearAllTimeouts]);
 
   return (
     <AuthContext.Provider value={contextValue}>
