@@ -878,7 +878,6 @@ export default function PlatformConfiguration() {
             name: data.name,
             description: data.description,
             sector: data.sector || '',
-            logo_url: data.logo_url || '',
             created_at: data.created_at,
             updated_at: data.updated_at
           };
