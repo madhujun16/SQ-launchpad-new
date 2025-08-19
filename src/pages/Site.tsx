@@ -790,53 +790,64 @@ const SiteDetail = () => {
       return true;
     };
 
-    // Check if the Site Study form should show as read-only
-    const isSiteStudyFormReadOnly = () => {
-      if (currentRole === 'admin') return false;
-      
-      // Live sites are completely read-only for non-admin users
-      if (site.status === 'live') {
-        return true;
-      }
-      
-      const currentStepIndex = getStepperStepFromStatus(site.status);
-      
-      // Deployment Engineer can edit until Scoping starts
-      if (currentRole === 'deployment_engineer') {
-        return currentStepIndex >= 2;
-      }
-      
-      // Other roles can only edit during Site Study step
-      return currentStepIndex > 1;
-    };
+         // Check if the Site Study form should show as read-only
+     const isSiteStudyFormReadOnly = () => {
+       if (currentRole === 'admin') return false;
+       
+       // Live sites are completely read-only for non-admin users
+       if (site.status === 'live') {
+         return true;
+       }
+       
+       const currentStepIndex = getStepperStepFromStatus(site.status);
+       
+       // Deployment Engineer can edit until Scoping starts
+       if (currentRole === 'deployment_engineer') {
+         return currentStepIndex >= 2;
+       }
+       
+       // Other roles can only edit during Site Study step
+       return currentStepIndex > 1;
+     };
+
+     // Check if Site Creation step is editable
+     const canEditSiteCreation = () => {
+       // Only admins can edit anything at any stage
+       if (currentRole === 'admin') return true;
+       
+       // Live sites are completely read-only for non-admin users
+       if (site.status === 'live') {
+         return false;
+       }
+       
+       // Site Creation is editable only when status is 'site_created'
+       // Once Site Study step starts, Site Creation becomes read-only
+       return site.status === 'site_created';
+     };
 
     switch (selectedStep) {
       case 0: // Site Creation
         return (
           <div className="space-y-6">
-            {/* Action Buttons at Top */}
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
-                <p className="text-gray-600 mt-1">Basic site information and configuration</p>
-              </div>
-              <div className="flex space-x-3">
-                {canEditStep(0) && (
-                  <Button 
-                    variant="outline" 
-                    className="flex items-center space-x-2"
-                    onClick={() => {/* TODO: Implement edit mode toggle */}}
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span>Edit Site Creation</span>
-                  </Button>
-                )}
-                <Button className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Submit for Review</span>
-                </Button>
-              </div>
-            </div>
+                         {/* Action Buttons at Top */}
+             <div className="flex justify-between items-center">
+               <div>
+                 <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
+                 <p className="text-gray-600 mt-1">Basic site information and configuration</p>
+               </div>
+                               <div className="flex space-x-3">
+                  {/* Show Mark as Completed button only when Site Creation is editable */}
+                  {canEditSiteCreation() && (
+                    <Button 
+                      className="flex items-center space-x-2"
+                      onClick={() => {/* TODO: Implement mark as completed functionality */}}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Mark as Completed</span>
+                    </Button>
+                  )}
+                </div>
+             </div>
 
             {/* Site Creation Form */}
             <div className="grid grid-cols-1 gap-6">
@@ -856,51 +867,61 @@ const SiteDetail = () => {
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Basic Site Information</h4>
                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">Site Name</label>
-                         <Input 
-                           defaultValue={site.foodCourt} 
-                           placeholder="e.g., London Central"
-                           className={`w-full ${!canEditField('foodCourt') ? "bg-gray-50" : ""}`}
-                           disabled={!canEditField('foodCourt')}
-                         />
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">Organisation</label>
-                         <Input 
-                           defaultValue={site.organization} 
-                           placeholder="e.g., Compass Group UK"
-                           className={`w-full ${!canEditField('organization') ? "bg-gray-50" : ""}`}
-                           disabled={!canEditField('organization')}
-                         />
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">Sector</label>
-                         <Input 
-                           defaultValue={site.sector || 'Eurest'} 
-                           placeholder="e.g., Eurest"
-                           className={`w-full ${!canEditField('sector') ? "bg-gray-50" : ""}`}
-                           disabled={!canEditField('sector')}
-                         />
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">Unit Code</label>
-                         <Input 
-                           defaultValue={site.unitCode} 
-                           placeholder="e.g., LC001"
-                           className={`w-full ${!canEditField('unitCode') ? "bg-gray-50" : ""}`}
-                           disabled={!canEditField('unitCode')}
-                         />
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-sm font-medium text-gray-700">Target Live Date</label>
-                         <Input 
-                           type="date"
-                           defaultValue={site.goLiveDate}
-                           className={`w-full ${!canEditField('goLiveDate') ? "bg-gray-50" : ""}`}
-                           disabled={!canEditField('goLiveDate')}
-                         />
-                       </div>
+                                               <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Site Name <span className="text-red-500">*</span>
+                          </label>
+                          <Input 
+                            defaultValue={site.foodCourt} 
+                            placeholder="e.g., London Central"
+                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                            disabled={!canEditSiteCreation()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Organisation <span className="text-red-500">*</span>
+                          </label>
+                          <Input 
+                            defaultValue={site.organization} 
+                            placeholder="e.g., Compass Group UK"
+                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                            disabled={!canEditSiteCreation()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Sector <span className="text-red-500">*</span>
+                          </label>
+                          <Input 
+                            defaultValue={site.sector || 'Eurest'} 
+                            placeholder="e.g., Eurest"
+                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                            disabled={!canEditSiteCreation()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Unit Code <span className="text-red-500">*</span>
+                          </label>
+                          <Input 
+                            defaultValue={site.unitCode} 
+                            placeholder="e.g., LC001"
+                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                            disabled={!canEditSiteCreation()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Target Live Date <span className="text-red-500">*</span>
+                          </label>
+                          <Input 
+                            type="date"
+                            defaultValue={site.goLiveDate}
+                            className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                            disabled={!canEditSiteCreation()}
+                          />
+                        </div>
                      </div>
                   </div>
 
@@ -910,8 +931,8 @@ const SiteDetail = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Priority Level</label>
-                        <Select defaultValue={site.priority} disabled={!canEditField('priority')}>
-                          <SelectTrigger className={!canEditField('priority') ? "bg-gray-50" : ""}>
+                        <Select defaultValue={site.priority} disabled={!canEditSiteCreation()}>
+                          <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select priority" />
                           </SelectTrigger>
                           <SelectContent>
@@ -924,8 +945,8 @@ const SiteDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Risk Level</label>
-                        <Select defaultValue={site.riskLevel} disabled={!canEditField('riskLevel')}>
-                          <SelectTrigger className={!canEditField('riskLevel') ? "bg-gray-50" : ""}>
+                        <Select defaultValue={site.riskLevel} disabled={!canEditSiteCreation()}>
+                          <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select risk level" />
                           </SelectTrigger>
                           <SelectContent>
@@ -940,12 +961,16 @@ const SiteDetail = () => {
 
                   {/* Team Assignment */}
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Team Assignment</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                      Team Assignment <span className="text-red-500">*</span>
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Operations Manager</label>
-                        <Select defaultValue={site.assignedOpsManager} disabled={!canEditField('assignedOpsManager')}>
-                          <SelectTrigger className={!canEditField('assignedOpsManager') ? "bg-gray-50" : ""}>
+                        <label className="text-sm font-medium text-gray-700">
+                          Operations Manager <span className="text-red-500">*</span>
+                        </label>
+                        <Select defaultValue={site.assignedOpsManager} disabled={!canEditSiteCreation()}>
+                          <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select operations manager" />
                           </SelectTrigger>
                           <SelectContent>
@@ -957,9 +982,11 @@ const SiteDetail = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Deployment Engineer</label>
-                        <Select defaultValue={site.assignedDeploymentEngineer} disabled={!canEditField('assignedDeploymentEngineer')}>
-                          <SelectTrigger className={!canEditField('assignedDeploymentEngineer') ? "bg-gray-50" : ""}>
+                        <label className="text-sm font-medium text-gray-700">
+                          Deployment Engineer <span className="text-red-500">*</span>
+                        </label>
+                        <Select defaultValue={site.assignedDeploymentEngineer} disabled={!canEditSiteCreation()}>
+                          <SelectTrigger className={!canEditSiteCreation() ? "bg-gray-50" : ""}>
                             <SelectValue placeholder="Select deployment engineer" />
                           </SelectTrigger>
                           <SelectContent>
@@ -980,7 +1007,7 @@ const SiteDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <MapPin className="mr-2 h-5 w-5" />
-                    Location Information
+                    Location Information <span className="text-red-500">*</span>
                   </CardTitle>
                   <CardDescription>
                     Site location details and coordinates
@@ -1037,17 +1064,7 @@ const SiteDetail = () => {
 
             </div>
 
-            {/* Action Buttons at Bottom */}
-            <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button variant="outline" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Save as Draft</span>
-              </Button>
-              <Button className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Submit for Review</span>
-              </Button>
-            </div>
+                         
           </div>
         );
 
