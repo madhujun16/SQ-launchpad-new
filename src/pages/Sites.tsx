@@ -228,51 +228,51 @@ const Sites = () => {
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Page Header */}
       <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Sites</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Sites</h1>
         <p className="text-gray-600">Manage client sites and track deployment progress</p>
       </div>
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <Input
+                <Input
             placeholder="Search by site name, organization, or location..."
-            value={searchTerm}
+                  value={searchTerm}
             onChange={handleSearchChange}
             className="w-full"
-          />
-        </div>
+                />
+              </div>
         <div className="flex gap-2">
           <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="site_created">Site Created</SelectItem>
               <SelectItem value="site_study_done">Site Study Done</SelectItem>
               <SelectItem value="scoping_done">Scoping Done</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="procurement_done">Procurement Done</SelectItem>
               <SelectItem value="deployed">Deployed</SelectItem>
-              <SelectItem value="live">Live</SelectItem>
-            </SelectContent>
-          </Select>
+                  <SelectItem value="live">Live</SelectItem>
+                </SelectContent>
+              </Select>
           <Button variant="outline" onClick={clearFilters}>
             Clear Filters
-          </Button>
-        </div>
+              </Button>
+            </div>
       </div>
 
       {/* Sites Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sites Overview</CardTitle>
-          <CardDescription>
-            Manage and track all client sites in the deployment pipeline.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sites Overview</CardTitle>
+            <CardDescription>
+              Manage and track all client sites in the deployment pipeline.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -286,7 +286,7 @@ const Sites = () => {
             </TableHeader>
             <TableBody>
               {filteredSites.map((site) => (
-                <TableRow key={site.id}>
+                    <TableRow key={site.id}>
                   <TableCell className="font-medium">
                     {site.name}
                   </TableCell>
@@ -301,39 +301,39 @@ const Sites = () => {
                       <span>{site.organization_name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>
+                      <TableCell>
                     <Badge 
                       variant="outline" 
                       className={`${getStatusDisplayNameFromDB(site.status).color}`}
                     >
                       {getStatusDisplayNameFromDB(site.status).name}
-                    </Badge>
-                  </TableCell>
+                        </Badge>
+                      </TableCell>
                   <TableCell>
                     {site.target_live_date ? new Date(site.target_live_date).toLocaleDateString() : 'N/A'}
                   </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="flex items-center space-x-1">
-                        <User className="h-3 w-3 text-gray-400" />
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="flex items-center space-x-1">
+                            <User className="h-3 w-3 text-gray-400" />
                         <span>{site.assigned_ops_manager || 'Unassigned'}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Wrench className="h-3 w-3 text-gray-400" />
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Wrench className="h-3 w-3 text-gray-400" />
                         <span>{site.assigned_deployment_engineer || 'Unassigned'}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                     <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                            <Button
+                              variant="ghost"
+                              size="sm"
                         onClick={() => handleViewSite(site)}
                         title="View Site"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -343,23 +343,23 @@ const Sites = () => {
                         <FileText className="h-4 w-4" />
                       </Button>
                       {site.status !== 'go_live' && site.status !== 'live' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                            <Button
+                              variant="ghost"
+                              size="sm"
                           onClick={() => handleEditSite(site)}
-                          title="Edit Site"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                              title="Edit Site"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Global Site Notes Modal */}
       {selectedSite && (
@@ -377,4 +377,4 @@ const Sites = () => {
   );
 };
 
-export default Sites;
+export default Sites; 

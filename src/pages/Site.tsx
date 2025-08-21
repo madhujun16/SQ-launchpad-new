@@ -395,18 +395,18 @@ const SiteDetail = () => {
           assignedOpsManager: 'Jessica Cleaver',
           assignedDeploymentEngineer: 'John Smith',
           stakeholders: [
-            {
+            { 
               id: '1',
-              name: 'Sarah Johnson',
+              name: 'Sarah Johnson', 
               role: 'Unit Manager',
               email: 'sarah.johnson@company.com',
               phone: '+44 20 7123 4567',
               organization: 'Company Ltd'
             },
-            {
+            { 
               id: '2',
-              name: 'Mike Wilson',
-              role: 'IT Manager',
+              name: 'Mike Wilson', 
+              role: 'IT Manager', 
               email: 'mike.wilson@company.com',
               phone: '+44 20 7123 4568',
               organization: 'Company Ltd'
@@ -778,6 +778,44 @@ const SiteDetail = () => {
     };
   }, [site]);
 
+  // Create stepper steps based on site status
+  const [stepperSteps, setStepperSteps] = useState<EnhancedStepperStep[]>([]);
+  
+  // Initialize and update stepper steps when site status changes
+  useEffect(() => {
+    if (site?.status) {
+      const baseSteps = createStepperSteps(site.status as UnifiedSiteStatus);
+      const updatedSteps = baseSteps.map((step, index) => ({
+        ...step,
+        isExpanded: expandedSteps.has(index),
+        canCollapse: true
+      }));
+      setStepperSteps(updatedSteps);
+    }
+  }, [site?.status, expandedSteps]);
+
+  // Initialize stepper steps when component mounts
+  useEffect(() => {
+    if (site?.status && stepperSteps.length === 0) {
+      const baseSteps = createStepperSteps(site.status as UnifiedSiteStatus);
+      const initialSteps = baseSteps.map((step, index) => ({
+        ...step,
+        isExpanded: index === 0, // Only first step expanded initially
+        canCollapse: true
+      }));
+      setStepperSteps(initialSteps);
+    }
+  }, [site?.status, stepperSteps.length]);
+
+  // Update expanded steps when selected step changes
+  useEffect(() => {
+    if (selectedStep !== undefined) {
+      const newExpandedSteps = new Set(expandedSteps);
+      newExpandedSteps.add(selectedStep);
+      setExpandedSteps(newExpandedSteps);
+    }
+  }, [selectedStep]);
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -818,16 +856,6 @@ const SiteDetail = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
-  // Create stepper steps based on site status
-  const baseStepperSteps = createStepperSteps(site.status as UnifiedSiteStatus);
-  
-  // Add expanded state to stepper steps
-  const stepperSteps = baseStepperSteps.map((step, index) => ({
-    ...step,
-    isExpanded: expandedSteps.has(index),
-    canCollapse: true
-  }));
 
   // Render content based on selected step
   const renderStepContent = () => {
@@ -979,7 +1007,7 @@ const SiteDetail = () => {
       };
     };
 
-    // Update site status and move to next step
+        // Update site status and move to next step
     const markStepAsCompleted = async (stepIndex: number) => {
       try {
         let newStatus: UnifiedSiteStatus;
@@ -1013,7 +1041,20 @@ const SiteDetail = () => {
 
         // For Site Creation (step 0), we can always proceed as it's the initial step
         if (stepIndex === 0) {
-          // Update site status
+          // Update site status in backend
+          try {
+            const success = await SitesService.updateSiteStatus(site.id, newStatus);
+            if (!success) {
+              toast.error('Failed to update site status in database');
+              return;
+            }
+          } catch (error) {
+            console.error('Error updating site status in database:', error);
+            toast.error('Failed to update site status in database');
+            return;
+          }
+          
+          // Update site status locally
           const updatedSite = { ...site, status: newStatus };
           setSite(updatedSite);
           
@@ -1027,6 +1068,7 @@ const SiteDetail = () => {
           
           // Show success message
           toast.success('Site Creation completed successfully!');
+          // Stepper steps will automatically update due to the useEffect dependency on site.status
           return;
         }
 
@@ -1039,14 +1081,27 @@ const SiteDetail = () => {
           }
         }
 
-        // Update site status
+        // Update site status in backend
+        try {
+          const success = await SitesService.updateSiteStatus(site.id, newStatus);
+          if (!success) {
+            toast.error('Failed to update site status in database');
+            return;
+          }
+        } catch (error) {
+          console.error('Error updating site status in database:', error);
+          toast.error('Failed to update site status in database');
+          return;
+        }
+        
+        // Update site status locally
         const updatedSite = { ...site, status: newStatus };
         setSite(updatedSite);
         
         // Update sites context
         setSites((prevSites: Site[]) => 
-          prevSites.map(s => s.id === site.id ? updatedSite : s)
-        );
+            prevSites.map(s => s.id === site.id ? updatedSite : s)
+          );
         
         // Move to next step if not the last step
         if (stepIndex < 6) {
@@ -1056,6 +1111,8 @@ const SiteDetail = () => {
         // Show success message
         const stepNames = ['Site Creation', 'Site Study', 'Scoping', 'Approval', 'Procurement', 'Deployment', 'Go-Live'];
         toast.success(`${stepNames[stepIndex]} completed successfully!`);
+        
+        // Stepper steps will automatically update due to the useEffect dependency on site.status
         
       } catch (error) {
         console.error('Error marking step as completed:', error);
