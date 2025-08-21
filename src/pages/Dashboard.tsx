@@ -213,7 +213,38 @@ const WidgetsGrid = React.memo(({ widgets }: { widgets: DashboardWidget[] }) => 
 
 // Main Dashboard Component
 const Dashboard = () => {
-  const { currentRole, profile, loading } = useAuth();
+  // Add error boundary state
+  const [hasError, setHasError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Wrap useAuth in try-catch to prevent crashes
+  let authData;
+  try {
+    authData = useAuth();
+  } catch (err) {
+    console.error('Dashboard: Error accessing auth context:', err);
+    setHasError(true);
+    setError(err as Error);
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Error</h2>
+          <p className="text-gray-600 mb-4">There was an issue loading your authentication data.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { currentRole, profile, loading } = authData;
   const roleConfig = getRoleConfig(currentRole || 'admin');
   const navigate = useNavigate();
 
