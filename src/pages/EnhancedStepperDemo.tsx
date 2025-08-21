@@ -20,65 +20,103 @@ import {
   StickyNote,
   ArrowLeft,
   Home,
-  X
+  X,
+  Wifi,
+  Monitor,
+  Server,
+  Truck,
+  CreditCard
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { 
   EnhancedStepper, 
   EnhancedStepContent, 
   MultiStepForm,
+  ReadOnlyInput,
+  ReadOnlyTextarea,
+  ReadOnlySelect,
+  isStepReadOnly,
   type EnhancedStepperStep 
 } from '@/components/ui/enhanced-stepper';
 
 export default function EnhancedStepperDemo() {
   const [currentStep, setCurrentStep] = useState(0);
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
+  
+  // Enhanced form data for site details with realistic information
   const [formData, setFormData] = useState({
-    generalInfo: {
-      username: 'kazi562',
-      fullName: 'Kazi Erfan',
-      email: 'erfan@email.com'
+    siteInfo: {
+      siteName: 'ASDA Redditch (AR004)',
+      siteCode: 'AR004',
+      location: 'Redditch, Worcestershire',
+      address: 'Unit 4, Kingfisher Shopping Centre, Redditch B97 4HA',
+      contactPerson: 'Sarah Johnson',
+      contactPhone: '+44 1527 123456',
+      contactEmail: 'sarah.johnson@asda.co.uk'
     },
-    companyDetails: {
-      companyName: 'Cravty',
-      cnpj: '13567247451386',
-      accountNumber: '4613********865',
-      ispb: '00416968',
-      compeCode: '6567',
-      issuer: 'Nadia Asha',
-      accountType: 'Savings',
-      covenant: ''
+    technicalRequirements: {
+      networkType: 'Fiber Optic',
+      bandwidth: '1 Gbps',
+      hardwareSpecs: 'POS Terminals, Self-Service Kiosks, Kitchen Display Systems',
+      softwareRequirements: 'POS System v3.2, Inventory Management, Customer Analytics',
+      securityLevel: 'PCI DSS Level 1',
+      backupRequirements: 'Daily automated backups with 30-day retention'
     },
-    additionalAccounts: [
-      {
-        accountNumber: '4613671357348683',
-        ispb: '00413568',
-        compeCode: '6594',
-        issuer: 'Julian Floyed',
-        accountType: 'Current',
-        covenant: ''
-      }
-    ]
+    deploymentDetails: {
+      deploymentDate: '2024-03-15',
+      deploymentTeam: 'TechDeploy Squad Alpha',
+      estimatedDuration: '3-4 days',
+      specialRequirements: 'After-hours deployment to minimize business disruption',
+      riskAssessment: 'Low - Standard deployment with experienced team',
+      contingencyPlan: 'Rollback plan available with 2-hour recovery time'
+    },
+    financialInfo: {
+      totalBudget: '£45,000',
+      hardwareCost: '£28,000',
+      softwareCost: '£12,000',
+      laborCost: '£5,000',
+      approvalStatus: 'Approved',
+      approvedBy: 'Michael Chen',
+      approvalDate: '2024-02-28'
+    }
   });
 
-  // Enhanced stepper steps with collapsible functionality
+  // Enhanced stepper steps with realistic site go-live flow
   const steps: EnhancedStepperStep[] = [
     {
-      id: 'general-details',
-      title: 'General Details',
-      description: 'Basic user information',
+      id: 'site-information',
+      title: 'Site Information',
+      description: 'Basic site details and contact information',
       status: currentStep === 0 ? 'current' : currentStep > 0 ? 'completed' : 'upcoming',
-      icon: User,
+      icon: Building,
       isExpanded: expandedSteps.has(0),
       canCollapse: true
     },
     {
-      id: 'company-details',
-      title: 'Company Details',
-      description: 'Company and account information',
+      id: 'technical-requirements',
+      title: 'Technical Requirements',
+      description: 'Network, hardware, and software specifications',
       status: currentStep === 1 ? 'current' : currentStep > 1 ? 'completed' : 'upcoming',
-      icon: Building,
+      icon: Server,
       isExpanded: expandedSteps.has(1),
+      canCollapse: true
+    },
+    {
+      id: 'deployment-planning',
+      title: 'Deployment Planning',
+      description: 'Timeline, team, and risk assessment',
+      status: currentStep === 2 ? 'current' : currentStep > 2 ? 'completed' : 'upcoming',
+      icon: Truck,
+      isExpanded: expandedSteps.has(2),
+      canCollapse: true
+    },
+    {
+      id: 'financial-approval',
+      title: 'Financial Approval',
+      description: 'Budget, costs, and approval status',
+      status: currentStep === 3 ? 'current' : currentStep > 3 ? 'completed' : 'upcoming',
+      icon: CreditCard,
+      isExpanded: expandedSteps.has(3),
       canCollapse: true
     }
   ];
@@ -95,6 +133,11 @@ export default function EnhancedStepperDemo() {
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
+      // Mark current step as completed
+      const newSteps = steps.map((step, index) => 
+        index === currentStep ? { ...step, status: 'completed' as const } : step
+      );
+      
       setCurrentStep(currentStep + 1);
       // Auto-expand the next step
       setExpandedSteps(prev => new Set([...prev, currentStep + 1]));
@@ -112,54 +155,32 @@ export default function EnhancedStepperDemo() {
     const newSteps = steps.map((step, index) => 
       index === currentStep ? { ...step, status: 'completed' as const } : step
     );
-    // In a real app, you would update the steps state here
     
-    console.log('Form completed:', formData);
-    alert('Form completed successfully!');
+    console.log('Site go-live process completed:', formData);
+    alert('Site go-live process completed successfully!');
   };
 
   const canProceed = () => {
-    // Basic validation - in a real app, you'd have more sophisticated validation
+    // Basic validation based on current step
     if (currentStep === 0) {
-      return formData.generalInfo.username && formData.generalInfo.fullName && formData.generalInfo.email;
+      return formData.siteInfo.siteName && formData.siteInfo.siteCode && formData.siteInfo.contactEmail;
     }
     if (currentStep === 1) {
-      return formData.companyDetails.companyName && formData.companyDetails.cnpj;
+      return formData.technicalRequirements.networkType && formData.technicalRequirements.bandwidth;
+    }
+    if (currentStep === 2) {
+      return formData.deploymentDetails.deploymentDate && formData.deploymentDetails.deploymentTeam;
+    }
+    if (currentStep === 3) {
+      return formData.financialInfo.totalBudget && formData.financialInfo.approvalStatus === 'Approved';
     }
     return true;
   };
 
-  const addAdditionalAccount = () => {
-    setFormData(prev => ({
-      ...prev,
-      additionalAccounts: [
-        ...prev.additionalAccounts,
-        {
-          accountNumber: '',
-          ispb: '',
-          compeCode: '',
-          issuer: '',
-          accountType: 'Savings',
-          covenant: ''
-        }
-      ]
-    }));
-  };
-
-  const removeAdditionalAccount = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      additionalAccounts: prev.additionalAccounts.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateAdditionalAccount = (index: number, field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      additionalAccounts: prev.additionalAccounts.map((account, i) => 
-        i === index ? { ...account, [field]: value } : account
-      )
-    }));
+  // Helper function to determine if a step should be read-only
+  const getStepReadOnlyStatus = (stepIndex: number): boolean => {
+    const step = steps[stepIndex];
+    return isStepReadOnly(step);
   };
 
   return (
@@ -171,16 +192,26 @@ export default function EnhancedStepperDemo() {
           <span>Home</span>
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <span className="text-gray-900 font-medium">Enhanced Stepper Demo</span>
+        <span className="text-gray-900 font-medium">Site Go-Live Process</span>
       </nav>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Enhanced Stepper Demo</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Site Go-Live Process</h1>
           <p className="text-gray-600 mt-1">
-            Multi-step form with collapsible sections and step completion states
+            Multi-step form for site deployment with conditional field editability
           </p>
+          <div className="mt-2 flex items-center space-x-2">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Building className="h-3 w-3 mr-1" />
+              ASDA Redditch (AR004)
+            </Badge>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              In Progress
+            </Badge>
+          </div>
         </div>
         <Button
           variant="outline"
@@ -203,7 +234,7 @@ export default function EnhancedStepperDemo() {
         canProceed={canProceed()}
         showNavigation={true}
       >
-        {/* Step 1: General Details */}
+        {/* Step 1: Site Information */}
         {currentStep === 0 && (
           <EnhancedStepContent
             step={steps[0]}
@@ -213,55 +244,91 @@ export default function EnhancedStepperDemo() {
           >
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="username">
-                    Username <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="username"
-                    value={formData.generalInfo.username}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, username: e.target.value }
-                    }))}
-                    placeholder="Enter username"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="fullName">
-                    Full Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="fullName"
-                    value={formData.generalInfo.fullName}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      generalInfo: { ...prev.generalInfo, fullName: e.target.value }
-                    }))}
-                    placeholder="Enter full name"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="email">
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.generalInfo.email}
-                  onChange={(e) => setFormData(prev => ({
+                <ReadOnlyInput
+                  label="Site Name"
+                  value={formData.siteInfo.siteName}
+                  required={true}
+                  placeholder="Enter site name"
+                  readOnly={getStepReadOnlyStatus(0)}
+                  onChange={(value) => setFormData(prev => ({
                     ...prev,
-                    generalInfo: { ...prev.generalInfo, email: e.target.value }
+                    siteInfo: { ...prev.siteInfo, siteName: value }
                   }))}
+                />
+                <ReadOnlyInput
+                  label="Site Code"
+                  value={formData.siteInfo.siteCode}
+                  required={true}
+                  placeholder="Enter site code"
+                  readOnly={getStepReadOnlyStatus(0)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    siteInfo: { ...prev.siteInfo, siteCode: value }
+                  }))}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyInput
+                  label="Location"
+                  value={formData.siteInfo.location}
+                  placeholder="Enter city/region"
+                  readOnly={getStepReadOnlyStatus(0)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    siteInfo: { ...prev.siteInfo, location: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Contact Person"
+                  value={formData.siteInfo.contactPerson}
+                  placeholder="Enter contact person name"
+                  readOnly={getStepReadOnlyStatus(0)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    siteInfo: { ...prev.siteInfo, contactPerson: value }
+                  }))}
+                />
+              </div>
+              <ReadOnlyTextarea
+                label="Full Address"
+                value={formData.siteInfo.address}
+                placeholder="Enter complete address"
+                readOnly={getStepReadOnlyStatus(0)}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  siteInfo: { ...prev.siteInfo, address: value }
+                }))}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyInput
+                  label="Contact Phone"
+                  value={formData.siteInfo.contactPhone}
+                  type="tel"
+                  placeholder="Enter phone number"
+                  readOnly={getStepReadOnlyStatus(0)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    siteInfo: { ...prev.siteInfo, contactPhone: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Contact Email"
+                  value={formData.siteInfo.contactEmail}
+                  type="email"
+                  required={true}
                   placeholder="Enter email address"
+                  readOnly={getStepReadOnlyStatus(0)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    siteInfo: { ...prev.siteInfo, contactEmail: value }
+                  }))}
                 />
               </div>
             </div>
           </EnhancedStepContent>
         )}
 
-        {/* Step 2: Company Details */}
+        {/* Step 2: Technical Requirements */}
         {currentStep === 1 && (
           <EnhancedStepContent
             step={steps[1]}
@@ -270,242 +337,309 @@ export default function EnhancedStepperDemo() {
             canCollapse={true}
           >
             <div className="space-y-6">
-              {/* Primary Company Details */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 border-b pb-2">Company Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="companyName">
-                      Company Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="companyName"
-                      value={formData.companyDetails.companyName}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, companyName: e.target.value }
-                      }))}
-                      placeholder="Enter company name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cnpj">
-                      CNPJ <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="cnpj"
-                      value={formData.companyDetails.cnpj}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, cnpj: e.target.value }
-                      }))}
-                      placeholder="Enter CNPJ"
-                    />
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlySelect
+                  label="Network Type"
+                  value={formData.technicalRequirements.networkType}
+                  required={true}
+                  placeholder="Select network type"
+                  options={[
+                    { value: 'Fiber Optic', label: 'Fiber Optic' },
+                    { value: 'Copper', label: 'Copper' },
+                    { value: 'Wireless', label: 'Wireless' },
+                    { value: 'Hybrid', label: 'Hybrid' }
+                  ]}
+                  readOnly={getStepReadOnlyStatus(1)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    technicalRequirements: { ...prev.technicalRequirements, networkType: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Bandwidth"
+                  value={formData.technicalRequirements.bandwidth}
+                  required={true}
+                  placeholder="Enter bandwidth (e.g., 1 Gbps)"
+                  readOnly={getStepReadOnlyStatus(1)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    technicalRequirements: { ...prev.technicalRequirements, bandwidth: value }
+                  }))}
+                />
               </div>
+              <ReadOnlyTextarea
+                label="Hardware Specifications"
+                value={formData.technicalRequirements.hardwareSpecs}
+                placeholder="List required hardware components"
+                readOnly={getStepReadOnlyStatus(1)}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  technicalRequirements: { ...prev.technicalRequirements, hardwareSpecs: value }
+                }))}
+              />
+              <ReadOnlyTextarea
+                label="Software Requirements"
+                value={formData.technicalRequirements.softwareRequirements}
+                placeholder="List required software applications"
+                readOnly={getStepReadOnlyStatus(1)}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  technicalRequirements: { ...prev.technicalRequirements, softwareRequirements: value }
+                }))}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlySelect
+                  label="Security Level"
+                  value={formData.technicalRequirements.securityLevel}
+                  placeholder="Select security level"
+                  options={[
+                    { value: 'PCI DSS Level 1', label: 'PCI DSS Level 1' },
+                    { value: 'PCI DSS Level 2', label: 'PCI DSS Level 2' },
+                    { value: 'Basic', label: 'Basic' },
+                    { value: 'Enhanced', label: 'Enhanced' }
+                  ]}
+                  readOnly={getStepReadOnlyStatus(1)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    technicalRequirements: { ...prev.technicalRequirements, securityLevel: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Backup Requirements"
+                  value={formData.technicalRequirements.backupRequirements}
+                  placeholder="Enter backup specifications"
+                  readOnly={getStepReadOnlyStatus(1)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    technicalRequirements: { ...prev.technicalRequirements, backupRequirements: value }
+                  }))}
+                />
+              </div>
+            </div>
+          </EnhancedStepContent>
+        )}
 
-              {/* Primary Account Details */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 border-b pb-2">Primary Account</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="accountNumber">Account Number</Label>
-                    <Input
-                      id="accountNumber"
-                      value={formData.companyDetails.accountNumber}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, accountNumber: e.target.value }
-                      }))}
-                      placeholder="Enter account number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ispb">ISPB</Label>
-                    <Input
-                      id="ispb"
-                      value={formData.companyDetails.ispb}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, ispb: e.target.value }
-                      }))}
-                      placeholder="Enter ISPB"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="compeCode">Compe Code</Label>
-                    <Input
-                      id="compeCode"
-                      value={formData.companyDetails.compeCode}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, compeCode: e.target.value }
-                      }))}
-                      placeholder="Enter Compe Code"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="issuer">Issuer</Label>
-                    <Input
-                      id="issuer"
-                      value={formData.companyDetails.issuer}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, issuer: e.target.value }
-                      }))}
-                      placeholder="Enter issuer name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="accountType">Account Type</Label>
-                    <Select
-                      value={formData.companyDetails.accountType}
-                      onValueChange={(value) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, accountType: value }
-                      }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Savings">Savings</SelectItem>
-                        <SelectItem value="Current">Current</SelectItem>
-                        <SelectItem value="Investment">Investment</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="covenant">Covenant</Label>
-                    <Input
-                      id="covenant"
-                      value={formData.companyDetails.covenant}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        companyDetails: { ...prev.companyDetails, covenant: e.target.value }
-                      }))}
-                      placeholder="Enter covenant details"
-                    />
-                  </div>
-                </div>
+        {/* Step 3: Deployment Planning */}
+        {currentStep === 2 && (
+          <EnhancedStepContent
+            step={steps[2]}
+            isExpanded={expandedSteps.has(2)}
+            onToggle={() => handleStepToggle(2, !expandedSteps.has(2))}
+            canCollapse={true}
+          >
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyInput
+                  label="Deployment Date"
+                  value={formData.deploymentDetails.deploymentDate}
+                  type="date"
+                  required={true}
+                  readOnly={getStepReadOnlyStatus(2)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    deploymentDetails: { ...prev.deploymentDetails, deploymentDate: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Deployment Team"
+                  value={formData.deploymentDetails.deploymentTeam}
+                  required={true}
+                  placeholder="Enter team name"
+                  readOnly={getStepReadOnlyStatus(2)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    deploymentDetails: { ...prev.deploymentDetails, deploymentTeam: value }
+                  }))}
+                />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyInput
+                  label="Estimated Duration"
+                  value={formData.deploymentDetails.estimatedDuration}
+                  placeholder="e.g., 3-4 days"
+                  readOnly={getStepReadOnlyStatus(2)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    deploymentDetails: { ...prev.deploymentDetails, estimatedDuration: value }
+                  }))}
+                />
+                <ReadOnlySelect
+                  label="Risk Assessment"
+                  value={formData.deploymentDetails.riskAssessment}
+                  placeholder="Select risk level"
+                  options={[
+                    { value: 'Low', label: 'Low' },
+                    { value: 'Medium', label: 'Medium' },
+                    { value: 'High', label: 'High' },
+                    { value: 'Critical', label: 'Critical' }
+                  ]}
+                  readOnly={getStepReadOnlyStatus(2)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    deploymentDetails: { ...prev.deploymentDetails, riskAssessment: value }
+                  }))}
+                />
+              </div>
+              <ReadOnlyTextarea
+                label="Special Requirements"
+                value={formData.deploymentDetails.specialRequirements}
+                placeholder="Any special deployment requirements"
+                readOnly={getStepReadOnlyStatus(2)}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  deploymentDetails: { ...prev.deploymentDetails, specialRequirements: value }
+                }))}
+              />
+              <ReadOnlyTextarea
+                label="Contingency Plan"
+                value={formData.deploymentDetails.contingencyPlan}
+                placeholder="Describe contingency plan"
+                readOnly={getStepReadOnlyStatus(2)}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  deploymentDetails: { ...prev.deploymentDetails, contingencyPlan: value }
+                }))}
+              />
+            </div>
+          </EnhancedStepContent>
+        )}
 
-              {/* Additional Accounts */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-900 border-b pb-2">Additional Accounts</h4>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addAdditionalAccount}
-                    className="text-blue-600 hover:text-blue-700"
-                  >
-                    <ChevronRight className="h-4 w-4 mr-1" />
-                    Add Additional Account
-                  </Button>
-                </div>
-                
-                {formData.additionalAccounts.map((account, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h5 className="font-medium text-gray-700">Account {index + 1}</h5>
-                      {formData.additionalAccounts.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeAdditionalAccount(index)}
-                          className="text-red-600 hover:text-red-700 p-1 h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor={`accountNumber-${index}`}>Account Number</Label>
-                        <Input
-                          id={`accountNumber-${index}`}
-                          value={account.accountNumber}
-                          onChange={(e) => updateAdditionalAccount(index, 'accountNumber', e.target.value)}
-                          placeholder="Enter account number"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`ispb-${index}`}>ISPB</Label>
-                        <Input
-                          id={`ispb-${index}`}
-                          value={account.ispb}
-                          onChange={(e) => updateAdditionalAccount(index, 'ispb', e.target.value)}
-                          placeholder="Enter ISPB"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`compeCode-${index}`}>Compe Code</Label>
-                        <Input
-                          id={`compeCode-${index}`}
-                          value={account.compeCode}
-                          onChange={(e) => updateAdditionalAccount(index, 'compeCode', e.target.value)}
-                          placeholder="Enter Compe Code"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`issuer-${index}`}>Issuer</Label>
-                        <Input
-                          id={`issuer-${index}`}
-                          value={account.issuer}
-                          onChange={(e) => updateAdditionalAccount(index, 'issuer', e.target.value)}
-                          placeholder="Enter issuer name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`accountType-${index}`}>Account Type</Label>
-                        <Select
-                          value={account.accountType}
-                          onValueChange={(value) => updateAdditionalAccount(index, 'accountType', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select account type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Savings">Savings</SelectItem>
-                            <SelectItem value="Current">Current</SelectItem>
-                            <SelectItem value="Investment">Investment</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor={`covenant-${index}`}>Covenant</Label>
-                        <Input
-                          id={`covenant-${index}`}
-                          value={account.covenant}
-                          onChange={(e) => updateAdditionalAccount(index, 'covenant', e.target.value)}
-                          placeholder="Enter covenant details"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+        {/* Step 4: Financial Approval */}
+        {currentStep === 3 && (
+          <EnhancedStepContent
+            step={steps[3]}
+            isExpanded={expandedSteps.has(3)}
+            onToggle={() => handleStepToggle(3, !expandedSteps.has(3))}
+            canCollapse={true}
+          >
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyInput
+                  label="Total Budget"
+                  value={formData.financialInfo.totalBudget}
+                  required={true}
+                  placeholder="Enter total budget"
+                  readOnly={getStepReadOnlyStatus(3)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    financialInfo: { ...prev.financialInfo, totalBudget: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Hardware Cost"
+                  value={formData.financialInfo.hardwareCost}
+                  placeholder="Enter hardware cost"
+                  readOnly={getStepReadOnlyStatus(3)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    financialInfo: { ...prev.financialInfo, hardwareCost: value }
+                  }))}
+                />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlyInput
+                  label="Software Cost"
+                  value={formData.financialInfo.softwareCost}
+                  placeholder="Enter software cost"
+                  readOnly={getStepReadOnlyStatus(3)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    financialInfo: { ...prev.financialInfo, softwareCost: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Labor Cost"
+                  value={formData.financialInfo.laborCost}
+                  placeholder="Enter labor cost"
+                  readOnly={getStepReadOnlyStatus(3)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    financialInfo: { ...prev.financialInfo, laborCost: value }
+                  }))}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ReadOnlySelect
+                  label="Approval Status"
+                  value={formData.financialInfo.approvalStatus}
+                  required={true}
+                  placeholder="Select approval status"
+                  options={[
+                    { value: 'Pending', label: 'Pending' },
+                    { value: 'Approved', label: 'Approved' },
+                    { value: 'Rejected', label: 'Rejected' },
+                    { value: 'Under Review', label: 'Under Review' }
+                  ]}
+                  readOnly={getStepReadOnlyStatus(3)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    financialInfo: { ...prev.financialInfo, approvalStatus: value }
+                  }))}
+                />
+                <ReadOnlyInput
+                  label="Approved By"
+                  value={formData.financialInfo.approvedBy}
+                  placeholder="Enter approver name"
+                  readOnly={getStepReadOnlyStatus(3)}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    financialInfo: { ...prev.financialInfo, approvedBy: value }
+                  }))}
+                />
+              </div>
+              <ReadOnlyInput
+                label="Approval Date"
+                value={formData.financialInfo.approvalDate}
+                type="date"
+                readOnly={getStepReadOnlyStatus(3)}
+                onChange={(value) => setFormData(prev => ({
+                  ...prev,
+                  financialInfo: { ...prev.financialInfo, approvalDate: value }
+                }))}
+              />
             </div>
           </EnhancedStepContent>
         )}
       </MultiStepForm>
 
-      {/* Debug Info */}
+      {/* Status Summary */}
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-sm">Debug Information</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-600" />
+            Process Status Summary
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-xs space-y-1">
-            <p>Current Step: {currentStep}</p>
-            <p>Expanded Steps: {Array.from(expandedSteps).join(', ')}</p>
-            <p>Can Proceed: {canProceed() ? 'Yes' : 'No'}</p>
-            <p>Form Data: {JSON.stringify(formData, null, 2)}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {steps.map((step, index) => (
+              <div key={step.id} className="text-center">
+                <div className={`
+                  w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center
+                  ${step.status === 'completed' ? 'bg-green-500 text-white' : 
+                    step.status === 'current' ? 'bg-blue-500 text-white' : 
+                    'bg-gray-300 text-gray-600'}
+                `}>
+                  {step.status === 'completed' ? (
+                    <CheckCircle className="h-6 w-6" />
+                  ) : step.status === 'current' ? (
+                    <span className="text-sm font-bold">{index + 1}</span>
+                  ) : (
+                    <span className="text-sm font-bold">{index + 1}</span>
+                  )}
+                </div>
+                <p className="text-sm font-medium text-gray-900">{step.title}</p>
+                <p className={`text-xs ${
+                  step.status === 'completed' ? 'text-green-600' : 
+                  step.status === 'current' ? 'text-blue-600' : 
+                  'text-gray-500'
+                }`}>
+                  {step.status === 'completed' ? 'Completed' : 
+                   step.status === 'current' ? 'In Progress' : 
+                   'Pending'}
+                </p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

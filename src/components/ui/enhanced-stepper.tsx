@@ -3,6 +3,10 @@ import { CheckCircle, Circle, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
+import { Input } from './input';
+import { Label } from './label';
+import { Textarea } from './textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
 export interface EnhancedStepperStep {
   id: string;
@@ -12,6 +16,7 @@ export interface EnhancedStepperStep {
   icon?: React.ComponentType<{ className?: string }>;
   isExpanded?: boolean;
   canCollapse?: boolean;
+  readOnly?: boolean; // New property to control field editability
 }
 
 export interface EnhancedStepperProps {
@@ -343,4 +348,168 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
       </EnhancedStepper>
     </div>
   );
+};
+
+// Read-Only Field Components for Conditional Editability
+export interface ReadOnlyFieldProps {
+  label: string;
+  value: string | number;
+  required?: boolean;
+  placeholder?: string;
+  className?: string;
+  type?: 'text' | 'email' | 'password' | 'number';
+  readOnly?: boolean;
+  onChange?: (value: string) => void;
+}
+
+export const ReadOnlyInput: React.FC<ReadOnlyFieldProps> = ({
+  label,
+  value,
+  required = false,
+  placeholder,
+  className,
+  type = 'text',
+  readOnly = false,
+  onChange
+}) => {
+  if (readOnly) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <Label className="text-sm font-medium text-gray-700">
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+        <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900">
+          {value || placeholder || 'Not provided'}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      <Label htmlFor={label.toLowerCase().replace(/\s+/g, '-')} className="text-sm font-medium text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
+      <Input
+        id={label.toLowerCase().replace(/\s+/g, '-')}
+        type={type}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        placeholder={placeholder}
+        className="w-full"
+      />
+    </div>
+  );
+};
+
+export interface ReadOnlyTextareaProps {
+  label: string;
+  value: string;
+  required?: boolean;
+  placeholder?: string;
+  className?: string;
+  rows?: number;
+  readOnly?: boolean;
+  onChange?: (value: string) => void;
+}
+
+export const ReadOnlyTextarea: React.FC<ReadOnlyTextareaProps> = ({
+  label,
+  value,
+  required = false,
+  placeholder,
+  className,
+  rows = 3,
+  readOnly = false,
+  onChange
+}) => {
+  if (readOnly) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <Label className="text-sm font-medium text-gray-700">
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+        <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900 min-h-[60px]">
+          {value || placeholder || 'Not provided'}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      <Label htmlFor={label.toLowerCase().replace(/\s+/g, '-')} className="text-sm font-medium text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
+      <Textarea
+        id={label.toLowerCase().replace(/\s+/g, '-')}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full"
+      />
+    </div>
+  );
+};
+
+export interface ReadOnlySelectProps {
+  label: string;
+  value: string;
+  required?: boolean;
+  placeholder?: string;
+  className?: string;
+  options: { value: string; label: string }[];
+  readOnly?: boolean;
+  onChange?: (value: string) => void;
+}
+
+export const ReadOnlySelect: React.FC<ReadOnlySelectProps> = ({
+  label,
+  value,
+  required = false,
+  placeholder,
+  className,
+  options,
+  readOnly = false,
+  onChange
+}) => {
+  if (readOnly) {
+    const selectedOption = options.find(opt => opt.value === value);
+    return (
+      <div className={cn("space-y-2", className)}>
+        <Label className="text-sm font-medium text-gray-700">
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+        <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-900">
+          {selectedOption?.label || value || placeholder || 'Not provided'}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      <Label htmlFor={label.toLowerCase().replace(/\s+/g, '-')} className="text-sm font-medium text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+// Helper function to determine if a step should be read-only
+export const isStepReadOnly = (step: EnhancedStepperStep): boolean => {
+  return step.readOnly || step.status === 'completed';
 };
