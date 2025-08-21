@@ -8,7 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Stepper, StepperContent, type StepperStep } from '@/components/ui/stepper';
+import { 
+  EnhancedStepper, 
+  EnhancedStepContent, 
+  MultiStepForm,
+  type EnhancedStepperStep 
+} from '@/components/ui/enhanced-stepper';
 import { 
   FileText, 
   Eye, 
@@ -186,44 +191,56 @@ export default function SiteStudy() {
     // Reset to original data if needed
   };
 
-  // Stepper steps - updated when currentStep changes
-  const steps: StepperStep[] = React.useMemo(() => [
+  // Enhanced stepper steps with collapsible functionality
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
+  
+  const steps: EnhancedStepperStep[] = React.useMemo(() => [
     {
       id: 'site-info',
       title: 'Site Info',
       description: 'Basic site details',
       status: currentStep === 0 ? 'current' : currentStep > 0 ? 'completed' : 'upcoming',
-      icon: Info
+      icon: Info,
+      isExpanded: expandedSteps.has(0),
+      canCollapse: true
     },
     {
       id: 'site-study',
       title: 'Site Study',
       description: 'Location & infrastructure',
       status: currentStep === 1 ? 'current' : currentStep > 1 ? 'completed' : 'upcoming',
-      icon: FileText
+      icon: FileText,
+      isExpanded: expandedSteps.has(1),
+      canCollapse: true
     },
     {
       id: 'software-scoping',
       title: 'Software Scoping',
       description: 'Software requirements',
       status: currentStep === 2 ? 'current' : currentStep > 2 ? 'completed' : 'upcoming',
-      icon: Settings
+      icon: Settings,
+      isExpanded: expandedSteps.has(2),
+      canCollapse: true
     },
     {
       id: 'hardware-scoping',
       title: 'Hardware Scoping',
       description: 'Hardware requirements',
       status: currentStep === 3 ? 'current' : currentStep > 3 ? 'completed' : 'upcoming',
-      icon: Package
+      icon: Package,
+      isExpanded: expandedSteps.has(3),
+      canCollapse: true
     },
     {
       id: 'site-notes-stakeholders',
       title: 'Notes & Stakeholders',
       description: 'Site notes and stakeholders',
       status: currentStep === 4 ? 'current' : currentStep > 4 ? 'completed' : 'upcoming',
-      icon: StickyNote
+      icon: StickyNote,
+      isExpanded: expandedSteps.has(4),
+      canCollapse: true
     }
-  ], [currentStep]);
+  ], [currentStep, expandedSteps]);
 
   // Get site data
   const site = id ? getSiteById(id) : null;
@@ -265,6 +282,16 @@ export default function SiteStudy() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const handleStepToggle = (stepIndex: number, isExpanded: boolean) => {
+    const newExpandedSteps = new Set(expandedSteps);
+    if (isExpanded) {
+      newExpandedSteps.add(stepIndex);
+    } else {
+      newExpandedSteps.delete(stepIndex);
+    }
+    setExpandedSteps(newExpandedSteps);
   };
 
   const handleComplete = () => {
@@ -1001,27 +1028,78 @@ export default function SiteStudy() {
         </div>
       )}
 
-      {/* Stepper Form */}
-      <div className="space-y-4">
-        {/* Debug Info */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Info</h3>
-          <p className="text-xs text-gray-600">Current Step: {currentStep}</p>
-          <p className="text-xs text-gray-600">Total Steps: {steps.length}</p>
-          <p className="text-xs text-gray-600">Steps: {steps.map(s => s.title).join(', ')}</p>
-        </div>
-        
-        <StepperContent
-          steps={steps}
-          currentStep={currentStep}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          onComplete={handleComplete}
-          canProceed={true}
-        >
-          {renderStepContent()}
-        </StepperContent>
-      </div>
+      {/* Enhanced Stepper Form */}
+      <MultiStepForm
+        steps={steps}
+        currentStep={currentStep}
+        onStepChange={setCurrentStep}
+        onStepToggle={handleStepToggle}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        onComplete={handleComplete}
+        canProceed={true}
+        showNavigation={true}
+      >
+        {/* Step 1: Site Info */}
+        {currentStep === 0 && (
+          <EnhancedStepContent
+            step={steps[0]}
+            isExpanded={expandedSteps.has(0)}
+            onToggle={() => handleStepToggle(0, !expandedSteps.has(0))}
+            canCollapse={true}
+          >
+            {renderStepContent()}
+          </EnhancedStepContent>
+        )}
+
+        {/* Step 2: Site Study */}
+        {currentStep === 1 && (
+          <EnhancedStepContent
+            step={steps[1]}
+            isExpanded={expandedSteps.has(1)}
+            onToggle={() => handleStepToggle(1, !expandedSteps.has(1))}
+            canCollapse={true}
+          >
+            {renderStepContent()}
+          </EnhancedStepContent>
+        )}
+
+        {/* Step 3: Software Scoping */}
+        {currentStep === 2 && (
+          <EnhancedStepContent
+            step={steps[2]}
+            isExpanded={expandedSteps.has(2)}
+            onToggle={() => handleStepToggle(2, !expandedSteps.has(2))}
+            canCollapse={true}
+          >
+            {renderStepContent()}
+          </EnhancedStepContent>
+        )}
+
+        {/* Step 4: Hardware Scoping */}
+        {currentStep === 3 && (
+          <EnhancedStepContent
+            step={steps[3]}
+            isExpanded={expandedSteps.has(3)}
+            onToggle={() => handleStepToggle(3, !expandedSteps.has(3))}
+            canCollapse={true}
+          >
+            {renderStepContent()}
+          </EnhancedStepContent>
+        )}
+
+        {/* Step 5: Notes & Stakeholders */}
+        {currentStep === 4 && (
+          <EnhancedStepContent
+            step={steps[4]}
+            isExpanded={expandedSteps.has(4)}
+            onToggle={() => handleStepToggle(4, !expandedSteps.has(4))}
+            canCollapse={true}
+          >
+            {renderStepContent()}
+          </EnhancedStepContent>
+        )}
+      </MultiStepForm>
 
       {/* Global Site Notes Modal */}
       {site && (

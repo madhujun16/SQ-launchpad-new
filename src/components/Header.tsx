@@ -217,6 +217,20 @@ const MobileNavigation = React.memo(({
               <span>Platform Configuration</span>
             </Link>
           )}
+
+          {/* Enhanced Stepper Demo Link */}
+          <Link
+            to="/demo/enhanced-stepper"
+            onClick={onClose}
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              currentPath === '/demo/enhanced-stepper'
+                ? 'bg-green-100 text-green-700'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Enhanced Stepper Demo</span>
+          </Link>
         </div>
         
         <div className="mt-8 pt-6 border-t">

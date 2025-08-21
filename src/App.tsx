@@ -23,6 +23,9 @@ const PlatformConfiguration = lazy(() => import("./pages/PlatformConfiguration")
 const Admin = lazy(() => import("./pages/Admin"));
 const Forecast = lazy(() => import("./pages/Forecast"));
 
+// Demo pages
+const EnhancedStepperDemo = lazy(() => import("./pages/EnhancedStepperDemo"));
+
 // Sites-related pages
 const SiteStudy = lazy(() => import("./pages/SiteStudy"));
 const Site = lazy(() => import("./pages/Site"));
@@ -324,6 +327,20 @@ function App() {
                     }
                   />
                   {/* Note: Integrations and Forecast routes removed - not integrated into main navigation */}
+
+                  {/* Demo routes */}
+                  <Route
+                    path="/demo/enhanced-stepper"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <EnhancedStepperDemo />
+                          </Suspense>
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Legacy route redirects */}
                   <Route path="/site-study" element={<Navigate to="/sites" replace />} />
