@@ -153,6 +153,7 @@ export default function PlatformConfiguration() {
   const { currentRole } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('organizations');
 
   // State for platform configuration
@@ -161,7 +162,7 @@ export default function PlatformConfiguration() {
   const [softwareModules, setSoftwareModules] = useState<SoftwareModule[]>([]);
   const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
   const [recommendationRules, setRecommendationRules] = useState<RecommendationRule[]>([]);
-  const [businessRules, setBusinessRules] = useState<BusinessRule[]>([]);
+  const [businessRules, setBusinessRule] = useState<BusinessRule[]>([]);
   const [editingRule, setEditingRule] = useState<RecommendationRule | null>(null);
   const [editingBusinessRule, setEditingBusinessRule] = useState<BusinessRule | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -189,6 +190,44 @@ export default function PlatformConfiguration() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             You do not have permission to access the Platform Configuration. Please contact an administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <ContentLoader />
+            <p className="text-gray-600">Loading platform configuration...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <Button 
+              variant="outline" 
+              className="ml-4" 
+              onClick={() => {
+                setError(null);
+                loadConfigurationData();
+              }}
+            >
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       </div>
@@ -225,35 +264,69 @@ export default function PlatformConfiguration() {
 
   // Helper to seed default software options
   const seedDefaultSoftware = () => {
-    const defaults: SoftwareModule[] = [
+    const defaultSoftware: SoftwareModule[] = [
       {
-        id: 'sw-pos-system',
-        name: 'SmartQ POS Pro',
-        description: 'Advanced point-of-sale system with inventory management',
-        category: 'POS',
+        id: '1',
+        name: 'POS System',
+        description: 'Point of Sale system for transactions',
+        category: 'Payment Processing',
         is_active: true,
-        monthly_fee: 25,
-        setup_fee: 150,
-        license_fee: 50,
+        monthly_fee: 25.00,
+        setup_fee: 150.00,
+        license_fee: 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
-        id: 'sw-kiosk-software',
-        name: 'Self-Service Kiosk Suite',
-        description: 'Touch-screen kiosk software for customer interactions',
-        category: 'Kiosk',
+        id: '2',
+        name: 'Kiosk Software',
+        description: 'Self-service kiosk software',
+        category: 'Self-Service',
         is_active: true,
-        monthly_fee: 20,
-        setup_fee: 100,
-        license_fee: 30,
+        monthly_fee: 20.00,
+        setup_fee: 100.00,
+        license_fee: 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ];
+    setSoftwareModules(defaultSoftware);
+    toast.success('Default software modules seeded');
+  };
 
-    setSoftwareModules(defaults);
-    logAudit({ type: 'info', message: 'Default software catalog seeded', actor: currentRole });
+  const seedDefaultHardware = () => {
+    const defaultHardware: HardwareItem[] = [
+      {
+        id: '1',
+        name: 'POS Terminal',
+        description: 'Ingenico Telium 2 POS terminal',
+        manufacturer: 'Ingenico',
+        model: 'Telium 2',
+        unit_cost: 2500.00,
+        installation_cost: 150.00,
+        maintenance_cost: 50.00,
+        category: 'Payment Processing',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Thermal Printer',
+        description: 'Receipt and kitchen order printer',
+        manufacturer: 'Epson',
+        model: 'TM-T88VI',
+        unit_cost: 350.00,
+        installation_cost: 75.00,
+        maintenance_cost: 25.00,
+        category: 'Printing',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+    setHardwareItems(defaultHardware);
+    toast.success('Default hardware items seeded');
   };
 
   // Helper to seed default organizations from Excel data
@@ -396,99 +469,154 @@ export default function PlatformConfiguration() {
       setLoading(true);
       
       // Load users with their actual roles using the new secure function
-      const { data: usersData, error: usersError } = await supabase.rpc('list_safe_profiles');
-      
-      if (usersError) {
-        console.error('Error loading users:', usersError);
-        toast.error('Failed to load users');
-      } else if (usersData && usersData.length > 0) {
-        // Fetch actual roles for each user from user_roles table
-        const usersWithRoles = await Promise.all(
-          usersData.map(async (user) => {
-            const { data: rolesData } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', user.user_id);
-            
-            return {
-          ...user,
-              user_roles: rolesData?.map(r => ({ role: r.role })) || []
-            };
-          })
-        );
+      try {
+        const { data: usersData, error: usersError } = await supabase.rpc('list_safe_profiles');
         
-        setUsers(usersWithRoles);
-      } else {
-        // No users found, show empty state
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+          toast.error('Failed to load users');
+          // Set empty array as fallback
+          setUsers([]);
+        } else if (usersData && usersData.length > 0) {
+          // Fetch actual roles for each user from user_roles table
+          const usersWithRoles = await Promise.all(
+            usersData.map(async (user) => {
+              try {
+                const { data: rolesData } = await supabase
+                  .from('user_roles')
+                  .select('role')
+                  .eq('user_id', user.user_id);
+                
+                return {
+                  ...user,
+                  user_roles: rolesData?.map(r => ({ role: r.role })) || []
+                };
+              } catch (roleError) {
+                console.error('Error fetching roles for user:', user.email, roleError);
+                return {
+                  ...user,
+                  user_roles: []
+                };
+              }
+            })
+          );
+          
+          setUsers(usersWithRoles);
+        } else {
+          // No users found, show empty state
+          setUsers([]);
+        }
+      } catch (usersException) {
+        console.error('Exception loading users:', usersException);
         setUsers([]);
       }
 
       // Load user statistics
-      const { data: statsData, error: statsError } = await supabase.rpc('get_user_management_stats');
-      if (statsError) {
-        console.error('Error loading user stats:', statsError);
-      } else if (statsData && statsData.length > 0) {
-        setUserStats(statsData[0]);
+      try {
+        const { data: statsData, error: statsError } = await supabase.rpc('get_user_management_stats');
+        if (statsError) {
+          console.error('Error loading user stats:', statsError);
+          // Set default stats as fallback
+          setUserStats({
+            total_users: 0,
+            admin_count: 0,
+            ops_manager_count: 0,
+            deployment_engineer_count: 0
+          });
+        } else if (statsData && statsData.length > 0) {
+          setUserStats(statsData[0]);
+        }
+      } catch (statsException) {
+        console.error('Exception loading user stats:', statsException);
+        setUserStats({
+          total_users: 0,
+          admin_count: 0,
+          ops_manager_count: 0,
+          deployment_engineer_count: 0
+        });
       }
 
       // Load organizations
-      const { data: orgsData, error: orgsError } = await supabase
-        .from('organizations')
-        .select('*');
-      
-      if (orgsError) {
-        console.error('Error loading organizations:', orgsError);
-        toast.error('Failed to load organizations');
-      } else {
-        if (orgsData && orgsData.length > 0) {
-          setOrganizations(orgsData);
+      try {
+        const { data: orgsData, error: orgsError } = await supabase
+          .from('organizations')
+          .select('*');
+        
+        if (orgsError) {
+          console.error('Error loading organizations:', orgsError);
+          toast.error('Failed to load organizations');
+          setOrganizations([]);
         } else {
-          // No organizations found, seed defaults from Excel data
-          await seedDefaultOrganizations();
+          if (orgsData && orgsData.length > 0) {
+            setOrganizations(orgsData);
+          } else {
+            // No organizations found, seed defaults from Excel data
+            await seedDefaultOrganizations();
+          }
         }
+      } catch (orgsException) {
+        console.error('Exception loading organizations:', orgsException);
+        setOrganizations([]);
       }
 
       // Load software modules
-      const { data: softwareData, error: softwareError } = await supabase
-        .from('software_modules')
-        .select('*');
-      
-      if (softwareError) {
-        console.error('Error loading software modules:', softwareError);
-        toast.error('Failed to load software modules');
-      } else {
-        // Map database fields to enhanced interface with defaults
-        const mappedSoftware = (softwareData || []).map(software => ({
-          ...software,
-          monthly_fee: (software as any).monthly_fee || 0,
-          setup_fee: (software as any).setup_fee || 0,
-          license_fee: (software as any).license_fee || 0
-        }));
-        if (mappedSoftware.length === 0) {
-          // seed defaults for first-time experience
-          seedDefaultSoftware();
+      try {
+        const { data: softwareData, error: softwareError } = await supabase
+          .from('software_modules')
+          .select('*');
+        
+        if (softwareError) {
+          console.error('Error loading software modules:', softwareError);
+          toast.error('Failed to load software modules');
+          setSoftwareModules([]);
         } else {
-        setSoftwareModules(mappedSoftware);
+          // Map database fields to enhanced interface with defaults
+          const mappedSoftware = (softwareData || []).map(software => ({
+            ...software,
+            monthly_fee: (software as any).monthly_fee || 0,
+            setup_fee: (software as any).setup_fee || 0,
+            license_fee: (software as any).license_fee || 0
+          }));
+          if (mappedSoftware.length === 0) {
+            // seed defaults for first-time experience
+            await seedDefaultSoftware();
+          } else {
+            setSoftwareModules(mappedSoftware);
+          }
         }
+      } catch (softwareException) {
+        console.error('Exception loading software modules:', softwareException);
+        setSoftwareModules([]);
       }
 
       // Load hardware items
-      const { data: hardwareData, error: hardwareError } = await supabase
-        .from('hardware_items')
-        .select('*');
-      
-      if (hardwareError) {
-        console.error('Error loading hardware items:', hardwareError);
-        toast.error('Failed to load hardware items');
-      } else {
-        // Map database fields to enhanced interface with defaults
-        const mappedHardware = (hardwareData || []).map(hardware => ({
-          ...hardware,
-          unit_cost: (hardware as any).unit_cost || (hardware as any).estimated_cost || 0,
-          installation_cost: (hardware as any).installation_cost || 0,
-          maintenance_cost: (hardware as any).maintenance_cost || 0
-        }));
-        setHardwareItems(mappedHardware);
+      try {
+        const { data: hardwareData, error: hardwareError } = await supabase
+          .from('hardware_items')
+          .select('*');
+        
+        if (hardwareError) {
+          console.error('Error loading hardware items:', hardwareError);
+          toast.error('Failed to load hardware items');
+          setHardwareItems([]);
+        } else {
+          // Map database fields to enhanced interface with defaults
+          const mappedHardware = (hardwareData || []).map(hardware => ({
+            ...hardware,
+            unit_cost: (hardware as any).unit_cost || (hardware as any).estimated_cost || 0,
+            installation_cost: (hardware as any).installation_cost || 0,
+            maintenance_cost: (hardware as any).maintenance_cost || 0
+          }));
+          if (mappedHardware.length === 0) {
+            // seed defaults for first-time experience
+            seedDefaultHardware();
+          } else {
+            setHardwareItems(mappedHardware);
+          }
+        }
+      } catch (hardwareException) {
+        console.error('Exception loading hardware items:', hardwareException);
+        setHardwareItems([]);
       }
 
       // For now, keep some sample recommendation rules and business rules
@@ -524,7 +652,7 @@ export default function PlatformConfiguration() {
       ];
 
       setRecommendationRules(sampleRecommendationRules);
-      setBusinessRules(sampleBusinessRules);
+      setBusinessRule(sampleBusinessRules);
       setLoading(false);
     } catch (error) {
       console.error('Error loading configuration data:', error);
@@ -795,20 +923,20 @@ export default function PlatformConfiguration() {
   };
 
   const deleteBusinessRule = (ruleId: string) => {
-    setBusinessRules(prev => prev.filter(r => r.id !== ruleId));
+    setBusinessRule(prev => prev.filter(r => r.id !== ruleId));
   };
 
   const saveBusinessRule = () => {
     if (editingBusinessRule) {
       if (editingBusinessRule.id && editingBusinessRule.id !== 'new') {
         // Update existing rule
-        setBusinessRules(prev => 
+        setBusinessRule(prev => 
           prev.map(r => r.id === editingBusinessRule.id ? editingBusinessRule : r)
         );
       } else {
         // Add new rule
         const newRule = { ...editingBusinessRule, id: crypto.randomUUID() };
-        setBusinessRules(prev => [...prev, newRule]);
+        setBusinessRule(prev => [...prev, newRule]);
       }
       setEditingBusinessRule(null);
     }
@@ -1045,10 +1173,6 @@ export default function PlatformConfiguration() {
     a.href = url; a.download = 'audit-logs.csv'; a.click();
     URL.revokeObjectURL(url);
   };
-
-  if (loading) {
-    return <ContentLoader />;
-  }
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">

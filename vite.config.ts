@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     port: 8080,
+    strictPort: true, // Fail if port is already in use
     hmr: {
       port: 24678,
       fastRefresh: true

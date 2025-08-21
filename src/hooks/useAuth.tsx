@@ -35,8 +35,8 @@ const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
 const ROLES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Constants - reduced timeouts to prevent hanging
-const REQUEST_TIMEOUT = 10000; // 10 seconds
-const GLOBAL_TIMEOUT = 15000; // 15 seconds
+const REQUEST_TIMEOUT = 15000; // 15 seconds
+const GLOBAL_TIMEOUT = 20000; // 20 seconds
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
