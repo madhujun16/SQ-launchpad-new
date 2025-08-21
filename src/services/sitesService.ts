@@ -54,7 +54,7 @@ export class SitesService {
         name: site.name,
         organization_id: site.organization_id,
         organization_name: site.organization_name,
-        organization_logo: site.organization_logo || site.organizations?.logo_url,
+        organization_logo: site.organizations?.logo_url || null, // Get logo from organizations table
         location: site.location,
         status: site.status,
         target_live_date: site.target_live_date,
@@ -97,7 +97,7 @@ export class SitesService {
         name: data.name,
         organization_id: data.organization_id,
         organization_name: data.organization_name,
-        organization_logo: data.organization_logo || data.organizations?.logo_url,
+        organization_logo: data.organizations?.logo_url || null, // Get logo from organizations table
         location: data.location,
         status: data.status,
         target_live_date: data.target_live_date,
