@@ -30,18 +30,35 @@ export interface SiteStatus {
 export interface Site {
   id: string;
   name: string;
-  location: SiteLocation;
-  status: SiteStatus;
-  overallStatus: 'new' | 'in-progress' | 'active' | 'deployed';
-  assignment: SiteAssignment;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
+  organization: string;
+  foodCourt: string;
+  unitCode: string;
+  sector?: string; // Optional sector property
+  goLiveDate: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  riskLevel: 'low' | 'medium' | 'high';
+  criticality?: 'low' | 'medium' | 'high';
+  status: UnifiedSiteStatus;
+  assignedOpsManager: string;
+  assignedDeploymentEngineer: string;
+  stakeholders: any[];
+  notes?: string;
   description?: string;
-  clientName: string; // Compass Group
-  cafeteriaType: 'staff' | 'visitor' | 'mixed';
-  capacity: number;
-  expectedFootfall: number;
+  lastUpdated: string;
+  hardwareScope?: {
+    approvalStatus: 'pending' | 'approved' | 'rejected';
+  };
+  // Legacy properties for backward compatibility
+  location?: SiteLocation;
+  overallStatus?: 'new' | 'in-progress' | 'active' | 'deployed';
+  assignment?: SiteAssignment;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  clientName?: string;
+  cafeteriaType?: 'staff' | 'visitor' | 'mixed';
+  capacity?: number;
+  expectedFootfall?: number;
 }
 
 // Unified status system - Finalized sequence
