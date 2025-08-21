@@ -221,6 +221,27 @@ const Dashboard = () => {
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
+  // Memoized helper functions - MUST be defined before any conditional returns
+  const getStatusBadge = useCallback((status: RequestRow['status']) => {
+    switch (status) {
+      case 'pending': return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>;
+      case 'approved': return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+      case 'rejected': return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      case 'procurement': return <Badge className="bg-blue-100 text-blue-800">Procurement</Badge>;
+      default: return <Badge>Unknown</Badge>;
+    }
+  }, []);
+
+  const approveInline = useCallback((id: string) => {
+    setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
+    toast.success('Request approved');
+  }, []);
+
+  const rejectInline = useCallback((id: string) => {
+    setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected', rejectionReason: 'Rejected from dashboard' } : r));
+    toast.success('Request rejected');
+  }, []);
+
   // Timeout handling
   useEffect(() => {
     if (loading) {
@@ -266,26 +287,7 @@ const Dashboard = () => {
     setAllRequests(seed);
   }, []);
 
-  // Memoized helper functions
-  const getStatusBadge = useCallback((status: RequestRow['status']) => {
-    switch (status) {
-      case 'pending': return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>;
-      case 'approved': return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
-      case 'rejected': return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
-      case 'procurement': return <Badge className="bg-blue-100 text-blue-800">Procurement</Badge>;
-      default: return <Badge>Unknown</Badge>;
-    }
-  }, []);
 
-  const approveInline = useCallback((id: string) => {
-    setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
-    toast.success('Request approved');
-  }, []);
-
-  const rejectInline = useCallback((id: string) => {
-    setAllRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected', rejectionReason: 'Rejected from dashboard' } : r));
-    toast.success('Request rejected');
-  }, []);
 
   // Memoized metrics generation
   const metrics = useMemo(() => {

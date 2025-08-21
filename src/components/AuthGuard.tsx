@@ -2,8 +2,6 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-export { AuthProvider, useAuth } from '@/hooks/useAuth';
-
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, currentRole } = useAuth();
   const navigate = useNavigate();
