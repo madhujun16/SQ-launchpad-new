@@ -8,7 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Stepper } from '@/components/ui/stepper';
+import { 
+  EnhancedStepper, 
+  EnhancedStepContent, 
+  MultiStepForm,
+  ReadOnlyInput,
+  ReadOnlyTextarea,
+  ReadOnlySelect,
+  isStepReadOnly,
+  type EnhancedStepperStep 
+} from '@/components/ui/enhanced-stepper';
 import { 
   Building, 
   MapPin, 
@@ -235,6 +244,7 @@ const SiteDetail = () => {
   const [site, setSite] = useState<Site | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedStep, setSelectedStep] = useState(0);
+  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
   const [locationData, setLocationData] = useState<{
     lat: number;
     lng: number;
@@ -260,6 +270,17 @@ const SiteDetail = () => {
         }))
       });
     }
+  };
+
+  // Handler for step toggle
+  const handleStepToggle = (stepIndex: number, isExpanded: boolean) => {
+    const newExpandedSteps = new Set(expandedSteps);
+    if (isExpanded) {
+      newExpandedSteps.add(stepIndex);
+    } else {
+      newExpandedSteps.delete(stepIndex);
+    }
+    setExpandedSteps(newExpandedSteps);
   };
 
   // Handler for organisation selection
@@ -561,6 +582,7 @@ const SiteDetail = () => {
             goLiveDate: '2024-03-01',
             priority: 'medium' as const,
             riskLevel: 'low' as const,
+            criticality: 'medium' as const,
             status: 'approved' as UnifiedSiteStatus,
             assignedOpsManager: 'Fiona MacDonald',
             assignedDeploymentEngineer: 'Robert Campbell',
@@ -613,9 +635,11 @@ const SiteDetail = () => {
             organization: 'Compass Group UK',
             foodCourt: 'Sheffield Steelworks',
             unitCode: 'SS011',
+            sector: 'Eurest',
             goLiveDate: '2024-03-15',
             priority: 'high' as const,
             riskLevel: 'medium' as const,
+            criticality: 'high' as const,
             status: 'approved' as UnifiedSiteStatus,
             assignedOpsManager: 'Andrew Taylor',
             assignedDeploymentEngineer: 'Natalie Clark',
@@ -630,9 +654,11 @@ const SiteDetail = () => {
             organization: 'Compass Group UK',
             foodCourt: 'Nottingham Castle',
             unitCode: 'NC012',
+            sector: 'Eurest',
             goLiveDate: '2024-03-20',
             priority: 'medium' as const,
             riskLevel: 'low' as const,
+            criticality: 'medium' as const,
             status: 'approved' as UnifiedSiteStatus,
             assignedOpsManager: 'Daniel Wright',
             assignedDeploymentEngineer: 'Sophie Turner',
@@ -647,9 +673,11 @@ const SiteDetail = () => {
             organization: 'Compass Group UK',
             foodCourt: 'Oxford University',
             unitCode: 'OU013',
+            sector: 'Eurest',
             goLiveDate: '2024-04-01',
             priority: 'high' as const,
             riskLevel: 'medium' as const,
+            criticality: 'high' as const,
             status: 'site_created' as UnifiedSiteStatus,
             assignedOpsManager: 'Dr. Sarah Johnson',
             assignedDeploymentEngineer: 'Mark Wilson',
@@ -667,9 +695,11 @@ const SiteDetail = () => {
             organization: 'Compass Group UK',
             foodCourt: 'Cambridge Science Park',
             unitCode: 'CSP014',
+            sector: 'Eurest',
             goLiveDate: '2024-04-05',
             priority: 'medium' as const,
             riskLevel: 'low' as const,
+            criticality: 'medium' as const,
             status: 'study_in_progress' as UnifiedSiteStatus,
             assignedOpsManager: 'Dr. Michael Brown',
             assignedDeploymentEngineer: 'Emma Davis',
@@ -687,9 +717,11 @@ const SiteDetail = () => {
             organization: 'Compass Group UK',
             foodCourt: 'Durham Cathedral',
             unitCode: 'DC015',
+            sector: 'Eurest',
             goLiveDate: '2024-04-10',
             priority: 'high' as const,
             riskLevel: 'medium' as const,
+            criticality: 'high' as const,
             status: 'site_created' as UnifiedSiteStatus,
             assignedOpsManager: 'Reverend James Smith',
             assignedDeploymentEngineer: 'Lisa Anderson',
@@ -788,7 +820,14 @@ const SiteDetail = () => {
   };
 
   // Create stepper steps based on site status
-  const stepperSteps = createStepperSteps(site.status as UnifiedSiteStatus);
+  const baseStepperSteps = createStepperSteps(site.status as UnifiedSiteStatus);
+  
+  // Add expanded state to stepper steps
+  const stepperSteps = baseStepperSteps.map((step, index) => ({
+    ...step,
+    isExpanded: expandedSteps.has(index),
+    canCollapse: true
+  }));
 
   // Render content based on selected step
   const renderStepContent = () => {
@@ -2890,17 +2929,15 @@ const SiteDetail = () => {
         </CardHeader>
         <CardContent>
           <div className="mb-6">
-            <Stepper 
+            <EnhancedStepper 
               steps={stepperSteps} 
               currentStep={getStepperStepFromStatus(site.status)}
               onStepClick={setSelectedStep}
+              onStepToggle={handleStepToggle}
+              showNavigation={false}
             />
           </div>
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              Step {getStepperStepFromStatus(site.status) + 1} of {stepperSteps.length}
-            </div>
-          </div>
+
           
           {/* Mobile Navigation Buttons */}
           <div className="md:hidden flex justify-between items-center mt-4 pt-4 border-t">

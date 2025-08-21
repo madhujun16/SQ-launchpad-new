@@ -71,13 +71,16 @@ export type UnifiedSiteStatus =
   | 'deployed' 
   | 'live';
 
-// Stepper step interface
+// Stepper step interface - Updated to match EnhancedStepperStep
 export interface StepperStep {
   id: string;
   title: string;
   description: string;
   status: 'completed' | 'current' | 'upcoming';
   icon: React.ComponentType<{ className?: string }>;
+  isExpanded?: boolean;
+  canCollapse?: boolean;
+  readOnly?: boolean;
 }
 
 // Map status to stepper step
@@ -104,49 +107,70 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
       title: 'Site Creation',
       description: 'Site has been created in the system',
       status: currentStep >= 0 ? (currentStep === 0 ? 'current' : 'completed') : 'upcoming',
-      icon: Building
+      icon: Building,
+      isExpanded: currentStep === 0,
+      canCollapse: true,
+      readOnly: false
     },
     {
       id: 'site-study-done',
       title: 'Site Study',
       description: 'On-site assessment completed',
       status: currentStep >= 1 ? (currentStep === 1 ? 'current' : 'completed') : 'upcoming',
-      icon: FileText
+      icon: FileText,
+      isExpanded: currentStep === 1,
+      canCollapse: true,
+      readOnly: false
     },
     {
       id: 'scoping-done',
       title: 'Scoping',
       description: 'Software & Hardware scoping completed',
       status: currentStep >= 2 ? (currentStep === 2 ? 'current' : 'completed') : 'upcoming',
-      icon: Package
+      icon: Package,
+      isExpanded: currentStep === 2,
+      canCollapse: true,
+      readOnly: false
     },
     {
       id: 'approved',
       title: 'Approval',
       description: 'Project approved by stakeholders',
       status: currentStep >= 3 ? (currentStep === 3 ? 'current' : 'completed') : 'upcoming',
-      icon: CheckSquare
+      icon: CheckSquare,
+      isExpanded: currentStep === 3,
+      canCollapse: true,
+      readOnly: false
     },
     {
       id: 'procurement-done',
       title: 'Procurement',
       description: 'Hardware procurement completed',
       status: currentStep >= 4 ? (currentStep === 4 ? 'current' : 'completed') : 'upcoming',
-      icon: Package
+      icon: Package,
+      isExpanded: currentStep === 4,
+      canCollapse: true,
+      readOnly: false
     },
     {
       id: 'deployed',
       title: 'Deployment',
       description: 'Hardware deployed and installed',
       status: currentStep >= 5 ? (currentStep === 5 ? 'current' : 'completed') : 'upcoming',
-      icon: Truck
+      icon: Truck,
+      isExpanded: currentStep === 5,
+      canCollapse: true,
+      readOnly: false
     },
     {
       id: 'live',
       title: 'Go-Live',
       description: 'Site is live and operational',
       status: currentStep >= 6 ? (currentStep === 6 ? 'current' : 'completed') : 'upcoming',
-      icon: CheckCircle
+      icon: CheckCircle,
+      isExpanded: currentStep === 6,
+      canCollapse: true,
+      readOnly: false
     }
   ];
 };
