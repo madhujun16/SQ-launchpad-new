@@ -165,6 +165,7 @@ const MobileNavigation = React.memo(({
   navigationItems, 
   currentPath, 
   currentRole,
+  availableRoles,
   onClose, 
   onRoleSwitch
 }: { 
@@ -172,10 +173,11 @@ const MobileNavigation = React.memo(({
   navigationItems: NavigationItem[]; 
   currentPath: string; 
   currentRole: UserRole | null;
+  availableRoles: UserRole[];
   onClose: () => void; 
   onRoleSwitch: (role: UserRole) => void; 
 }) => {
-  console.log('🔍 MobileNavigation render:', { isOpen, currentPath, currentRole, navigationItemsCount: navigationItems.length });
+  console.log('🔍 MobileNavigation render:', { isOpen, currentPath, currentRole, navigationItemsCount: navigationItems.length, availableRoles });
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -241,16 +243,16 @@ const MobileNavigation = React.memo(({
             <p className="text-xs text-gray-500">Current Role</p>
           </div>
           
-          {/* Role Switcher in Mobile Menu */}
-          {currentRole && (
+          {/* Role Switcher in Mobile Menu - Only show if user has multiple roles */}
+          {availableRoles.length > 1 && (
             <div className="mt-4 px-3">
               <p className="text-xs text-gray-500 mb-2">Switch Role</p>
               <div className="space-y-1">
-                {['admin', 'ops_manager', 'deployment_engineer'].map((role) => (
+                {availableRoles.map((role) => (
                   <button
                     key={role}
                     onClick={() => {
-                      onRoleSwitch(role as UserRole);
+                      onRoleSwitch(role);
                       onClose();
                     }}
                     className={`w-full text-left px-2 py-1 rounded text-sm ${
@@ -259,7 +261,7 @@ const MobileNavigation = React.memo(({
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    {getRoleConfig(role as UserRole).displayName}
+                    {getRoleConfig(role).displayName}
                   </button>
                 ))}
               </div>
@@ -405,6 +407,37 @@ const Header = () => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  
+                  {/* Role Switcher - Only show if user has multiple roles */}
+                  {availableRoles.length > 1 && (
+                    <>
+                      <DropdownMenuLabel className="text-xs text-gray-500">
+                        Switch Role
+                      </DropdownMenuLabel>
+                      {availableRoles.map((role) => {
+                        const roleConfig = getRoleConfig(role);
+                        return (
+                          <DropdownMenuItem
+                            key={role}
+                            onClick={() => handleRoleSwitch(role)}
+                            className={`flex items-center ${
+                              role === currentRole ? 'bg-green-50 text-green-700' : ''
+                            }`}
+                          >
+                            {roleConfig.icon && (
+                              <roleConfig.icon className="h-4 w-4 mr-2" />
+                            )}
+                            {roleConfig.displayName}
+                            {role === currentRole && (
+                              <span className="ml-auto text-xs text-green-600">Current</span>
+                            )}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  
                   {currentRole === 'admin' && (
                     <>
                       <DropdownMenuItem asChild>
@@ -437,6 +470,7 @@ const Header = () => {
         navigationItems={navigationItems}
         currentPath={currentPath}
         currentRole={currentRole}
+        availableRoles={availableRoles}
         onClose={handleMobileMenuClose}
                     onRoleSwitch={handleRoleSwitch}
           />

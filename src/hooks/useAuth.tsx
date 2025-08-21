@@ -32,7 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Cache for user profiles and roles
 const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
-const ROLES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Constants - reduced timeouts to prevent hanging
 const REQUEST_TIMEOUT = 15000; // 15 seconds
@@ -49,21 +49,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Use refs to track mounted state and prevent memory leaks
   const mountedRef = useRef(true);
   const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
-
-  // Helper function to create fallback profile
-  const createFallbackProfile = useCallback((userId: string, userEmail?: string): Profile => ({
-    id: userId,
-    user_id: userId,
-    full_name: userEmail || userId,
-    email: userEmail || userId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    invited_at: new Date().toISOString(),
-    invited_by: 'system',
-    last_login_at: new Date().toISOString(),
-    welcome_email_sent: false,
-    user_roles: [{ role: 'admin' as UserRole }]
-  }), []);
 
   // Helper function to add timeout with cleanup
   const addTimeout = useCallback((callback: () => void, delay: number) => {
@@ -85,68 +70,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Simplified fetch function with better error handling
   const fetchProfile = useCallback(async (userId: string) => {
+    if (!mountedRef.current) return;
+
     try {
-      if (!mountedRef.current) return;
+      console.log('🔍 Fetching profile for user:', userId);
       
-      console.log('🔍 Starting fetchProfile for user:', userId);
-      
-      // TEMPORARY BYPASS: Force profile data without database query
-      console.log('🚨 TEMPORARY BYPASS: Using hardcoded profile to bypass hanging database query');
-      const hardcodedProfile: Profile = {
-        id: userId,
-        user_id: userId,
-        full_name: 'shivanshu.singh@thesmartq.com',
-        email: 'shivanshu.singh@thesmartq.com',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        invited_at: new Date().toISOString(),
-        invited_by: userId,
-        last_login_at: new Date().toISOString(),
-        welcome_email_sent: false,
-        user_roles: [
-          { role: 'admin' as UserRole },
-          { role: 'ops_manager' as UserRole },
-          { role: 'deployment_engineer' as UserRole }
-        ]
-      };
-      
-      console.log('✅ Setting hardcoded profile:', hardcodedProfile);
-      setProfile(hardcodedProfile);
-      setAvailableRoles(['admin', 'ops_manager', 'deployment_engineer']);
-      setCurrentRole('admin');
-      
-      // Cache the hardcoded profile
-      profileCache.set(userId, {
-        profile: hardcodedProfile,
-        timestamp: Date.now()
-      });
-      
-      console.log('✅ Hardcoded profile set successfully - bypassing database issues');
-      return;
-      
-      // ORIGINAL DATABASE QUERY CODE (COMMENTED OUT FOR NOW)
-      /*
       // Check cache first
       const cached = profileCache.get(userId);
-      if (cached && Date.now() - cached.timestamp < ROLES_CACHE_DURATION) {
-        console.log('✅ Using cached profile for user:', userId);
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log('✅ Using cached profile data');
         if (mountedRef.current) {
           setProfile(cached.profile);
-          setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || ['admin']);
-          
-          // Set current role from localStorage or default to first available role
-          const savedRole = localStorage.getItem('currentRole') as UserRole;
-          if (savedRole && cached.profile.user_roles?.some(r => r.role === savedRole)) {
-            setCurrentRole(savedRole);
-          } else {
-            setCurrentRole(cached.profile.user_roles?.[0]?.role || 'admin');
-          }
+          setAvailableRoles(cached.profile.user_roles.map(r => r.role));
+          setCurrentRole(cached.profile.user_roles[0]?.role || 'admin');
         }
         return;
       }
 
-      console.log('🔄 Fetching fresh profile for user:', userId);
-      
       // Create timeout promise
       const timeoutPromise = new Promise<never>((_, reject) => {
         addTimeout(() => {
@@ -174,38 +114,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!mountedRef.current) return;
 
       if (profileError) {
-        console.warn('⚠️ Profile fetch error, using fallback:', profileError.message);
-        const fallbackProfile = createFallbackProfile(userId);
-        
-        if (mountedRef.current) {
-          setProfile(fallbackProfile);
-          setAvailableRoles(['admin']);
-          setCurrentRole('admin');
-          
-          // Cache the fallback profile
-          profileCache.set(userId, {
-            profile: fallbackProfile,
-            timestamp: Date.now()
-          });
-        }
-        return;
+        console.warn('⚠️ Profile fetch error:', profileError.message);
+        throw profileError;
       }
 
       if (!profileData) {
-        console.warn('⚠️ No profile found, creating fallback');
-        const fallbackProfile = createFallbackProfile(userId);
-        
-        if (mountedRef.current) {
-          setProfile(fallbackProfile);
-          setAvailableRoles(['admin']);
-          setCurrentRole('admin');
-          
-          profileCache.set(userId, {
-            profile: fallbackProfile,
-            timestamp: Date.now()
-          });
-        }
-        return;
+        console.warn('⚠️ No profile found for user');
+        throw new Error('No profile found');
       }
 
       console.log('✅ Profile data fetched successfully:', profileData);
@@ -229,14 +144,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!mountedRef.current) return;
 
-      let roles: UserRole[] = ['admin']; // Default fallback
-
-      if (!rolesError && rolesData && rolesData.length > 0) {
-        roles = rolesData.map(r => r.role);
-        console.log('✅ Roles fetched successfully:', roles);
-      } else {
-        console.warn('⚠️ Using fallback admin role due to roles fetch issue');
+      if (rolesError) {
+        console.warn('⚠️ Roles fetch error:', rolesError.message);
+        throw rolesError;
       }
+
+      if (!rolesData || rolesData.length === 0) {
+        console.warn('⚠️ No roles found for user');
+        throw new Error('No roles found');
+      }
+
+      const roles = rolesData.map(r => r.role);
+      console.log('✅ Roles fetched successfully:', roles);
 
       const profileWithRoles: Profile = { 
         ...profileData, 
@@ -263,25 +182,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         console.log('✅ Profile setup completed successfully');
       }
-      */
     } catch (error) {
       if (!mountedRef.current) return;
       
-      console.warn('⚠️ Error fetching profile, using fallback:', error);
-      const fallbackProfile = createFallbackProfile(userId);
-      
-      if (mountedRef.current) {
-        setProfile(fallbackProfile);
-        setAvailableRoles(['admin']);
-        setCurrentRole('admin');
-        
-        profileCache.set(userId, {
-          profile: fallbackProfile,
-          timestamp: Date.now()
-        });
-      }
+      console.error('💥 Error fetching profile:', error);
+      // Don't set fallback profile - let the error propagate
+      throw error;
     }
-  }, [createFallbackProfile, addTimeout]);
+  }, [addTimeout]);
 
   // Memoized switch role function
   const switchRole = useCallback((role: UserRole) => {
