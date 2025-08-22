@@ -408,10 +408,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    console.error('useAuth must be used within an AuthProvider');
-    // Return a safe default instead of throwing
+  try {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+      console.error('useAuth must be used within an AuthProvider');
+      // Return a safe default instead of throwing
+      return {
+        user: null,
+        session: null,
+        profile: null,
+        currentRole: null,
+        availableRoles: [],
+        switchRole: () => {},
+        signOut: async () => {},
+        signInWithOtp: async () => ({ error: 'Context not available' }),
+        verifyOtp: async () => ({ error: 'Context not available' }),
+        createUserAsAdmin: async () => ({ error: 'Context not available' }),
+        loading: true,
+        forceRefresh: async () => {}
+      };
+    }
+    return context;
+  } catch (error) {
+    console.error('useAuth hook error:', error);
+    // Return a safe default if context access fails
     return {
       user: null,
       session: null,
@@ -427,5 +447,4 @@ export const useAuth = () => {
       forceRefresh: async () => {}
     };
   }
-  return context;
 };
