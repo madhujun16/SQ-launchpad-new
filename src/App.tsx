@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute } from "@/components/AuthGuard";
+import AuthGuard from "@/components/AuthGuard";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
@@ -96,13 +96,13 @@ function App() {
                   <Route
                     path="/dashboard"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <Layout>
                           <Suspense fallback={<PageLoader />}>
                             <Dashboard />
                           </Suspense>
                         </Layout>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
@@ -110,7 +110,7 @@ function App() {
                   <Route
                     path="/sites"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -118,13 +118,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/sites/create"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -132,13 +132,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/sites/:id"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -146,13 +146,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/sites/:id/study"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -160,7 +160,7 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
@@ -168,7 +168,7 @@ function App() {
                   <Route
                     path="/approvals-procurement"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -176,13 +176,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/approvals-procurement/hardware-approvals"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -190,13 +190,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/approvals-procurement/hardware-scoping"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -204,13 +204,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/approvals-procurement/hardware-master"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -218,7 +218,7 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
@@ -226,7 +226,7 @@ function App() {
                   <Route
                     path="/deployment"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -234,7 +234,7 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
@@ -242,7 +242,7 @@ function App() {
                   <Route
                     path="/forecast"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -250,7 +250,7 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
@@ -258,7 +258,7 @@ function App() {
                   <Route
                     path="/assets"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -266,13 +266,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/assets/inventory"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -280,13 +280,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/assets/license-management"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -294,7 +294,7 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
@@ -302,7 +302,7 @@ function App() {
                   <Route
                     path="/platform-configuration"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -310,13 +310,13 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   <Route
                     path="/platform-configuration/admin"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
@@ -324,7 +324,7 @@ function App() {
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
                   {/* Note: Integrations and Forecast routes removed - not integrated into main navigation */}
@@ -333,13 +333,13 @@ function App() {
                   <Route
                     path="/demo/enhanced-stepper"
                     element={
-                      <ProtectedRoute>
+                      <AuthGuard>
                         <Layout>
                           <Suspense fallback={<PageLoader />}>
                             <EnhancedStepperDemo />
                           </Suspense>
                         </Layout>
-                      </ProtectedRoute>
+                      </AuthGuard>
                     }
                   />
 
