@@ -46,10 +46,10 @@ const NAVIGATION_ITEMS = [
 // Logo Component
 const Logo = React.memo(() => (
   <Link to="/" className="flex items-end space-x-2">
+    <span className="text-3xl font-bold text-white mb-1">Launchpad</span>
     <div className="relative">
       <RocketIcon className="h-12 w-12 text-green-400 relative -bottom-1" />
     </div>
-    <span className="text-xl font-bold text-white mb-1">Launchpad</span>
   </Link>
 ));
 
