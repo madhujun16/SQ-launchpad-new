@@ -45,9 +45,11 @@ const NAVIGATION_ITEMS = [
 
 // Logo Component
 const Logo = React.memo(() => (
-  <Link to="/" className="flex items-center space-x-2">
-    <RocketIcon className="h-8 w-8 text-green-400" />
-    <span className="text-xl font-bold text-white">Launchpad</span>
+  <Link to="/" className="flex items-end space-x-2">
+    <div className="relative">
+      <RocketIcon className="h-12 w-12 text-green-400 relative -bottom-1" />
+    </div>
+    <span className="text-xl font-bold text-white mb-1">Launchpad</span>
   </Link>
 ));
 
@@ -59,7 +61,7 @@ const DesktopNavigation = React.memo(({
   navigationItems: NavigationItem[]; 
   currentPath: string; 
 }) => (
-  <nav className="hidden lg:flex items-center space-x-1">
+  <nav className="hidden lg:flex items-end space-x-1 mb-1">
     {navigationItems.map((item) => (
       <Link
         key={item.path}
@@ -88,7 +90,7 @@ const MobileMenuButton = React.memo(({
   <Button
     variant="ghost"
     size="sm"
-    className="lg:hidden text-white hover:bg-white/10"
+    className="lg:hidden text-white hover:bg-white/10 mb-1"
     onClick={onClick}
     aria-label="Toggle mobile menu"
   >
@@ -355,9 +357,9 @@ const Header = () => {
     return (
       <header className="bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-end h-20">
             <Logo />
-            <div className="flex items-center space-x-4">
+            <div className="flex items-end space-x-4 mb-1">
               <div className="animate-pulse bg-green-200 h-8 w-32 rounded"></div>
             </div>
           </div>
@@ -369,7 +371,7 @@ const Header = () => {
   return (
     <header className="bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600" data-mobile-menu>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-end h-20">
           <Logo />
           
           <DesktopNavigation 
@@ -377,10 +379,10 @@ const Header = () => {
             currentPath={currentPath} 
           />
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-end space-x-4 mb-1">
             <NotificationBell />
             
-            <div className="hidden md:flex items-center space-x-3">
+            <div className="hidden md:flex items-end space-x-3 mb-1">
               <UserInfo 
                 profile={profile} 
                 roleConfig={roleConfig} 

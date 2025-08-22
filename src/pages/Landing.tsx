@@ -18,16 +18,18 @@ const Landing = () => {
       {/* Header with darker aurora fade */}
       <header className="fixed top-0 left-0 right-0 z-50 header-black-green">
         <div className="container mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <RocketIcon size={isMobile ? 28 : 36} className="text-white" />
-              <span className="font-bold text-white hidden sm:block text-2xl sm:text-3xl">SmartQ Launchpad</span>
+          <div className="flex items-end justify-between h-20">
+            <div className="flex items-end space-x-3 sm:space-x-4">
+              <div className="relative">
+                <RocketIcon size={isMobile ? 48 : 64} className="text-white relative -bottom-1" />
+              </div>
+              <span className="font-bold text-white hidden sm:block text-2xl sm:text-3xl mb-1">SmartQ Launchpad</span>
             </div>
 
             <Button 
               onClick={handleLoginClick}
               variant="ghost"
-              className={`${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2'} text-white hover:bg-white/15 rounded-xl`}
+              className={`${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2'} text-white hover:bg-white/15 rounded-xl mb-1`}
             >
               Login
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -37,7 +39,7 @@ const Landing = () => {
       </header>
 
       {/* Spacer to offset fixed header height on landing */}
-      <div className="h-14" aria-hidden="true" />
+      <div className="h-20" aria-hidden="true" />
 
       {/* Hero copy */}
       <section className="relative py-12 sm:py-16 px-4 sm:px-6">
