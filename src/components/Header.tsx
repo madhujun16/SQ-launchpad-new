@@ -90,7 +90,7 @@ const MobileMenuButton = React.memo(({
   <Button
     variant="ghost"
     size="sm"
-    className="lg:hidden text-white hover:bg-white/10"
+    className="lg:hidden text-white hover:bg-white/10 p-2"
     onClick={onClick}
     aria-label="Toggle mobile menu"
   >
@@ -181,12 +181,14 @@ const MobileNavigation = React.memo(({
 }) => {
   console.log('🔍 MobileNavigation render:', { isOpen, currentPath, currentRole, navigationItemsCount: navigationItems.length, availableRoles });
   
+  if (!isOpen) return null;
+  
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
-          <SheetTitle>Navigation</SheetTitle>
-          <SheetDescription>Access your Launchpad features</SheetDescription>
+      <SheetContent side="left" className="w-80 bg-white">
+        <SheetHeader className="border-b pb-4">
+          <SheetTitle className="text-lg font-semibold text-gray-900">Navigation</SheetTitle>
+          <SheetDescription className="text-sm text-gray-600">Access your Launchpad features</SheetDescription>
         </SheetHeader>
         
         <div className="mt-6 space-y-2">
@@ -263,6 +265,9 @@ const MobileNavigation = React.memo(({
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
+                    {role === currentRole && (
+                      <span className="mr-2 text-green-600">✓</span>
+                    )}
                     {getRoleConfig(role).displayName}
                   </button>
                 ))}
@@ -315,12 +320,24 @@ const Header = () => {
   // Memoized handlers
   const handleMobileMenuToggle = useCallback(() => {
     console.log('🔍 Mobile menu toggle clicked, current state:', isMobileMenuOpen);
-    setIsMobileMenuOpen(prev => !prev);
+    try {
+      setIsMobileMenuOpen(prev => {
+        const newState = !prev;
+        console.log('🔍 Setting mobile menu to:', newState);
+        return newState;
+      });
+    } catch (error) {
+      console.error('🔍 Error toggling mobile menu:', error);
+    }
   }, [isMobileMenuOpen]);
 
   const handleMobileMenuClose = useCallback(() => {
     console.log('🔍 Mobile menu close called');
-    setIsMobileMenuOpen(false);
+    try {
+      setIsMobileMenuOpen(false);
+    } catch (error) {
+      console.error('🔍 Error closing mobile menu:', error);
+    }
   }, []);
 
   const handleRoleSwitch = useCallback((role: UserRole) => {
@@ -463,6 +480,7 @@ const Header = () => {
               </DropdownMenu>
             </div>
             
+            {/* Mobile Menu Button - Always visible on mobile */}
             <MobileMenuButton 
               isOpen={isMobileMenuOpen} 
               onClick={handleMobileMenuToggle} 
