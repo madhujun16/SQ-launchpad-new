@@ -224,22 +224,6 @@ const Dashboard = () => {
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Check if auth context is available AFTER all hooks are defined
-  if (!authData) {
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Initializing authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { currentRole, profile, loading } = authData;
-  const roleConfig = getRoleConfig(currentRole || 'admin');
-  const navigate = useNavigate();
-
   // Memoized helper functions - MUST be defined before any conditional returns
   const getStatusBadge = useCallback((status: RequestRow['status']) => {
     switch (status) {
@@ -261,9 +245,9 @@ const Dashboard = () => {
     toast.success('Request rejected');
   }, []);
 
-  // Timeout handling
+  // Timeout handling - will be updated after authData is available
   useEffect(() => {
-    if (loading) {
+    if (authData?.loading) {
       const timer = setTimeout(() => {
         console.warn('⚠️ Dashboard loading timeout - forcing display');
         setLoadingTimeout(true);
@@ -273,7 +257,7 @@ const Dashboard = () => {
     } else {
       setLoadingTimeout(false);
     }
-  }, [loading]);
+  }, [authData?.loading]);
 
   // Mock data initialization
   useEffect(() => {
@@ -305,6 +289,22 @@ const Dashboard = () => {
     ];
     setAllRequests(seed);
   }, []);
+
+  // Check if auth context is available AFTER all hooks are defined
+  if (!authData) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Initializing authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { currentRole, profile, loading } = authData;
+  const roleConfig = getRoleConfig(currentRole || 'admin');
+  const navigate = useNavigate();
 
 
 
