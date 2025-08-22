@@ -13,9 +13,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { secureLog } from '@/config/security';
 
 const Auth = () => {
-  const { signInWithOtp, verifyOtp, user } = useAuth();
+  const authData = useAuth();
   const navigate = useNavigate();
   const { isMobile, isTablet } = useIsMobile();
+  
+  // Destructure with safe defaults
+  const { signInWithOtp, verifyOtp, user } = authData || {};
   
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -33,6 +36,12 @@ const Auth = () => {
     e.preventDefault();
     if (!email) {
       setError('Please enter your email address');
+      return;
+    }
+
+    if (!signInWithOtp) {
+      setError('Authentication service not available');
+      toast.error('Authentication service not available');
       return;
     }
 
@@ -60,6 +69,12 @@ const Auth = () => {
       return;
     }
 
+    if (!verifyOtp) {
+      setError('Authentication service not available');
+      toast.error('Authentication service not available');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -80,6 +95,18 @@ const Auth = () => {
     setOtp('');
     setError('');
   };
+
+  // Show loading state if auth context is not ready
+  if (!authData || !signInWithOtp || !verifyOtp) {
+    return (
+      <div className="min-h-screen flex items-center justify-center header-black-green">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Initializing authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`

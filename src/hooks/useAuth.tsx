@@ -412,12 +412,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   console.log('🔧 useAuth hook called, AuthContext:', AuthContext);
-  
-  // Check if we're in a React component context
-  if (typeof window !== 'undefined' && !window.React) {
-    console.error('useAuth: React not available in window context');
-    return getDefaultAuthContext();
-  }
 
   try {
     console.log('🔧 Attempting to use useContext with AuthContext:', AuthContext);
