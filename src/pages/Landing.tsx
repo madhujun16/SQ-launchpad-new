@@ -21,6 +21,7 @@ const Landing = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <span className="font-bold text-white hidden sm:block text-2xl sm:text-3xl">SmartQ Launchpad</span>
+              <RocketIcon size={isMobile ? 40 : 48} className="text-white" />
             </div>
 
             <Button 
@@ -42,17 +43,11 @@ const Landing = () => {
       <section className="relative py-12 sm:py-16 px-4 sm:px-6">
         <div className="container mx-auto text-center">
           <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col items-center mb-6">
-              <h1 className={`${isMobile ? 'text-4xl sm:text-5xl' : 'text-5xl md:text-6xl lg:text-7xl'} font-bold leading-tight text-white mb-4`}>
-                Deploy Sites Faster.
-                <br />
-                <span className="text-green-400 text-glow-green">With Confidence.</span>
-              </h1>
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl sm:text-3xl font-bold text-white">SmartQ Launchpad</span>
-                <RocketIcon size={isMobile ? 40 : 48} className="text-white" />
-              </div>
-            </div>
+            <h1 className={`${isMobile ? 'text-4xl sm:text-5xl' : 'text-5xl md:text-6xl lg:text-7xl'} font-bold leading-tight text-white mb-6`}>
+              Deploy Sites Faster.
+              <br />
+              <span className="text-green-400 text-glow-green">With Confidence.</span>
+            </h1>
             <p className={`${isMobile ? 'text-lg sm:text-xl' : 'text-xl md:text-2xl'} text-white/85 mb-10 max-w-3xl mx-auto leading-relaxed`}>
               Streamline site studies, hardware procurement, and inventory management — and track progress in real-time with SmartQ LaunchPad.
             </p>

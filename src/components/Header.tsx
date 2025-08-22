@@ -68,7 +68,7 @@ const DesktopNavigation = React.memo(({
         to={item.path}
         className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
           currentPath === item.path
-            ? 'bg-green-600 text-white'
+            ? 'bg-white/10 text-white border border-white/20'
             : 'text-white/85 hover:bg-white/10 hover:text-white'
         }`}
       >
@@ -197,7 +197,7 @@ const MobileNavigation = React.memo(({
               onClick={onClose}
               className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 currentPath === item.path
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-gray-100 text-gray-900 border border-gray-200'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
               }`}
             >
@@ -213,7 +213,7 @@ const MobileNavigation = React.memo(({
               onClick={onClose}
               className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 currentPath === '/platform-configuration'
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-gray-100 text-gray-900 border border-gray-200'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
               }`}
             >
@@ -228,7 +228,7 @@ const MobileNavigation = React.memo(({
             onClick={onClose}
             className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               currentPath === '/demo/enhanced-stepper'
-                ? 'bg-green-100 text-green-700'
+                ? 'bg-gray-100 text-gray-900 border border-gray-200'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
@@ -259,7 +259,7 @@ const MobileNavigation = React.memo(({
                     }}
                     className={`w-full text-left px-2 py-1 rounded text-sm ${
                       role === currentRole
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-gray-100 text-gray-900 border border-gray-200'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
