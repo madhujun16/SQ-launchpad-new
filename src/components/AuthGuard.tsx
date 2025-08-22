@@ -10,6 +10,16 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   // Destructure with safe defaults
   const { user, loading, currentRole } = authData || {};
+  
+  // Additional safety check for context availability
+  if (!authData || typeof authData.loading === 'undefined') {
+    console.log('🔧 AuthGuard: Context not ready, showing loader');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!loading && !user && location.pathname !== '/auth') {

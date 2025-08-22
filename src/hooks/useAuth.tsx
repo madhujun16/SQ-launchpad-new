@@ -28,11 +28,11 @@ interface AuthContextType {
   forceRefresh: () => Promise<void>;
 }
 
-// Create context inside the provider to ensure React is fully initialized
-let AuthContext: React.Context<AuthContextType | undefined>;
+// Create context at module level - this is the correct React pattern
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Debug: Log context creation
-console.log('🔧 About to create AuthContext');
+console.log('🔧 AuthContext created at module level:', AuthContext);
 
 // Cache for user profiles and roles
 const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
@@ -43,11 +43,6 @@ const REQUEST_TIMEOUT = 15000; // 15 seconds
 const GLOBAL_TIMEOUT = 20000; // 20 seconds
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Create context inside the provider to ensure React is fully initialized
-  if (!AuthContext) {
-    AuthContext = createContext<AuthContextType | undefined>(undefined);
-    console.log('🔧 AuthContext created:', AuthContext);
-  }
 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -412,6 +407,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Don't render children until context is properly initialized
   if (loading && !user && !session) {
+    console.log('🔧 AuthProvider: Still initializing, showing loader');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
         <div className="text-center">
@@ -421,6 +417,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
+  
+  console.log('🔧 AuthProvider: Context ready, rendering children');
 
   return (
     <AuthContext.Provider value={contextValue}>
@@ -431,6 +429,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   console.log('🔧 useAuth hook called, AuthContext:', AuthContext);
+
+  // Ensure AuthContext exists
+  if (!AuthContext) {
+    console.error('🔧 AuthContext is not defined!');
+    return getDefaultAuthContext();
+  }
 
   try {
     console.log('🔧 Attempting to use useContext with AuthContext:', AuthContext);
