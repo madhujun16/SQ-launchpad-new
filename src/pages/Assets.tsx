@@ -86,6 +86,7 @@ const Assets = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [siteFilter, setSiteFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Check access permissions
   const tabAccess = getTabAccess('/assets');
@@ -101,6 +102,11 @@ const Assets = () => {
 
   // Mock data
   useEffect(() => {
+    // Don't load data if auth context isn't ready
+    if (!currentRole || !profile) {
+      return;
+    }
+    
     const mockAssets: Asset[] = [
       {
         id: '1',
@@ -191,6 +197,21 @@ const Assets = () => {
     setLoading(false);
   }, [currentRole, profile]);
 
+  // Timeout handling to prevent infinite loading
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        console.warn('⚠️ Assets loading timeout - forcing display');
+        setLoadingTimeout(true);
+        setLoading(false);
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timer);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading]);
+
   useEffect(() => {
     let filtered = assets;
 
@@ -235,10 +256,38 @@ const Assets = () => {
     { value: 'retired', label: 'Retired' }
   ];
 
-  if (loading) {
+  if (loading && !loadingTimeout) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Loading assets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingTimeout) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
+        <div className="text-center">
+          <div className="text-orange-600 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
+          <p className="text-gray-600 mb-4">The assets page is still loading. This might be due to:</p>
+          <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1 mb-4">
+            <li>• Slow database connection</li>
+            <li>• Authentication service delay</li>
+            <li>• Network connectivity issues</li>
+          </ul>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
+        </div>
       </div>
     );
   }
