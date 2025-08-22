@@ -220,7 +220,11 @@ const Dashboard = () => {
   // Use auth context safely
   const authData = useAuth();
   
-  // Check if auth context is available
+  // State
+  const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Check if auth context is available AFTER all hooks are defined
   if (!authData) {
     return (
       <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
@@ -235,10 +239,6 @@ const Dashboard = () => {
   const { currentRole, profile, loading } = authData;
   const roleConfig = getRoleConfig(currentRole || 'admin');
   const navigate = useNavigate();
-
-  // State
-  const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Memoized helper functions - MUST be defined before any conditional returns
   const getStatusBadge = useCallback((status: RequestRow['status']) => {
