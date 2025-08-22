@@ -33,6 +33,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Debug: Log context creation
 console.log('🔧 AuthContext created at module level:', AuthContext);
+console.log('🔧 AuthContext type:', typeof AuthContext);
+console.log('🔧 AuthContext constructor:', AuthContext.constructor.name);
 
 // Cache for user profiles and roles
 const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
@@ -470,6 +472,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   console.log('🔧 useAuth hook called, AuthContext:', AuthContext);
+  console.log('🔧 AuthContext type:', typeof AuthContext);
+  console.log('🔧 AuthContext constructor:', AuthContext?.constructor?.name);
 
   // Ensure AuthContext exists
   if (!AuthContext) {
@@ -479,6 +483,7 @@ export const useAuth = () => {
 
   try {
     console.log('🔧 Attempting to use useContext with AuthContext:', AuthContext);
+    console.log('🔧 useContext function:', useContext);
     const context = useContext(AuthContext);
     console.log('🔧 useContext result:', context);
     
