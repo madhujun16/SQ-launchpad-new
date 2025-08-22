@@ -290,6 +290,11 @@ const Dashboard = () => {
     setAllRequests(seed);
   }, []);
 
+  // Extract auth data
+  const { currentRole, profile, loading } = authData || {};
+  const roleConfig = getRoleConfig(currentRole || 'admin');
+  const navigate = useNavigate();
+
   // Check if auth context is available AFTER all hooks are defined
   if (!authData) {
     return (
@@ -301,10 +306,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const { currentRole, profile, loading } = authData;
-  const roleConfig = getRoleConfig(currentRole || 'admin');
-  const navigate = useNavigate();
 
 
 
