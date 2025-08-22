@@ -141,7 +141,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ className })
         <Button
           variant="ghost"
           size="icon"
-          className={`relative ${className}`}
+          className={`relative text-white hover:bg-white/10 ${className}`}
           onClick={() => setIsOpen(!isOpen)}
         >
           <Bell className="h-5 w-5" />

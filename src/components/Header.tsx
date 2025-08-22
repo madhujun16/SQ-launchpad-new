@@ -443,13 +443,41 @@ const Header = () => {
                     <div className="space-y-1">
                       {/* Role Switcher - Only show if user has multiple roles */}
                       {availableRoles.length > 1 && (
-                        <DropdownMenuItem className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                          <div className="flex items-center space-x-2">
-                            <Settings className="h-4 w-4 text-gray-600" />
-                            <span className="text-sm text-gray-700">Switch Role</span>
-                          </div>
-                          <span className="text-xs text-gray-500">→</span>
-                        </DropdownMenuItem>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <DropdownMenuItem className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                              <div className="flex items-center space-x-2">
+                                <Settings className="h-4 w-4 text-gray-600" />
+                                <span className="text-sm text-gray-700">Switch Role</span>
+                              </div>
+                              <span className="text-xs text-gray-500">→</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="ml-2">
+                            {availableRoles.map((role) => {
+                              const roleConfig = getRoleConfig(role);
+                              return (
+                                <DropdownMenuItem
+                                  key={role}
+                                  onClick={() => {
+                                    handleRoleSwitch(role);
+                                  }}
+                                  className={`flex items-center px-2 py-2 rounded-md ${
+                                    role === currentRole ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {roleConfig.icon && (
+                                    <roleConfig.icon className="h-4 w-4 mr-2" />
+                                  )}
+                                  <span className="text-sm">{roleConfig.displayName}</span>
+                                  {role === currentRole && (
+                                    <span className="ml-auto text-xs text-green-600">Current</span>
+                                  )}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       
                       {currentRole === 'admin' && (
