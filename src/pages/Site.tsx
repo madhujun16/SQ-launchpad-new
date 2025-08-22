@@ -819,9 +819,10 @@ const SiteDetail = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
+        <div className="text-center">
           <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Loading site details...</p>
         </div>
       </div>
     );

@@ -222,8 +222,11 @@ const Sites = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Loading sites...</p>
+        </div>
       </div>
     );
   }
