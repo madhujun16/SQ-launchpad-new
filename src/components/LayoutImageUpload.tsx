@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { X, Download, Eye, Trash2, Image as ImageIcon, FileText } from 'lucide-r
 import { toast } from 'sonner';
 import { FileUploadService, type UploadedFile } from '@/services/fileUploadService';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader } from './ui/loader';
 
 interface LayoutImageUploadProps {
   siteId: string;
@@ -451,8 +452,8 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
 
       {/* Loading State */}
       {isLoading && (
-        <div className="text-center py-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+        <div className="text-center py-8">
+          <Loader size="md" />
           <p className="text-sm text-gray-500 mt-2">Loading existing images...</p>
         </div>
       )}

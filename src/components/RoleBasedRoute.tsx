@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { canAccessPage } from '@/lib/roles';
 import { AccessDenied } from './AccessDenied';
+import { Loader } from './ui/loader';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -47,8 +48,8 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+        <Loader size="lg" />
       </div>
     );
   }

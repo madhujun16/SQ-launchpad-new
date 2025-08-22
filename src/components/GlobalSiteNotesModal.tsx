@@ -19,6 +19,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { SiteStudyService } from '@/services/siteStudyService';
 import { toast } from 'sonner';
+import { Loader } from './ui/loader';
 
 interface SiteNote {
   id: string;
@@ -248,9 +249,9 @@ export function GlobalSiteNotesModal({
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  Loading notes...
+                <div className="text-center py-4">
+                  <Loader size="md" />
+                  <p className="text-sm text-gray-600 mt-2">Loading notes...</p>
                 </div>
               ) : notes.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">

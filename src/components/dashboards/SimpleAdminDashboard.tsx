@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Users, Building2, Package, ShieldCheck } from 'lucide-react';
-import { ContentLoader } from '@/components/ui/loader';
+import { Loader } from '@/components/ui/loader';
 
 interface DashboardStats {
   totalUsers: number;
@@ -48,7 +50,11 @@ const SimpleAdminDashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <ContentLoader />;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader size="lg" />
+      </div>
+    );
   }
 
   return (

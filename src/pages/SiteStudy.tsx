@@ -55,6 +55,7 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { Loader } from '@/components/ui/loader';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useSiteContext } from '@/contexts/SiteContext';
@@ -891,20 +892,8 @@ export default function SiteStudy() {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <StickyNote className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-gray-600 mb-4">
-                    Site notes are now managed globally and accessible from multiple locations.
-                  </p>
-                  <Button
-                    onClick={() => setShowNotesModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <StickyNote className="h-4 w-4 mr-2" />
-                    Open Site Notes
-                  </Button>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Notes are stored against the site record and visible in all contexts
-                  </p>
+                  <Loader size="lg" />
+                  <p className="text-gray-600 mt-4">Loading site study...</p>
                 </div>
               </CardContent>
             </Card>
@@ -944,9 +933,8 @@ export default function SiteStudy() {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading Site Study</h1>
-          <p className="text-gray-600">Please wait while we load the site study data...</p>
+          <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Loading site study...</p>
         </div>
       </div>
     );

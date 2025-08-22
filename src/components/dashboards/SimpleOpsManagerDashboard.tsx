@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, ClipboardCheck, AlertTriangle, TrendingUp } from 'lucide-react';
-import { ContentLoader } from '@/components/ui/loader';
+import { Badge } from '@/components/ui/badge';
+import { Loader } from '@/components/ui/loader';
 
 const SimpleOpsManagerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -11,7 +12,11 @@ const SimpleOpsManagerDashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <ContentLoader />;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader size="lg" />
+      </div>
+    );
   }
 
   return (

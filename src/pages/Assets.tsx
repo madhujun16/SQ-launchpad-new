@@ -45,7 +45,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
-import { ContentLoader } from '@/components/ui/loader';
+import { Loader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 
@@ -236,7 +236,11 @@ const Assets = () => {
   ];
 
   if (loading) {
-    return <ContentLoader />;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader size="lg" />
+      </div>
+    );
   }
 
   return (

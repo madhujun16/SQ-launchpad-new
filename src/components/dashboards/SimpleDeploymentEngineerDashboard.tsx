@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Loader } from '../ui/loader';
 import { Wrench, Clock, CheckCircle, TrendingUp } from 'lucide-react';
-import { ContentLoader } from '@/components/ui/loader';
 
 const SimpleDeploymentEngineerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -11,7 +12,11 @@ const SimpleDeploymentEngineerDashboard: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <ContentLoader />;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader size="lg" />
+      </div>
+    );
   }
 
   return (

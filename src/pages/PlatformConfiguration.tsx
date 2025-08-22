@@ -40,6 +40,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Loader } from '@/components/ui/loader';
 
 // Interfaces for platform configuration
 interface User {
@@ -209,8 +210,8 @@ export default function PlatformConfiguration() {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <ContentLoader />
-            <p className="text-gray-600">Loading platform configuration...</p>
+            <Loader size="lg" />
+            <p className="text-gray-600 mt-4">Loading platform configuration...</p>
           </div>
         </div>
       </div>
@@ -230,7 +231,7 @@ export default function PlatformConfiguration() {
               className="ml-4" 
               onClick={() => {
                 setError(null);
-                loadConfigurationData();
+    loadConfigurationData();
               }}
             >
               Retry
@@ -473,27 +474,27 @@ export default function PlatformConfiguration() {
       
       // Load users with their actual roles using the new secure function
       try {
-        const { data: usersData, error: usersError } = await supabase.rpc('list_safe_profiles');
-        
-        if (usersError) {
-          console.error('Error loading users:', usersError);
-          toast.error('Failed to load users');
+      const { data: usersData, error: usersError } = await supabase.rpc('list_safe_profiles');
+      
+      if (usersError) {
+        console.error('Error loading users:', usersError);
+        toast.error('Failed to load users');
           // Set empty array as fallback
           setUsers([]);
-        } else if (usersData && usersData.length > 0) {
-          // Fetch actual roles for each user from user_roles table
-          const usersWithRoles = await Promise.all(
-            usersData.map(async (user) => {
+      } else if (usersData && usersData.length > 0) {
+        // Fetch actual roles for each user from user_roles table
+        const usersWithRoles = await Promise.all(
+          usersData.map(async (user) => {
               try {
-                const { data: rolesData } = await supabase
-                  .from('user_roles')
-                  .select('role')
-                  .eq('user_id', user.user_id);
-                
-                return {
-                  ...user,
-                  user_roles: rolesData?.map(r => ({ role: r.role })) || []
-                };
+            const { data: rolesData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', user.user_id);
+            
+            return {
+          ...user,
+              user_roles: rolesData?.map(r => ({ role: r.role })) || []
+            };
               } catch (roleError) {
                 console.error('Error fetching roles for user:', user.email, roleError);
                 return {
@@ -501,12 +502,12 @@ export default function PlatformConfiguration() {
                   user_roles: []
                 };
               }
-            })
-          );
-          
-          setUsers(usersWithRoles);
-        } else {
-          // No users found, show empty state
+          })
+        );
+        
+        setUsers(usersWithRoles);
+      } else {
+        // No users found, show empty state
           setUsers([]);
         }
       } catch (usersException) {
@@ -516,9 +517,9 @@ export default function PlatformConfiguration() {
 
       // Load user statistics
       try {
-        const { data: statsData, error: statsError } = await supabase.rpc('get_user_management_stats');
-        if (statsError) {
-          console.error('Error loading user stats:', statsError);
+      const { data: statsData, error: statsError } = await supabase.rpc('get_user_management_stats');
+      if (statsError) {
+        console.error('Error loading user stats:', statsError);
           // Set default stats as fallback
           setUserStats({
             total_users: 0,
@@ -526,8 +527,8 @@ export default function PlatformConfiguration() {
             ops_manager_count: 0,
             deployment_engineer_count: 0
           });
-        } else if (statsData && statsData.length > 0) {
-          setUserStats(statsData[0]);
+      } else if (statsData && statsData.length > 0) {
+        setUserStats(statsData[0]);
         }
       } catch (statsException) {
         console.error('Exception loading user stats:', statsException);
@@ -541,15 +542,15 @@ export default function PlatformConfiguration() {
 
       // Load organizations
       try {
-        const { data: orgsData, error: orgsError } = await supabase
-          .from('organizations')
-          .select('*');
-        
-        if (orgsError) {
-          console.error('Error loading organizations:', orgsError);
-          toast.error('Failed to load organizations');
+      const { data: orgsData, error: orgsError } = await supabase
+        .from('organizations')
+        .select('*');
+      
+      if (orgsError) {
+        console.error('Error loading organizations:', orgsError);
+        toast.error('Failed to load organizations');
           setOrganizations([]);
-        } else {
+      } else {
           if (orgsData && orgsData.length > 0) {
             setOrganizations(orgsData);
           } else {
@@ -564,28 +565,28 @@ export default function PlatformConfiguration() {
 
       // Load software modules
       try {
-        const { data: softwareData, error: softwareError } = await supabase
-          .from('software_modules')
-          .select('*');
-        
-        if (softwareError) {
-          console.error('Error loading software modules:', softwareError);
-          toast.error('Failed to load software modules');
+      const { data: softwareData, error: softwareError } = await supabase
+        .from('software_modules')
+        .select('*');
+      
+      if (softwareError) {
+        console.error('Error loading software modules:', softwareError);
+        toast.error('Failed to load software modules');
           setSoftwareModules([]);
-        } else {
-          // Map database fields to enhanced interface with defaults
-          const mappedSoftware = (softwareData || []).map(software => ({
-            ...software,
-            monthly_fee: (software as any).monthly_fee || 0,
-            setup_fee: (software as any).setup_fee || 0,
-            license_fee: (software as any).license_fee || 0
-          }));
-          if (mappedSoftware.length === 0) {
-            // seed defaults for first-time experience
+      } else {
+        // Map database fields to enhanced interface with defaults
+        const mappedSoftware = (softwareData || []).map(software => ({
+          ...software,
+          monthly_fee: (software as any).monthly_fee || 0,
+          setup_fee: (software as any).setup_fee || 0,
+          license_fee: (software as any).license_fee || 0
+        }));
+        if (mappedSoftware.length === 0) {
+          // seed defaults for first-time experience
             await seedDefaultSoftware();
-          } else {
-            setSoftwareModules(mappedSoftware);
-          }
+        } else {
+        setSoftwareModules(mappedSoftware);
+        }
         }
       } catch (softwareException) {
         console.error('Exception loading software modules:', softwareException);
@@ -594,27 +595,27 @@ export default function PlatformConfiguration() {
 
       // Load hardware items
       try {
-        const { data: hardwareData, error: hardwareError } = await supabase
-          .from('hardware_items')
-          .select('*');
-        
-        if (hardwareError) {
-          console.error('Error loading hardware items:', hardwareError);
-          toast.error('Failed to load hardware items');
+      const { data: hardwareData, error: hardwareError } = await supabase
+        .from('hardware_items')
+        .select('*');
+      
+      if (hardwareError) {
+        console.error('Error loading hardware items:', hardwareError);
+        toast.error('Failed to load hardware items');
           setHardwareItems([]);
-        } else {
-          // Map database fields to enhanced interface with defaults
-          const mappedHardware = (hardwareData || []).map(hardware => ({
-            ...hardware,
-            unit_cost: (hardware as any).unit_cost || (hardware as any).estimated_cost || 0,
-            installation_cost: (hardware as any).installation_cost || 0,
-            maintenance_cost: (hardware as any).maintenance_cost || 0
-          }));
+      } else {
+        // Map database fields to enhanced interface with defaults
+        const mappedHardware = (hardwareData || []).map(hardware => ({
+          ...hardware,
+          unit_cost: (hardware as any).unit_cost || (hardware as any).estimated_cost || 0,
+          installation_cost: (hardware as any).installation_cost || 0,
+          maintenance_cost: (hardware as any).maintenance_cost || 0
+        }));
           if (mappedHardware.length === 0) {
             // seed defaults for first-time experience
             seedDefaultHardware();
           } else {
-            setHardwareItems(mappedHardware);
+        setHardwareItems(mappedHardware);
           }
         }
       } catch (hardwareException) {

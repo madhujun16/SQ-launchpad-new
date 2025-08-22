@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Loader } from '@/components/ui/loader';
 
 // Types
 interface DashboardMetric {
@@ -79,9 +80,8 @@ const LOADING_TIMEOUT = 10000; // 10 seconds
 const DashboardLoading = () => (
   <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
     <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-      <p className="text-gray-600">Loading dashboard...</p>
-      <p className="text-xs text-gray-400 mt-2">This may take a few moments</p>
+      <Loader size="lg" />
+      <p className="text-gray-600 mt-4">Loading dashboard...</p>
     </div>
   </div>
 );

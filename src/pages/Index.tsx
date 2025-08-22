@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
-import { ContentLoader } from '@/components/ui/loader';
+import { Loader } from '@/components/ui/loader';
 import Header from '@/components/Header';
 import DashboardStats from "@/components/DashboardStats";
 import WorkflowCard from "@/components/WorkflowCard";
@@ -64,19 +64,31 @@ const Index = () => {
     switch (currentRole) {
       case 'admin':
         return (
-          <Suspense fallback={<ContentLoader />}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <Loader size="lg" />
+            </div>
+          }>
             <SimpleAdminDashboard />
           </Suspense>
         );
       case 'ops_manager':
         return (
-          <Suspense fallback={<ContentLoader />}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <Loader size="lg" />
+            </div>
+          }>
             <SimpleOpsManagerDashboard />
           </Suspense>
         );
       case 'deployment_engineer':
         return (
-          <Suspense fallback={<ContentLoader />}>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <Loader size="lg" />
+            </div>
+          }>
             <SimpleDeploymentEngineerDashboard />
           </Suspense>
         );

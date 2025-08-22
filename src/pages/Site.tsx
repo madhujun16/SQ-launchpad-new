@@ -100,6 +100,7 @@ import { LayoutImageUpload } from '@/components/LayoutImageUpload';
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 import { SitesService } from '@/services/sitesService';
 import { getOrganisations, type Organisation } from '@/services/organisationsService';
+import { Loader } from '@/components/ui/loader';
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -820,7 +821,7 @@ const SiteDetail = () => {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          <Loader size="lg" />
         </div>
       </div>
     );

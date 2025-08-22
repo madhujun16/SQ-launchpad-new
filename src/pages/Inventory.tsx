@@ -38,7 +38,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { ContentLoader } from '@/components/ui/loader';
+import { Loader } from '@/components/ui/loader';
 import { SimpleInventoryItemForm } from '@/components/inventory/SimpleInventoryItemForm';
 import { SimpleInventoryItemDetails } from '@/components/inventory/SimpleInventoryItemDetails';
 import { SimpleInventoryFiltersPanel } from '@/components/inventory/SimpleInventoryFiltersPanel';
@@ -165,7 +165,11 @@ const Inventory: React.FC = () => {
   };
 
   if (loading) {
-    return <ContentLoader />;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader size="lg" />
+      </div>
+    );
   }
 
   return (

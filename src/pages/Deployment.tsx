@@ -48,7 +48,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
-import { ContentLoader } from '@/components/ui/loader';
+import { Loader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 
 interface ScopingItem { name: string; quantity: number; unit_cost: number }
@@ -333,11 +333,10 @@ const Deployment = () => {
     { value: 'cancelled', label: 'Cancelled' }
   ];
 
-  if (loading) {
-    return (
-      <ContentLoader />
-    );
-  }
+  const handleDeploymentClick = (deployment: Deployment) => {
+    setSelectedDeployment(deployment);
+    setShowDetailsDialog(true);
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -403,68 +402,71 @@ const Deployment = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {filteredDeployments.map((deployment) => (
-              <button
-                key={deployment.id}
-                className="w-full text-left border rounded-lg p-4 hover:shadow-md transition-shadow"
-                onClick={() => {
-                  setSelectedDeployment(deployment);
-                  setShowDetailsDialog(true);
-                }}
-              >
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-medium">{deployment.site_name}</h3>
-                        <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
-                      </div>
-                      <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
-                    {React.createElement(getStatusConfig(deployment.status).icon, { className: 'h-3 w-3' })}
-                        <span>{getStatusConfig(deployment.status).label}</span>
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.hardware_delivered ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Truck className="h-4 w-4" />
+                {loading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader size="lg" />
+                  </div>
+                ) : (
+                  filteredDeployments.map((deployment) => (
+                    <button
+                      key={deployment.id}
+                      onClick={() => handleDeploymentClick(deployment)}
+                      className="w-full text-left p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-medium">{deployment.site_name}</h3>
+                          <p className="text-sm text-gray-500">{deployment.assigned_deployment_engineer}</p>
                         </div>
-                        <div className="text-xs font-medium">Hardware Delivered</div>
+                        <Badge className={`${getStatusConfig(deployment.status).color} flex items-center space-x-1`}>
+                          {React.createElement(getStatusConfig(deployment.status).icon, { className: 'h-3 w-3' })}
+                          <span>{getStatusConfig(deployment.status).label}</span>
+                        </Badge>
                       </div>
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.installation_started ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Wrench className="h-4 w-4" />
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            deployment.hardware_delivered ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            <Truck className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs font-medium">Hardware Delivered</div>
                         </div>
-                        <div className="text-xs font-medium">Installation Started</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.testing_completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <CheckCircle className="h-4 w-4" />
+                        <div className="text-center">
+                          <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            deployment.installation_started ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            <Wrench className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs font-medium">Installation Started</div>
                         </div>
-                        <div className="text-xs font-medium">Testing Completed</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
-                          deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Activity className="h-4 w-4" />
+                        <div className="text-center">
+                          <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            deployment.testing_completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            <CheckCircle className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs font-medium">Testing Completed</div>
                         </div>
-                        <div className="text-xs font-medium">Go-Live Ready</div>
+                        <div className="text-center">
+                          <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            deployment.live_ready ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            <Activity className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs font-medium">Go-Live Ready</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-4">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span>Overall Progress</span>
-                        <span>{deployment.progress_percentage}%</span>
+                      <div className="mt-4">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Overall Progress</span>
+                          <span>{deployment.progress_percentage}%</span>
+                        </div>
+                        <Progress value={deployment.progress_percentage} className="h-2" />
                       </div>
-                      <Progress value={deployment.progress_percentage} className="h-2" />
-                    </div>
-              </button>
-                ))}
+                    </button>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

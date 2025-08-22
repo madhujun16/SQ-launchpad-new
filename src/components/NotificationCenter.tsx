@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Loader } from '@/components/ui/loader';
 import * as notificationService from '@/services/notificationService';
 import { Notification } from '@/types/notifications';
 import { formatDistanceToNow } from 'date-fns';
@@ -151,8 +152,9 @@ export const NotificationCenter: React.FC = () => {
         
         <ScrollArea className="h-80">
           {loading ? (
-            <div className="p-4 text-center text-muted-foreground">
-              Loading notifications...
+            <div className="text-center py-8">
+              <Loader size="md" />
+              <p className="text-sm text-gray-600 mt-2">Loading notifications...</p>
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
