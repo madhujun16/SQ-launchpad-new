@@ -182,6 +182,13 @@ export default function PlatformConfiguration() {
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
+  // Move useEffect to the top, before any conditional returns
+  useEffect(() => {
+    if (currentRole === 'admin') {
+      loadConfigurationData();
+    }
+  }, [currentRole]);
+
   // Only allow admin access - strict security enforcement
   if (currentRole !== 'admin') {
     return (
@@ -233,10 +240,6 @@ export default function PlatformConfiguration() {
       </div>
     );
   }
-
-  useEffect(() => {
-    loadConfigurationData();
-  }, []);
 
   const logAudit = async (entry: Omit<AuditLog, 'id' | 'created_at'>) => {
     try {
