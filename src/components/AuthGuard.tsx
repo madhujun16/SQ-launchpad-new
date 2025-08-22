@@ -15,7 +15,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!authData || typeof authData.loading === 'undefined') {
     console.log('🔧 AuthGuard: Context not ready, showing loader');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
         <Loader size="lg" />
       </div>
     );

@@ -64,12 +64,9 @@ export const Loader: React.FC<LoaderProps> = ({ size = 'lg', className = '' }) =
 
 export const PageLoader: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+    <div className="min-h-screen flex items-center justify-center bg-white/90">
       <div className="text-center">
         <Loader size="lg" />
-        <div className="mt-6">
-          <div className="w-32 h-1 bg-gradient-to-r from-transparent via-green-600 to-transparent rounded-full animate-pulse"></div>
-        </div>
       </div>
     </div>
   );
@@ -77,12 +74,9 @@ export const PageLoader: React.FC = () => {
 
 export const ContentLoader: React.FC = () => {
   return (
-    <div className="flex items-center justify-center h-64">
+    <div className="flex items-center justify-center h-64 bg-white/90">
       <div className="text-center">
         <Loader size="lg" />
-        <div className="mt-4">
-          <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-green-600 to-transparent rounded-full animate-pulse"></div>
-        </div>
       </div>
     </div>
   );

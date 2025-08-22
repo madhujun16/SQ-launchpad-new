@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { secureLog } from '@/config/security';
+import { Loader } from '@/components/ui/loader';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   user_roles?: Array<{
@@ -409,10 +410,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   if (loading && !user && !session) {
     console.log('🔧 AuthProvider: Still initializing, showing loader');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Initializing authentication...</p>
+          <Loader size="lg" />
         </div>
       </div>
     );

@@ -11,6 +11,7 @@ import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { RocketIcon } from '@/components/ui/RocketIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { secureLog } from '@/config/security';
+import { Loader } from '@/components/ui/loader';
 
 const Auth = () => {
   const authData = useAuth();
@@ -99,10 +100,9 @@ const Auth = () => {
   // Show loading state if auth context is not ready
   if (!authData || !signInWithOtp || !verifyOtp) {
     return (
-      <div className="min-h-screen flex items-center justify-center header-black-green">
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white">Initializing authentication...</p>
+          <Loader size="lg" />
         </div>
       </div>
     );
