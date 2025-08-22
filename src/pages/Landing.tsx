@@ -17,7 +17,7 @@ const Landing = () => {
     <div className="min-h-screen page-green-black text-white/95 relative overflow-hidden">
       {/* Header with darker aurora fade */}
       <header className="fixed top-0 left-0 right-0 z-50 header-black-green">
-        <div className="container mx-auto px-4 sm:px-6 py-3">
+        <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <span className="font-bold text-white hidden sm:block text-2xl sm:text-3xl">SmartQ Launchpad</span>

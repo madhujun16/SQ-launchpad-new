@@ -373,7 +373,7 @@ const Header = () => {
   if (!roleConfig) {
     return (
       <header className="bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Logo />
@@ -389,7 +389,7 @@ const Header = () => {
 
   return (
     <header className="bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600" data-mobile-menu>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Logo />
