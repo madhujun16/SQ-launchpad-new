@@ -19,9 +19,9 @@ const Landing = () => {
       <header className="fixed top-0 left-0 right-0 z-50 header-black-green">
         <div className="container mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="flex items-center">
               <span className="font-bold text-white hidden sm:block text-2xl sm:text-3xl">SmartQ Launchpad</span>
-              <RocketIcon size={isMobile ? 40 : 48} className="text-white" />
+              <RocketIcon size={isMobile ? 40 : 48} className="text-white ml-3 sm:ml-4" />
             </div>
 
             <Button 
