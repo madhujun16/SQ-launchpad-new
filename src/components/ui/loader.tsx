@@ -5,7 +5,7 @@ interface LoaderProps {
   className?: string;
 }
 
-// Elegant SVG preloader with dark green theme matching the website
+// Beautiful expanding circle SVG preloader with fade effect
 export const Loader: React.FC<LoaderProps> = ({ size = 'lg', className = '' }) => {
   const sizeClasses = {
     sm: 'h-8 w-8',
@@ -21,97 +21,40 @@ export const Loader: React.FC<LoaderProps> = ({ size = 'lg', className = '' }) =
         viewBox="0 0 200 200"
       >
         <circle 
-          fill="#033D0A" 
+          fill="none" 
+          strokeOpacity="1" 
           stroke="#033D0A" 
-          strokeWidth="15" 
-          r="15" 
-          cx="35" 
-          cy="100"
+          strokeWidth="0.5" 
+          cx="100" 
+          cy="100" 
+          r="0"
         >
           <animate 
-            attributeName="cx" 
+            attributeName="r" 
             calcMode="spline" 
             dur="2" 
-            values="35;165;165;35;35" 
-            keySplines="0 .1 .5 1;0 .1 .5 1;0 .1 .5 1;0 .1 .5 1" 
-            repeatCount="indefinite" 
-            begin="0"
+            values="1;80" 
+            keyTimes="0;1" 
+            keySplines="0 .2 .5 1" 
+            repeatCount="indefinite"
           />
-        </circle>
-        <circle 
-          fill="#033D0A" 
-          stroke="#033D0A" 
-          strokeWidth="15" 
-          opacity=".8" 
-          r="15" 
-          cx="35" 
-          cy="100"
-        >
           <animate 
-            attributeName="cx" 
+            attributeName="stroke-width" 
             calcMode="spline" 
             dur="2" 
-            values="35;165;165;35;35" 
-            keySplines="0 .1 .5 1;0 .1 .5 1;0 .1 .5 1;0 .1 .5 1" 
-            repeatCount="indefinite" 
-            begin="0.05"
+            values="0;25" 
+            keyTimes="0;1" 
+            keySplines="0 .2 .5 1" 
+            repeatCount="indefinite"
           />
-        </circle>
-        <circle 
-          fill="#033D0A" 
-          stroke="#033D0A" 
-          strokeWidth="15" 
-          opacity=".6" 
-          r="15" 
-          cx="35" 
-          cy="100"
-        >
           <animate 
-            attributeName="cx" 
+            attributeName="stroke-opacity" 
             calcMode="spline" 
             dur="2" 
-            values="35;165;165;35;35" 
-            keySplines="0 .1 .5 1;0 .1 .5 1;0 .1 .5 1;0 .1 .5 1" 
-            repeatCount="indefinite" 
-            begin=".1"
-          />
-        </circle>
-        <circle 
-          fill="#033D0A" 
-          stroke="#033D0A" 
-          strokeWidth="15" 
-          opacity=".4" 
-          r="15" 
-          cx="35" 
-          cy="100"
-        >
-          <animate 
-            attributeName="cx" 
-            calcMode="spline" 
-            dur="2" 
-            values="35;165;165;35;35" 
-            keySplines="0 .1 .5 1;0 .1 .5 1;0 .1 .5 1;0 .1 .5 1" 
-            repeatCount="indefinite" 
-            begin=".15"
-          />
-        </circle>
-        <circle 
-          fill="#033D0A" 
-          stroke="#033D0A" 
-          strokeWidth="15" 
-          opacity=".2" 
-          r="15" 
-          cx="35" 
-          cy="100"
-        >
-          <animate 
-            attributeName="cx" 
-            calcMode="spline" 
-            dur="2" 
-            values="35;165;165;35;35" 
-            keySplines="0 .1 .5 1;0 .1 .5 1;0 .1 .5 1;0 .1 .5 1" 
-            repeatCount="indefinite" 
-            begin=".2"
+            values="1;0" 
+            keyTimes="0;1" 
+            keySplines="0 .2 .5 1" 
+            repeatCount="indefinite"
           />
         </circle>
       </svg>

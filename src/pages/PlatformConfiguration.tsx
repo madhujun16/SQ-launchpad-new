@@ -34,7 +34,7 @@ import {
   Download
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { ContentLoader } from '@/components/ui/loader';
+
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
