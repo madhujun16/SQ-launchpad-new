@@ -4,9 +4,12 @@ import { useAuth } from '../hooks/useAuth';
 import { Loader } from './ui/loader';
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, currentRole } = useAuth();
+  const authData = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Destructure with safe defaults
+  const { user, loading, currentRole } = authData || {};
 
   useEffect(() => {
     if (!loading && !user && location.pathname !== '/auth') {
@@ -24,7 +27,8 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [currentRole, loading, user, navigate, location.pathname]);
 
-  if (loading) {
+  // Show loading state if context is not ready or auth is loading
+  if (!authData || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
         <Loader size="lg" />
