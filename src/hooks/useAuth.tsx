@@ -30,6 +30,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Debug: Log context creation
+console.log('🔧 AuthContext created:', AuthContext);
+
 // Cache for user profiles and roles
 const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -408,43 +411,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => {
+  console.log('🔧 useAuth hook called, AuthContext:', AuthContext);
+  
+  // Check if we're in a React component context
+  if (typeof window !== 'undefined' && !window.React) {
+    console.error('useAuth: React not available in window context');
+    return getDefaultAuthContext();
+  }
+
   try {
+    console.log('🔧 Attempting to use useContext with AuthContext:', AuthContext);
     const context = useContext(AuthContext);
-    if (context === undefined) {
+    console.log('🔧 useContext result:', context);
+    
+    // Additional safety check for context
+    if (!context || context === undefined) {
       console.error('useAuth must be used within an AuthProvider');
-      // Return a safe default instead of throwing
-      return {
-        user: null,
-        session: null,
-        profile: null,
-        currentRole: null,
-        availableRoles: [],
-        switchRole: () => {},
-        signOut: async () => {},
-        signInWithOtp: async () => ({ error: 'Context not available' }),
-        verifyOtp: async () => ({ error: 'Context not available' }),
-        createUserAsAdmin: async () => ({ error: 'Context not available' }),
-        loading: true,
-        forceRefresh: async () => {}
-      };
+      return getDefaultAuthContext();
     }
+    
     return context;
   } catch (error) {
     console.error('useAuth hook error:', error);
-    // Return a safe default if context access fails
-    return {
-      user: null,
-      session: null,
-      profile: null,
-      currentRole: null,
-      availableRoles: [],
-      switchRole: () => {},
-      signOut: async () => {},
-      signInWithOtp: async () => ({ error: 'Context not available' }),
-      verifyOtp: async () => ({ error: 'Context not available' }),
-      createUserAsAdmin: async () => ({ error: 'Context not available' }),
-      loading: true,
-      forceRefresh: async () => {}
-    };
+    return getDefaultAuthContext();
   }
 };
+
+// Helper function to get default auth context
+const getDefaultAuthContext = () => ({
+  user: null,
+  session: null,
+  profile: null,
+  currentRole: null,
+  availableRoles: [],
+  switchRole: () => {},
+  signOut: async () => {},
+  signInWithOtp: async () => ({ error: 'Context not available' }),
+  verifyOtp: async () => ({ error: 'Context not available' }),
+  createUserAsAdmin: async () => ({ error: 'Context not available' }),
+  loading: true,
+  forceRefresh: async () => {}
+});

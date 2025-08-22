@@ -9,6 +9,7 @@ import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
 import { Suspense, lazy, useEffect } from "react";
 import { PageLoader } from "@/components/ui/loader";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -98,9 +99,11 @@ function App() {
                     element={
                       <AuthGuard>
                         <Layout>
-                          <Suspense fallback={<PageLoader />}>
-                            <Dashboard />
-                          </Suspense>
+                          <ErrorBoundary>
+                            <Suspense fallback={<PageLoader />}>
+                              <Dashboard />
+                            </Suspense>
+                          </ErrorBoundary>
                         </Layout>
                       </AuthGuard>
                     }
