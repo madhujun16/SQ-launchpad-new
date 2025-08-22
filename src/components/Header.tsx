@@ -410,72 +410,89 @@ const Header = () => {
                 RoleIcon={RoleIcon} 
               />
               
-              {/* Force Refresh Button for debugging */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => window.location.reload()}
-                className="text-white hover:bg-white/10"
-                title="Force Refresh"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
                     <User className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  
-                  {/* Role Switcher - Only show if user has multiple roles */}
-                  {availableRoles.length > 1 && (
-                    <>
-                      <DropdownMenuLabel className="text-xs text-gray-500">
-                        Switch Role
-                      </DropdownMenuLabel>
-                      {availableRoles.map((role) => {
-                        const roleConfig = getRoleConfig(role);
-                        return (
-                          <DropdownMenuItem
-                            key={role}
-                            onClick={() => handleRoleSwitch(role)}
-                            className={`flex items-center ${
-                              role === currentRole ? 'bg-green-50 text-green-700' : ''
-                            }`}
-                          >
-                            {roleConfig.icon && (
-                              <roleConfig.icon className="h-4 w-4 mr-2" />
-                            )}
-                            {roleConfig.displayName}
-                            {role === currentRole && (
-                              <span className="ml-auto text-xs text-green-600">Current</span>
-                            )}
-                          </DropdownMenuItem>
-                        );
-                      })}
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  
-                  {currentRole === 'admin' && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link to="/platform-configuration" className="flex items-center">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Platform Configuration
-                        </Link>
+                <DropdownMenuContent align="end" className="w-80">
+                  {/* User Information Section */}
+                  <div className="px-3 py-3 border-b">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {profile?.full_name || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500">{profile?.email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Account Section */}
+                  <div className="px-3 py-2">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Account</p>
+                    <div className="space-y-1">
+                      {/* Role Switcher - Only show if user has multiple roles */}
+                      {availableRoles.length > 1 && (
+                        <DropdownMenuItem className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                          <div className="flex items-center space-x-2">
+                            <Settings className="h-4 w-4 text-gray-600" />
+                            <span className="text-sm text-gray-700">Switch Role</span>
+                          </div>
+                          <span className="text-xs text-gray-500">→</span>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {currentRole === 'admin' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/platform-configuration" className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                            <div className="flex items-center space-x-2">
+                              <Settings className="h-4 w-4 text-gray-600" />
+                              <span className="text-sm text-gray-700">Platform Configuration</span>
+                            </div>
+                            <span className="text-xs text-gray-500">→</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* System Section */}
+                  <div className="px-3 py-2">
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">System</p>
+                    <div className="space-y-1">
+                      <DropdownMenuItem 
+                        onClick={() => window.location.reload()}
+                        className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RefreshCw className="h-4 w-4 text-gray-600" />
+                          <span className="text-sm text-gray-700">Force Refresh</span>
+                        </div>
+                        <span className="text-xs text-gray-500">→</span>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
+                    </div>
+                  </div>
+
+                  {/* Sign Out Section */}
+                  <div className="px-3 py-2 border-t">
+                    <DropdownMenuItem 
+                      onClick={handleSignOut}
+                      className="flex items-center px-2 py-2 rounded-md hover:bg-red-50 cursor-pointer text-red-600 hover:text-red-700"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      <span className="text-sm font-medium">Sign Out</span>
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
