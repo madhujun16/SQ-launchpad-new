@@ -2945,15 +2945,17 @@ const SiteDetail = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+            <div className="flex items-center space-x-4">
+              <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+              <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                {getStatusDisplayName(site.status)}
+              </div>
+            </div>
             <div className="flex items-center space-x-4 mt-2">
               <p className="text-gray-600">
-                 {site.sector || 'Unknown Sector'} → {site.organization} - {new Date(site.goLiveDate).toLocaleDateString()}
+                Sector - <span className="font-medium">{site.sector || 'Unknown Sector'}</span> | Organisation - <span className="font-medium">{site.organization}</span> | {site.status === 'live' ? 'Go Live Date' : 'Target Go Live Date'} - <span className="font-medium">{new Date(site.goLiveDate).toLocaleDateString()}</span>
               </p>
             </div>
-          </div>
-          <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-            {getStatusDisplayName(site.status)}
           </div>
         </div>
         <div className="flex items-center space-x-2">
