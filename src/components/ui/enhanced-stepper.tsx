@@ -7,6 +7,12 @@ import { Input } from './input';
 import { Label } from './label';
 import { Textarea } from './textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './tooltip';
 
 export interface EnhancedStepperStep {
   id: string;
@@ -31,6 +37,7 @@ export interface EnhancedStepperProps {
   onComplete?: () => void;
   canProceed?: boolean;
   showNavigation?: boolean;
+  compact?: boolean;
 }
 
 export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
@@ -44,7 +51,8 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
   onPrevious,
   onComplete,
   canProceed = true,
-  showNavigation = true
+  showNavigation = true,
+  compact = false
 }) => {
   const currentStepData = steps[currentStep];
   const nextStepData = currentStep < steps.length - 1 ? steps[currentStep + 1] : null;
@@ -58,8 +66,9 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
   };
 
   return (
-    <div className={cn("w-full space-y-6", className)}>
-      {/* Mobile Version - Compact Design */}
+    <TooltipProvider>
+      <div className={cn("w-full", compact ? "space-y-3" : "space-y-6", className)}>
+              {/* Mobile Version - Compact Design */}
       <div className="md:hidden">
         <div className="flex items-center justify-between">
           {/* Left Side - Current Step Info */}
@@ -77,7 +86,7 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
           {/* Right Side - Circular Progress */}
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <div className="w-12 h-12 rounded-full border-2 border-gray-300 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center">
                 <div 
                   className="absolute inset-0 rounded-full border-2 border-green-500"
                   style={{
@@ -94,7 +103,7 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
       </div>
 
       {/* Desktop Version - Full Horizontal Stepper */}
-      <div className="hidden md:flex items-center justify-between">
+      <div className={cn("hidden md:flex items-center", compact ? "justify-center space-x-2" : "justify-between")}>
         {steps.map((step, index) => {
           const isCompleted = step.status === 'completed';
           const isCurrent = step.status === 'current';
@@ -104,32 +113,47 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
             <React.Fragment key={step.id}>
               {/* Step */}
               <div className="flex flex-col items-center">
-                <button
-                  onClick={() => onStepClick?.(index)}
-                  className={cn(
-                    "flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-200 shadow-sm",
-                    isCompleted && "bg-green-500 border-green-500 text-white shadow-lg scale-110",
-                    isCurrent && "bg-gradient-to-r from-black to-green-800 border-green-600 text-white shadow-lg",
-                    isUpcoming && "bg-gray-100 border-gray-300 text-gray-400 hover:border-gray-400",
-                    onStepClick && "cursor-pointer hover:scale-105"
-                  )}
-                  disabled={!onStepClick}
-                >
-                  {isCompleted ? (
-                    <CheckCircle className="h-6 w-6" />
-                  ) : isCurrent ? (
-                    step.icon ? (
-                      <step.icon className="h-6 w-6" />
-                    ) : (
-                      <Circle className="h-6 w-6" />
-                    )
-                  ) : (
-                    <Circle className="h-6 w-6" />
-                  )}
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onStepClick?.(index)}
+                      className={cn(
+                        "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 shadow-sm",
+                        isCompleted && "bg-green-500 border-green-500 text-white shadow-lg scale-110",
+                        isCurrent && "bg-gradient-to-r from-black to-green-800 border-green-600 text-white shadow-lg",
+                        isUpcoming && "bg-gray-100 border-gray-300 text-gray-400 hover:border-gray-400",
+                        onStepClick && "cursor-pointer hover:scale-105"
+                      )}
+                      disabled={!onStepClick}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : isCurrent ? (
+                        step.icon ? (
+                          <step.icon className="h-5 w-5" />
+                        ) : (
+                          <Circle className="h-5 w-5" />
+                        )
+                      ) : (
+                        // Show icon for inactive steps
+                        step.icon ? (
+                          <step.icon className="h-5 w-5" />
+                        ) : (
+                          <Circle className="h-5 w-5" />
+                        )
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">{step.title}</p>
+                    {step.description && (
+                      <p className="text-sm text-gray-300">{step.description}</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
                 
                 {/* Step Title */}
-                <div className="mt-3 text-center">
+                <div className="mt-2 text-center">
                   <p className={cn(
                     "text-sm font-semibold",
                     isCompleted && "text-green-600",
@@ -138,7 +162,7 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
                   )}>
                     {step.title}
                   </p>
-                  {step.description && (
+                  {!compact && step.description && (
                     <p className="text-xs text-gray-500 mt-1 max-w-24">
                       {step.description}
                     </p>
@@ -149,7 +173,8 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
               {/* Connector Line */}
               {index < steps.length - 1 && (
                 <div className={cn(
-                  "flex-1 h-1 mx-4 rounded-full transition-all duration-300",
+                  "flex-1 h-1 rounded-full transition-all duration-300",
+                  compact ? "mx-1" : "mx-3",
                   isCompleted ? "bg-green-500" : "bg-gray-300"
                 )} />
               )}
@@ -159,13 +184,13 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
       </div>
 
       {/* Content */}
-      <div className="mt-8">
+      <div className={cn(compact ? "mt-4" : "mt-8")}>
         {children}
       </div>
       
       {/* Navigation */}
       {showNavigation && (
-        <div className="flex justify-between pt-6 border-t">
+        <div className={cn("flex justify-between border-t", compact ? "pt-4" : "pt-6")}>
           <Button
             variant="outline"
             onClick={onPrevious}
@@ -195,7 +220,8 @@ export const EnhancedStepper: React.FC<EnhancedStepperProps> = ({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

@@ -247,56 +247,107 @@ const Dashboard = () => {
 
   // Timeout handling - will be updated after authData is available
   useEffect(() => {
-    if (authData?.loading) {
-      const timer = setTimeout(() => {
-        console.warn('⚠️ Dashboard loading timeout - forcing display');
-        setLoadingTimeout(true);
-      }, LOADING_TIMEOUT);
+    try {
+      if (authData?.loading) {
+        console.log('🔍 Dashboard: Setting up loading timeout');
+        const timer = setTimeout(() => {
+          console.warn('⚠️ Dashboard loading timeout - forcing display');
+          setLoadingTimeout(true);
+        }, LOADING_TIMEOUT);
 
-      return () => clearTimeout(timer);
-    } else {
-      setLoadingTimeout(false);
+        return () => {
+          console.log('🔍 Dashboard: Clearing loading timeout');
+          clearTimeout(timer);
+        };
+      } else {
+        console.log('🔍 Dashboard: Auth not loading, clearing timeout');
+        setLoadingTimeout(false);
+      }
+    } catch (error) {
+      console.error('🔍 Dashboard: Error in timeout effect:', error);
     }
   }, [authData?.loading]);
 
   // Mock data initialization
   useEffect(() => {
-    const seed: RequestRow[] = [
-      {
-        id: 'r1', siteId: '3', siteName: 'Birmingham South', requestedBy: 'Tom Wilson',
-        status: 'pending', priority: 'high', totalValue: 4500, assignedOps: 'Emma Davis', assignedEngineer: 'Tom Wilson',
-        submittedAt: '2024-01-16T10:30:00Z',
-        summary: { software: [{ name: 'POS System' }, { name: 'Kiosk Software' }], hardware: [{ name: 'POS Terminals', units: 2 }] }
-      },
-      {
-        id: 'r2', siteId: '4', siteName: 'Leeds Central', requestedBy: 'Chris Taylor',
-        status: 'approved', priority: 'medium', totalValue: 12000, assignedOps: 'Lisa Anderson', assignedEngineer: 'Chris Taylor',
-        submittedAt: '2024-01-17T14:20:00Z',
-        summary: { software: [{ name: 'POS System' }, { name: 'Kitchen Display' }], hardware: [{ name: 'POS Terminals', units: 4 }] }
-      },
-      {
-        id: 'r3', siteId: '5', siteName: 'Liverpool East', requestedBy: 'Anna Garcia',
-        status: 'rejected', priority: 'low', totalValue: 800, assignedOps: 'Mark Thompson', assignedEngineer: 'Anna Garcia',
-        rejectionReason: 'Please reduce scope and resubmit.', submittedAt: '2024-01-18T09:15:00Z',
-        summary: { software: [{ name: 'Self-Service Kiosks' }], hardware: [{ name: 'Tablets', units: 1 }] }
-      },
-      {
-        id: 'r4', siteId: '2', siteName: 'Manchester North', requestedBy: 'David Brown',
-        status: 'procurement', priority: 'urgent', totalValue: 7500, assignedOps: 'Sarah Wilson', assignedEngineer: 'David Brown',
-        submittedAt: '2024-01-19T11:45:00Z',
-        summary: { software: [{ name: 'Kitchen Display' }], hardware: [{ name: 'KDS Screens', units: 3 }] }
-      }
-    ];
-    setAllRequests(seed);
+    try {
+      console.log('🔍 Dashboard: Initializing mock data');
+      const seed: RequestRow[] = [
+        {
+          id: 'r1', siteId: '3', siteName: 'Birmingham South', requestedBy: 'Tom Wilson',
+          status: 'pending', priority: 'high', totalValue: 4500, assignedOps: 'Emma Davis', assignedEngineer: 'Tom Wilson',
+          submittedAt: '2024-01-16T10:30:00Z',
+          summary: { software: [{ name: 'POS System' }, { name: 'Kiosk Software' }], hardware: [{ name: 'POS Terminals', units: 2 }] }
+        },
+        {
+          id: 'r2', siteId: '4', siteName: 'Leeds Central', requestedBy: 'Chris Taylor',
+          status: 'approved', priority: 'medium', totalValue: 12000, assignedOps: 'Lisa Anderson', assignedEngineer: 'Chris Taylor',
+          submittedAt: '2024-01-17T14:20:00Z',
+          summary: { software: [{ name: 'POS System' }, { name: 'Kitchen Display' }], hardware: [{ name: 'POS Terminals', units: 4 }] }
+        },
+        {
+          id: 'r3', siteId: '5', siteName: 'Liverpool East', requestedBy: 'Anna Garcia',
+          status: 'rejected', priority: 'low', totalValue: 800, assignedOps: 'Mark Thompson', assignedEngineer: 'Anna Garcia',
+          rejectionReason: 'Please reduce scope and resubmit.', submittedAt: '2024-01-18T09:15:00Z',
+          summary: { software: [{ name: 'Self-Service Kiosks' }], hardware: [{ name: 'Tablets', units: 1 }] }
+        },
+        {
+          id: 'r4', siteId: '2', siteName: 'Manchester North', requestedBy: 'David Brown',
+          status: 'procurement', priority: 'urgent', totalValue: 7500, assignedOps: 'Sarah Wilson', assignedEngineer: 'David Brown',
+          submittedAt: '2024-01-19T11:45:00Z',
+          summary: { software: [{ name: 'Kitchen Display' }], hardware: [{ name: 'KDS Screens', units: 3 }] }
+        }
+      ];
+      setAllRequests(seed);
+      console.log('🔍 Dashboard: Mock data initialized successfully');
+    } catch (error) {
+      console.error('🔍 Dashboard: Error initializing mock data:', error);
+      setAllRequests([]);
+    }
   }, []);
 
   // Extract auth data
   const { currentRole, profile, loading } = authData || {};
-  const roleConfig = getRoleConfig(currentRole || 'admin');
+  
+  // Add error handling for role configuration
+  let roleConfig;
+  try {
+    roleConfig = getRoleConfig(currentRole || 'admin');
+  } catch (error) {
+    console.error('🔍 Dashboard: Error getting role config:', error);
+    roleConfig = getRoleConfig('admin'); // Fallback to admin
+  }
+  
   const navigate = useNavigate();
+
+  // Add null checks for profile and currentRole
+  if (!profile) {
+    console.log('🔍 Dashboard: Profile is null/undefined, showing loading state');
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentRole) {
+    console.log('🔍 Dashboard: currentRole is null/undefined, showing loading state');
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader size="lg" />
+          <p className="text-gray-600 mt-4">Loading role information...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Check if auth context is available AFTER all hooks are defined
   if (!authData) {
+    console.log('🔍 Dashboard: authData is null/undefined');
     return (
       <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -309,8 +360,15 @@ const Dashboard = () => {
 
 
 
+
+
   // Memoized metrics generation
   const metrics = useMemo(() => {
+    if (!allRequests || !Array.isArray(allRequests)) {
+      console.warn('🔍 Dashboard: allRequests is not an array:', allRequests);
+      return [];
+    }
+
     const baseMetrics: DashboardMetric[] = [
       {
         title: 'Active Sites',
@@ -392,6 +450,11 @@ const Dashboard = () => {
 
   // Memoized widgets generation
   const widgets = useMemo(() => {
+    if (!currentRole) {
+      console.warn('🔍 Dashboard: currentRole is null for widgets generation');
+      return [];
+    }
+
     const roleWidgets: DashboardWidget[] = [];
 
     // Common recent activity widget
@@ -617,19 +680,113 @@ const Dashboard = () => {
   // Debug logging
   console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
 
-  return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      <DashboardHeader profile={profile} roleConfig={roleConfig} />
-      <MetricsGrid metrics={metrics} />
-      
-      {/* Role-specific sections */}
-      {currentRole === 'deployment_engineer' && renderDeploymentEngineerSection()}
-      {currentRole === 'ops_manager' && renderOpsManagerSection()}
-      {currentRole === 'admin' && renderAdminSection()}
+  // Simplified render to debug the issue
+  try {
+    return (
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="bg-green-100 p-4 rounded">
+          <h1 className="text-2xl font-bold text-green-800">Dashboard Debug Mode</h1>
+          <p className="text-green-700">Current Role: {currentRole || 'None'}</p>
+          <p className="text-green-700">Profile: {profile ? 'Loaded' : 'Not loaded'}</p>
+          <p className="text-green-700">Role Config: {roleConfig ? 'Loaded' : 'Not loaded'}</p>
+        </div>
+        
+        <DashboardHeader profile={profile} roleConfig={roleConfig} />
+        
+        <div className="bg-blue-100 p-4 rounded">
+          <h2 className="text-xl font-bold text-blue-800">Metrics Section</h2>
+          <p className="text-blue-700">Metrics count: {metrics?.length || 0}</p>
+        </div>
+        
+        <MetricsGrid metrics={metrics} />
+        
+        <div className="bg-yellow-100 p-4 rounded">
+          <h2 className="text-xl font-bold text-yellow-800">Role Sections</h2>
+          <p className="text-yellow-700">Current Role: {currentRole}</p>
+        </div>
+        
+        {/* Role-specific sections */}
+        <div className="bg-yellow-100 p-4 rounded">
+          <h2 className="text-xl font-bold text-yellow-800">Role Sections</h2>
+          <p className="text-yellow-700">Current Role: {currentRole}</p>
+        </div>
+        
+        {currentRole === 'deployment_engineer' && (
+          <div className="bg-blue-100 p-4 rounded">
+            <h3 className="text-lg font-bold text-blue-800">Deployment Engineer Section</h3>
+            {(() => {
+              try {
+                return renderDeploymentEngineerSection();
+              } catch (error) {
+                console.error('🔍 Dashboard: Error rendering deployment engineer section:', error);
+                return <p className="text-red-600">Error rendering section</p>;
+              }
+            })()}
+          </div>
+        )}
+        
+        {currentRole === 'ops_manager' && (
+          <div className="bg-green-100 p-4 rounded">
+            <h3 className="text-lg font-bold text-green-800">Ops Manager Section</h3>
+            {(() => {
+              try {
+                return renderOpsManagerSection();
+              } catch (error) {
+                console.error('🔍 Dashboard: Error rendering ops manager section:', error);
+                return <p className="text-red-600">Error rendering section</p>;
+              }
+            })()}
+          </div>
+        )}
+        
+        {currentRole === 'admin' && (
+          <div className="bg-red-100 p-4 rounded">
+            <h3 className="text-lg font-bold text-red-800">Admin Section</h3>
+            {(() => {
+              try {
+                return renderAdminSection();
+              } catch (error) {
+                console.error('🔍 Dashboard: Error rendering admin section:', error);
+                return <p className="text-red-600">Error rendering section</p>;
+              }
+            })()}
+          </div>
+        )}
 
-      <WidgetsGrid widgets={widgets} />
-    </div>
-  );
+        <div className="bg-purple-100 p-4 rounded">
+          <h2 className="text-xl font-bold text-purple-800">Widgets Section</h2>
+          <p className="text-purple-700">Widgets count: {widgets?.length || 0}</p>
+        </div>
+        
+        <WidgetsGrid widgets={widgets} />
+      </div>
+    );
+  } catch (error) {
+    console.error('🔍 Dashboard: Error in render:', error);
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <AlertCircle className="h-12 w-12 mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Render Error</h2>
+          <p className="text-gray-600 mb-4">There was an error rendering the dashboard. Please try refreshing the page.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
+          <details className="mt-4 text-left text-sm text-gray-500">
+            <summary className="cursor-pointer">Error Details</summary>
+            <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+              {error instanceof Error ? error.message : String(error)}
+            </pre>
+          </details>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default Dashboard; 

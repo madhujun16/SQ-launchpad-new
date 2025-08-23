@@ -2941,14 +2941,19 @@ const SiteDetail = () => {
         <span className="text-gray-900 font-medium">{site.name}</span>
       </nav>
 
-      {/* Header */}
+      {/* Header with Status */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
-          <div className="flex items-center space-x-4 mt-2">
-            <p className="text-gray-600">
-               {site.sector || 'Unknown Sector'} → {site.organization} - {new Date(site.goLiveDate).toLocaleDateString()}
-            </p>
+        <div className="flex items-center space-x-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+            <div className="flex items-center space-x-4 mt-2">
+              <p className="text-gray-600">
+                 {site.sector || 'Unknown Sector'} → {site.organization} - {new Date(site.goLiveDate).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+          <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+            {getStatusDisplayName(site.status)}
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -2971,29 +2976,17 @@ const SiteDetail = () => {
         </div>
       </div>
 
-
-
-      {/* Workflow Stepper */}
+      {/* Workflow Stepper - Compact */}
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center text-gray-900">
-              <Info className="mr-2 h-5 w-5 text-blue-600" />
-              Go-Live Progress
-            </CardTitle>
-            <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-              Current Status: {getStatusDisplayName(site.status)}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
+        <CardContent className="pt-6">
+          <div className="mb-4">
             <EnhancedStepper 
               steps={stepperSteps} 
               currentStep={getStepperStepFromStatus(site.status)}
               onStepClick={setSelectedStep}
               onStepToggle={handleStepToggle}
               showNavigation={false}
+              compact={true}
             />
           </div>
 

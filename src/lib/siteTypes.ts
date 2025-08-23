@@ -104,8 +104,8 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
   return [
     {
       id: 'site-created',
-      title: 'Site Creation',
-      description: 'Site has been created in the system',
+      title: 'Create Site',
+      description: 'Initialize new site in the system',
       status: currentStep >= 0 ? (currentStep === 0 ? 'current' : 'completed') : 'upcoming',
       icon: Building,
       isExpanded: currentStep === 0,
@@ -115,7 +115,7 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
     {
       id: 'site-study-done',
       title: 'Site Study',
-      description: 'On-site assessment completed',
+      description: 'Perform on-site assessment and analysis',
       status: currentStep >= 1 ? (currentStep === 1 ? 'current' : 'completed') : 'upcoming',
       icon: FileText,
       isExpanded: currentStep === 1,
@@ -124,8 +124,8 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
     },
     {
       id: 'scoping-done',
-      title: 'Scoping',
-      description: 'Software & Hardware scoping completed',
+      title: 'Define Scope',
+      description: 'Determine software & hardware requirements',
       status: currentStep >= 2 ? (currentStep === 2 ? 'current' : 'completed') : 'upcoming',
       icon: Package,
       isExpanded: currentStep === 2,
@@ -135,7 +135,7 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
     {
       id: 'approved',
       title: 'Approval',
-      description: 'Project approved by stakeholders',
+      description: 'Obtain stakeholder approval for project',
       status: currentStep >= 3 ? (currentStep === 3 ? 'current' : 'completed') : 'upcoming',
       icon: CheckSquare,
       isExpanded: currentStep === 3,
@@ -145,7 +145,7 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
     {
       id: 'procurement-done',
       title: 'Procurement',
-      description: 'Hardware procurement completed',
+      description: 'Source and acquire required hardware',
       status: currentStep >= 4 ? (currentStep === 4 ? 'current' : 'completed') : 'upcoming',
       icon: Package,
       isExpanded: currentStep === 4,
@@ -155,7 +155,7 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
     {
       id: 'deployed',
       title: 'Deployment',
-      description: 'Hardware deployed and installed',
+      description: 'Install and configure hardware on-site',
       status: currentStep >= 5 ? (currentStep === 5 ? 'current' : 'completed') : 'upcoming',
       icon: Truck,
       isExpanded: currentStep === 5,
@@ -164,8 +164,8 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
     },
     {
       id: 'live',
-      title: 'Go-Live',
-      description: 'Site is live and operational',
+      title: 'Go Live',
+      description: 'Activate site and begin operations',
       status: currentStep >= 6 ? (currentStep === 6 ? 'current' : 'completed') : 'upcoming',
       icon: CheckCircle,
       isExpanded: currentStep === 6,
@@ -207,21 +207,21 @@ export const getStatusColor = (status: string) => {
 
 export const getStatusDisplayName = (status: string) => {
   switch (status) {
-    // New finalized statuses
+    // New finalized statuses - aligned with Sites page
     case 'site_created':
-      return 'Site Creation';
+      return 'Site Created';
     case 'site_study_done':
-      return 'Site Study';
+      return 'Site Study Done';
     case 'scoping_done':
-      return 'Scoping';
+      return 'Scoping Done';
     case 'approved':
-      return 'Approval';
+      return 'Approved';
     case 'procurement_done':
-      return 'Procurement';
+      return 'Procurement Done';
     case 'deployed':
-      return 'Deployment';
+      return 'Deployed';
     case 'live':
-      return 'Go-Live';
+      return 'Live';
     // Legacy status mappings for backward compatibility
     case 'created':
       return 'Site Created';
