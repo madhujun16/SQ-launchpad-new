@@ -24,7 +24,8 @@ import {
   StickyNote,
   Edit,
   CheckSquare,
-  Building
+  Building,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -35,6 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import { getStatusColor, getStatusDisplayName, type UnifiedSiteStatus } from '@/lib/siteTypes';
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 import { SitesService, type Site } from '@/services/sitesService';
+import { toast } from 'sonner';
 
 const Sites = () => {
   const navigate = useNavigate();
@@ -110,18 +112,45 @@ const Sites = () => {
     setStatusFilter('all');
   };
 
-  // Handle site actions
+  // Handle view site
   const handleViewSite = (site: Site) => {
     navigate(`/sites/${site.id}`);
   };
 
+  // Handle edit site
   const handleEditSite = (site: Site) => {
     navigate(`/sites/${site.id}/edit`);
   };
 
+  // Handle site notes
   const handleSiteNotes = (site: Site) => {
     setSelectedSite(site);
     setShowNotesModal(true);
+  };
+
+  // Handle delete site - only for admin users
+  const handleDeleteSite = async (site: Site) => {
+    if (currentRole !== 'admin') {
+      toast.error('Only admin users can delete sites');
+      return;
+    }
+
+    // Confirm deletion
+    if (!window.confirm(`Are you sure you want to delete the site "${site.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Here you would typically call the API to delete the site
+      // For now, we'll just remove it from the local state
+      setSites(prevSites => prevSites.filter(s => s.id !== site.id));
+      setFilteredSites(prevSites => prevSites.filter(s => s.id !== site.id));
+      
+      toast.success(`Site "${site.name}" has been deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting site:', error);
+      toast.error('Failed to delete site. Please try again.');
+    }
   };
 
   // Get unique statuses for filter dropdown
@@ -364,6 +393,17 @@ const Sites = () => {
                               title="Edit Site"
                             >
                               <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {currentRole === 'admin' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSite(site)}
+                              title="Delete Site"
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
                         </div>

@@ -79,6 +79,17 @@ interface RequestRow {
   summary: RequestSummary;
 }
 
+// New interface for cost tracking
+interface SiteCosts {
+  siteId: string;
+  siteName: string;
+  status: string;
+  capex: number;
+  opex: number;
+  assignedOps?: string;
+  totalValue: number;
+}
+
 // Loading Component
 const DashboardLoading = () => (
   <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
@@ -169,6 +180,7 @@ const Dashboard = () => {
   
   // State
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
+  const [siteCosts, setSiteCosts] = useState<SiteCosts[]>([]);
 
   // Memoized helper functions
   const getStatusBadge = useCallback((status: RequestRow['status']) => {
@@ -220,6 +232,35 @@ const Dashboard = () => {
       }
     ];
     setAllRequests(seed);
+
+    // Mock site costs data
+    const costsSeed: SiteCosts[] = [
+      {
+        siteId: '1', siteName: 'London Central', status: 'live', capex: 25000, opex: 5000, assignedOps: 'Emma Davis', totalValue: 30000
+      },
+      {
+        siteId: '2', siteName: 'Manchester North', status: 'live', capex: 18000, opex: 3500, assignedOps: 'Sarah Wilson', totalValue: 21500
+      },
+      {
+        siteId: '3', siteName: 'Birmingham South', status: 'live', capex: 22000, opex: 4200, assignedOps: 'Emma Davis', totalValue: 26200
+      },
+      {
+        siteId: '4', siteName: 'Leeds Central', status: 'live', capex: 15000, opex: 3000, assignedOps: 'Lisa Anderson', totalValue: 18000
+      },
+      {
+        siteId: '5', siteName: 'Liverpool East', status: 'live', capex: 12000, opex: 2500, assignedOps: 'Mark Thompson', totalValue: 14500
+      },
+      {
+        siteId: '6', siteName: 'Edinburgh West', status: 'live', capex: 28000, opex: 5500, assignedOps: 'Emma Davis', totalValue: 33500
+      },
+      {
+        siteId: '7', siteName: 'Cardiff Central', status: 'live', capex: 16000, opex: 3200, assignedOps: 'Sarah Wilson', totalValue: 19200
+      },
+      {
+        siteId: '8', siteName: 'Bristol North', status: 'live', capex: 19000, opex: 3800, assignedOps: 'Lisa Anderson', totalValue: 22800
+      }
+    ];
+    setSiteCosts(costsSeed);
   }, []);
 
   // Extract auth data
@@ -437,6 +478,12 @@ const Dashboard = () => {
     const pending = mine.filter(r => r.status === 'pending');
     const recent = mine.filter(r => r.status !== 'pending').slice(0, 5);
     
+    // Get costs for sites assigned to this Ops Manager
+    const mySiteCosts = siteCosts.filter(site => site.assignedOps === (profile?.full_name || profile?.email));
+    const totalCapex = mySiteCosts.reduce((sum, site) => sum + site.capex, 0);
+    const totalOpex = mySiteCosts.reduce((sum, site) => sum + site.opex, 0);
+    const totalValue = mySiteCosts.reduce((sum, site) => sum + site.totalValue, 0);
+    
     return (
       <>
         <Card>
@@ -469,6 +516,34 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+        
+        {/* Cost Summary Card for Ops Manager */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Financial Overview</CardTitle>
+            <CardDescription>Cost summary for your assigned live sites</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">£{totalCapex.toLocaleString()}</p>
+                <p className="text-sm text-blue-600">Total CAPEX</p>
+                <p className="text-xs text-gray-500">{mySiteCosts.length} sites</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">£{totalOpex.toLocaleString()}</p>
+                <p className="text-sm text-green-600">Total OPEX</p>
+                <p className="text-xs text-gray-500">Annual costs</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold text-purple-600">£{totalValue.toLocaleString()}</p>
+                <p className="text-sm text-purple-600">Total Value</p>
+                <p className="text-xs text-gray-500">CAPEX + OPEX</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Recent Decisions</CardTitle>
@@ -492,11 +567,19 @@ const Dashboard = () => {
         </Card>
       </>
     );
-  }, [allRequests, profile, approveInline, rejectInline, getStatusBadge]);
+  }, [allRequests, profile, approveInline, rejectInline, getStatusBadge, siteCosts]);
 
   const renderAdminSection = useCallback(() => {
     const pending = allRequests.filter(r => r.status === 'pending');
     const recent = allRequests.slice(0, 5);
+    
+    // Get costs for all live sites
+    const liveSiteCosts = siteCosts.filter(site => site.status === 'live');
+    const totalCapex = liveSiteCosts.reduce((sum, site) => sum + site.capex, 0);
+    const totalOpex = liveSiteCosts.reduce((sum, site) => sum + site.opex, 0);
+    const totalValue = liveSiteCosts.reduce((sum, site) => sum + site.totalValue, 0);
+    const avgCapexPerSite = liveSiteCosts.length > 0 ? Math.round(totalCapex / liveSiteCosts.length) : 0;
+    const avgOpexPerSite = liveSiteCosts.length > 0 ? Math.round(totalOpex / liveSiteCosts.length) : 0;
     
     return (
       <>
@@ -527,9 +610,41 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Financial Overview Card for Admin */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Financial Overview</CardTitle>
+            <CardDescription>Complete cost analysis across all live sites</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">£{totalCapex.toLocaleString()}</p>
+                <p className="text-sm text-blue-600">Total CAPEX</p>
+                <p className="text-xs text-gray-500">{liveSiteCosts.length} sites</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">£{totalOpex.toLocaleString()}</p>
+                <p className="text-sm text-green-600">Total OPEX</p>
+                <p className="text-xs text-gray-500">Annual costs</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold text-purple-600">£{totalValue.toLocaleString()}</p>
+                <p className="text-sm text-purple-600">Total Value</p>
+                <p className="text-xs text-gray-500">CAPEX + OPEX</p>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-600">£{avgCapexPerSite.toLocaleString()}</p>
+                <p className="text-sm text-orange-600">Avg CAPEX/Site</p>
+                <p className="text-xs text-gray-500">Per deployment</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </>
     );
-  }, [allRequests, getStatusBadge]);
+  }, [allRequests, getStatusBadge, siteCosts]);
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -537,24 +652,21 @@ const Dashboard = () => {
       
       <MetricsGrid metrics={metrics} />
       
-      {/* Role-specific sections */}
+      {/* Role-specific sections - simplified without headers */}
       {currentRole === 'deployment_engineer' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Field Operations</h2>
           {renderDeploymentEngineerSection()}
         </div>
       )}
       
       {currentRole === 'ops_manager' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Operations Management</h2>
           {renderOpsManagerSection()}
         </div>
       )}
       
       {currentRole === 'admin' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">System Administration</h2>
           {renderAdminSection()}
         </div>
       )}
