@@ -2929,6 +2929,99 @@ const SiteDetail = () => {
     }
   };
 
+  // Map database statuses to display names and colors (same as Sites list page)
+  const getStatusDisplayNameFromDB = (status: string) => {
+    const statusMap: Record<string, { name: string; color: string }> = {
+      // New finalized statuses
+      'site_created': { 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      },
+      'site_study_done': { 
+        name: 'Site Study Done', 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+      },
+      'scoping_done': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'approved': { 
+        name: 'Approved', 
+        color: 'bg-purple-100 text-purple-800 border-purple-200' 
+      },
+      'procurement_done': { 
+        name: 'Procurement Done', 
+        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+      },
+      'deployed': { 
+        name: 'Deployed', 
+        color: 'bg-green-100 text-green-800 border-green-200' 
+      },
+      'live': { 
+        name: 'Live', 
+        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+      },
+      // Legacy status mappings for backward compatibility
+      'created': { 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      },
+      'site_creation': { 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      },
+      'site_study': { 
+        name: 'Site Study Done', 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+      },
+      'study_completed': { 
+        name: 'Site Study Done', 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
+      },
+      'software_scoping': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'hardware_scoping': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'hardware_scoped': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'approval': { 
+        name: 'Approved', 
+        color: 'bg-purple-100 text-purple-800 border-purple-200' 
+      },
+      'procurement': { 
+        name: 'Procurement Done', 
+        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+      },
+      'deployment': { 
+        name: 'Deployed', 
+        color: 'bg-green-100 text-green-800 border-green-200' 
+      },
+      'go_live': { 
+        name: 'Live', 
+        color: 'bg-blue-100 text-blue-800 border-blue-200' 
+      },
+      'activated': { 
+        name: 'Live', 
+        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+      },
+      'configuration_in_progress': { 
+        name: 'Scoping Done', 
+        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
+      },
+      'on_hold': { 
+        name: 'Site Created', 
+        color: 'bg-gray-100 text-gray-800 border-gray-200' 
+      }
+    };
+    return statusMap[status] || { name: status, color: 'bg-gray-100 text-gray-800 border-gray-200' };
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Breadcrumb Navigation */}
@@ -2947,9 +3040,12 @@ const SiteDetail = () => {
           <div>
             <div className="flex items-center space-x-4">
               <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
-              <div className="text-base font-semibold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-                {getStatusDisplayName(site.status)}
-              </div>
+              <Badge 
+                variant="outline" 
+                className={`${getStatusDisplayNameFromDB(site.status).color}`}
+              >
+                {getStatusDisplayNameFromDB(site.status).name}
+              </Badge>
             </div>
             <div className="flex items-center space-x-4 mt-2">
               <p className="text-gray-600">
