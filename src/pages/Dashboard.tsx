@@ -22,7 +22,13 @@ import {
   FileText,
   Database,
   Eye,
-  Edit
+  Edit,
+  Settings,
+  Target,
+  CheckSquare,
+  AlertTriangle,
+  Play,
+  Pause
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
@@ -367,7 +373,7 @@ const Dashboard = () => {
       <>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">My Scoping Queue</CardTitle>
+            <CardTitle className="text-lg">Scoping Queue</CardTitle>
             <CardDescription>Pending and rejected scopes requiring attention</CardDescription>
           </CardHeader>
           <CardContent>
@@ -435,7 +441,7 @@ const Dashboard = () => {
       <>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Pending Approvals</CardTitle>
+            <CardTitle className="text-lg">Approval Queue</CardTitle>
             <CardDescription>Newly submitted scopes awaiting your decision</CardDescription>
           </CardHeader>
           <CardContent>
@@ -465,7 +471,7 @@ const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Recent Activity</CardTitle>
+            <CardTitle className="text-lg">Recent Decisions</CardTitle>
             <CardDescription>Your recent approval decisions</CardDescription>
           </CardHeader>
           <CardContent>
@@ -500,16 +506,16 @@ const Dashboard = () => {
             <CardDescription>System-wide statistics and recent activity</CardDescription>
           </CardHeader>
           <CardContent>
-                         <div className="grid grid-cols-2 gap-4 mb-4">
-               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                 <p className="text-2xl font-bold text-blue-600">{allRequests.length}</p>
-                 <p className="text-sm text-blue-600">Total Requests</p>
-               </div>
-               <div className="text-center p-4 bg-green-50 rounded-lg">
-                 <p className="text-2xl font-bold text-green-600">{allRequests.filter(r => r.status === 'approved').length}</p>
-                 <p className="text-sm text-green-600">Approved Requests</p>
-               </div>
-             </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">{allRequests.length}</p>
+                <p className="text-sm text-blue-600">Total Requests</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{allRequests.filter(r => r.status === 'approved').length}</p>
+                <p className="text-sm text-green-600">Approved Requests</p>
+              </div>
+            </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700">Recent Requests</p>
               {recent.map(r => (
@@ -523,7 +529,7 @@ const Dashboard = () => {
         </Card>
       </>
     );
-  }, [allRequests]);
+  }, [allRequests, getStatusBadge]);
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -534,21 +540,21 @@ const Dashboard = () => {
       {/* Role-specific sections */}
       {currentRole === 'deployment_engineer' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Deployment Engineer Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Field Operations</h2>
           {renderDeploymentEngineerSection()}
         </div>
       )}
       
       {currentRole === 'ops_manager' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Operations Manager Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Operations Management</h2>
           {renderOpsManagerSection()}
         </div>
       )}
       
       {currentRole === 'admin' && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
+          <h2 className="text-2xl font-bold text-gray-900">System Administration</h2>
           {renderAdminSection()}
         </div>
       )}
