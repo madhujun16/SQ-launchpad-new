@@ -3042,7 +3042,7 @@ const SiteDetail = () => {
               <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
               <Badge 
                 variant="outline" 
-                className={`${getStatusDisplayNameFromDB(site.status).color}`}
+                className={`px-4 py-2 text-base font-semibold ${getStatusDisplayNameFromDB(site.status).color}`}
               >
                 {getStatusDisplayNameFromDB(site.status).name}
               </Badge>
