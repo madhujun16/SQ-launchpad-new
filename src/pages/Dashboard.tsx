@@ -73,9 +73,6 @@ interface RequestRow {
   summary: RequestSummary;
 }
 
-// Constants
-const LOADING_TIMEOUT = 10000; // 10 seconds
-
 // Loading Component
 const DashboardLoading = () => (
   <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
@@ -86,116 +83,64 @@ const DashboardLoading = () => (
   </div>
 );
 
-// Timeout Warning Component
-const DashboardTimeoutWarning = () => (
-  <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-    <div className="text-center">
-      <div className="text-orange-600 mb-4">
-        <AlertCircle className="h-12 w-12 mx-auto" />
-      </div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
-      <p className="text-gray-600 mb-4">The dashboard is still loading. This might be due to:</p>
-      <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1">
-        <li>• Slow database connection</li>
-        <li>• Authentication service delay</li>
-        <li>• Network connectivity issues</li>
-      </ul>
-      <button 
-        onClick={() => window.location.reload()} 
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Refresh Page
-      </button>
-    </div>
-  </div>
-);
-
-// Access Denied Component
-const DashboardAccessDenied = ({ profile, currentRole, loading }: { 
-  profile: any; 
-  currentRole: any; 
-  loading: boolean; 
-}) => (
-  <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-    <div className="text-center">
-      <div className="text-red-600 mb-4">
-        <AlertCircle className="h-12 w-12 mx-auto" />
-      </div>
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-      <p className="text-gray-600 mb-4">You don't have the required permissions to access this dashboard.</p>
-      <div className="text-sm text-gray-500 space-y-1">
-        <p>Debug Info:</p>
-        <p>• Profile: {profile ? 'Loaded' : 'Not loaded'}</p>
-        <p>• Current Role: {currentRole || 'None'}</p>
-        <p>• Loading State: {loading ? 'True' : 'False'}</p>
-      </div>
-    </div>
-  </div>
-);
-
 // Dashboard Header Component
-const DashboardHeader = React.memo(({ profile, roleConfig }: { 
-  profile: any; 
-  roleConfig: any; 
-}) => (
-  <div className="flex items-center justify-between">
+const DashboardHeader = ({ profile, roleConfig }: { profile: any; roleConfig: any }) => (
+  <div className="flex items-center justify-between mb-8">
     <div>
       <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-      <p className="text-gray-600 mt-1">
-        Welcome back, {profile?.full_name || 'User'}. Here's your {roleConfig.displayName} overview.
+      <p className="text-gray-600 mt-2">
+        Welcome back, {profile?.full_name || profile?.email || 'User'}. Here's your {roleConfig?.displayName} overview.
       </p>
     </div>
     <div className="flex items-center space-x-2">
-      <Badge variant="outline" className="flex items-center space-x-1">
-        <roleConfig.icon className="h-3 w-3" />
-        <span>{roleConfig.displayName}</span>
+      <Badge variant="secondary" className="px-3 py-1">
+        {roleConfig?.icon && <roleConfig.icon className="h-4 w-4 mr-2" />}
+        {roleConfig?.displayName}
       </Badge>
     </div>
   </div>
-));
+);
 
 // Metrics Grid Component
-const MetricsGrid = React.memo(({ metrics }: { metrics: DashboardMetric[] }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+const MetricsGrid = ({ metrics }: { metrics: DashboardMetric[] }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     {metrics.map((metric, index) => (
       <Card key={index} className="hover:shadow-md transition-shadow">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">{metric.title}</p>
-              <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{metric.value}</p>
               {metric.change && (
-                <p className="text-xs text-green-600 mt-1">{metric.change}</p>
+                <p className="text-sm text-green-600 mt-1">{metric.change}</p>
+              )}
+              {metric.description && (
+                <p className="text-xs text-gray-500 mt-1">{metric.description}</p>
               )}
             </div>
-            <div className={`p-3 rounded-full bg-gray-100 ${metric.color}`}>
-              <metric.icon className="h-6 w-6" />
+            <div className={`p-3 rounded-lg ${metric.color} bg-opacity-10`}>
+              <metric.icon className={`h-6 w-6 ${metric.color}`} />
             </div>
           </div>
-          {metric.description && (
-            <p className="text-xs text-gray-500 mt-2">{metric.description}</p>
-          )}
         </CardContent>
       </Card>
     ))}
   </div>
-));
+);
 
 // Widgets Grid Component
-const WidgetsGrid = React.memo(({ widgets }: { widgets: DashboardWidget[] }) => {
-  const getWidgetSizeClass = useCallback((size: string) => {
+const WidgetsGrid = ({ widgets }: { widgets: DashboardWidget[] }) => {
+  const getWidgetSizeClass = (size: string) => {
     switch (size) {
       case 'small': return 'col-span-1';
-      case 'medium': return 'col-span-1 md:col-span-2';
-      case 'large': return 'col-span-1 md:col-span-2 lg:col-span-3';
+      case 'medium': return 'col-span-1 lg:col-span-2';
+      case 'large': return 'col-span-1 lg:col-span-3';
       default: return 'col-span-1';
     }
-  }, []);
-
-  if (widgets.length === 0) return null;
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {widgets.map((widget) => (
         <Card key={widget.id} className={`${getWidgetSizeClass(widget.size)} hover:shadow-md transition-shadow`}>
           <CardHeader>
@@ -209,22 +154,17 @@ const WidgetsGrid = React.memo(({ widgets }: { widgets: DashboardWidget[] }) => 
       ))}
     </div>
   );
-});
+};
 
 // Main Dashboard Component
 const Dashboard = () => {
-  // Add error boundary state
-  const [hasError, setHasError] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
   // Use auth context safely
   const authData = useAuth();
   
   // State
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
-  // Memoized helper functions - MUST be defined before any conditional returns
+  // Memoized helper functions
   const getStatusBadge = useCallback((status: RequestRow['status']) => {
     switch (status) {
       case 'pending': return <Badge className="bg-orange-100 text-orange-800">Pending</Badge>;
@@ -245,65 +185,35 @@ const Dashboard = () => {
     toast.success('Request rejected');
   }, []);
 
-  // Timeout handling - will be updated after authData is available
-  useEffect(() => {
-    try {
-      if (authData?.loading) {
-        console.log('🔍 Dashboard: Setting up loading timeout');
-        const timer = setTimeout(() => {
-          console.warn('⚠️ Dashboard loading timeout - forcing display');
-          setLoadingTimeout(true);
-        }, LOADING_TIMEOUT);
-
-        return () => {
-          console.log('🔍 Dashboard: Clearing loading timeout');
-          clearTimeout(timer);
-        };
-      } else {
-        console.log('🔍 Dashboard: Auth not loading, clearing timeout');
-        setLoadingTimeout(false);
-      }
-    } catch (error) {
-      console.error('🔍 Dashboard: Error in timeout effect:', error);
-    }
-  }, [authData?.loading]);
-
   // Mock data initialization
   useEffect(() => {
-    try {
-      console.log('🔍 Dashboard: Initializing mock data');
-      const seed: RequestRow[] = [
-        {
-          id: 'r1', siteId: '3', siteName: 'Birmingham South', requestedBy: 'Tom Wilson',
-          status: 'pending', priority: 'high', totalValue: 4500, assignedOps: 'Emma Davis', assignedEngineer: 'Tom Wilson',
-          submittedAt: '2024-01-16T10:30:00Z',
-          summary: { software: [{ name: 'POS System' }, { name: 'Kiosk Software' }], hardware: [{ name: 'POS Terminals', units: 2 }] }
-        },
-        {
-          id: 'r2', siteId: '4', siteName: 'Leeds Central', requestedBy: 'Chris Taylor',
-          status: 'approved', priority: 'medium', totalValue: 12000, assignedOps: 'Lisa Anderson', assignedEngineer: 'Chris Taylor',
-          submittedAt: '2024-01-17T14:20:00Z',
-          summary: { software: [{ name: 'POS System' }, { name: 'Kitchen Display' }], hardware: [{ name: 'POS Terminals', units: 4 }] }
-        },
-        {
-          id: 'r3', siteId: '5', siteName: 'Liverpool East', requestedBy: 'Anna Garcia',
-          status: 'rejected', priority: 'low', totalValue: 800, assignedOps: 'Mark Thompson', assignedEngineer: 'Anna Garcia',
-          rejectionReason: 'Please reduce scope and resubmit.', submittedAt: '2024-01-18T09:15:00Z',
-          summary: { software: [{ name: 'Self-Service Kiosks' }], hardware: [{ name: 'Tablets', units: 1 }] }
-        },
-        {
-          id: 'r4', siteId: '2', siteName: 'Manchester North', requestedBy: 'David Brown',
-          status: 'procurement', priority: 'urgent', totalValue: 7500, assignedOps: 'Sarah Wilson', assignedEngineer: 'David Brown',
-          submittedAt: '2024-01-19T11:45:00Z',
-          summary: { software: [{ name: 'Kitchen Display' }], hardware: [{ name: 'KDS Screens', units: 3 }] }
-        }
-      ];
-      setAllRequests(seed);
-      console.log('🔍 Dashboard: Mock data initialized successfully');
-    } catch (error) {
-      console.error('🔍 Dashboard: Error initializing mock data:', error);
-      setAllRequests([]);
-    }
+    const seed: RequestRow[] = [
+      {
+        id: 'r1', siteId: '3', siteName: 'Birmingham South', requestedBy: 'Tom Wilson',
+        status: 'pending', priority: 'high', totalValue: 4500, assignedOps: 'Emma Davis', assignedEngineer: 'Tom Wilson',
+        submittedAt: '2024-01-16T10:30:00Z',
+        summary: { software: [{ name: 'POS System' }, { name: 'Kiosk Software' }], hardware: [{ name: 'POS Terminals', units: 2 }] }
+      },
+      {
+        id: 'r2', siteId: '4', siteName: 'Leeds Central', requestedBy: 'Chris Taylor',
+        status: 'approved', priority: 'medium', totalValue: 12000, assignedOps: 'Lisa Anderson', assignedEngineer: 'Chris Taylor',
+        submittedAt: '2024-01-17T14:20:00Z',
+        summary: { software: [{ name: 'POS System' }, { name: 'Kitchen Display' }], hardware: [{ name: 'POS Terminals', units: 4 }] }
+      },
+      {
+        id: 'r3', siteId: '5', siteName: 'Liverpool East', requestedBy: 'Anna Garcia',
+        status: 'rejected', priority: 'low', totalValue: 800, assignedOps: 'Mark Thompson', assignedEngineer: 'Anna Garcia',
+        rejectionReason: 'Please reduce scope and resubmit.', submittedAt: '2024-01-18T09:15:00Z',
+        summary: { software: [{ name: 'Self-Service Kiosks' }], hardware: [{ name: 'Tablets', units: 1 }] }
+      },
+      {
+        id: 'r4', siteId: '2', siteName: 'Manchester North', requestedBy: 'David Brown',
+        status: 'procurement', priority: 'urgent', totalValue: 7500, assignedOps: 'Sarah Wilson', assignedEngineer: 'David Brown',
+        submittedAt: '2024-01-19T11:45:00Z',
+        summary: { software: [{ name: 'Kitchen Display' }], hardware: [{ name: 'KDS Screens', units: 3 }] }
+      }
+    ];
+    setAllRequests(seed);
   }, []);
 
   // Extract auth data
@@ -314,61 +224,23 @@ const Dashboard = () => {
   try {
     roleConfig = getRoleConfig(currentRole || 'admin');
   } catch (error) {
-    console.error('🔍 Dashboard: Error getting role config:', error);
+    console.error('Dashboard: Error getting role config:', error);
     roleConfig = getRoleConfig('admin'); // Fallback to admin
   }
   
   const navigate = useNavigate();
 
-  // Add null checks for profile and currentRole
-  if (!profile) {
-    console.log('🔍 Dashboard: Profile is null/undefined, showing loading state');
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Loading profile...</p>
-        </div>
-      </div>
-    );
+  // Loading states
+  if (loading) {
+    return <DashboardLoading />;
   }
 
-  if (!currentRole) {
-    console.log('🔍 Dashboard: currentRole is null/undefined, showing loading state');
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Loading role information...</p>
-        </div>
-      </div>
-    );
+  if (!authData || !profile || !currentRole) {
+    return <DashboardLoading />;
   }
-
-  // Check if auth context is available AFTER all hooks are defined
-  if (!authData) {
-    console.log('🔍 Dashboard: authData is null/undefined');
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Initializing authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-
-
-
 
   // Memoized metrics generation
   const metrics = useMemo(() => {
-    if (!allRequests || !Array.isArray(allRequests)) {
-      console.warn('🔍 Dashboard: allRequests is not an array:', allRequests);
-      return [];
-    }
-
     const baseMetrics: DashboardMetric[] = [
       {
         title: 'Active Sites',
@@ -450,11 +322,6 @@ const Dashboard = () => {
 
   // Memoized widgets generation
   const widgets = useMemo(() => {
-    if (!currentRole) {
-      console.warn('🔍 Dashboard: currentRole is null for widgets generation');
-      return [];
-    }
-
     const roleWidgets: DashboardWidget[] = [];
 
     // Common recent activity widget
@@ -490,7 +357,7 @@ const Dashboard = () => {
     return roleWidgets;
   }, []);
 
-  // Role-specific section renderers - MUST be defined before any early returns
+  // Role-specific section renderers
   const renderDeploymentEngineerSection = useCallback(() => {
     const mine = allRequests.filter(r => r.assignedEngineer === (profile?.full_name || profile?.email));
     const pendingOrRejected = mine.filter(r => r.status === 'pending' || r.status === 'rejected');
@@ -598,24 +465,22 @@ const Dashboard = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Recent Decisions</CardTitle>
-            <CardDescription>Approved, rejected, and resubmitted scopes</CardDescription>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
+            <CardDescription>Your recent approval decisions</CardDescription>
           </CardHeader>
           <CardContent>
             {recent.length === 0 ? (
               <p className="text-sm text-gray-600">No recent activity.</p>
             ) : (
-              <div className="space-y-2">
+              <AppTable headers={[ 'Site', 'Decision', 'Date' ]}>
                 {recent.map(r => (
-                  <div key={r.id} className="p-3 border rounded flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">{r.siteName}</div>
-                      <div className="text-xs text-gray-500">Value £{r.totalValue.toLocaleString()}</div>
-                    </div>
-                    {getStatusBadge(r.status)}
-                  </div>
+                  <tr key={r.id} className="border-b last:border-0">
+                    <td className="p-3 font-medium">{r.siteName}</td>
+                    <td className="p-3">{getStatusBadge(r.status)}</td>
+                    <td className="p-3 text-sm text-gray-600">{new Date(r.submittedAt).toLocaleDateString()}</td>
+                  </tr>
                 ))}
-              </div>
+              </AppTable>
             )}
           </CardContent>
         </Card>
@@ -624,169 +489,73 @@ const Dashboard = () => {
   }, [allRequests, profile, approveInline, rejectInline, getStatusBadge]);
 
   const renderAdminSection = useCallback(() => {
-    const totalSites = 42;
-    const activeLicenses = 120;
-    const inventoryItems = 340;
-    const procurementSpend = 248000;
+    const pending = allRequests.filter(r => r.status === 'pending');
+    const recent = allRequests.slice(0, 5);
     
     return (
       <>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Key Metrics</CardTitle>
-            <CardDescription>Platform-wide overview</CardDescription>
+            <CardTitle className="text-lg">Platform Overview</CardTitle>
+            <CardDescription>System-wide statistics and recent activity</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 border rounded">
-                <div className="text-sm text-gray-600">Total Sites</div>
-                <div className="text-2xl font-bold">{totalSites}</div>
-              </div>
-              <div className="p-3 border rounded">
-                <div className="text-sm text-gray-600">Active Licenses</div>
-                <div className="text-2xl font-bold">{activeLicenses}</div>
-              </div>
-              <div className="p-3 border rounded">
-                <div className="text-sm text-gray-600">Inventory Items</div>
-                <div className="text-2xl font-bold">{inventoryItems}</div>
-              </div>
-              <div className="p-3 border rounded">
-                <div className="text-sm text-gray-600">Procurement Spend</div>
-                <div className="text-2xl font-bold">£{procurementSpend.toLocaleString()}</div>
-              </div>
+                         <div className="grid grid-cols-2 gap-4 mb-4">
+               <div className="text-center p-4 bg-blue-50 rounded-lg">
+                 <p className="text-2xl font-bold text-blue-600">{allRequests.length}</p>
+                 <p className="text-sm text-blue-600">Total Requests</p>
+               </div>
+               <div className="text-center p-4 bg-green-50 rounded-lg">
+                 <p className="text-2xl font-bold text-green-600">{allRequests.filter(r => r.status === 'approved').length}</p>
+                 <p className="text-sm text-green-600">Approved Requests</p>
+               </div>
+             </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Recent Requests</p>
+              {recent.map(r => (
+                <div key={r.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <span className="text-sm font-medium">{r.siteName}</span>
+                  <span className="text-xs text-gray-500">{getStatusBadge(r.status)}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-        </div>
       </>
     );
-  }, []);
+  }, [allRequests]);
 
-  // Loading states - AFTER all hooks are defined
-  if (loading && !loadingTimeout) {
-    return <DashboardLoading />;
-  }
+  return (
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <DashboardHeader profile={profile} roleConfig={roleConfig} />
+      
+      <MetricsGrid metrics={metrics} />
+      
+      {/* Role-specific sections */}
+      {currentRole === 'deployment_engineer' && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900">Deployment Engineer Dashboard</h2>
+          {renderDeploymentEngineerSection()}
+        </div>
+      )}
+      
+      {currentRole === 'ops_manager' && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900">Operations Manager Dashboard</h2>
+          {renderOpsManagerSection()}
+        </div>
+      )}
+      
+      {currentRole === 'admin' && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
+          {renderAdminSection()}
+        </div>
+      )}
 
-  if (loading && loadingTimeout) {
-    return <DashboardTimeoutWarning />;
-  }
-
-  if (!currentRole) {
-    return <DashboardAccessDenied profile={profile} currentRole={currentRole} loading={loading} />;
-  }
-
-  // Debug logging
-  console.log('🎯 Dashboard render - currentRole:', currentRole, 'profile:', profile, 'roleConfig:', roleConfig);
-
-  // Simplified render to debug the issue
-  try {
-    return (
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="bg-green-100 p-4 rounded">
-          <h1 className="text-2xl font-bold text-green-800">Dashboard Debug Mode</h1>
-          <p className="text-green-700">Current Role: {currentRole || 'None'}</p>
-          <p className="text-green-700">Profile: {profile ? 'Loaded' : 'Not loaded'}</p>
-          <p className="text-green-700">Role Config: {roleConfig ? 'Loaded' : 'Not loaded'}</p>
-        </div>
-        
-        <DashboardHeader profile={profile} roleConfig={roleConfig} />
-        
-        <div className="bg-blue-100 p-4 rounded">
-          <h2 className="text-xl font-bold text-blue-800">Metrics Section</h2>
-          <p className="text-blue-700">Metrics count: {metrics?.length || 0}</p>
-        </div>
-        
-        <MetricsGrid metrics={metrics} />
-        
-        <div className="bg-yellow-100 p-4 rounded">
-          <h2 className="text-xl font-bold text-yellow-800">Role Sections</h2>
-          <p className="text-yellow-700">Current Role: {currentRole}</p>
-        </div>
-        
-        {/* Role-specific sections */}
-        <div className="bg-yellow-100 p-4 rounded">
-          <h2 className="text-xl font-bold text-yellow-800">Role Sections</h2>
-          <p className="text-yellow-700">Current Role: {currentRole}</p>
-        </div>
-        
-        {currentRole === 'deployment_engineer' && (
-          <div className="bg-blue-100 p-4 rounded">
-            <h3 className="text-lg font-bold text-blue-800">Deployment Engineer Section</h3>
-            {(() => {
-              try {
-                return renderDeploymentEngineerSection();
-              } catch (error) {
-                console.error('🔍 Dashboard: Error rendering deployment engineer section:', error);
-                return <p className="text-red-600">Error rendering section</p>;
-              }
-            })()}
-          </div>
-        )}
-        
-        {currentRole === 'ops_manager' && (
-          <div className="bg-green-100 p-4 rounded">
-            <h3 className="text-lg font-bold text-green-800">Ops Manager Section</h3>
-            {(() => {
-              try {
-                return renderOpsManagerSection();
-              } catch (error) {
-                console.error('🔍 Dashboard: Error rendering ops manager section:', error);
-                return <p className="text-red-600">Error rendering section</p>;
-              }
-            })()}
-          </div>
-        )}
-        
-        {currentRole === 'admin' && (
-          <div className="bg-red-100 p-4 rounded">
-            <h3 className="text-lg font-bold text-red-800">Admin Section</h3>
-            {(() => {
-              try {
-                return renderAdminSection();
-              } catch (error) {
-                console.error('🔍 Dashboard: Error rendering admin section:', error);
-                return <p className="text-red-600">Error rendering section</p>;
-              }
-            })()}
-          </div>
-        )}
-
-        <div className="bg-purple-100 p-4 rounded">
-          <h2 className="text-xl font-bold text-purple-800">Widgets Section</h2>
-          <p className="text-purple-700">Widgets count: {widgets?.length || 0}</p>
-        </div>
-        
-        <WidgetsGrid widgets={widgets} />
-      </div>
-    );
-  } catch (error) {
-    console.error('🔍 Dashboard: Error in render:', error);
-    return (
-      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <AlertCircle className="h-12 w-12 mx-auto" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Render Error</h2>
-          <p className="text-gray-600 mb-4">There was an error rendering the dashboard. Please try refreshing the page.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh Page
-          </button>
-          <details className="mt-4 text-left text-sm text-gray-500">
-            <summary className="cursor-pointer">Error Details</summary>
-            <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-              {error instanceof Error ? error.message : String(error)}
-            </pre>
-          </details>
-        </div>
-      </div>
-    );
-  }
+      <WidgetsGrid widgets={widgets} />
+    </div>
+  );
 };
 
 export default Dashboard; 

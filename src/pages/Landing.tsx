@@ -94,7 +94,7 @@ const Landing = () => {
                 <div className="icon-badge-green w-max"><BarChart3 className="h-6 w-6" color="#1CB255" /></div>
                 <CardTitle className="text-white text-xl">Smart Insights</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  AI-powered recommendations for optimal hardware and software configurations based on your requirements.
+                  Intelligent suggestions for optimal hardware and software configurations based on your requirements.
                 </CardDescription>
               </CardHeader>
             </Card>
