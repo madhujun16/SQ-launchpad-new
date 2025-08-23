@@ -69,52 +69,52 @@ const Landing = () => {
       {/* Capabilities */}
       <section className="relative py-12 sm:py-16 px-4 sm:px-6">
         <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12 max-w-5xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12 max-w-4xl mx-auto">
             <h2 className={`${isMobile ? 'text-2xl sm:text-3xl' : 'text-3xl md:text-4xl'} font-bold mb-4 text-white`}>
-              Learn about SmartQ LaunchPad's Capabilities
+              Why Choose SmartQ LaunchPad?
             </h2>
             <p className={`${isMobile ? 'text-base sm:text-lg' : 'text-lg md:text-xl'} text-white/80 leading-relaxed`}>
-              Unlock the full potential of your site deployments with SmartQ LaunchPad — the all‑in‑one platform designed to deliver end‑to‑end visibility, control, and efficiency. Whether you’re managing hardware, software, or project workflows, our intuitive tools keep every stakeholder connected and informed.
+              Streamline your entire deployment process with intelligent automation and real-time insights.
             </p>
           </div>
 
           <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-            <Card className="card-surface">
-              <CardHeader className="p-6 space-y-2">
-                <div className="icon-badge-green w-max"><Target className="h-5 w-5" color="#1CB255" /></div>
-                <CardTitle className="text-white text-lg">Comprehensive Deployment Oversight</CardTitle>
+            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+              <CardHeader className="p-6 space-y-3">
+                <div className="icon-badge-green w-max"><Target className="h-6 w-6" color="#1CB255" /></div>
+                <CardTitle className="text-white text-xl">Deployment Oversight</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Monitor and manage every phase of your site setup—from initial scoping and hardware configuration to approvals and procurement—with real‑time status updates and audit trails.
+                  End-to-end visibility across all deployment phases with real-time tracking and automated workflows.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="card-surface">
-              <CardHeader className="p-6 space-y-2">
-                <div className="icon-badge-green w-max"><BarChart3 className="h-5 w-5" color="#1CB255" /></div>
-                <CardTitle className="text-white text-lg">Strategic Insights & Recommendations</CardTitle>
+            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+              <CardHeader className="p-6 space-y-3">
+                <div className="icon-badge-green w-max"><BarChart3 className="h-6 w-6" color="#1CB255" /></div>
+                <CardTitle className="text-white text-xl">Smart Insights</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Leverage intelligent hardware and software suggestions tailored to your unique site requirements, ensuring optimal resource allocation and cost efficiency.
+                  AI-powered recommendations for optimal hardware and software configurations based on your requirements.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="card-surface">
-              <CardHeader className="p-6 space-y-2">
-                <div className="icon-badge-green w-max"><Users className="h-5 w-5" color="#1CB255" /></div>
-                <CardTitle className="text-white text-lg">Role‑Based Access & Workflow Automation</CardTitle>
+            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+              <CardHeader className="p-6 space-y-3">
+                <div className="icon-badge-green w-max"><Users className="h-6 w-6" color="#1CB255" /></div>
+                <CardTitle className="text-white text-xl">Team Collaboration</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Empower your Deployment Engineers, Ops Managers, and Admin teams with tailored access and streamlined approval processes that reduce bottlenecks and enhance collaboration.
+                  Role-based access control with streamlined approval processes for seamless team coordination.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="card-surface">
-              <CardHeader className="p-6 space-y-2">
-                <div className="icon-badge-green w-max"><Wallet className="h-5 w-5" color="#1CB255" /></div>
-                <CardTitle className="text-white text-lg">Seamless Cost Management</CardTitle>
+            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+              <CardHeader className="p-6 space-y-3">
+                <div className="icon-badge-green w-max"><Wallet className="h-6 w-6" color="#1CB255" /></div>
+                <CardTitle className="text-white text-xl">Cost Control</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Automatically align configurations with up‑to‑date costing rules to generate accurate budgets, approval‑ready summaries, and forecasting reports—simplifying financial oversight.
+                  Automated cost management with real-time budgeting, approvals, and forecasting capabilities.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -123,8 +123,8 @@ const Landing = () => {
           <div className="section-divider my-10" />
 
           <div className="text-center">
-            <p className="text-white/80 max-w-4xl mx-auto leading-relaxed">
-              Discover how SmartQ LaunchPad transforms complex site deployments into predictable, manageable projects — enabling faster go‑lives, reduced errors, and measurable operational gains.
+            <p className="text-white/80 max-w-3xl mx-auto leading-relaxed">
+              Transform complex deployments into predictable, manageable projects with measurable operational gains.
             </p>
           </div>
         </div>

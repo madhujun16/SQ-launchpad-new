@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 			<Header />
 			<main
 				className={`
-					pt-6 relative z-10
+					pt-24 relative z-10
 					${isMobile ? 'px-3 pb-6' : isTablet ? 'px-4 pb-8' : 'px-6 pb-10'}
 					transition-all duration-300 ease-in-out
 				`}
