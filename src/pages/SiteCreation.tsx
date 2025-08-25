@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
@@ -23,25 +23,11 @@ import {
   User,
   Wrench,
   Shield,
-  ArrowLeft
+  ArrowLeft,
+  Loader
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSiteContext, type Site, type Stakeholder } from '@/contexts/SiteContext';
-
-interface Organization {
-  id: string;
-  name: string;
-  type: string;
-  industry: string;
-}
-
-interface FoodCourt {
-  id: string;
-  name: string;
-  location: string;
-  capacity: number;
-  unitCode: string;
-}
+import { SitesService, type Site, type Organization } from '@/services/sitesService';
 
 interface User {
   id: string;
@@ -52,183 +38,140 @@ interface User {
 
 interface SiteData {
   name: string;
-  organization: string;
-  foodCourt: string;
-  stakeholders: Stakeholder[];
+  organization_id: string;
+  location: string;
+  target_live_date: string;
+  assigned_ops_manager: string;
+  assigned_deployment_engineer: string;
   notes: string;
-  riskLevel: 'low' | 'medium' | 'high';
-  priority: 'low' | 'medium' | 'high';
-  goLiveDate: string;
-  assignedOpsManager: string;
-  assignedDeploymentEngineer: string;
-  status: 'draft' | 'in_study' | 'hardware_scoped' | 'live';
 }
 
 const SiteCreation = () => {
   const { currentRole } = useAuth();
   const navigate = useNavigate();
-  const { createSite, setSelectedSite } = useSiteContext();
   
   const [formData, setFormData] = useState<SiteData>({
     name: '',
-    organization: '',
-    foodCourt: '',
-    stakeholders: [],
-    notes: '',
-    riskLevel: 'medium',
-    priority: 'medium',
-    goLiveDate: '',
-    assignedOpsManager: '',
-    assignedDeploymentEngineer: '',
-    status: 'draft'
+    organization_id: '',
+    location: '',
+    target_live_date: '',
+    assigned_ops_manager: '',
+    assigned_deployment_engineer: '',
+    notes: ''
   });
 
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [opsManagers, setOpsManagers] = useState<User[]>([]);
+  const [deploymentEngineers, setDeploymentEngineers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   // Check if user has permission to create sites
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentRole && !hasPermission(currentRole, 'create_sites')) {
       toast.error('You do not have permission to create sites');
       navigate('/sites');
     }
   }, [currentRole, navigate]);
 
-  // Mock data
-  const organizations: Organization[] = [
-    { id: '1', name: 'Compass Group UK', type: 'Food Service', industry: 'Hospitality' },
-    { id: '2', name: 'Sodexo UK', type: 'Facility Management', industry: 'Services' },
-    { id: '3', name: 'Aramark UK', type: 'Food Service', industry: 'Hospitality' },
-    { id: '4', name: 'ASDA', type: 'Retail', industry: 'Retail' },
-    { id: '5', name: 'HSBC', type: 'Banking', industry: 'Finance' }
-  ];
+  // Fetch organizations and users on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch organizations from backend
+        const orgs = await SitesService.getAllOrganizations();
+        setOrganizations(orgs);
 
-  const foodCourts: FoodCourt[] = [
-    { id: '1', name: 'Manchester Central Food Court', location: 'Manchester', capacity: 500, unitCode: 'MC001' },
-    { id: '2', name: 'London Bridge Hub', location: 'London', capacity: 300, unitCode: 'LB002' },
-    { id: '3', name: 'Birmingham Office Complex', location: 'Birmingham', capacity: 200, unitCode: 'BO003' },
-    { id: '4', name: 'ASDA Redditch', location: 'Redditch', capacity: 150, unitCode: 'AR004' },
-    { id: '5', name: 'HSBC Canary Wharf', location: 'London', capacity: 400, unitCode: 'HC005' }
-  ];
+        // For now, using mock data for users - this should be replaced with actual user service
+        const mockOpsManagers: User[] = [
+          { id: '1', name: 'Jessica Cleaver', role: 'ops_manager', email: 'jessica.cleaver@company.com' },
+          { id: '2', name: 'Mike Thompson', role: 'ops_manager', email: 'mike.thompson@company.com' },
+          { id: '3', name: 'Sarah Johnson', role: 'ops_manager', email: 'sarah.johnson@company.com' }
+        ];
+        setOpsManagers(mockOpsManagers);
 
-  // Mock data for Ops Managers
-  const opsManagers: User[] = [
-    { id: '1', name: 'Jessica Cleaver', role: 'ops_manager', email: 'jessica.cleaver@company.com' },
-    { id: '2', name: 'Mike Thompson', role: 'ops_manager', email: 'mike.thompson@company.com' },
-    { id: '3', name: 'Sarah Johnson', role: 'ops_manager', email: 'sarah.johnson@company.com' }
-  ];
+        const mockDeploymentEngineers: User[] = [
+          { id: '1', name: 'John Smith', role: 'deployment_engineer', email: 'john.smith@company.com' },
+          { id: '2', name: 'Emma Wilson', role: 'deployment_engineer', email: 'emma.wilson@company.com' },
+          { id: '3', name: 'David Brown', role: 'deployment_engineer', email: 'david.brown@company.com' }
+        ];
+        setDeploymentEngineers(mockDeploymentEngineers);
 
-  // Mock data for Deployment Engineers
-  const deploymentEngineers: User[] = [
-    { id: '1', name: 'John Smith', role: 'deployment_engineer', email: 'john.smith@company.com' },
-    { id: '2', name: 'Emma Wilson', role: 'deployment_engineer', email: 'emma.wilson@company.com' },
-    { id: '3', name: 'David Brown', role: 'deployment_engineer', email: 'david.brown@company.com' }
-  ];
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load required data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleInputChange = (field: keyof SiteData, value: any) => {
     setFormData({ ...formData, [field]: value });
   };
 
-  const addStakeholder = () => {
-    const newStakeholder: Stakeholder = {
-      id: Date.now().toString(),
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      organization: ''
-    };
-    setFormData({
-      ...formData,
-      stakeholders: [...formData.stakeholders, newStakeholder]
-    });
-  };
-
-  const updateStakeholder = (id: string, field: keyof Stakeholder, value: string) => {
-    setFormData({
-      ...formData,
-      stakeholders: formData.stakeholders.map(stakeholder =>
-        stakeholder.id === id ? { ...stakeholder, [field]: value } : stakeholder
-      )
-    });
-  };
-
-  const removeStakeholder = (id: string) => {
-    setFormData({
-      ...formData,
-      stakeholders: formData.stakeholders.filter(stakeholder => stakeholder.id !== id)
-    });
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate required fields
-    if (!formData.name || !formData.organization || !formData.foodCourt) {
+    if (!formData.name || !formData.organization_id || !formData.location || !formData.target_live_date) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    // Create site using context
-    const siteId = createSite({
-      name: formData.name,
-      organization: formData.organization,
-      foodCourt: formData.foodCourt,
-      unitCode: foodCourts.find(fc => fc.id === formData.foodCourt)?.unitCode || '',
-      goLiveDate: formData.goLiveDate,
-      priority: formData.priority,
-      riskLevel: formData.riskLevel,
-      assignedOpsManager: opsManagers.find(om => om.id === formData.assignedOpsManager)?.name || '',
-      assignedDeploymentEngineer: deploymentEngineers.find(de => de.id === formData.assignedDeploymentEngineer)?.name || '',
-      stakeholders: formData.stakeholders,
-      notes: formData.notes,
-      description: formData.notes,
-      status: 'created'
-    });
+    if (!formData.assigned_ops_manager || !formData.assigned_deployment_engineer) {
+      toast.error('Please assign both Ops Manager and Deployment Engineer');
+      return;
+    }
 
-    // Get the created site and set it as selected
-    const createdSite = {
-      id: siteId,
-      name: formData.name,
-      organization: formData.organization,
-      foodCourt: formData.foodCourt,
-      unitCode: foodCourts.find(fc => fc.id === formData.foodCourt)?.unitCode || '',
-      goLiveDate: formData.goLiveDate,
-      priority: formData.priority,
-      riskLevel: formData.riskLevel,
-      assignedOpsManager: opsManagers.find(om => om.id === formData.assignedOpsManager)?.name || '',
-      assignedDeploymentEngineer: deploymentEngineers.find(de => de.id === formData.assignedDeploymentEngineer)?.name || '',
-      stakeholders: formData.stakeholders,
-      notes: formData.notes,
-      description: formData.notes,
-      status: 'created' as const,
-      lastUpdated: new Date().toISOString().split('T')[0]
-    };
+    try {
+      setSubmitting(true);
 
-    setSelectedSite(createdSite);
-    toast.success('Site created successfully!');
-    
-    // Navigate to site management
-    navigate('/sites');
-  };
+      // Prepare site data for backend
+      const siteData = {
+        name: formData.name,
+        organization_id: formData.organization_id,
+        location: formData.location,
+        target_live_date: formData.target_live_date,
+        assigned_ops_manager: formData.assigned_ops_manager,
+        assigned_deployment_engineer: formData.assigned_deployment_engineer,
+        status: 'site_created', // Initial status
+        description: formData.notes // Use description field for notes
+      };
 
-  const getRiskColor = (level: string) => {
-    switch (level) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      // Create site using backend service
+      const createdSite = await SitesService.createSite(siteData);
+
+      if (createdSite) {
+        toast.success('Site created successfully!');
+        navigate('/sites');
+      } else {
+        toast.error('Failed to create site. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating site:', error);
+      toast.error('An error occurred while creating the site');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'low': return 'bg-blue-100 text-blue-800';
-      case 'medium': return 'bg-orange-100 text-orange-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const selectedOrg = organizations.find(org => org.id === formData.organization_id);
+  const selectedOpsManager = opsManagers.find(om => om.id === formData.assigned_ops_manager);
+  const selectedDeploymentEngineer = deploymentEngineers.find(de => de.id === formData.assigned_deployment_engineer);
 
-  const selectedOrg = organizations.find(org => org.id === formData.organization);
-  const selectedFoodCourt = foodCourts.find(fc => fc.id === formData.foodCourt);
-  const selectedOpsManager = opsManagers.find(om => om.id === formData.assignedOpsManager);
-  const selectedDeploymentEngineer = deploymentEngineers.find(de => de.id === formData.assignedDeploymentEngineer);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading site creation form...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -275,68 +218,36 @@ const SiteCreation = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="organization">Organization *</Label>
-                  <Select value={formData.organization} onValueChange={(value) => handleInputChange('organization', value)}>
+                  <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select organization" />
                     </SelectTrigger>
                     <SelectContent>
                       {organizations.map((org) => (
                         <SelectItem key={org.id} value={org.id}>
-                          {org.name}
+                          {org.name} ({org.sector})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="food-court">Food Court / Unit *</Label>
-                  <Select value={formData.foodCourt} onValueChange={(value) => handleInputChange('foodCourt', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select food court" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {foodCourts.map((fc) => (
-                        <SelectItem key={fc.id} value={fc.id}>
-                          {fc.name} ({fc.unitCode})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="go-live-date">Go-Live Date *</Label>
+                  <Label htmlFor="location">Location *</Label>
                   <Input
-                    id="go-live-date"
-                    type="date"
-                    value={formData.goLiveDate}
-                    onChange={(e) => handleInputChange('goLiveDate', e.target.value)}
+                    id="location"
+                    placeholder="Enter site location"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="risk-level">Risk Level</Label>
-                  <Select value={formData.riskLevel} onValueChange={(value) => handleInputChange('riskLevel', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="go-live-date">Target Go-Live Date *</Label>
+                  <Input
+                    id="go-live-date"
+                    type="date"
+                    value={formData.target_live_date}
+                    onChange={(e) => handleInputChange('target_live_date', e.target.value)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -351,33 +262,23 @@ const SiteCreation = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">Risk Level</p>
-                <Badge className={getRiskColor(formData.riskLevel)}>
-                  {formData.riskLevel}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">Priority</p>
-                <Badge className={getPriorityColor(formData.priority)}>
-                  {formData.priority}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">Stakeholders</p>
-                <p className="text-sm font-medium">{formData.stakeholders.length} stakeholders</p>
-              </div>
               {selectedOrg && (
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">Organization</p>
                   <p className="text-sm font-medium">{selectedOrg.name}</p>
+                  <p className="text-xs text-gray-500">Sector: {selectedOrg.sector}</p>
                 </div>
               )}
-              {selectedFoodCourt && (
+              {formData.location && (
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-600">Food Court</p>
-                  <p className="text-sm font-medium">{selectedFoodCourt.name}</p>
-                  <p className="text-xs text-gray-500">Unit: {selectedFoodCourt.unitCode}</p>
+                  <p className="text-sm text-gray-600">Location</p>
+                  <p className="text-sm font-medium">{formData.location}</p>
+                </div>
+              )}
+              {formData.target_live_date && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">Target Go-Live Date</p>
+                  <p className="text-sm font-medium">{new Date(formData.target_live_date).toLocaleDateString()}</p>
                 </div>
               )}
             </CardContent>
@@ -399,7 +300,7 @@ const SiteCreation = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="ops-manager">Ops Manager *</Label>
-                <Select value={formData.assignedOpsManager} onValueChange={(value) => handleInputChange('assignedOpsManager', value)}>
+                <Select value={formData.assigned_ops_manager} onValueChange={(value) => handleInputChange('assigned_ops_manager', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Ops Manager" />
                   </SelectTrigger>
@@ -414,7 +315,7 @@ const SiteCreation = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="deployment-engineer">Deployment Engineer *</Label>
-                <Select value={formData.assignedDeploymentEngineer} onValueChange={(value) => handleInputChange('assignedDeploymentEngineer', value)}>
+                <Select value={formData.assigned_deployment_engineer} onValueChange={(value) => handleInputChange('assigned_deployment_engineer', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Deployment Engineer" />
                   </SelectTrigger>
@@ -430,107 +331,51 @@ const SiteCreation = () => {
             </CardContent>
           </Card>
 
-          {/* Stakeholders */}
+          {/* Additional Information */}
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-purple-600" />
-                Stakeholders
+                <FileText className="h-5 w-5 text-orange-600" />
+                Additional Information
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Add key stakeholders and site contacts
+                Notes and additional site details
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {formData.stakeholders.map((stakeholder, index) => (
-                  <div key={stakeholder.id} className="p-4 border rounded-lg space-y-3">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Stakeholder {index + 1}</h4>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeStakeholder(stakeholder.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label>Name</Label>
-                        <Input
-                          placeholder="Full name"
-                          value={stakeholder.name}
-                          onChange={(e) => updateStakeholder(stakeholder.id, 'name', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Role</Label>
-                        <Input
-                          placeholder="e.g., Site Manager"
-                          value={stakeholder.role}
-                          onChange={(e) => updateStakeholder(stakeholder.id, 'role', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Email</Label>
-                        <Input
-                          type="email"
-                          placeholder="email@company.com"
-                          value={stakeholder.email}
-                          onChange={(e) => updateStakeholder(stakeholder.id, 'email', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Phone</Label>
-                        <Input
-                          placeholder="+44 123 456 7890"
-                          value={stakeholder.phone}
-                          onChange={(e) => updateStakeholder(stakeholder.id, 'phone', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button onClick={addStakeholder} variant="outline" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Stakeholder
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="site-notes">Site Notes</Label>
+                <Textarea
+                  id="site-notes"
+                  placeholder="Enter site notes and additional information..."
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  rows={4}
+                />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Additional Information */}
-        <Card className="mt-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5 text-orange-600" />
-              Additional Information
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Notes and additional site details
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="site-notes">Site Notes</Label>
-              <Textarea
-                id="site-notes"
-                placeholder="Enter site notes and additional information..."
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                rows={4}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Submit Button */}
         <div className="mt-6 flex justify-end">
-          <Button onClick={handleSubmit} variant="gradient" size="lg">
-            <Save className="h-4 w-4 mr-2" />
-            Create Site
+          <Button 
+            onClick={handleSubmit} 
+            disabled={submitting}
+            className="bg-gradient-to-r from-black to-green-600 text-white px-8 py-3 rounded-lg hover:from-gray-900 hover:to-green-700 transition-all duration-200 shadow-lg"
+            size="lg"
+          >
+            {submitting ? (
+              <>
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                Creating Site...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Create Site
+              </>
+            )}
           </Button>
         </div>
       </div>

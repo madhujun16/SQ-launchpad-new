@@ -11,6 +11,7 @@ export interface Site {
   target_live_date?: string;
   assigned_ops_manager?: string;
   assigned_deployment_engineer?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +24,17 @@ export interface Organization {
   description?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateSiteData {
+  name: string;
+  organization_id: string;
+  location: string;
+  target_live_date: string;
+  assigned_ops_manager: string;
+  assigned_deployment_engineer: string;
+  status: string;
+  description?: string; // Use description field for notes
 }
 
 export class SitesService {
@@ -60,6 +72,7 @@ export class SitesService {
         target_live_date: site.target_live_date,
         assigned_ops_manager: site.assigned_ops_manager,
         assigned_deployment_engineer: site.assigned_deployment_engineer,
+        notes: site.description, // Map description to notes
         created_at: site.created_at,
         updated_at: site.updated_at
       })) || [];
@@ -103,6 +116,7 @@ export class SitesService {
         target_live_date: data.target_live_date,
         assigned_ops_manager: data.assigned_ops_manager,
         assigned_deployment_engineer: data.assigned_deployment_engineer,
+        notes: data.description, // Map description to notes
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -240,7 +254,7 @@ export class SitesService {
   }
 
   // Create new site
-  static async createSite(siteData: Partial<Site>): Promise<Site | null> {
+  static async createSite(siteData: CreateSiteData): Promise<Site | null> {
     try {
       const { data, error } = await supabase
         .from('sites')

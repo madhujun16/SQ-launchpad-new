@@ -363,7 +363,7 @@ const Sites = () => {
         {currentRole === 'admin' && (
           <Button 
             onClick={handleCreateSite}
-            className="bg-gradient-to-r from-green-600 to-black text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:from-green-700 hover:to-gray-900 transition-all duration-200 shadow-lg"
+            className="bg-gradient-to-r from-black to-green-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:from-gray-900 hover:to-green-700 transition-all duration-200 shadow-lg"
           >
             <Plus className="h-5 w-5" />
             <span>Create Site</span>
