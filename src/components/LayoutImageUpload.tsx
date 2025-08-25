@@ -3,7 +3,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { X, Download, Eye, Trash2, Image as ImageIcon, FileText } from 'lucide-react';
+import { X, Download, Edit, Trash2, Image as ImageIcon, FileText, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUploadService, type UploadedFile } from '@/services/fileUploadService';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,20 +20,21 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   disabled = false,
   onImagesUpdated
 }) => {
-  const [existingImages, setExistingImages] = useState<UploadedFile[]>([]);
+  const [existingImage, setExistingImage] = useState<UploadedFile | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showFilePicker, setShowFilePicker] = useState(false);
 
-  // Load existing images on component mount
+  // Load existing image on component mount
   useEffect(() => {
     if (siteId) {
-      loadExistingImages();
+      loadExistingImage();
     }
   }, [siteId]);
 
-  const loadExistingImages = async () => {
+  const loadExistingImage = async () => {
     try {
       setIsLoading(true);
       
@@ -42,91 +43,88 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
       
       if (!bucketResult.success) {
         console.warn('Storage bucket not available:', bucketResult.error);
-        // Don't show error toast for bucket issues - just log and continue
-        // The user will see this when they try to upload
         return;
       }
       
       // Get existing images from storage
       const result = await FileUploadService.getSiteFiles(siteId);
       
-      if (result.success && result.files) {
-        setExistingImages(result.files);
+      if (result.success && result.files && result.files.length > 0) {
+        // Only take the first image since we're limiting to 1
+        setExistingImage(result.files[0]);
       }
     } catch (error) {
-      console.error('Error loading existing images:', error);
-      toast.error('Failed to load existing images');
+      console.error('Error loading existing image:', error);
+      toast.error('Failed to load existing image');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFilesSelected = (files: File[]) => {
-    setSelectedFiles(files);
+  const handleFileSelected = (files: File[]) => {
+    if (files.length > 0) {
+      setSelectedFile(files[0]); // Only take the first file
+      setShowFilePicker(false);
+    }
   };
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
+    if (!selectedFile) return;
 
     try {
       setIsUploading(true);
-      setUploadProgress({});
+      setUploadProgress(0);
 
       // Check if bucket exists before attempting upload
       const bucketResult = await FileUploadService.ensureBucketExists();
       if (!bucketResult.success) {
-        toast.error(`Cannot upload images: ${bucketResult.error}`);
+        toast.error(`Cannot upload image: ${bucketResult.error}`);
         return;
       }
 
-      // Upload files with progress tracking
-      const result = await FileUploadService.uploadMultipleFiles(
-        selectedFiles,
+      // Delete existing image if it exists
+      if (existingImage) {
+        await FileUploadService.deleteFile(existingImage.id);
+      }
+
+      // Upload new file with progress tracking
+      const result = await FileUploadService.uploadFile(
+        selectedFile,
         siteId,
-        (fileIndex, progress) => {
-          const fileName = selectedFiles[fileIndex].name;
-          setUploadProgress(prev => ({
-            ...prev,
-            [fileName]: progress
-          }));
+        (progress) => {
+          setUploadProgress(progress);
         }
       );
 
-      if (result.success && result.files) {
-        // Add new images to existing ones
-        const updatedImages = [...existingImages, ...result.files];
-        setExistingImages(updatedImages);
+      if (result.success && result.file) {
+        // Set the new image
+        setExistingImage(result.file);
         
         // Update database
-        await updateSiteLayoutImages(updatedImages);
+        await updateSiteLayoutImage([result.file]);
         
         // Notify parent component
         if (onImagesUpdated) {
-          onImagesUpdated(updatedImages);
+          onImagesUpdated([result.file]);
         }
 
-        toast.success(`Successfully uploaded ${result.files.length} image(s)`);
+        toast.success('Image uploaded successfully');
         
-        // Clear selected files after successful upload
-        setSelectedFiles([]);
-        
-        // Show any errors that occurred during upload
-        if (result.errors && result.errors.length > 0) {
-          result.errors.forEach(error => toast.error(error));
-        }
-      } else if (result.errors) {
-        result.errors.forEach(error => toast.error(error));
+        // Clear selected file after successful upload
+        setSelectedFile(null);
+      } else {
+        toast.error(result.error || 'Failed to upload image');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload images');
+      toast.error('Failed to upload image');
     } finally {
       setIsUploading(false);
-      setUploadProgress({});
+      setUploadProgress(0);
     }
   };
 
-  const updateSiteLayoutImages = async (images: UploadedFile[]) => {
+  const updateSiteLayoutImage = async (images: UploadedFile[]) => {
     try {
       const { error } = await supabase
         .from('sites')
@@ -143,34 +141,32 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
         .eq('id', siteId);
 
       if (error) {
-        console.error('Error updating site layout images:', error);
-        toast.error('Failed to save image references to database');
+        console.error('Error updating site layout image:', error);
+        toast.error('Failed to save image reference to database');
       }
     } catch (error) {
       console.error('Database update error:', error);
-      toast.error('Failed to save image references');
+      toast.error('Failed to save image reference');
     }
   };
 
-  const handleDeleteImage = async (imageIndex: number) => {
-    const image = existingImages[imageIndex];
-    if (!image) return;
+  const handleDeleteImage = async () => {
+    if (!existingImage) return;
 
     try {
       // Delete from storage
-      const deleteResult = await FileUploadService.deleteFile(image.id);
+      const deleteResult = await FileUploadService.deleteFile(existingImage.id);
       
       if (deleteResult.success) {
         // Remove from local state
-        const updatedImages = existingImages.filter((_, index) => index !== imageIndex);
-        setExistingImages(updatedImages);
+        setExistingImage(null);
         
         // Update database
-        await updateSiteLayoutImages(updatedImages);
+        await updateSiteLayoutImage([]);
         
         // Notify parent component
         if (onImagesUpdated) {
-          onImagesUpdated(updatedImages);
+          onImagesUpdated([]);
         }
 
         toast.success('Image deleted successfully');
@@ -181,6 +177,10 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
       console.error('Delete error:', error);
       toast.error('Failed to delete image');
     }
+  };
+
+  const handleEditImage = () => {
+    setShowFilePicker(true);
   };
 
   const handleViewImage = (image: UploadedFile) => {
@@ -204,19 +204,10 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) {
-      return <ImageIcon className="h-4 w-4" />;
-    } else if (fileType === 'application/pdf') {
-      return <FileText className="h-4 w-4" />;
-    }
-    return <FileText className="h-4 w-4" />;
-  };
-
   const renderThumbnail = (image: UploadedFile) => {
     if (image.type.startsWith('image/')) {
       return (
-        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+        <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
           <img
             src={image.url}
             alt={image.name}
@@ -228,20 +219,20 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
             }}
           />
           <div className="hidden absolute inset-0 flex items-center justify-center bg-gray-200">
-            <ImageIcon className="h-6 w-6 text-gray-400" />
+            <ImageIcon className="h-8 w-8 text-gray-400" />
           </div>
         </div>
       );
     } else if (image.type === 'application/pdf') {
       return (
-        <div className="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-          <FileText className="h-8 w-8 text-red-600" />
+        <div className="w-24 h-24 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+          <FileText className="h-12 w-12 text-red-600" />
         </div>
       );
     }
     return (
-      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <FileText className="h-8 w-8 text-gray-400" />
+      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <FileText className="h-12 w-12 text-gray-400" />
       </div>
     );
   };
@@ -249,7 +240,7 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   const renderSelectedFileThumbnail = (file: File) => {
     if (file.type.startsWith('image/')) {
       return (
-        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+        <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
           <img
             src={URL.createObjectURL(file)}
             alt={file.name}
@@ -259,208 +250,177 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
       );
     } else if (file.type === 'application/pdf') {
       return (
-        <div className="w-16 h-16 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-          <FileText className="h-8 w-8 text-red-600" />
+        <div className="w-24 h-24 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+          <FileText className="h-12 w-12 text-red-600" />
         </div>
       );
     }
     return (
-      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <FileText className="h-8 w-8 text-gray-400" />
+      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <FileText className="h-12 w-12 text-gray-400" />
       </div>
     );
   };
 
-  return (
-    <div className="space-y-6">
-      {/* File Upload Component */}
+  // If editing, show file picker
+  if (showFilePicker) {
+    return (
       <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-lg font-medium text-gray-900">Upload Layout Image</h4>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilePicker(false)}
+            disabled={isUploading}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
         <FileUpload
-          multiple={true}
-          maxFiles={3}
+          multiple={false}
+          maxFiles={1}
           maxFileSize={10 * 1024 * 1024} // 10MB
           acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']}
-          onFilesSelected={handleFilesSelected}
+          onFilesSelected={handleFileSelected}
           disabled={disabled || isUploading}
-          placeholder="Select up to 3 layout images or drag & drop them here"
+          placeholder="Select a layout image or drag & drop it here"
         />
 
-        {/* Selected Files Preview */}
-        {selectedFiles.length > 0 && (
+        {selectedFile && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h5 className="text-sm font-medium text-gray-700">
-                Selected Files ({selectedFiles.length}/3)
-              </h5>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-gray-500">
-                  {selectedFiles.reduce((total, file) => total + file.size, 0) > 10 * 1024 * 1024 
-                    ? '⚠️ Total size exceeds 10MB limit' 
-                    : `${Math.round(selectedFiles.reduce((total, file) => total + file.size, 0) / (1024 * 1024) * 100) / 100}MB total`
-                  }
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedFiles([])}
-                  disabled={disabled || isUploading}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Clear All
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedFiles.map((file, index) => (
-                <Card key={`${file.name}-${index}`} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      {renderSelectedFileThumbnail(file)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-700 truncate">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {formatFileSize(file.size)}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {file.type}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const newFiles = selectedFiles.filter((_, i) => i !== index);
-                          setSelectedFiles(newFiles);
-                        }}
-                        disabled={disabled || isUploading}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  {renderSelectedFileThumbnail(selectedFile)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-700 truncate">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatFileSize(selectedFile.size)}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {selectedFile.type}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedFile(null)}
+                    disabled={disabled || isUploading}
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Upload Button */}
             <Button
               onClick={handleUpload}
               disabled={disabled || isUploading}
               className="w-full"
               size="lg"
             >
-              {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
+              {isUploading ? 'Uploading...' : 'Upload Image'}
             </Button>
           </div>
         )}
-      </div>
 
-      {/* Existing Images */}
-      {existingImages.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h5 className="text-sm font-medium text-gray-700">
-              Uploaded Images ({existingImages.length}/3)
-            </h5>
-            <p className="text-xs text-gray-500">
-              Drag to reorder • First image will be the primary layout
-            </p>
+        {/* Upload Progress */}
+        {isUploading && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Upload Progress</span>
+              <span className="text-gray-500">{uploadProgress}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-2" />
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {existingImages.map((image, index) => (
-              <Card key={image.id} className="overflow-hidden group hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="relative">
-                      {renderThumbnail(image)}
-                      {index === 0 && (
-                        <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          Primary
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-gray-700 truncate">
-                          {image.name}
-                        </p>
-                        {index === 0 && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                            Primary Layout
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        {formatFileSize(image.size)}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(image.uploaded_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewImage(image)}
-                        className="h-8 w-8 p-0"
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownloadImage(image)}
-                        className="h-8 w-8 p-0"
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteImage(index)}
-                        disabled={disabled}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Upload Button - shown when no image exists */}
+      {!existingImage && !isLoading && (
+        <div className="text-center">
+          <Button
+            onClick={() => setShowFilePicker(true)}
+            disabled={disabled}
+            className="w-full max-w-md"
+            size="lg"
+          >
+            <Upload className="h-5 w-5 mr-2" />
+            Upload Layout Image
+          </Button>
+          <p className="text-sm text-gray-500 mt-2">
+            Upload a single image or PDF file (Max 10MB)
+          </p>
         </div>
       )}
 
-      {/* Upload Progress */}
-      {isUploading && Object.keys(uploadProgress).length > 0 && (
-        <div className="space-y-2">
-          <h5 className="text-sm font-medium text-gray-700">Upload Progress</h5>
-          {Object.entries(uploadProgress).map(([fileName, progress]) => (
-            <div key={fileName} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">{fileName}</span>
-                <span className="text-gray-500">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
+      {/* Existing Image Preview */}
+      {existingImage && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-lg font-medium text-gray-900">Layout Image</h4>
+            <div className="flex items-center space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleEditImage}
+                disabled={disabled}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleViewImage(existingImage)}
+                disabled={disabled}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                View
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteImage}
+                disabled={disabled}
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
             </div>
-          ))}
+          </div>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start space-x-4">
+                {renderThumbnail(existingImage)}
+                <div className="flex-1 min-w-0">
+                  <h5 className="text-lg font-medium text-gray-900 mb-2">
+                    {existingImage.name}
+                  </h5>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p><span className="font-medium">Size:</span> {formatFileSize(existingImage.size)}</p>
+                    <p><span className="font-medium">Type:</span> {existingImage.type}</p>
+                    <p><span className="font-medium">Uploaded:</span> {new Date(existingImage.uploaded_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -468,16 +428,16 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
       {isLoading && (
         <div className="text-center py-8">
           <Loader size="md" />
-          <p className="text-sm text-gray-500 mt-2">Loading existing images...</p>
+          <p className="text-sm text-gray-500 mt-2">Loading existing image...</p>
         </div>
       )}
 
       {/* Empty State */}
-      {!isLoading && existingImages.length === 0 && selectedFiles.length === 0 && (
+      {!isLoading && !existingImage && !showFilePicker && (
         <div className="text-center py-8 text-gray-500">
-          <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-sm">No layout images uploaded yet</p>
-          <p className="text-xs">Upload up to 3 layout images to get started</p>
+          <ImageIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <p className="text-lg font-medium mb-2">No layout image uploaded</p>
+          <p className="text-sm">Upload a single image or PDF file to get started</p>
         </div>
       )}
     </div>
