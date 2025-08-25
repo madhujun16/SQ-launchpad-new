@@ -280,7 +280,7 @@ const SiteCreation = () => {
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Mark as Completed
+                  Create Site
                 </>
               )}
             </Button>
