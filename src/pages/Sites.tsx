@@ -25,7 +25,8 @@ import {
   Edit,
   CheckSquare,
   Building,
-  Trash2
+  Trash2,
+  Archive
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -37,6 +38,17 @@ import { getStatusColor, getStatusDisplayName, type UnifiedSiteStatus } from '@/
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 import { SitesService, type Site } from '@/services/sitesService';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const Sites = () => {
   const navigate = useNavigate();
@@ -49,6 +61,14 @@ const Sites = () => {
   const [loading, setLoading] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  
+  // New state for Archive and Delete modals
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [archiveReason, setArchiveReason] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [otherArchiveReason, setOtherArchiveReason] = useState('');
+  const [otherDeleteReason, setOtherDeleteReason] = useState('');
 
   // Check access permissions
   const tabAccess = getTabAccess('/sites');
@@ -112,14 +132,14 @@ const Sites = () => {
     setStatusFilter('all');
   };
 
-  // Handle view site
+  // Handle view site (read-only mode for Live sites)
   const handleViewSite = (site: Site) => {
-    navigate(`/sites/${site.id}`);
+    navigate(`/sites/${site.id}?mode=view`);
   };
 
-  // Handle edit site
+  // Handle edit site (with stepper flow based on status)
   const handleEditSite = (site: Site) => {
-    navigate(`/sites/${site.id}/edit`);
+    navigate(`/sites/${site.id}?mode=edit`);
   };
 
   // Handle site notes
@@ -128,29 +148,99 @@ const Sites = () => {
     setShowNotesModal(true);
   };
 
-  // Handle delete site - only for admin users
-  const handleDeleteSite = async (site: Site) => {
-    if (currentRole !== 'admin') {
-      toast.error('Only admin users can delete sites');
+  // Handle archive site
+  const handleArchiveSite = (site: Site) => {
+    setSelectedSite(site);
+    setArchiveReason('');
+    setOtherArchiveReason('');
+    setShowArchiveModal(true);
+  };
+
+  // Handle delete site
+  const handleDeleteSite = (site: Site) => {
+    setSelectedSite(site);
+    setDeleteReason('');
+    setOtherDeleteReason('');
+    setShowDeleteModal(true);
+  };
+
+  // Handle create new site
+  const handleCreateSite = () => {
+    navigate('/sites/create');
+  };
+
+  // Confirm archive site
+  const confirmArchiveSite = async () => {
+    if (!selectedSite || !archiveReason) {
+      toast.error('Please select a reason for archiving');
       return;
     }
 
-    // Confirm deletion
-    if (!window.confirm(`Are you sure you want to delete the site "${site.name}"? This action cannot be undone.`)) {
+    if (archiveReason === 'other' && !otherArchiveReason.trim()) {
+      toast.error('Please provide details for the "Other" reason');
       return;
     }
 
     try {
+      const finalReason = archiveReason === 'other' ? otherArchiveReason : archiveReason;
+      
+      // Here you would typically call the API to archive the site
+      // For now, we'll just remove it from the local state
+      setSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
+      setFilteredSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
+      
+      toast.success(`Site "${selectedSite!.name}" has been archived successfully`);
+      setShowArchiveModal(false);
+      setSelectedSite(null);
+      setArchiveReason('');
+      setOtherArchiveReason('');
+    } catch (error) {
+      console.error('Error archiving site:', error);
+      toast.error('Failed to archive site. Please try again.');
+    }
+  };
+
+  // Confirm delete site
+  const confirmDeleteSite = async () => {
+    if (!selectedSite || !deleteReason) {
+      toast.error('Please select a reason for deletion');
+      return;
+    }
+
+    if (deleteReason === 'other' && !otherDeleteReason.trim()) {
+      toast.error('Please provide details for the "Other" reason');
+      return;
+    }
+
+    try {
+      const finalReason = deleteReason === 'other' ? otherDeleteReason : deleteReason;
+      
       // Here you would typically call the API to delete the site
       // For now, we'll just remove it from the local state
-      setSites(prevSites => prevSites.filter(s => s.id !== site.id));
-      setFilteredSites(prevSites => prevSites.filter(s => s.id !== site.id));
+      setSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
+      setFilteredSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
       
-      toast.success(`Site "${site.name}" has been deleted successfully`);
+      toast.success(`Site "${selectedSite!.name}" has been deleted successfully`);
+      setShowDeleteModal(false);
+      setSelectedSite(null);
+      setDeleteReason('');
+      setOtherDeleteReason('');
     } catch (error) {
       console.error('Error deleting site:', error);
       toast.error('Failed to delete site. Please try again.');
     }
+  };
+
+  // Check if site is live (deployed and operational)
+  const isSiteLive = (status: string) => {
+    return status === 'live' || status === 'go_live' || status === 'activated';
+  };
+
+  // Check if site is not yet deployed
+  const isSiteNotDeployed = (status: string) => {
+    return status === 'site_created' || status === 'site_creation' || 
+           status === 'site_study_done' || status === 'scoping_done' || 
+           status === 'approved' || status === 'procurement_done';
   };
 
   // Get unique statuses for filter dropdown
@@ -231,7 +321,7 @@ const Sites = () => {
       },
       'go_live': { 
         name: 'Live', 
-        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+        color: 'bg-blue-100 text-blue-800 border-blue-200' 
       },
       'activated': { 
         name: 'Live', 
@@ -262,10 +352,23 @@ const Sites = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col space-y-2">
+      {/* Page Header with Create Site Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold text-gray-900">Sites</h1>
-        <p className="text-gray-600">Manage client sites and track deployment progress</p>
+          <p className="text-gray-600">Manage client sites and track deployment progress</p>
+        </div>
+        
+        {/* Create Site Button - Only visible to Admin users */}
+        {currentRole === 'admin' && (
+          <Button 
+            onClick={handleCreateSite}
+            className="bg-gradient-to-r from-green-600 to-black text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:from-green-700 hover:to-gray-900 transition-all duration-200 shadow-lg"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Create Site</span>
+          </Button>
+        )}
       </div>
 
       {/* Search and Filters */}
@@ -368,34 +471,54 @@ const Sites = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                    <div className="flex space-x-2">
+                        <div className="flex space-x-2">
+                          {/* Notes icon - Always visible */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSiteNotes(site)}
+                            title="Site Notes"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          
+                          {/* For Live sites: Show View and Archive */}
+                          {isSiteLive(site.status) && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewSite(site)}
+                                title="View Site (Read-only)"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleArchiveSite(site)}
+                                title="Archive Site"
+                                className="text-orange-600 hover:text-orange-800"
+                              >
+                                <Archive className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          
+                          {/* For non-Live sites: Show Edit only */}
+                          {!isSiteLive(site.status) && (
                             <Button
                               variant="ghost"
                               size="sm"
-                        onClick={() => handleViewSite(site)}
-                        title="View Site"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSiteNotes(site)}
-                        title="Site Notes"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                      {site.status !== 'go_live' && site.status !== 'live' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                          onClick={() => handleEditSite(site)}
-                              title="Edit Site"
+                              onClick={() => handleEditSite(site)}
+                              title="Edit Site (with Stepper Flow)"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                           )}
-                          {currentRole === 'admin' && (
+                          
+                          {/* Delete icon - Only for sites not yet deployed and admin users */}
+                          {isSiteNotDeployed(site.status) && currentRole === 'admin' && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -427,6 +550,143 @@ const Sites = () => {
           siteName={selectedSite.name}
         />
       )}
+
+      {/* Archive Site Modal */}
+      <Dialog open={showArchiveModal} onOpenChange={setShowArchiveModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Please specify the reason for archiving this site</DialogTitle>
+            <DialogDescription>
+              Select the primary reason for archiving "{selectedSite?.name}". This information will be logged for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <RadioGroup value={archiveReason} onValueChange={setArchiveReason}>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="site_closed" id="archive-reason-1" />
+                  <Label htmlFor="archive-reason-1">Site getting closed (e.g., permanent shutdown)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="lost_contract" id="archive-reason-2" />
+                  <Label htmlFor="archive-reason-2">Lost contract or business (e.g., client contract ended)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="business_restructuring" id="archive-reason-3" />
+                  <Label htmlFor="archive-reason-3">Business restructuring (merger, acquisition, organisational changes)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="site_replaced" id="archive-reason-4" />
+                  <Label htmlFor="archive-reason-4">Site replaced or consolidated with another location</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="regulatory_compliance" id="archive-reason-5" />
+                  <Label htmlFor="archive-reason-5">Regulatory/compliance requirement (e.g., legal hold, audit requirement)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="temporary_pause" id="archive-reason-6" />
+                  <Label htmlFor="archive-reason-6">Temporary operational pause (e.g., seasonal or strategic pause)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="other" id="archive-reason-7" />
+                  <Label htmlFor="archive-reason-7">Other</Label>
+                </div>
+              </div>
+            </RadioGroup>
+            
+            {archiveReason === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="other-archive-reason">Please provide details</Label>
+                <Textarea
+                  id="other-archive-reason"
+                  placeholder="Please describe the reason for archiving this site..."
+                  value={otherArchiveReason}
+                  onChange={(e) => setOtherArchiveReason(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowArchiveModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmArchiveSite}
+              disabled={!archiveReason || (archiveReason === 'other' && !otherArchiveReason.trim())}
+            >
+              Archive Site
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Site Modal */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Please specify the reason for deleting this site</DialogTitle>
+            <DialogDescription>
+              Select the primary reason for deleting "{selectedSite?.name}". This action cannot be undone and will be logged for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <RadioGroup value={deleteReason} onValueChange={setDeleteReason}>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="created_mistake" id="delete-reason-1" />
+                  <Label htmlFor="delete-reason-1">Created by mistake (erroneous site creation)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="lost_contract" id="delete-reason-2" />
+                  <Label htmlFor="delete-reason-2">Lost contract or business cancellation</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="duplicate_record" id="delete-reason-3" />
+                  <Label htmlFor="delete-reason-3">Duplicate site record in the system</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="data_cleanup" id="delete-reason-4" />
+                  <Label htmlFor="delete-reason-4">Data cleanup (removal of outdated, incomplete, or incorrect information)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="regulatory_legal" id="delete-reason-5" />
+                  <Label htmlFor="delete-reason-5">Regulatory or legal mandate for data deletion (e.g., right to erasure)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="other" id="delete-reason-6" />
+                  <Label htmlFor="delete-reason-6">Other</Label>
+                </div>
+              </div>
+            </RadioGroup>
+            
+            {deleteReason === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="other-delete-reason">Please provide details</Label>
+                <Textarea
+                  id="other-delete-reason"
+                  placeholder="Please describe the reason for deleting this site..."
+                  value={otherDeleteReason}
+                  onChange={(e) => setOtherDeleteReason(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmDeleteSite}
+              disabled={!deleteReason || (deleteReason === 'other' && !otherDeleteReason.trim())}
+              variant="destructive"
+            >
+              Delete Site
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

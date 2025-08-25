@@ -28,13 +28,15 @@ import {
   CheckSquare,
   AlertTriangle,
   Play,
-  Pause
+  Pause,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader } from '@/components/ui/loader';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 // Types
 interface DashboardMetric {
@@ -175,8 +177,9 @@ const WidgetsGrid = ({ widgets }: { widgets: DashboardWidget[] }) => {
 
 // Main Dashboard Component
 const Dashboard = () => {
-  // Use auth context safely
-  const authData = useAuth();
+  const { currentRole, profile, loading: authLoading } = useAuth();
+  const { getTabAccess } = useRoleAccess();
+  const navigate = useNavigate();
   
   // State
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
@@ -263,9 +266,6 @@ const Dashboard = () => {
     setSiteCosts(costsSeed);
   }, []);
 
-  // Extract auth data
-  const { currentRole, profile, loading } = authData || {};
-  
   // Add error handling for role configuration
   let roleConfig;
   try {
@@ -274,15 +274,13 @@ const Dashboard = () => {
     console.error('Dashboard: Error getting role config:', error);
     roleConfig = getRoleConfig('admin'); // Fallback to admin
   }
-  
-  const navigate = useNavigate();
 
   // Loading states
-  if (loading) {
+  if (authLoading) {
     return <DashboardLoading />;
   }
 
-  if (!authData || !profile || !currentRole) {
+  if (!profile || !currentRole) {
     return <DashboardLoading />;
   }
 
@@ -646,8 +644,32 @@ const Dashboard = () => {
     );
   }, [allRequests, getStatusBadge, siteCosts]);
 
+  // Handle create new site
+  const handleCreateSite = () => {
+    navigate('/sites/create');
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Page Header with Create Site Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-2">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's what's happening with your sites.</p>
+        </div>
+        
+        {/* Create Site Button - Only visible to Admin users */}
+        {currentRole === 'admin' && (
+          <Button 
+            onClick={handleCreateSite}
+            className="bg-gradient-to-r from-green-600 to-black text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:from-green-700 hover:to-gray-900 transition-all duration-200 shadow-lg"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Create Site</span>
+          </Button>
+        )}
+      </div>
+
       <DashboardHeader profile={profile} roleConfig={roleConfig} />
       
       <MetricsGrid metrics={metrics} />
