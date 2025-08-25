@@ -84,6 +84,7 @@ import { LocationPicker } from '@/components/ui/location-picker';
 import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
 import { LayoutImageUpload } from '@/components/LayoutImageUpload';
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
+import { StakeholderManager } from '@/components/StakeholderManager';
 import { SitesService } from '@/services/sitesService';
 import { getOrganisations, type Organisation } from '@/services/organisationsService';
 import { Loader } from '@/components/ui/loader';
@@ -241,6 +242,7 @@ const SiteDetail = () => {
     address: string;
   } | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showStakeholderModal, setShowStakeholderModal] = useState(false);
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [selectedOrganisation, setSelectedOrganisation] = useState<Organisation | null>(null);
 
@@ -1670,30 +1672,12 @@ const SiteDetail = () => {
                     General Information
                   </CardTitle>
                   <CardDescription>
-                    Organisation details and key contacts
+                    Key contacts and operational details
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Organisation</label>
-                        <Input 
-                          defaultValue="Compass Eurest"
-                          placeholder="Enter organisation name"
-                          className={`w-full ${!canEditField('organization', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('organization', 1)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Sector</label>
-                        <Input 
-                          defaultValue="Eurest"
-                          placeholder="Enter sector"
-                          className={`w-full ${!canEditField('sector', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('sector', 1)}
-                        />
-                      </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Email</label>
                         <Input 
@@ -1704,8 +1688,6 @@ const SiteDetail = () => {
                           disabled={!canEditField('email', 1)}
                         />
                       </div>
-                    </div>
-                    <div className="space-y-3">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Unit Manager</label>
                         <Input 
@@ -1715,15 +1697,17 @@ const SiteDetail = () => {
                           disabled={!canEditField('unitManager', 1)}
                         />
                       </div>
-                                              <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Job Title</label>
-                          <Input 
-                            defaultValue="Operations Manager"
-                            placeholder="Enter job title"
-                            className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
-                            disabled={!canEditField('jobTitle', 1)}
-                          />
-                        </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Job Title</label>
+                        <Input 
+                          defaultValue="Operations Manager"
+                          placeholder="Enter job title"
+                          className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('jobTitle', 1)}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Mobile</label>
                         <Input 
@@ -2117,10 +2101,7 @@ const SiteDetail = () => {
                         size="sm"
                         className="flex items-center space-x-2"
                         disabled={!canEditField('stakeholders', 1)}
-                        onClick={() => {
-                          // TODO: Open stakeholder management modal
-                          console.log('Open stakeholder management');
-                        }}
+                        onClick={() => setShowStakeholderModal(true)}
                       >
                         <Plus className="h-4 w-4" />
                         <span>Add Stakeholders</span>
@@ -2243,8 +2224,18 @@ const SiteDetail = () => {
                               mode="single"
                               selected={site?.goLiveDate ? new Date(site.goLiveDate) : undefined}
                               onSelect={(date) => {
-                                // TODO: Implement date update logic
-                                console.log('Selected date:', date);
+                                if (date && site) {
+                                  const updatedSite = {
+                                    ...site,
+                                    goLiveDate: date.toISOString()
+                                  };
+                                  setSite(updatedSite);
+                                  // Update the sites array
+                                  setSites((prevSites: Site[]) => 
+                                    prevSites.map(s => s.id === site.id ? updatedSite : s)
+                                  );
+                                  toast.success('Go-Live date updated successfully');
+                                }
                               }}
                               initialFocus
                             />
@@ -3592,6 +3583,16 @@ const SiteDetail = () => {
         <GlobalSiteNotesModal
           isOpen={showNotesModal}
           onClose={() => setShowNotesModal(false)}
+          siteId={site.id}
+          siteName={site.name}
+        />
+      )}
+
+      {/* Stakeholder Manager Modal */}
+      {site && (
+        <StakeholderManager
+          isOpen={showStakeholderModal}
+          onClose={() => setShowStakeholderModal(false)}
           siteId={site.id}
           siteName={site.name}
         />
