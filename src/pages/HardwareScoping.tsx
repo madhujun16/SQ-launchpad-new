@@ -72,6 +72,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig, canAccessPage } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { UserService, UserWithRole } from '@/services/userService';
 import { 
   Table,
   TableBody,
@@ -179,6 +180,27 @@ const HardwareScoping = () => {
   const [selectedScope, setSelectedScope] = useState<HardwareScope | null>(null);
   const [selectedSite, setSelectedSite] = useState<string>('');
   const [selectedSector, setSelectedSector] = useState<string>('');
+  const [opsManagers, setOpsManagers] = useState<UserWithRole[]>([]);
+  const [deploymentEngineers, setDeploymentEngineers] = useState<UserWithRole[]>([]);
+
+  // Fetch users from backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const [opsManagersData, deploymentEngineersData] = await Promise.all([
+          UserService.getOpsManagers(),
+          UserService.getDeploymentEngineers()
+        ]);
+        setOpsManagers(opsManagersData);
+        setDeploymentEngineers(deploymentEngineersData);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast.error('Failed to load users');
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Static mock data to avoid infinite loops
   const sites = [
@@ -232,7 +254,7 @@ const HardwareScoping = () => {
   const siteSummary: SiteSummary = selectedSiteData ? {
     organisation: selectedSiteData.sector_name,
     unitName: selectedSiteData.name,
-    deploymentEngineer: "John Smith", // This would come from site assignments
+    deploymentEngineer: deploymentEngineers.length > 0 ? deploymentEngineers[0].full_name : "No Engineer Assigned",
     goLiveDate: "14-Aug-2024", // This would come from site data
     smartQSolution: "POS + Kiosk + TDS" // This would come from site study
   } : isAllSites ? {
@@ -431,7 +453,7 @@ const HardwareScoping = () => {
       siteName: "ASDA Redditch",
       status: "approved",
       submittedOn: "20-Jul",
-      approvedBy: "Jessica Cleaver",
+      approvedBy: opsManagers.length > 0 ? opsManagers[0].full_name : "No Manager Assigned",
       hardwareItems: [...autoPulledHardware, ...additionalHardware],
       supportingFiles: [],
       remarks: "All hardware approved for deployment",
@@ -1013,9 +1035,11 @@ const HardwareScoping = () => {
                             <SelectValue placeholder="Select Ops Manager" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="jessica">Jessica Cleaver</SelectItem>
-                            <SelectItem value="mike">Mike Thompson</SelectItem>
-                            <SelectItem value="sarah">Sarah Johnson</SelectItem>
+                            {opsManagers.map((manager) => (
+                              <SelectItem key={manager.id} value={manager.user_id}>
+                                {manager.full_name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

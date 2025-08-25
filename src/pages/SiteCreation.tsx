@@ -46,13 +46,7 @@ import {
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
 import { LocationPicker } from '@/components/ui/location-picker';
-
-interface User {
-  id: string;
-  name: string;
-  role: 'ops_manager' | 'deployment_engineer';
-  email: string;
-}
+import { UserService, UserWithRole } from '@/services/userService';
 
 interface SiteData {
   name: string;
@@ -113,8 +107,8 @@ const SiteCreation = () => {
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [opsManagers, setOpsManagers] = useState<User[]>([]);
-  const [deploymentEngineers, setDeploymentEngineers] = useState<User[]>([]);
+  const [opsManagers, setOpsManagers] = useState<UserWithRole[]>([]);
+  const [deploymentEngineers, setDeploymentEngineers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
@@ -142,20 +136,14 @@ const SiteCreation = () => {
         const orgs = await SitesService.getAllOrganizations();
         setOrganizations(orgs);
 
-        // For now, using mock data for users - this should be replaced with actual user service
-        const mockOpsManagers: User[] = [
-          { id: '1', name: 'Jessica Cleaver', role: 'ops_manager', email: 'jessica.cleaver@company.com' },
-          { id: '2', name: 'Mike Thompson', role: 'ops_manager', email: 'mike.thompson@company.com' },
-          { id: '3', name: 'Sarah Johnson', role: 'ops_manager', email: 'sarah.johnson@company.com' }
-        ];
-        setOpsManagers(mockOpsManagers);
-
-        const mockDeploymentEngineers: User[] = [
-          { id: '1', name: 'John Smith', role: 'deployment_engineer', email: 'john.smith@company.com' },
-          { id: '2', name: 'Emma Wilson', role: 'deployment_engineer', email: 'emma.wilson@company.com' },
-          { id: '3', name: 'David Brown', role: 'deployment_engineer', email: 'david.brown@company.com' }
-        ];
-        setDeploymentEngineers(mockDeploymentEngineers);
+        // Fetch users from backend using UserService
+        const [opsManagersData, deploymentEngineersData] = await Promise.all([
+          UserService.getOpsManagers(),
+          UserService.getDeploymentEngineers()
+        ]);
+        
+        setOpsManagers(opsManagersData);
+        setDeploymentEngineers(deploymentEngineersData);
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -406,7 +394,7 @@ const SiteCreation = () => {
                           <SelectContent>
                             {opsManagers.map((om) => (
                               <SelectItem key={om.id} value={om.id}>
-                                {om.name}
+                                {om.full_name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -419,9 +407,9 @@ const SiteCreation = () => {
                             <SelectValue placeholder="Select Deployment Engineer" />
                           </SelectTrigger>
                           <SelectContent>
-                            {opsManagers.map((de) => (
+                            {deploymentEngineers.map((de) => (
                               <SelectItem key={de.id} value={de.id}>
-                                {de.name}
+                                {de.full_name}
                               </SelectItem>
                             ))}
                           </SelectContent>

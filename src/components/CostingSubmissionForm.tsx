@@ -22,6 +22,7 @@ import { CostingService } from '@/services/costingService';
 import { CostingItem } from '@/types/costing';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
+import { UserService, UserWithRole } from '@/services/userService';
 
 interface CostingSubmissionFormProps {
   siteId: string;
@@ -52,7 +53,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
 }) => {
   const [items, setItems] = useState<CostingFormItem[]>([]);
   const [selectedOpsManager, setSelectedOpsManager] = useState<string>('');
-  const [opsManagers, setOpsManagers] = useState<Array<{ id: string; name: string }>>([]);
+  const [opsManagers, setOpsManagers] = useState<UserWithRole[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -60,17 +61,11 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
   useEffect(() => {
     const loadOpsManagers = async () => {
       try {
-        // In a real app, this would fetch from the database
-        // For now, using mock data
-        const mockOpsManagers = [
-          { id: '1', name: 'Emma Davis' },
-          { id: '2', name: 'Lisa Anderson' },
-          { id: '3', name: 'Mark Thompson' },
-          { id: '4', name: 'Sarah Wilson' }
-        ];
-        setOpsManagers(mockOpsManagers);
+        const opsManagersData = await UserService.getOpsManagers();
+        setOpsManagers(opsManagersData);
       } catch (error) {
         console.error('Error loading Ops Managers:', error);
+        toast.error('Failed to load Operations Managers');
       }
     };
 
@@ -213,7 +208,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
               <SelectContent>
                 {opsManagers.map((manager) => (
                   <SelectItem key={manager.id} value={manager.id}>
-                    {manager.name}
+                    {manager.full_name}
                   </SelectItem>
                 ))}
               </SelectContent>
