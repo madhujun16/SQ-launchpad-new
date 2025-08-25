@@ -41,7 +41,8 @@ import {
   Map,
   Info,
   Settings,
-  Package
+  Package,
+  Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
@@ -51,15 +52,6 @@ interface User {
   name: string;
   role: 'ops_manager' | 'deployment_engineer';
   email: string;
-}
-
-interface Stakeholder {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  organization: string;
 }
 
 interface SiteData {
@@ -73,34 +65,24 @@ interface SiteData {
   operationsManager: string;
   deploymentEngineer: string;
   location: string;
-  stakeholders: Stakeholder[];
-  // Additional fields from stepper flow
-  foodCourtName: string;
+  postcode: string;
+  region: string;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+  siteNotes: string;
+  additionalSiteDetails: string;
+  // Contact fields
   unitManagerName: string;
   jobTitle: string;
   unitManagerEmail: string;
   unitManagerMobile: string;
   additionalContactName: string;
   additionalContactEmail: string;
-  siteStudyDate: string;
-  postcode: string;
-  region: string;
-  country: string;
-  latitude: number | null;
-  longitude: number | null;
-  counters: number;
-  floorPlan: 'yes' | 'no' | 'pending';
-  mealSessions: string[];
-  smartQSolutions: string[];
-  additionalHardware: string[];
-  networkRequirements: string;
-  powerRequirements: string;
-  siteNotes: string;
-  additionalSiteDetails: string;
 }
 
 const SiteCreation = () => {
-  const { currentRole } = useAuth();
+  const { currentRole, profile } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState<SiteData>({
@@ -114,29 +96,20 @@ const SiteCreation = () => {
     operationsManager: '',
     deploymentEngineer: '',
     location: '',
-    stakeholders: [],
-    foodCourtName: '',
-    unitManagerName: '',
-    jobTitle: '',
-    unitManagerEmail: '',
-    unitManagerMobile: '',
-    additionalContactName: '',
-    additionalContactEmail: '',
-    siteStudyDate: new Date().toISOString().split('T')[0],
     postcode: '',
     region: '',
     country: 'United Kingdom',
     latitude: null,
     longitude: null,
-    counters: 0,
-    floorPlan: 'pending',
-    mealSessions: [],
-    smartQSolutions: [],
-    additionalHardware: [],
-    networkRequirements: '',
-    powerRequirements: '',
     siteNotes: '',
-    additionalSiteDetails: ''
+    additionalSiteDetails: '',
+    // Contact fields
+    unitManagerName: '',
+    jobTitle: '',
+    unitManagerEmail: '',
+    unitManagerMobile: '',
+    additionalContactName: '',
+    additionalContactEmail: ''
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -148,12 +121,9 @@ const SiteCreation = () => {
     general: true,
     contact: false,
     location: false,
-    infrastructure: false,
-    software: false,
-    hardware: false,
-    stakeholders: false,
     notes: false
   });
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Check if user has permission to create sites
   useEffect(() => {
@@ -210,37 +180,6 @@ const SiteCreation = () => {
     }));
   };
 
-  const addStakeholder = () => {
-    const newStakeholder: Stakeholder = {
-      id: Date.now().toString(),
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      organization: ''
-    };
-    setFormData({
-      ...formData,
-      stakeholders: [...formData.stakeholders, newStakeholder]
-    });
-  };
-
-  const updateStakeholder = (id: string, field: keyof Stakeholder, value: string) => {
-    setFormData({
-      ...formData,
-      stakeholders: formData.stakeholders.map(stakeholder =>
-        stakeholder.id === id ? { ...stakeholder, [field]: value } : stakeholder
-      )
-    });
-  };
-
-  const removeStakeholder = (id: string) => {
-    setFormData({
-      ...formData,
-      stakeholders: formData.stakeholders.filter(stakeholder => stakeholder.id !== id)
-    });
-  };
-
   const handleSubmit = async () => {
     // Validate required fields
     if (!formData.name || !formData.organization || !formData.sector || !formData.unitCode || !formData.targetLiveDate) {
@@ -269,7 +208,6 @@ const SiteCreation = () => {
         unit_code: formData.unitCode,
         criticality_level: formData.criticalityLevel,
         team_assignment: formData.teamAssignment,
-        stakeholders: formData.stakeholders,
         description: `Site created with sector: ${formData.sector}, unit code: ${formData.unitCode}, criticality: ${formData.criticalityLevel}, team: ${formData.teamAssignment}`
       };
 
@@ -297,6 +235,13 @@ const SiteCreation = () => {
       case 'high': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Get selected organization name for dynamic display
+  const getSelectedOrganizationName = () => {
+    if (!formData.organization) return '';
+    const org = organizations.find(o => o.id === formData.organization);
+    return org ? org.name : formData.organization;
   };
 
   if (loading) {
@@ -396,9 +341,11 @@ const SiteCreation = () => {
                             <SelectValue placeholder="Select organisation" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="selected-org">Selected Organization Name</SelectItem>
-                            <SelectItem value="compass">Compass</SelectItem>
-                            <SelectItem value="others">Others</SelectItem>
+                            {organizations.map((org) => (
+                              <SelectItem key={org.id} value={org.id}>
+                                {org.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -473,7 +420,7 @@ const SiteCreation = () => {
                             <SelectValue placeholder="Select Deployment Engineer" />
                           </SelectTrigger>
                           <SelectContent>
-                            {deploymentEngineers.map((de) => (
+                            {opsManagers.map((de) => (
                               <SelectItem key={de.id} value={de.id}>
                                 {de.name}
                               </SelectItem>
@@ -516,15 +463,6 @@ const SiteCreation = () => {
                     <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Primary Contact</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="food-court-name">Food Court Name *</Label>
-                        <Input
-                          id="food-court-name"
-                          placeholder="e.g., JLR Whitley"
-                          value={formData.foodCourtName}
-                          onChange={(e) => handleInputChange('foodCourtName', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="unit-manager-name">Unit Manager Name *</Label>
                         <Input
                           id="unit-manager-name"
@@ -559,15 +497,6 @@ const SiteCreation = () => {
                           placeholder="e.g., +44 20 7123 4567"
                           value={formData.unitManagerMobile}
                           onChange={(e) => handleInputChange('unitManagerMobile', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="site-study-date">Site Study Date</Label>
-                        <Input
-                          id="site-study-date"
-                          type="date"
-                          value={formData.siteStudyDate}
-                          onChange={(e) => handleInputChange('siteStudyDate', e.target.value)}
                         />
                       </div>
                     </div>
@@ -628,6 +557,23 @@ const SiteCreation = () => {
                 <div className="space-y-6">
                   <div>
                     <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Details</h4>
+                    
+                    {/* Location Picker Button */}
+                    <div className="mb-4">
+                      <Button
+                        onClick={() => setShowLocationModal(true)}
+                        variant="outline"
+                        className="w-full md:w-auto"
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        Use Location Picker
+                      </Button>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Click to open the location picker and select site coordinates
+                      </p>
+                    </div>
+
+                    {/* Manual Location Inputs */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <Label htmlFor="address">Site Address *</Label>
@@ -697,272 +643,6 @@ const SiteCreation = () => {
             )}
           </Card>
 
-          {/* Infrastructure Section */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('infrastructure')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-purple-600" />
-                  <CardTitle className="text-lg">Infrastructure Assessment</CardTitle>
-                </div>
-                {expandedSections.infrastructure ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-              <CardDescription className="text-gray-600">
-                Site infrastructure and operational details
-              </CardDescription>
-            </CardHeader>
-            {expandedSections.infrastructure && (
-              <CardContent className="pt-0">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="counters">Number of Counters *</Label>
-                      <Input
-                        id="counters"
-                        type="number"
-                        placeholder="e.g., 4"
-                        value={formData.counters}
-                        onChange={(e) => handleInputChange('counters', parseInt(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="floor-plan">Floor Plan Available</Label>
-                      <Select 
-                        value={formData.floorPlan} 
-                        onValueChange={(value) => handleInputChange('floorPlan', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select availability" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="meal-sessions">Meal Sessions</Label>
-                    <Textarea
-                      id="meal-sessions"
-                      placeholder="e.g., Breakfast, Lunch, Dinner"
-                      value={formData.mealSessions.join(', ')}
-                      onChange={(e) => handleInputChange('mealSessions', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Software Scoping Section */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('software')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-blue-600" />
-                  <CardTitle className="text-lg">Software Scoping</CardTitle>
-                </div>
-                {expandedSections.software ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-              <CardDescription className="text-gray-600">
-                Define software requirements and solutions
-              </CardDescription>
-            </CardHeader>
-            {expandedSections.software && (
-              <CardContent className="pt-0">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="smart-q-solutions">Required SmartQ Solutions *</Label>
-                    <Textarea
-                      id="smart-q-solutions"
-                      placeholder="Enter required SmartQ solutions (comma-separated)"
-                      value={formData.smartQSolutions.join(', ')}
-                      onChange={(e) => handleInputChange('smartQSolutions', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
-                      rows={3}
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Examples: Order Management, Payment Processing, Inventory Tracking, Analytics Dashboard
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Hardware Scoping Section */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('hardware')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-orange-600" />
-                  <CardTitle className="text-lg">Hardware Scoping</CardTitle>
-                </div>
-                {expandedSections.hardware ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-              <CardDescription className="text-gray-600">
-                Hardware requirements and technical specifications
-              </CardDescription>
-            </CardHeader>
-            {expandedSections.hardware && (
-              <CardContent className="pt-0">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="additional-hardware">Additional Hardware</Label>
-                    <Textarea
-                      id="additional-hardware"
-                      placeholder="e.g., POS Terminals, Receipt Printers, Barcode Scanners"
-                      value={formData.additionalHardware.join(', ')}
-                      onChange={(e) => handleInputChange('additionalHardware', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="network-requirements">Network Requirements</Label>
-                    <Textarea
-                      id="network-requirements"
-                      placeholder="e.g., High-speed internet connection required, minimum 100Mbps bandwidth"
-                      value={formData.networkRequirements}
-                      onChange={(e) => handleInputChange('networkRequirements', e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="power-requirements">Power Requirements</Label>
-                    <Textarea
-                      id="power-requirements"
-                      placeholder="e.g., Standard 230V power outlets, backup power recommended"
-                      value={formData.powerRequirements}
-                      onChange={(e) => handleInputChange('powerRequirements', e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Stakeholders Section */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('stakeholders')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  <CardTitle className="text-lg">Stakeholders</CardTitle>
-                </div>
-                {expandedSections.stakeholders ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-              <CardDescription className="text-gray-600">
-                Add key stakeholders and site contacts
-              </CardDescription>
-            </CardHeader>
-            {expandedSections.stakeholders && (
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  {formData.stakeholders.map((stakeholder, index) => (
-                    <div key={stakeholder.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium">Stakeholder {index + 1}</h4>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeStakeholder(stakeholder.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label>Name</Label>
-                          <Input
-                            placeholder="Full name"
-                            value={stakeholder.name}
-                            onChange={(e) => updateStakeholder(stakeholder.id, 'name', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Role</Label>
-                          <Input
-                            placeholder="e.g., Site Manager"
-                            value={stakeholder.role}
-                            onChange={(e) => updateStakeholder(stakeholder.id, 'role', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Email</Label>
-                          <Input
-                            type="email"
-                            placeholder="email@company.com"
-                            value={stakeholder.email}
-                            onChange={(e) => updateStakeholder(stakeholder.id, 'email', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Phone</Label>
-                          <Input
-                            placeholder="+44 123 456 7890"
-                            value={stakeholder.phone}
-                            onChange={(e) => updateStakeholder(stakeholder.id, 'phone', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1 md:col-span-2">
-                          <Label>Organization</Label>
-                          <Select 
-                            value={stakeholder.organization} 
-                            onValueChange={(value) => updateStakeholder(stakeholder.id, 'organization', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select organization" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="selected-org">Selected Organization Name</SelectItem>
-                              <SelectItem value="compass">Compass</SelectItem>
-                              <SelectItem value="others">Others</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <Button onClick={addStakeholder} variant="outline" className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Stakeholder
-                  </Button>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
           {/* Site Notes Section */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader 
@@ -996,6 +676,9 @@ const SiteCreation = () => {
                       onChange={(e) => handleInputChange('siteNotes', e.target.value)}
                       rows={4}
                     />
+                    <p className="text-sm text-gray-500 mt-1">
+                      These notes will be added to the site with your name and role
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="additional-site-details">Additional Site Details</Label>
@@ -1035,6 +718,37 @@ const SiteCreation = () => {
           </Button>
         </div>
       </div>
+
+      {/* Location Picker Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl h-3/4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Location Picker</h3>
+              <Button
+                variant="ghost"
+                onClick={() => setShowLocationModal(false)}
+                size="sm"
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="h-full">
+              {/* LocationIQ Widget will be integrated here */}
+              <div className="bg-gray-100 rounded-lg p-8 text-center">
+                <MapPin className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Location Picker</h4>
+                <p className="text-gray-600 mb-4">
+                  This will integrate with the LocationIQ widget from the stepper flow
+                </p>
+                <p className="text-sm text-gray-500">
+                  For now, please manually enter the location details above
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
