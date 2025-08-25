@@ -2311,7 +2311,7 @@ const SiteDetail = () => {
                   
                   {/* Layout Images Upload Section */}
                   <div className="border-t pt-6">
-                    <h4 className="font-semibold text-gray-900 mb-4">Layout Images</h4>
+                    <h4 className="font-semibold text-gray-900 mb-4">Layout Image</h4>
                     <p className="text-sm text-gray-600 mb-4">Upload a single layout image for the site (JPG, PNG, PDF - Max 10MB)</p>
                     
                     <LayoutImageUpload
