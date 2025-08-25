@@ -23,13 +23,13 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Building,
+  Building, 
   CalendarDays,
   CheckCircle,
   ChevronDown,
   ChevronRight,
   Clock,
-  Download,
+  Download, 
   Edit,
   FileText,
   Filter,
@@ -337,10 +337,12 @@ const SiteDetail = () => {
         // Try to load from database
         const loadSiteFromDatabase = async () => {
           try {
+            console.log('Attempting to load site from database:', id);
             const dbSites = await SitesService.getAllSites();
             const dbSite = dbSites.find(s => s.id === id);
             
             if (dbSite) {
+              console.log('Site found in database:', dbSite);
               // Convert database site to context site format
               const contextSite: Site = {
                 id: dbSite.id,
@@ -366,12 +368,17 @@ const SiteDetail = () => {
               setSelectedStep(getStepperStepFromStatus(contextSite.status as UnifiedSiteStatus));
               setLoading(false);
               return;
+            } else {
+              console.log('Site not found in database, will use mock data');
             }
           } catch (error) {
             console.error('Error loading site from database:', error);
           }
           
           // Fall back to mock data if database load fails
+          console.log('Creating mock site for ID:', id);
+          setIsMockSite(true); // Mark this as a mock site
+          
         // If not found in context, load from mock data (in real app, this would be an API call)
         const mockSite: Site = {
           id: id,
@@ -776,6 +783,7 @@ const SiteDetail = () => {
   // Create stepper steps based on site status
   const [stepperSteps, setStepperSteps] = useState<EnhancedStepperStep[]>([]);
   const [manuallyUpdatedSteps, setManuallyUpdatedSteps] = useState(false);
+  const [isMockSite, setIsMockSite] = useState(false);
   
   // Initialize and update stepper steps when site status changes
   useEffect(() => {
@@ -815,7 +823,7 @@ const SiteDetail = () => {
       // Reset manual update flag when user manually changes steps
       if (manuallyUpdatedSteps) {
         setManuallyUpdatedSteps(false);
-      }
+    }
     }
   }, [selectedStep, manuallyUpdatedSteps]);
 
@@ -1045,14 +1053,19 @@ const SiteDetail = () => {
 
         // For Site Creation (step 0), we can always proceed as it's the initial step
         if (stepIndex === 0) {
-          // Try to update site status in backend, but don't fail if it doesn't work
+          // Skip database operations for mock sites
+          if (isMockSite) {
+            console.log('Skipping database update for mock site');
+          } else {
+            // Try to update site status in backend, but don't fail if it doesn't work
           try {
             const success = await SitesService.updateSiteStatus(site.id, newStatus);
             if (!success) {
-              console.warn('Failed to update site status in database, continuing with local update');
+                console.warn('Failed to update site status in database, continuing with local update');
             }
           } catch (error) {
-            console.warn('Error updating site status in database, continuing with local update:', error);
+              console.warn('Error updating site status in database, continuing with local update:', error);
+            }
           }
           
           // Update site status locally
@@ -1064,21 +1077,92 @@ const SiteDetail = () => {
             prevSites.map(s => s.id === site.id ? updatedSite : s)
           );
           
-          // Force stepper steps to update immediately
+          // Force stepper steps to update immediately with proper completion logic
           console.log('Forcing stepper steps update for new status:', newStatus);
-          const newBaseSteps = createStepperSteps(newStatus as UnifiedSiteStatus);
-          const newStepperSteps = newBaseSteps.map((step, index) => ({
-            ...step,
-            isExpanded: index === 1, // Expand the next step (Site Study)
-            canCollapse: true
-          }));
+          
+          // Create steps manually to ensure proper completion state
+          const newStepperSteps = [
+            {
+              id: 'site-created',
+              title: 'Create Site',
+              description: 'Initialize new site in the system',
+              status: 'completed' as const, // Force as completed
+              icon: Building,
+              isExpanded: false,
+              canCollapse: true,
+              readOnly: false
+            },
+            {
+              id: 'site-study-done',
+              title: 'Site Study',
+              description: 'Perform on-site assessment and analysis',
+              status: 'current' as const, // Force as current
+              icon: FileText,
+              isExpanded: true, // Expand this step
+              canCollapse: true,
+              readOnly: false
+            },
+            {
+              id: 'scoping-done',
+              title: 'Define Scope',
+              description: 'Determine software & hardware requirements',
+              status: 'upcoming' as const,
+              icon: Package,
+              isExpanded: false,
+              canCollapse: true,
+              readOnly: false
+            },
+            {
+              id: 'approved',
+              title: 'Approval',
+              description: 'Obtain stakeholder approval for project',
+              status: 'upcoming' as const,
+              icon: CheckSquare,
+              isExpanded: false,
+              canCollapse: true,
+              readOnly: false
+            },
+            {
+              id: 'procurement-done',
+              title: 'Procurement',
+              description: 'Source and acquire required hardware',
+              status: 'upcoming' as const,
+              icon: Package,
+              isExpanded: false,
+              canCollapse: true,
+              readOnly: false
+            },
+            {
+              id: 'deployed',
+              title: 'Deployment',
+              description: 'Install and configure hardware on-site',
+              status: 'upcoming' as const,
+              icon: Truck,
+              isExpanded: false,
+              canCollapse: true,
+              readOnly: false
+            },
+            {
+              id: 'live',
+              title: 'Go Live',
+              description: 'Activate site and begin operations',
+              status: 'upcoming' as const,
+              icon: CheckCircle,
+              isExpanded: false,
+              canCollapse: true,
+              readOnly: false
+            }
+          ];
+          
           console.log('New stepper steps after completion:', newStepperSteps);
           setStepperSteps(newStepperSteps);
           setManuallyUpdatedSteps(true); // Prevent auto-override
           
-          // Move to next step
+          // Move to next step with a small delay to ensure state updates are processed
           console.log('Setting selected step to:', 1);
+          setTimeout(() => {
           setSelectedStep(1);
+          }, 100);
           
           // Show success message
           toast.success('Site Creation completed successfully!');
@@ -1094,14 +1178,19 @@ const SiteDetail = () => {
           }
         }
 
-        // Try to update site status in backend, but don't fail if it doesn't work
+        // Skip database operations for mock sites
+        if (isMockSite) {
+          console.log('Skipping database update for mock site');
+        } else {
+          // Try to update site status in backend, but don't fail if it doesn't work
         try {
           const success = await SitesService.updateSiteStatus(site.id, newStatus);
           if (!success) {
-            console.warn('Failed to update site status in database, continuing with local update');
+              console.warn('Failed to update site status in database, continuing with local update');
           }
         } catch (error) {
-          console.warn('Error updating site status in database, continuing with local update:', error);
+            console.warn('Error updating site status in database, continuing with local update:', error);
+          }
         }
         
         // Update site status locally
@@ -1113,13 +1202,84 @@ const SiteDetail = () => {
             prevSites.map(s => s.id === site.id ? updatedSite : s)
           );
         
-        // Force stepper steps to update immediately
-        const newBaseSteps = createStepperSteps(newStatus as UnifiedSiteStatus);
-        const newStepperSteps = newBaseSteps.map((step, index) => ({
-          ...step,
-          isExpanded: stepIndex < 6 ? index === stepIndex + 1 : index === stepIndex, // Expand the next step
-          canCollapse: true
-        }));
+        // Force stepper steps to update immediately with proper completion logic
+        console.log('Forcing stepper steps update for new status:', newStatus);
+        
+        // Create steps manually to ensure proper completion state
+        const newStepperSteps = [
+          {
+            id: 'site-created',
+            title: 'Create Site',
+            description: 'Initialize new site in the system',
+            status: stepIndex >= 0 ? 'completed' as const : 'upcoming' as const,
+            icon: Building,
+            isExpanded: false,
+            canCollapse: true,
+            readOnly: false
+          },
+          {
+            id: 'site-study-done',
+            title: 'Site Study',
+            description: 'Perform on-site assessment and analysis',
+            status: stepIndex >= 1 ? (stepIndex === 1 ? 'current' as const : 'completed' as const) : 'upcoming' as const,
+            icon: FileText,
+            isExpanded: stepIndex === 1,
+            canCollapse: true,
+            readOnly: false
+          },
+          {
+            id: 'scoping-done',
+            title: 'Define Scope',
+            description: 'Determine software & hardware requirements',
+            status: stepIndex >= 2 ? (stepIndex === 2 ? 'current' as const : 'completed' as const) : 'upcoming' as const,
+            icon: Package,
+            isExpanded: stepIndex === 2,
+            canCollapse: true,
+            readOnly: false
+          },
+          {
+            id: 'approved',
+            title: 'Approval',
+            description: 'Obtain stakeholder approval for project',
+            status: stepIndex >= 3 ? (stepIndex === 3 ? 'current' as const : 'completed' as const) : 'upcoming' as const,
+            icon: CheckSquare,
+            isExpanded: stepIndex === 3,
+            canCollapse: true,
+            readOnly: false
+          },
+          {
+            id: 'procurement-done',
+            title: 'Procurement',
+            description: 'Source and acquire required hardware',
+            status: stepIndex >= 4 ? (stepIndex === 4 ? 'current' as const : 'completed' as const) : 'upcoming' as const,
+            icon: Package,
+            isExpanded: stepIndex === 4,
+            canCollapse: true,
+            readOnly: false
+          },
+          {
+            id: 'deployed',
+            title: 'Deployment',
+            description: 'Install and configure hardware on-site',
+            status: stepIndex >= 5 ? (stepIndex === 5 ? 'current' as const : 'completed' as const) : 'upcoming' as const,
+            icon: Truck,
+            isExpanded: stepIndex === 5,
+            canCollapse: true,
+            readOnly: false
+          },
+          {
+            id: 'live',
+            title: 'Go Live',
+            description: 'Activate site and begin operations',
+            status: stepIndex >= 6 ? 'current' as const : 'upcoming' as const,
+            icon: CheckCircle,
+            isExpanded: stepIndex === 6,
+            canCollapse: true,
+            readOnly: false
+          }
+        ];
+        
+        console.log('New stepper steps after completion:', newStepperSteps);
         setStepperSteps(newStepperSteps);
         setManuallyUpdatedSteps(true); // Prevent auto-override
         
@@ -1518,7 +1678,7 @@ const SiteDetail = () => {
                   {/* Primary Contact */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Primary Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
                           Name
@@ -2105,13 +2265,13 @@ const SiteDetail = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <div className={`relative w-full ${!canEditField('suggestedGoLiveDate', 1) ? "opacity-50" : ""}`}>
-                              <Input
+                        <Input 
                                 readOnly
                                 placeholder="Select date"
                                 value={site?.goLiveDate ? format(new Date(site.goLiveDate), 'PPP') : ''}
                                 className="w-full cursor-pointer bg-white"
-                                disabled={!canEditField('suggestedGoLiveDate', 1)}
-                              />
+                          disabled={!canEditField('suggestedGoLiveDate', 1)}
+                        />
                               <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                             </div>
                           </PopoverTrigger>
@@ -2152,7 +2312,7 @@ const SiteDetail = () => {
                   {/* Layout Images Upload Section */}
                   <div className="border-t pt-6">
                     <h4 className="font-semibold text-gray-900 mb-4">Layout Images</h4>
-                    <p className="text-sm text-gray-600 mb-4">Upload up to 3 layout images for the site (JPG, PNG, PDF - Max 10MB each)</p>
+                    <p className="text-sm text-gray-600 mb-4">Upload a single layout image for the site (JPG, PNG, PDF - Max 10MB)</p>
                     
                     <LayoutImageUpload
                       siteId={id || ''}
@@ -3410,9 +3570,9 @@ const SiteDetail = () => {
       {/* Header with Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div>
+        <div>
             <div className="flex items-center space-x-4">
-              <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
               <Badge 
                 variant="outline" 
                 className={`px-4 py-2 text-base font-semibold ${getStatusDisplayNameFromDB(site.status).color}`}
@@ -3420,9 +3580,14 @@ const SiteDetail = () => {
                 {getStatusDisplayNameFromDB(site.status).name}
               </Badge>
             </div>
-            <div className="flex items-center space-x-4 mt-2">
-              <p className="text-gray-600">
+          <div className="flex items-center space-x-4 mt-2">
+            <p className="text-gray-600">
                 Sector - <span className="font-medium">{site.sector || 'Unknown Sector'}</span> | Organisation - <span className="font-medium">{site.organization}</span> | {getDateLabel()} - <span className="font-medium">{new Date(site.goLiveDate).toLocaleDateString()}</span>
+                {isMockSite && (
+                  <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Mock Site (No Database)
+                  </span>
+                )}
               </p>
             </div>
           </div>
