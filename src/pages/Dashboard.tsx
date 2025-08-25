@@ -670,7 +670,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      <DashboardHeader profile={profile} roleConfig={roleConfig} />
+      
       
       <MetricsGrid metrics={metrics} />
       

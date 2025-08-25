@@ -11,6 +11,11 @@ export interface Site {
   target_live_date?: string;
   assigned_ops_manager?: string;
   assigned_deployment_engineer?: string;
+  sector?: string;
+  unit_code?: string;
+  criticality_level?: 'low' | 'medium' | 'high';
+  team_assignment?: string;
+  stakeholders?: any[];
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -34,6 +39,11 @@ export interface CreateSiteData {
   assigned_ops_manager: string;
   assigned_deployment_engineer: string;
   status: string;
+  sector?: string;
+  unit_code?: string;
+  criticality_level?: 'low' | 'medium' | 'high';
+  team_assignment?: string;
+  stakeholders?: any[];
   description?: string; // Use description field for notes
 }
 
@@ -72,6 +82,11 @@ export class SitesService {
         target_live_date: site.target_live_date,
         assigned_ops_manager: site.assigned_ops_manager,
         assigned_deployment_engineer: site.assigned_deployment_engineer,
+        sector: site.sector,
+        unit_code: site.unit_code,
+        criticality_level: site.criticality_level,
+        team_assignment: site.team_assignment,
+        stakeholders: site.stakeholders || [],
         notes: site.description, // Map description to notes
         created_at: site.created_at,
         updated_at: site.updated_at
@@ -116,6 +131,11 @@ export class SitesService {
         target_live_date: data.target_live_date,
         assigned_ops_manager: data.assigned_ops_manager,
         assigned_deployment_engineer: data.assigned_deployment_engineer,
+        sector: data.sector,
+        unit_code: data.unit_code,
+        criticality_level: data.criticality_level,
+        team_assignment: data.team_assignment,
+        stakeholders: data.stakeholders || [],
         notes: data.description, // Map description to notes
         created_at: data.created_at,
         updated_at: data.updated_at

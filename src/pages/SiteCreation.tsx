@@ -24,7 +24,9 @@ import {
   Wrench,
   Shield,
   ArrowLeft,
-  Loader
+  Loader,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
@@ -36,14 +38,27 @@ interface User {
   email: string;
 }
 
+interface Stakeholder {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  organization: string;
+}
+
 interface SiteData {
   name: string;
-  organization_id: string;
+  organization: string;
+  sector: string;
+  unitCode: string;
+  targetLiveDate: string;
+  criticalityLevel: 'low' | 'medium' | 'high';
+  teamAssignment: string;
+  operationsManager: string;
+  deploymentEngineer: string;
   location: string;
-  target_live_date: string;
-  assigned_ops_manager: string;
-  assigned_deployment_engineer: string;
-  notes: string;
+  stakeholders: Stakeholder[];
 }
 
 const SiteCreation = () => {
@@ -52,12 +67,16 @@ const SiteCreation = () => {
   
   const [formData, setFormData] = useState<SiteData>({
     name: '',
-    organization_id: '',
+    organization: '',
+    sector: '',
+    unitCode: '',
+    targetLiveDate: '',
+    criticalityLevel: 'medium',
+    teamAssignment: '',
+    operationsManager: '',
+    deploymentEngineer: '',
     location: '',
-    target_live_date: '',
-    assigned_ops_manager: '',
-    assigned_deployment_engineer: '',
-    notes: ''
+    stakeholders: []
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -65,6 +84,11 @@ const SiteCreation = () => {
   const [deploymentEngineers, setDeploymentEngineers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    general: true,
+    location: false,
+    stakeholders: false
+  });
 
   // Check if user has permission to create sites
   useEffect(() => {
@@ -114,15 +138,53 @@ const SiteCreation = () => {
     setFormData({ ...formData, [field]: value });
   };
 
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const addStakeholder = () => {
+    const newStakeholder: Stakeholder = {
+      id: Date.now().toString(),
+      name: '',
+      role: '',
+      email: '',
+      phone: '',
+      organization: ''
+    };
+    setFormData({
+      ...formData,
+      stakeholders: [...formData.stakeholders, newStakeholder]
+    });
+  };
+
+  const updateStakeholder = (id: string, field: keyof Stakeholder, value: string) => {
+    setFormData({
+      ...formData,
+      stakeholders: formData.stakeholders.map(stakeholder =>
+        stakeholder.id === id ? { ...stakeholder, [field]: value } : stakeholder
+      )
+    });
+  };
+
+  const removeStakeholder = (id: string) => {
+    setFormData({
+      ...formData,
+      stakeholders: formData.stakeholders.filter(stakeholder => stakeholder.id !== id)
+    });
+  };
+
   const handleSubmit = async () => {
     // Validate required fields
-    if (!formData.name || !formData.organization_id || !formData.location || !formData.target_live_date) {
+    if (!formData.name || !formData.organization || !formData.sector || !formData.unitCode || !formData.targetLiveDate) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    if (!formData.assigned_ops_manager || !formData.assigned_deployment_engineer) {
-      toast.error('Please assign both Ops Manager and Deployment Engineer');
+    if (!formData.operationsManager || !formData.deploymentEngineer) {
+      toast.error('Please assign both Operations Manager and Deployment Engineer');
       return;
     }
 
@@ -132,13 +194,18 @@ const SiteCreation = () => {
       // Prepare site data for backend
       const siteData = {
         name: formData.name,
-        organization_id: formData.organization_id,
+        organization_id: formData.organization,
         location: formData.location,
-        target_live_date: formData.target_live_date,
-        assigned_ops_manager: formData.assigned_ops_manager,
-        assigned_deployment_engineer: formData.assigned_deployment_engineer,
+        target_live_date: formData.targetLiveDate,
+        assigned_ops_manager: formData.operationsManager,
+        assigned_deployment_engineer: formData.deploymentEngineer,
         status: 'site_created', // Initial status
-        description: formData.notes // Use description field for notes
+        sector: formData.sector,
+        unit_code: formData.unitCode,
+        criticality_level: formData.criticalityLevel,
+        team_assignment: formData.teamAssignment,
+        stakeholders: formData.stakeholders,
+        description: `Site created with sector: ${formData.sector}, unit code: ${formData.unitCode}, criticality: ${formData.criticalityLevel}, team: ${formData.teamAssignment}`
       };
 
       // Create site using backend service
@@ -158,13 +225,18 @@ const SiteCreation = () => {
     }
   };
 
-  const selectedOrg = organizations.find(org => org.id === formData.organization_id);
-  const selectedOpsManager = opsManagers.find(om => om.id === formData.assigned_ops_manager);
-  const selectedDeploymentEngineer = deploymentEngineers.find(de => de.id === formData.assigned_deployment_engineer);
+  const getCriticalityColor = (level: string) => {
+    switch (level) {
+      case 'low': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'high': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading site creation form...</p>
@@ -174,7 +246,7 @@ const SiteCreation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-white">
       <div className="w-full max-w-none px-2 sm:px-4 lg:px-6 py-6">
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
@@ -187,196 +259,301 @@ const SiteCreation = () => {
               Back to Sites
             </Button>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create New Site</h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Create a new site with organization and stakeholder details
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Site Creation</h1>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Basic site information and configuration
+              </p>
+            </div>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={submitting}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+              size="lg"
+            >
+              {submitting ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Site...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Mark as Completed
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Basic Information */}
-          <Card className="lg:col-span-2 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5 text-blue-600" />
-                Basic Information
-              </CardTitle>
+        <div className="space-y-6">
+          {/* General Information Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('general')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-lg">General Information</CardTitle>
+                </div>
+                {expandedSections.general ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
               <CardDescription className="text-gray-600">
-                Essential site details and organization information
+                Basic site details and organisation information
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="site-name">Site Name *</Label>
-                  <Input
-                    id="site-name"
-                    placeholder="Enter site name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                  />
+            {expandedSections.general && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Basic Site Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="site-name">Site Name *</Label>
+                        <Input
+                          id="site-name"
+                          placeholder="Enter site name"
+                          value={formData.name}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="organization">Organisation *</Label>
+                        <Select value={formData.organization} onValueChange={(value) => handleInputChange('organization', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select organisation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {organizations.map((org) => (
+                              <SelectItem key={org.id} value={org.id}>
+                                {org.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="sector">Sector *</Label>
+                        <Input
+                          id="sector"
+                          placeholder="Enter sector"
+                          value={formData.sector}
+                          onChange={(e) => handleInputChange('sector', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="unit-code">Unit Code *</Label>
+                        <Input
+                          id="unit-code"
+                          placeholder="Enter unit code"
+                          value={formData.unitCode}
+                          onChange={(e) => handleInputChange('unitCode', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="target-live-date">Target Live Date *</Label>
+                        <Input
+                          id="target-live-date"
+                          type="date"
+                          value={formData.targetLiveDate}
+                          onChange={(e) => handleInputChange('targetLiveDate', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="criticality-level">Criticality Level</Label>
+                        <Select value={formData.criticalityLevel} onValueChange={(value) => handleInputChange('criticalityLevel', value)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="team-assignment">Team Assignment *</Label>
+                        <Input
+                          id="team-assignment"
+                          placeholder="Enter team assignment"
+                          value={formData.teamAssignment}
+                          onChange={(e) => handleInputChange('teamAssignment', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="operations-manager">Operations Manager *</Label>
+                        <Select value={formData.operationsManager} onValueChange={(value) => handleInputChange('operationsManager', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Operations Manager" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {opsManagers.map((om) => (
+                              <SelectItem key={om.id} value={om.id}>
+                                {om.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="deployment-engineer">Deployment Engineer *</Label>
+                        <Select value={formData.deploymentEngineer} onValueChange={(value) => handleInputChange('deploymentEngineer', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Deployment Engineer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deploymentEngineers.map((de) => (
+                              <SelectItem key={de.id} value={de.id}>
+                                {de.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="organization">Organization *</Label>
-                  <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select organization" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {organizations.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name} ({org.sector})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
-                  <Input
-                    id="location"
-                    placeholder="Enter site location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="go-live-date">Target Go-Live Date *</Label>
-                  <Input
-                    id="go-live-date"
-                    type="date"
-                    value={formData.target_live_date}
-                    onChange={(e) => handleInputChange('target_live_date', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Site Summary */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Site Summary</CardTitle>
-              <CardDescription className="text-gray-600">
-                Overview of the site details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {selectedOrg && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">Organization</p>
-                  <p className="text-sm font-medium">{selectedOrg.name}</p>
-                  <p className="text-xs text-gray-500">Sector: {selectedOrg.sector}</p>
-                </div>
-              )}
-              {formData.location && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">Location</p>
-                  <p className="text-sm font-medium">{formData.location}</p>
-                </div>
-              )}
-              {formData.target_live_date && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">Target Go-Live Date</p>
-                  <p className="text-sm font-medium">{new Date(formData.target_live_date).toLocaleDateString()}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {/* Assigned Team */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-green-600" />
-                Assigned Team
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-                Assign Ops Manager and Deployment Engineer
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="ops-manager">Ops Manager *</Label>
-                <Select value={formData.assigned_ops_manager} onValueChange={(value) => handleInputChange('assigned_ops_manager', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Ops Manager" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {opsManagers.map((om) => (
-                      <SelectItem key={om.id} value={om.id}>
-                        {om.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deployment-engineer">Deployment Engineer *</Label>
-                <Select value={formData.assigned_deployment_engineer} onValueChange={(value) => handleInputChange('assigned_deployment_engineer', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Deployment Engineer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {deploymentEngineers.map((de) => (
-                      <SelectItem key={de.id} value={de.id}>
-                        {de.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Additional Information */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5 text-orange-600" />
-                Additional Information
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-                Notes and additional site details
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="site-notes">Site Notes</Label>
-                <Textarea
-                  id="site-notes"
-                  placeholder="Enter site notes and additional information..."
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Submit Button */}
-        <div className="mt-6 flex justify-end">
-          <Button 
-            onClick={handleSubmit} 
-            disabled={submitting}
-            className="bg-gradient-to-r from-black to-green-600 text-white px-8 py-3 rounded-lg hover:from-gray-900 hover:to-green-700 transition-all duration-200 shadow-lg"
-            size="lg"
-          >
-            {submitting ? (
-              <>
-                <Loader className="h-4 w-4 mr-2 animate-spin" />
-                Creating Site...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Create Site
-              </>
+              </CardContent>
             )}
-          </Button>
+          </Card>
+
+          {/* Location Information Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('location')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-lg">Location Information</CardTitle>
+                </div>
+                {expandedSections.location ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Site location details and coordinates
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.location && (
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location Details</Label>
+                    <Textarea
+                      id="location"
+                      placeholder="Enter detailed location information including address, coordinates, and any specific location details..."
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      rows={6}
+                      className="border-2 border-dashed border-gray-300"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Stakeholders Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('stakeholders')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-purple-600" />
+                  <CardTitle className="text-lg">Stakeholders</CardTitle>
+                </div>
+                {expandedSections.stakeholders ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Add key stakeholders and site contacts
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.stakeholders && (
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  {formData.stakeholders.map((stakeholder, index) => (
+                    <div key={stakeholder.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">Stakeholder {index + 1}</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeStakeholder(stakeholder.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label>Name</Label>
+                          <Input
+                            placeholder="Full name"
+                            value={stakeholder.name}
+                            onChange={(e) => updateStakeholder(stakeholder.id, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Role</Label>
+                          <Input
+                            placeholder="e.g., Site Manager"
+                            value={stakeholder.role}
+                            onChange={(e) => updateStakeholder(stakeholder.id, 'role', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            placeholder="email@company.com"
+                            value={stakeholder.email}
+                            onChange={(e) => updateStakeholder(stakeholder.id, 'email', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Phone</Label>
+                          <Input
+                            placeholder="+44 123 456 7890"
+                            value={stakeholder.phone}
+                            onChange={(e) => updateStakeholder(stakeholder.id, 'phone', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                          <Label>Organization</Label>
+                          <Input
+                            placeholder="Organization name"
+                            value={stakeholder.organization}
+                            onChange={(e) => updateStakeholder(stakeholder.id, 'organization', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button onClick={addStakeholder} variant="outline" className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Stakeholder
+                  </Button>
+                </div>
+              </CardContent>
+            )}
+          </Card>
         </div>
       </div>
     </div>
