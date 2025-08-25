@@ -38,7 +38,14 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
       setIsLoading(true);
       
       // First, ensure the storage bucket exists
-      await FileUploadService.ensureBucketExists();
+      const bucketResult = await FileUploadService.ensureBucketExists();
+      
+      if (!bucketResult.success) {
+        console.warn('Storage bucket not available:', bucketResult.error);
+        // Don't show error toast for bucket issues - just log and continue
+        // The user will see this when they try to upload
+        return;
+      }
       
       // Get existing images from storage
       const result = await FileUploadService.getSiteFiles(siteId);
@@ -64,6 +71,13 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
     try {
       setIsUploading(true);
       setUploadProgress({});
+
+      // Check if bucket exists before attempting upload
+      const bucketResult = await FileUploadService.ensureBucketExists();
+      if (!bucketResult.success) {
+        toast.error(`Cannot upload images: ${bucketResult.error}`);
+        return;
+      }
 
       // Upload files with progress tracking
       const result = await FileUploadService.uploadMultipleFiles(

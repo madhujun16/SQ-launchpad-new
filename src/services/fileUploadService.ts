@@ -196,7 +196,8 @@ export class FileUploadService {
   }
 
   /**
-   * Check if storage bucket exists, create if not
+   * Check if storage bucket exists
+   * Note: Bucket creation requires admin privileges and should be done manually in Supabase dashboard
    */
   static async ensureBucketExists(): Promise<{ success: boolean; error?: string }> {
     try {
@@ -211,23 +212,18 @@ export class FileUploadService {
       const bucketExists = buckets.some(bucket => bucket.name === this.BUCKET_NAME);
       
       if (!bucketExists) {
-        // Create bucket
-        const { error: createError } = await supabase.storage.createBucket(this.BUCKET_NAME, {
-          public: true,
-          fileSizeLimit: this.MAX_FILE_SIZE,
-          allowedMimeTypes: this.ALLOWED_TYPES
-        });
-
-        if (createError) {
-          console.error('Create bucket error:', createError);
-          return { success: false, error: createError.message };
-        }
+        // Bucket doesn't exist - provide helpful error message
+        console.warn(`Storage bucket '${this.BUCKET_NAME}' does not exist. Please create it manually in the Supabase dashboard.`);
+        return { 
+          success: false, 
+          error: `Storage bucket '${this.BUCKET_NAME}' not found. Please create it manually in the Supabase dashboard with public access and appropriate file size limits.` 
+        };
       }
 
       return { success: true };
     } catch (error) {
       console.error('Ensure bucket exists error:', error);
-      return { success: false, error: 'Failed to ensure bucket exists' };
+      return { success: false, error: 'Failed to check bucket existence' };
     }
   }
 }

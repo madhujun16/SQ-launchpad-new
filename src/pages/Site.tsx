@@ -345,7 +345,7 @@ const SiteDetail = () => {
               const contextSite: Site = {
                 id: dbSite.id,
                 name: dbSite.name,
-                organization: dbSite.organization_name || 'Unknown Organization',
+                organization: dbSite.organization || 'Unknown Organization',
                 foodCourt: dbSite.location || 'Unknown Location',
                 unitCode: 'N/A', // Not available in database schema
                 sector: 'Eurest', // Default sector
@@ -2079,24 +2079,27 @@ const SiteDetail = () => {
                         <label className="text-sm font-medium text-gray-700">Suggested Go-Live Date</label>
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={`w-full justify-start text-left font-normal ${!canEditField('suggestedGoLiveDate', 1) ? "bg-gray-50" : ""}`}
-                              disabled={!canEditField('suggestedGoLiveDate', 1)}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {site?.goLiveDate ? 
-                                format(new Date(site.goLiveDate), 'PPP') : 
-                                'Select date'
-                              }
-                            </Button>
+                            <div className={`relative w-full ${!canEditField('suggestedGoLiveDate', 1) ? "opacity-50" : ""}`}>
+                              <Input
+                                readOnly
+                                placeholder="Select date"
+                                value={site?.goLiveDate ? format(new Date(site.goLiveDate), 'PPP') : ''}
+                                className="w-full cursor-pointer bg-white"
+                                disabled={!canEditField('suggestedGoLiveDate', 1)}
+                              />
+                              <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                            </div>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
+                            <CalendarIcon
                               selected={site?.goLiveDate ? new Date(site.goLiveDate) : undefined}
-                              onSelect={(date) => {
+                              onSelect={(date: Date | undefined) => {
                                 if (date && site) {
+                                  // Only allow future dates
+                                  if (date <= new Date()) {
+                                    toast.error('Please select a future date');
+                                    return;
+                                  }
                                   const updatedSite = {
                                     ...site,
                                     goLiveDate: date.toISOString()
@@ -2109,7 +2112,7 @@ const SiteDetail = () => {
                                   toast.success('Go-Live date updated successfully');
                                 }
                               }}
-                              initialFocus
+                              disabled={(date) => date <= new Date()}
                             />
                           </PopoverContent>
                         </Popover>
@@ -3294,7 +3297,7 @@ const SiteDetail = () => {
       
       const exportData = {
         siteName: site.name,
-        organization: site.organization_name || site.organization || '',
+                        organization: site.organization || '',
         sector: site.sector || '',
         location: site.description || '',
         goLiveDate: site.goLiveDate || '',
@@ -3341,17 +3344,10 @@ const SiteDetail = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      toast({
-        title: "Export Successful",
-        description: "Site study data exported successfully!",
-      });
+      toast.success("Site study data exported successfully!");
     } catch (error) {
       console.error('Error exporting site study:', error);
-      toast({
-        title: "Export Failed",
-        description: "Failed to export site study data. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to export site study data. Please try again.");
     }
   };
 
