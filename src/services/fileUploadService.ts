@@ -201,28 +201,39 @@ export class FileUploadService {
    */
   static async ensureBucketExists(): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('🔍 Checking for storage bucket:', this.BUCKET_NAME);
+      
       // Check if bucket exists
       const { data: buckets, error: listError } = await supabase.storage.listBuckets();
       
       if (listError) {
-        console.error('List buckets error:', listError);
+        console.error('❌ List buckets error:', listError);
         return { success: false, error: listError.message };
       }
 
+      console.log('📦 Available buckets:', buckets);
+      
       const bucketExists = buckets.some(bucket => bucket.name === this.BUCKET_NAME);
       
       if (!bucketExists) {
         // Bucket doesn't exist - provide helpful error message
-        console.warn(`Storage bucket '${this.BUCKET_NAME}' does not exist. Please create it manually in the Supabase dashboard.`);
+        console.warn(`❌ Storage bucket '${this.BUCKET_NAME}' does not exist.`);
+        console.log('📋 Available bucket names:', buckets.map(b => b.name));
+        console.log('💡 Please create it manually in the Supabase dashboard with:');
+        console.log('   - Name: site-layout-images');
+        console.log('   - Public bucket: ✅ checked');
+        console.log('   - File size limit: 50MB');
+        
         return { 
           success: false, 
-          error: `Storage bucket '${this.BUCKET_NAME}' not found. Please create it manually in the Supabase dashboard with public access and appropriate file size limits.` 
+          error: `Storage bucket '${this.BUCKET_NAME}' not found. Available buckets: ${buckets.map(b => b.name).join(', ')}. Please create it manually in the Supabase dashboard.` 
         };
       }
 
+      console.log('✅ Storage bucket found:', this.BUCKET_NAME);
       return { success: true };
     } catch (error) {
-      console.error('Ensure bucket exists error:', error);
+      console.error('❌ Ensure bucket exists error:', error);
       return { success: false, error: 'Failed to check bucket existence' };
     }
   }
