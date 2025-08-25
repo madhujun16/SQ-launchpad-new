@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   EnhancedStepper, 
@@ -1394,7 +1395,133 @@ const SiteDetail = () => {
                 </CardContent>
               </Card>
 
+              {/* Contact Information Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    Contact Information
+                  </CardTitle>
+                  <CardDescription>
+                    Primary and additional contact details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Primary Contact */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Primary Contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Unit Manager Name <span className="text-red-500">*</span>
+                        </label>
+                        <Input 
+                          defaultValue={site.unitManagerName || ''} 
+                          placeholder="e.g., Sarah Johnson"
+                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                          disabled={!canEditSiteCreation()}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Job Title</label>
+                        <Input 
+                          defaultValue={site.jobTitle || ''} 
+                          placeholder="e.g., Operations Manager"
+                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                          disabled={!canEditSiteCreation()}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Email <span className="text-red-500">*</span>
+                        </label>
+                        <Input 
+                          type="email"
+                          defaultValue={site.unitManagerEmail || ''} 
+                          placeholder="e.g., sarah.johnson@company.com"
+                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                          disabled={!canEditSiteCreation()}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Mobile <span className="text-red-500">*</span>
+                        </label>
+                        <Input 
+                          defaultValue={site.unitManagerMobile || ''} 
+                          placeholder="e.g., +44 20 7123 4567"
+                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                          disabled={!canEditSiteCreation()}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
+                  {/* Additional Contact */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Additional Contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Additional Contact Name</label>
+                        <Input 
+                          defaultValue={site.additionalContactName || ''} 
+                          placeholder="e.g., John Smith"
+                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                          disabled={!canEditSiteCreation()}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Additional Contact Email</label>
+                        <Input 
+                          type="email"
+                          defaultValue={site.additionalContactEmail || ''} 
+                          placeholder="e.g., john.smith@company.com"
+                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                          disabled={!canEditSiteCreation()}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Site Notes Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <FileText className="mr-2 h-5 w-5" />
+                    Site Notes
+                  </CardTitle>
+                  <CardDescription>
+                    Additional notes and site details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Site Notes</label>
+                    <Textarea
+                      defaultValue={site.notes || ''} 
+                      placeholder="Enter site notes and additional information..."
+                      rows={4}
+                      className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                      disabled={!canEditSiteCreation()}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      These notes will be added to the site with your name and role
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Additional Site Details</label>
+                    <Textarea
+                      defaultValue={site.description || ''} 
+                      placeholder="Enter any additional site details..."
+                      rows={4}
+                      className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
+                      disabled={!canEditSiteCreation()}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
                          

@@ -206,18 +206,18 @@ export default function SiteStudy() {
       canCollapse: true
     },
     {
-      id: 'site-study',
-      title: 'Site Study',
-      description: 'Location & infrastructure',
+      id: 'infrastructure-assessment',
+      title: 'Infrastructure Assessment',
+      description: 'Site infrastructure and operational details',
       status: currentStep === 1 ? 'current' : currentStep > 1 ? 'completed' : 'upcoming',
-      icon: FileText,
+      icon: Building,
       isExpanded: expandedSteps.has(1),
       canCollapse: true
     },
     {
       id: 'software-scoping',
       title: 'Software Scoping',
-      description: 'Software requirements',
+      description: 'Software requirements and solutions',
       status: currentStep === 2 ? 'current' : currentStep > 2 ? 'completed' : 'upcoming',
       icon: Settings,
       isExpanded: expandedSteps.has(2),
@@ -226,19 +226,28 @@ export default function SiteStudy() {
     {
       id: 'hardware-scoping',
       title: 'Hardware Scoping',
-      description: 'Hardware requirements',
+      description: 'Hardware requirements and specifications',
       status: currentStep === 3 ? 'current' : currentStep > 3 ? 'completed' : 'upcoming',
       icon: Package,
       isExpanded: expandedSteps.has(3),
       canCollapse: true
     },
     {
-      id: 'site-notes-stakeholders',
-      title: 'Notes & Stakeholders',
-      description: 'Site notes and stakeholders',
+      id: 'stakeholder-management',
+      title: 'Stakeholder Management',
+      description: 'Key stakeholders and site contacts',
       status: currentStep === 4 ? 'current' : currentStep > 4 ? 'completed' : 'upcoming',
-      icon: StickyNote,
+      icon: Users,
       isExpanded: expandedSteps.has(4),
+      canCollapse: true
+    },
+    {
+      id: 'detailed-analysis',
+      title: 'Detailed Site Analysis',
+      description: 'Comprehensive site analysis and recommendations',
+      status: currentStep === 5 ? 'current' : currentStep > 5 ? 'completed' : 'upcoming',
+      icon: FileText,
+      isExpanded: expandedSteps.has(5),
       canCollapse: true
     }
   ], [currentStep, expandedSteps]);
@@ -558,130 +567,130 @@ export default function SiteStudy() {
           </Card>
         );
 
-      case 1: // Site Study
+      case 1: // Infrastructure Assessment
         return (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Site Study
+                <Building className="h-5 w-5" />
+                Infrastructure Assessment
               </CardTitle>
-              <CardDescription>Location and infrastructure details</CardDescription>
+              <CardDescription>Site infrastructure and operational details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                             {/* Location Details */}
-               <div className="space-y-4">
-                 <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
-                 
-                 {/* Read-only location display */}
-                 {!isEditMode && (
-                   <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                     {studyData.location.address ? (
-                       <>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div>
-                             <Label className="text-sm font-medium text-gray-700">Selected Address</Label>
-                             <p className="text-gray-900 mt-1">{studyData.location.address}</p>
-                           </div>
-                           <div>
-                             <Label className="text-sm font-medium text-gray-700">Postcode</Label>
-                             <p className="text-gray-900 mt-1">{studyData.location.postcode || 'Not specified'}</p>
-                           </div>
-                           <div>
-                             <Label className="text-sm font-medium text-gray-700">Region</Label>
-                             <p className="text-gray-900 mt-1">{studyData.location.region || 'Not specified'}</p>
-                           </div>
-                           <div>
-                             <Label className="text-sm font-medium text-gray-700">Country</Label>
-                             <p className="text-gray-900 mt-1">{studyData.location.country || 'Not specified'}</p>
-                           </div>
-                         </div>
-                         {(studyData.location.latitude && studyData.location.longitude) && (
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
-                             <div>
-                               <Label className="text-sm font-medium text-gray-700">Latitude</Label>
-                               <p className="text-gray-900 mt-1">{studyData.location.latitude}</p>
-                             </div>
-                             <div>
-                               <Label className="text-sm font-medium text-gray-700">Longitude</Label>
-                               <p className="text-gray-900 mt-1">{studyData.location.longitude}</p>
-                             </div>
-                           </div>
-                         )}
-                       </>
-                     ) : (
-                       <div className="text-center py-4">
-                         <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                         <p className="text-gray-500">No location information available</p>
-                         <p className="text-sm text-gray-400">Click "Edit Site Study" to add location details</p>
-                       </div>
-                     )}
-                   </div>
-                 )}
-
-                                   {/* Editable location form */}
-                  {isEditMode && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <Label htmlFor="address">
-                          Site Address <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="address"
-                          value={studyData.location.address}
-                          onChange={(e) => setStudyData(prev => ({
-                            ...prev,
-                            location: { ...prev.location, address: e.target.value }
-                          }))}
-                          placeholder="Enter site address"
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                          Location coordinates are managed during site creation. You can update the address details here.
-                        </p>
+              {/* Location Details */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
+                
+                {/* Read-only location display */}
+                {!isEditMode && (
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                    {studyData.location.address ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Selected Address</Label>
+                            <p className="text-gray-900 mt-1">{studyData.location.address}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Postcode</Label>
+                            <p className="text-gray-900 mt-1">{studyData.location.postcode || 'Not specified'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Region</Label>
+                            <p className="text-gray-900 mt-1">{studyData.location.region || 'Not specified'}</p>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium text-gray-700">Country</Label>
+                            <p className="text-gray-900 mt-1">{studyData.location.country || 'Not specified'}</p>
+                          </div>
+                        </div>
+                        {(studyData.location.latitude && studyData.location.longitude) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700">Latitude</Label>
+                              <p className="text-gray-900 mt-1">{studyData.location.latitude}</p>
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-gray-700">Longitude</Label>
+                              <p className="text-gray-900 mt-1">{studyData.location.longitude}</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500">No location information available</p>
+                        <p className="text-sm text-gray-400">Click "Edit Site Study" to add location details</p>
                       </div>
-                     <div>
-                       <Label htmlFor="postcode">
-                         Postcode <span className="text-red-500">*</span>
-                       </Label>
-                       <Input
-                         id="postcode"
-                         value={studyData.location.postcode}
-                         onChange={(e) => setStudyData(prev => ({
-                           ...prev,
-                           location: { ...prev.location, postcode: e.target.value }
-                         }))}
-                         placeholder="e.g., CV3 4LF"
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="region">
-                         Region <span className="text-red-500">*</span>
-                       </Label>
-                       <Input
-                         id="region"
-                         value={studyData.location.region}
-                         onChange={(e) => setStudyData(prev => ({
-                           ...prev,
-                           location: { ...prev.location, region: e.target.value }
-                         }))}
-                         placeholder="e.g., West Midlands"
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="country">Country</Label>
-                       <Input
-                         id="country"
-                         value={studyData.location.country}
-                         onChange={(e) => setStudyData(prev => ({
-                           ...prev,
-                           location: { ...prev.location, country: e.target.value }
-                         }))}
-                         placeholder="e.g., United Kingdom"
-                       />
-                     </div>
-                   </div>
-                 )}
-               </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Editable location form */}
+                {isEditMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="address">
+                        Site Address <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="address"
+                        value={studyData.location.address}
+                        onChange={(e) => setStudyData(prev => ({
+                          ...prev,
+                          location: { ...prev.location, address: e.target.value }
+                        }))}
+                        placeholder="Enter site address"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Location coordinates are managed during site creation. You can update the address details here.
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="postcode">
+                        Postcode <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="postcode"
+                        value={studyData.location.postcode}
+                        onChange={(e) => setStudyData(prev => ({
+                          ...prev,
+                          location: { ...prev.location, postcode: e.target.value }
+                        }))}
+                        placeholder="e.g., CV3 4LF"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="region">
+                        Region <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="region"
+                        value={studyData.location.region}
+                        onChange={(e) => setStudyData(prev => ({
+                          ...prev,
+                          location: { ...prev.location, region: e.target.value }
+                        }))}
+                        placeholder="e.g., West Midlands"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country</Label>
+                      <Input
+                        id="country"
+                        value={studyData.location.country}
+                        onChange={(e) => setStudyData(prev => ({
+                          ...prev,
+                          location: { ...prev.location, country: e.target.value }
+                        }))}
+                        placeholder="e.g., United Kingdom"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Infrastructure Details */}
               <div className="space-y-4">
@@ -876,7 +885,7 @@ export default function SiteStudy() {
           </Card>
         );
 
-      case 4: // Site Notes & Stakeholders
+      case 4: // Stakeholder Management
         return (
           <div className="space-y-6">
             {/* Site Notes */}
@@ -890,10 +899,39 @@ export default function SiteStudy() {
                   Manage site notes and additional details
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Loader size="lg" />
-                  <p className="text-gray-600 mt-4">Loading site study...</p>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="site-notes">Site Notes</Label>
+                  <Textarea
+                    id="site-notes"
+                    placeholder="Enter site notes and additional information..."
+                    value={studyData.siteNotes.notes}
+                    onChange={(e) => setStudyData(prev => ({
+                      ...prev,
+                      siteNotes: { ...prev.siteNotes, notes: e.target.value }
+                    }))}
+                    rows={4}
+                    disabled={!isEditMode}
+                    className={!isEditMode ? "bg-gray-50" : ""}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    These notes will be added to the site with your name and role
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="additional-site-details">Additional Site Details</Label>
+                  <Textarea
+                    id="additional-site-details"
+                    placeholder="Enter any additional site details..."
+                    value={studyData.siteNotes.additionalSiteDetails}
+                    onChange={(e) => setStudyData(prev => ({
+                      ...prev,
+                      siteNotes: { ...prev.siteNotes, additionalSiteDetails: e.target.value }
+                    }))}
+                    rows={4}
+                    disabled={!isEditMode}
+                    className={!isEditMode ? "bg-gray-50" : ""}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -906,6 +944,57 @@ export default function SiteStudy() {
               disabled={!isEditMode}
             />
           </div>
+        );
+
+      case 5: // Detailed Site Analysis
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Detailed Site Analysis
+              </CardTitle>
+              <CardDescription>Comprehensive site analysis and recommendations</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Review and Recommendations */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 border-b pb-2">Review & Recommendations</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="reviewNotes">Site Notes</Label>
+                    <Textarea
+                      id="reviewNotes"
+                      value={studyData.review.notes}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        review: { ...prev.review, notes: e.target.value }
+                      }))}
+                      placeholder="Enter site notes and observations"
+                      rows={4}
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="recommendations">Recommendations</Label>
+                    <Textarea
+                      id="recommendations"
+                      value={studyData.review.recommendations}
+                      onChange={(e) => setStudyData(prev => ({
+                        ...prev,
+                        review: { ...prev.review, recommendations: e.target.value }
+                      }))}
+                      placeholder="Enter recommendations for the site"
+                      rows={4}
+                      disabled={!isEditMode}
+                      className={!isEditMode ? "bg-gray-50" : ""}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
 
       default:
@@ -1040,7 +1129,7 @@ export default function SiteStudy() {
           </EnhancedStepContent>
         )}
 
-        {/* Step 2: Site Study */}
+        {/* Step 2: Infrastructure Assessment */}
         {currentStep === 1 && (
           <EnhancedStepContent
             step={steps[1]}
@@ -1076,12 +1165,24 @@ export default function SiteStudy() {
           </EnhancedStepContent>
         )}
 
-        {/* Step 5: Notes & Stakeholders */}
+        {/* Step 5: Stakeholder Management */}
         {currentStep === 4 && (
           <EnhancedStepContent
             step={steps[4]}
             isExpanded={expandedSteps.has(4)}
             onToggle={() => handleStepToggle(4, !expandedSteps.has(4))}
+            canCollapse={true}
+          >
+            {renderStepContent()}
+          </EnhancedStepContent>
+        )}
+
+        {/* Step 6: Detailed Site Analysis */}
+        {currentStep === 5 && (
+          <EnhancedStepContent
+            step={steps[5]}
+            isExpanded={expandedSteps.has(5)}
+            onToggle={() => handleStepToggle(5, !expandedSteps.has(5))}
             canCollapse={true}
           >
             {renderStepContent()}
