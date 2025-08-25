@@ -350,6 +350,7 @@ const SiteDetail = () => {
                 unitCode: 'N/A', // Not available in database schema
                 sector: 'Eurest', // Default sector
                 goLiveDate: dbSite.target_live_date || '2024-12-31',
+                originalTargetDate: dbSite.target_live_date || '2024-12-31', // Set original target date
                 priority: 'medium',
                 riskLevel: 'medium',
                 criticality: 'medium',
@@ -379,7 +380,8 @@ const SiteDetail = () => {
           foodCourt: 'ASDA Redditch',
           unitCode: 'AR004',
           sector: 'Eurest',
-          goLiveDate: '2024-11-15',
+          goLiveDate: '2025-01-15', // Changed to a different date for testing
+          originalTargetDate: '2024-11-15', // Original target date is different
           priority: 'high',
           riskLevel: 'medium',
            criticality: 'high',
@@ -436,6 +438,7 @@ const SiteDetail = () => {
             unitCode: 'LC001',
              sector: 'Eurest',
             goLiveDate: '2024-01-15',
+            originalTargetDate: '2024-01-15', // Set original target date
             priority: 'high' as const,
             riskLevel: 'medium' as const,
              criticality: 'high' as const,
@@ -2103,7 +2106,9 @@ const SiteDetail = () => {
                                   }
                                   const updatedSite = {
                                     ...site,
-                                    goLiveDate: date.toISOString()
+                                    goLiveDate: date.toISOString(),
+                                    // Preserve the original target date if it exists, otherwise set it to the current goLiveDate
+                                    originalTargetDate: site.originalTargetDate || site.goLiveDate
                                   };
                                   setSite(updatedSite);
                                   // Update the sites array
@@ -3287,6 +3292,28 @@ const SiteDetail = () => {
     return statusMap[status] || { name: status, color: 'bg-gray-100 text-gray-800 border-gray-200' };
   };
 
+  // Helper function to determine which date label to show
+  const getDateLabel = () => {
+    if (site.status === 'live') {
+      return 'Go Live Date';
+    }
+    
+    // Debug logging
+    console.log('Date comparison:', {
+      originalTargetDate: site.originalTargetDate,
+      goLiveDate: site.goLiveDate,
+      areDifferent: site.originalTargetDate && site.originalTargetDate !== site.goLiveDate
+    });
+    
+    // If original target date exists and is different from current go live date, show "Suggested Go Live Date"
+    if (site.originalTargetDate && site.originalTargetDate !== site.goLiveDate) {
+      return 'Suggested Go Live Date';
+    }
+    
+    // Otherwise show "Target Go Live Date"
+    return 'Target Go Live Date';
+  };
+
   // Add PDF export functionality for Site Study
   const handleExportSiteStudy = async () => {
     if (!id) return;
@@ -3380,7 +3407,7 @@ const SiteDetail = () => {
             </div>
             <div className="flex items-center space-x-4 mt-2">
               <p className="text-gray-600">
-                Sector - <span className="font-medium">{site.sector || 'Unknown Sector'}</span> | Organisation - <span className="font-medium">{site.organization}</span> | {site.status === 'live' ? 'Go Live Date' : 'Target Go Live Date'} - <span className="font-medium">{new Date(site.goLiveDate).toLocaleDateString()}</span>
+                Sector - <span className="font-medium">{site.sector || 'Unknown Sector'}</span> | Organisation - <span className="font-medium">{site.organization}</span> | {getDateLabel()} - <span className="font-medium">{new Date(site.goLiveDate).toLocaleDateString()}</span>
               </p>
             </div>
           </div>

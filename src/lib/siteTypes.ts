@@ -35,6 +35,7 @@ export interface Site {
   unitCode: string;
   sector?: string; // Optional sector property
   goLiveDate: string;
+  originalTargetDate?: string; // Original target date from Create Site step
   priority: 'low' | 'medium' | 'high' | 'urgent';
   riskLevel: 'low' | 'medium' | 'high';
   criticality?: 'low' | 'medium' | 'high';
