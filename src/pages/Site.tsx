@@ -48,7 +48,8 @@ import {
   X,
   Monitor,
   BarChart3,
-  CheckSquare
+  CheckSquare,
+  StickyNote
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
