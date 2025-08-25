@@ -29,7 +29,7 @@ const Forecast = lazy(() => import("./pages/Forecast"));
 const EnhancedStepperDemo = lazy(() => import("./pages/EnhancedStepperDemo"));
 
 // Sites-related pages
-const SiteStudy = lazy(() => import("./pages/SiteStudy"));
+
 const Site = lazy(() => import("./pages/Site"));
 const SiteCreation = lazy(() => import("./pages/SiteCreation"));
 
@@ -152,20 +152,7 @@ function App() {
                       </AuthGuard>
                     }
                   />
-                  <Route
-                    path="/sites/:id/study"
-                    element={
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <SiteStudy />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    }
-                  />
+
 
                   {/* Approvals & Procurement - Main tab with nested routes */}
                   <Route

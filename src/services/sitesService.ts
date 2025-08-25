@@ -17,6 +17,19 @@ export interface Site {
   team_assignment?: string;
   stakeholders?: any[];
   notes?: string;
+  // Contact information fields
+  unitManagerName?: string;
+  jobTitle?: string;
+  unitManagerEmail?: string;
+  unitManagerMobile?: string;
+  additionalContactName?: string;
+  additionalContactEmail?: string;
+  // Location fields
+  latitude?: number;
+  longitude?: number;
+  postcode?: string;
+  region?: string;
+  country?: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,20 +87,33 @@ export class SitesService {
       return data?.map((site: any) => ({
         id: site.id,
         name: site.name,
-        organization_id: site.organization_id,
-        organization_name: site.organization_name,
-        organization_logo: site.organizations?.logo_url || null, // Get logo from organizations table
-        location: site.location,
+        organization_id: site.organization_id || site.organizations?.id || '',
+        organization_name: site.organization_name || site.organizations?.name || '',
+        organization_logo: site.organizations?.logo_url || null,
+        location: site.location || site.address || '',
         status: site.status,
-        target_live_date: site.target_live_date,
-        assigned_ops_manager: site.assigned_ops_manager,
-        assigned_deployment_engineer: site.assigned_deployment_engineer,
-        sector: site.sector,
-        unit_code: site.unit_code,
-        criticality_level: site.criticality_level,
-        team_assignment: site.team_assignment,
+        target_live_date: site.target_live_date || site.go_live_date || '',
+        assigned_ops_manager: site.assigned_ops_manager || site.assigned_ops_manager_id || '',
+        assigned_deployment_engineer: site.assigned_deployment_engineer || site.assigned_deployment_engineer_id || '',
+        sector: site.sector || '',
+        unit_code: site.unit_code || '',
+        criticality_level: site.criticality_level || 'medium',
+        team_assignment: site.team_assignment || '',
         stakeholders: site.stakeholders || [],
-        notes: site.description, // Map description to notes
+        notes: site.description || site.notes || '',
+        // Contact information fields (optional, may not exist in database yet)
+        unitManagerName: site.unit_manager_name || '',
+        jobTitle: site.job_title || '',
+        unitManagerEmail: site.unit_manager_email || '',
+        unitManagerMobile: site.unit_manager_mobile || '',
+        additionalContactName: site.additional_contact_name || '',
+        additionalContactEmail: site.additional_contact_email || '',
+        // Location fields (optional, may not exist in database yet)
+        latitude: site.latitude,
+        longitude: site.longitude,
+        postcode: site.postcode,
+        region: site.region,
+        country: site.country,
         created_at: site.created_at,
         updated_at: site.updated_at
       })) || [];
@@ -123,20 +149,33 @@ export class SitesService {
       return {
         id: data.id,
         name: data.name,
-        organization_id: data.organization_id,
-        organization_name: data.organization_name,
-        organization_logo: data.organizations?.logo_url || null, // Get logo from organizations table
-        location: data.location,
+        organization_id: data.organization_id || data.organizations?.id || '',
+        organization_name: data.organization_name || data.organizations?.name || '',
+        organization_logo: data.organizations?.logo_url || null,
+        location: data.location || data.address || '',
         status: data.status,
-        target_live_date: data.target_live_date,
-        assigned_ops_manager: data.assigned_ops_manager,
-        assigned_deployment_engineer: data.assigned_deployment_engineer,
-        sector: data.sector,
-        unit_code: data.unit_code,
-        criticality_level: data.criticality_level,
-        team_assignment: data.team_assignment,
+        target_live_date: data.target_live_date || data.go_live_date || '',
+        assigned_ops_manager: data.assigned_ops_manager || data.assigned_ops_manager_id || '',
+        assigned_deployment_engineer: data.assigned_deployment_engineer || data.assigned_deployment_engineer_id || '',
+        sector: data.sector || '',
+        unit_code: data.unit_code || '',
+        criticality_level: data.criticality_level || 'medium',
+        team_assignment: data.team_assignment || '',
         stakeholders: data.stakeholders || [],
-        notes: data.description, // Map description to notes
+        notes: data.description || data.notes || '',
+        // Contact information fields (optional, may not exist in database yet)
+        unitManagerName: data.unit_manager_name || '',
+        jobTitle: data.job_title || '',
+        unitManagerEmail: data.unit_manager_email || '',
+        unitManagerMobile: data.unit_manager_mobile || '',
+        additionalContactName: data.additional_contact_name || '',
+        additionalContactEmail: data.additional_contact_email || '',
+        // Location fields (optional, may not exist in database yet)
+        latitude: data.latitude,
+        longitude: data.longitude,
+        postcode: data.postcode,
+        region: data.region,
+        country: data.country,
         created_at: data.created_at,
         updated_at: data.updated_at
       };

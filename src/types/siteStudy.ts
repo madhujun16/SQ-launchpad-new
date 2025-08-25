@@ -36,6 +36,7 @@ export interface SiteStudyFormData {
     additionalContactName: string;
     additionalContactEmail: string;
     siteStudyDate: string;
+    suggestedGoLiveDate: string;
   };
   location: {
     address: string;
@@ -52,10 +53,12 @@ export interface SiteStudyFormData {
     counters: number;
     mealSessions: string[];
   };
-  hardware: {
+  software: {
     smartQSolutions: string[];
-    additionalHardware: string[];
     networkRequirements: string;
+  };
+  hardware: {
+    additionalHardware: string[];
     powerRequirements: string;
   };
   review: {

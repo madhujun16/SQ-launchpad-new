@@ -20,52 +20,35 @@ import {
   type EnhancedStepperStep 
 } from '@/components/ui/enhanced-stepper';
 import { 
-  Building, 
-  MapPin, 
-  Search, 
-  Plus, 
-  Filter, 
-  Calendar, 
-  Users, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Download, 
-  Copy,
-  MoreHorizontal,
-  ArrowUpDown,
-  FileText,
-  Package,
-  CheckCircle,
-  Clock,
   AlertTriangle,
-  Play,
-  Pause,
-  Settings,
-  Info,
-  BarChart3,
-  Wrench,
-  Shield,
   ArrowLeft,
+  Building,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
   ChevronRight,
-  Home,
-  User,
-  Phone,
-  Mail,
+  Clock,
+  Download,
+  Edit,
+  FileText,
+  Filter,
   Globe,
-  Wifi,
-  Zap,
-  Monitor,
-  Printer,
-  Smartphone,
-  Tv,
-  Camera,
-  Navigation,
-  CheckSquare,
+  Home,
+  Info,
+  Layout,
+  MapPin,
+  MoreHorizontal,
+  Package,
+  Plus,
+  Search,
+  Settings,
   Truck,
-  ArrowRight,
-  Upload,
-  StickyNote
+  Users,
+  Wifi,
+  X,
+  Monitor,
+  BarChart3,
+  CheckSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -102,6 +85,9 @@ import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 import { SitesService } from '@/services/sitesService';
 import { getOrganisations, type Organisation } from '@/services/organisationsService';
 import { Loader } from '@/components/ui/loader';
+import { Calendar as CalendarIcon } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 
 // Enhanced interfaces for Scoping step
 interface HardwareItem {
@@ -242,7 +228,7 @@ const SiteDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { currentRole } = useAuth();
   const navigate = useNavigate();
-  const { sites, setSites, setSelectedSite } = useSiteContext();
+  const { sites, setSites, setSelectedSite, getSiteById } = useSiteContext();
   const [site, setSite] = useState<Site | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedStep, setSelectedStep] = useState(0);
@@ -317,21 +303,23 @@ const SiteDetail = () => {
       try {
         const orgs = await getOrganisations();
         setOrganisations(orgs);
-        
-        // If we have a site, try to find and set the selected organisation
-        if (site) {
-          const org = orgs.find(o => o.name === site.organization);
-          if (org) {
-            setSelectedOrganisation(org);
-          }
-        }
       } catch (error) {
         console.error('Error loading organisations:', error);
       }
     };
     
     loadOrganisations();
-  }, [site]);
+  }, []); // Only run once on component mount
+
+  // Set selected organisation when site changes
+  useEffect(() => {
+    if (site && organisations.length > 0) {
+      const org = organisations.find(o => o.name === site.organization);
+      if (org) {
+        setSelectedOrganisation(org);
+      }
+    }
+  }, [site, organisations]);
 
   // Load site data
   useEffect(() => {
@@ -1413,7 +1401,7 @@ const SiteDetail = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
-                          Unit Manager Name <span className="text-red-500">*</span>
+                          Unit Manager Name
                         </label>
                         <Input 
                           defaultValue={site.unitManagerName || ''} 
@@ -1433,7 +1421,7 @@ const SiteDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
-                          Email <span className="text-red-500">*</span>
+                          Email
                         </label>
                         <Input 
                           type="email"
@@ -1445,7 +1433,7 @@ const SiteDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
-                          Mobile <span className="text-red-500">*</span>
+                          Mobile
                         </label>
                         <Input 
                           defaultValue={site.unitManagerMobile || ''} 
@@ -1506,19 +1494,6 @@ const SiteDetail = () => {
                       className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
                       disabled={!canEditSiteCreation()}
                     />
-                    <p className="text-sm text-gray-500 mt-1">
-                      These notes will be added to the site with your name and role
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Additional Site Details</label>
-                    <Textarea
-                      defaultValue={site.description || ''} 
-                      placeholder="Enter any additional site details..."
-                      rows={4}
-                      className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                      disabled={!canEditSiteCreation()}
-                    />
                   </div>
                 </CardContent>
               </Card>
@@ -1557,7 +1532,12 @@ const SiteDetail = () => {
                     <span>Mark as Completed</span>
                   </Button>
                 )}
-                <Button className="flex items-center space-x-2">
+                <Button 
+                  className="flex items-center space-x-2"
+                  onClick={handleExportSiteStudy}
+                  disabled={!site || site.status !== 'site_study_done'}
+                  title={site && site.status !== 'site_study_done' ? 'Export only available when Site Study is completed' : 'Export Site Study Report'}
+                >
                   <Download className="h-4 w-4" />
                   <span>Export Report</span>
                 </Button>
@@ -1582,9 +1562,105 @@ const SiteDetail = () => {
               </div>
             )}
 
-            {/* Site Study Content with Cards */}
+            {/* Site Study Content - Enhanced with All Required Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* General Information Card */}
+              {/* 🏗️ Infrastructure Assessment */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Building className="mr-2 h-5 w-5" />
+                    Infrastructure Assessment
+                  </CardTitle>
+                  <CardDescription>
+                    Site infrastructure and operational details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Location Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 border-b pb-2">Location Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Site Address</label>
+                        <Input 
+                          defaultValue={site?.description || ''}
+                          placeholder="Enter site address"
+                          className={`w-full ${!canEditField('location', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('location', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Postcode</label>
+                        <Input 
+                          defaultValue="CV3 4LF"
+                          placeholder="Enter postcode"
+                          className={`w-full ${!canEditField('postcode', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('postcode', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Region</label>
+                        <Input 
+                          defaultValue="West Midlands"
+                          placeholder="Enter region"
+                          className={`w-full ${!canEditField('region', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('region', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Country</label>
+                        <Input 
+                          defaultValue="United Kingdom"
+                          placeholder="Enter country"
+                          className={`w-full ${!canEditField('country', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('country', 1)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Infrastructure Details */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 border-b pb-2">Infrastructure Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Number of Counters</label>
+                        <Input 
+                          defaultValue="4"
+                          type="number"
+                          placeholder="Enter number of counters"
+                          className={`w-full ${!canEditField('counters', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('counters', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Floor Plan Available</label>
+                        <Select defaultValue="yes" disabled={!canEditField('floorPlan', 1)}>
+                          <SelectTrigger className={`w-full ${!canEditField('floorPlan', 1) ? "bg-gray-50" : ""}`}>
+                            <SelectValue placeholder="Select availability" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Meal Sessions</label>
+                        <Input 
+                          defaultValue="Breakfast, Lunch, Dinner"
+                          placeholder="Enter meal sessions (comma-separated)"
+                          className={`w-full ${!canEditField('mealSessions', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('mealSessions', 1)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 📊 General Information Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -1637,15 +1713,15 @@ const SiteDetail = () => {
                           disabled={!canEditField('unitManager', 1)}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Job Title</label>
-                        <Input 
-                          defaultValue="Operations Manager"
-                          placeholder="Enter job title"
-                          className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('jobTitle', 1)}
-                        />
-                      </div>
+                                              <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Job Title</label>
+                          <Input 
+                            defaultValue="Operations Manager"
+                            placeholder="Enter job title"
+                            className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
+                            disabled={!canEditField('jobTitle', 1)}
+                          />
+                        </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Mobile</label>
                         <Input 
@@ -1660,7 +1736,7 @@ const SiteDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Location & Delivery Information Card */}
+              {/* 🚚 Location & Delivery Information Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -1921,6 +1997,178 @@ const SiteDetail = () => {
                 </CardContent>
               </Card>
 
+              {/* 💻 Software Scoping - Updated with Platform Config */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="mr-2 h-5 w-5" />
+                    Software Scoping
+                  </CardTitle>
+                  <CardDescription>
+                    Define software requirements and solutions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* SmartQ Solutions */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 border-b pb-2">SmartQ Solutions</h4>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id="pos-system" 
+                            disabled={!canEditField('smartQSolutions', 1)}
+                          />
+                          <label htmlFor="pos-system" className="text-sm font-medium text-gray-700">
+                            SmartQ POS Pro - Advanced point-of-sale system with inventory management
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id="kiosk-software" 
+                            disabled={!canEditField('smartQSolutions', 1)}
+                          />
+                          <label htmlFor="kiosk-software" className="text-sm font-medium text-gray-700">
+                            Self-Service Kiosk Suite - Touch-screen kiosk software for customer interactions
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id="kitchen-display" 
+                            disabled={!canEditField('smartQSolutions', 1)}
+                          />
+                          <label htmlFor="kitchen-display" className="text-sm font-medium text-gray-700">
+                            Kitchen Display System - Real-time order management for kitchen staff
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id="inventory-management" 
+                            disabled={!canEditField('smartQSolutions', 1)}
+                          />
+                          <label htmlFor="inventory-management" className="text-sm font-medium text-gray-700">
+                            Inventory Management Pro - Comprehensive inventory tracking and forecasting
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id="payment-gateway" 
+                            disabled={!canEditField('smartQSolutions', 1)}
+                          />
+                          <label htmlFor="payment-gateway" className="text-sm font-medium text-gray-700">
+                            Payment Gateway - Secure payment processing integration
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Checkbox 
+                            id="analytics-dashboard" 
+                            disabled={!canEditField('smartQSolutions', 1)}
+                          />
+                          <label htmlFor="analytics-dashboard" className="text-sm font-medium text-gray-700">
+                            Analytics Dashboard - Business intelligence and reporting platform
+                          </label>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Selected solutions will automatically populate hardware requirements in the Scoping step
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Network Requirements */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900 border-b pb-2">Network Requirements</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Network Specifications</label>
+                        <Textarea
+                          defaultValue="High-speed internet connection required, minimum 100Mbps bandwidth, secure network with VLAN segmentation"
+                          placeholder="Describe network requirements, bandwidth needs, security considerations..."
+                          rows={3}
+                          className={`w-full ${!canEditField('networkRequirements', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('networkRequirements', 1)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 👥 Stakeholder Management - Updated with Add Button */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    Stakeholder Management
+                  </CardTitle>
+                  <CardDescription>
+                    Key stakeholders and site contacts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Stakeholders */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium text-gray-900 border-b pb-2">Key Stakeholders</h4>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex items-center space-x-2"
+                        disabled={!canEditField('stakeholders', 1)}
+                        onClick={() => {
+                          // TODO: Open stakeholder management modal
+                          console.log('Open stakeholder management');
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Add Stakeholders</span>
+                      </Button>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Primary Contact</label>
+                          <Input 
+                            defaultValue="Sarah Johnson"
+                            placeholder="Enter primary contact name"
+                            className={`w-full ${!canEditField('primaryContact', 1) ? "bg-gray-50" : ""}`}
+                            disabled={!canEditField('primaryContact', 1)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Role</label>
+                          <Input 
+                            defaultValue="Site Manager"
+                            placeholder="Enter contact role"
+                            className={`w-full ${!canEditField('contactRole', 1) ? "bg-gray-50" : ""}`}
+                            disabled={!canEditField('contactRole', 1)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Email</label>
+                          <Input 
+                            defaultValue="sarah.johnson@company.com"
+                            type="email"
+                            placeholder="Enter contact email"
+                            className={`w-full ${!canEditField('contactEmail', 1) ? "bg-gray-50" : ""}`}
+                            disabled={!canEditField('contactEmail', 1)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Phone</label>
+                          <Input 
+                            defaultValue="+44 20 7123 4567"
+                            placeholder="Enter contact phone"
+                            className={`w-full ${!canEditField('contactPhone', 1) ? "bg-gray-50" : ""}`}
+                            disabled={!canEditField('contactPhone', 1)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Readiness & Risks Card */}
               <Card className="lg:col-span-2">
                 <CardHeader>
@@ -1974,12 +2222,32 @@ const SiteDetail = () => {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">Suggested Go-Live Date</label>
-                        <Input 
-                          defaultValue="1st November 2025"
-                          placeholder="Enter suggested go-live date"
-                          className={`w-full ${!canEditField('suggestedGoLiveDate', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('suggestedGoLiveDate', 1)}
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={`w-full justify-start text-left font-normal ${!canEditField('suggestedGoLiveDate', 1) ? "bg-gray-50" : ""}`}
+                              disabled={!canEditField('suggestedGoLiveDate', 1)}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {site?.goLiveDate ? 
+                                format(new Date(site.goLiveDate), 'PPP') : 
+                                'Select date'
+                              }
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={site?.goLiveDate ? new Date(site.goLiveDate) : undefined}
+                              onSelect={(date) => {
+                                // TODO: Implement date update logic
+                                console.log('Selected date:', date);
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </div>
@@ -3147,6 +3415,79 @@ const SiteDetail = () => {
       }
     };
     return statusMap[status] || { name: status, color: 'bg-gray-100 text-gray-800 border-gray-200' };
+  };
+
+  // Add PDF export functionality for Site Study
+  const handleExportSiteStudy = async () => {
+    if (!id) return;
+    
+    try {
+      // For now, we'll create a simple text-based export
+      // In a real implementation, you'd use a library like jsPDF or html2pdf
+      const site = getSiteById(id);
+      if (!site) return;
+      
+      const exportData = {
+        siteName: site.name,
+        organization: site.organization_name || site.organization || '',
+        sector: site.sector || '',
+        location: site.description || '',
+        goLiveDate: site.goLiveDate || '',
+        status: site.status,
+        // Site Study specific data
+        infrastructure: {
+          counters: '4',
+          floorPlan: 'Yes',
+          mealSessions: 'Breakfast, Lunch, Dinner'
+        },
+        software: {
+          smartQSolutions: 'Order Management, Payment Processing, Inventory Tracking',
+          networkRequirements: 'High-speed internet connection required, minimum 100Mbps bandwidth, secure network with VLAN segmentation'
+        },
+        hardware: {
+          additionalHardware: 'POS Terminals, Receipt Printers, Barcode Scanners, Cash Drawers',
+          powerRequirements: 'Standard 230V power outlets, backup power recommended, surge protection for all equipment'
+        },
+        stakeholders: {
+          primaryContact: 'Sarah Johnson',
+          role: 'Site Manager',
+          email: 'sarah.johnson@company.com',
+          phone: '+44 20 7123 4567'
+        },
+        siteNotes: {
+          notes: 'Site is ready for deployment. All infrastructure requirements have been assessed. High-traffic location with modern facilities.',
+          additionalDetails: 'Proceed with hardware procurement and software installation. Site has excellent infrastructure and is ready for advanced SmartQ solutions.'
+        },
+        analysis: {
+          notes: 'Site assessment completed successfully. All infrastructure requirements have been evaluated and documented. Site is suitable for SmartQ deployment with minor infrastructure upgrades.',
+          recommendations: '1. Proceed with hardware procurement for POS terminals and receipt printers\n2. Schedule network infrastructure upgrade to meet bandwidth requirements\n3. Coordinate with facilities team for power outlet installation\n4. Begin stakeholder training program for SmartQ system'
+        }
+      };
+      
+      // Create a downloadable text file (placeholder for PDF)
+      const content = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `site-study-${site.name}-${format(new Date(), 'yyyy-MM-dd')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Successful",
+        description: "Site study data exported successfully!",
+      });
+    } catch (error) {
+      console.error('Error exporting site study:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export site study data. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

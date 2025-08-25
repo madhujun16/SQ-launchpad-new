@@ -41,11 +41,11 @@ import {
   Map,
   Info,
   Settings,
-  Package,
-  Search
+  Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
+import { LocationPicker } from '@/components/ui/location-picker';
 
 interface User {
   id: string;
@@ -123,7 +123,6 @@ const SiteCreation = () => {
     locationPicker: false,
     notes: false
   });
-  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Check if user has permission to create sites
   useEffect(() => {
@@ -463,7 +462,7 @@ const SiteCreation = () => {
                     <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Primary Contact</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="unit-manager-name">Unit Manager Name *</Label>
+                        <Label htmlFor="unit-manager-name">Unit Manager Name</Label>
                         <Input
                           id="unit-manager-name"
                           placeholder="e.g., Sarah Johnson"
@@ -481,7 +480,7 @@ const SiteCreation = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="unit-manager-email">Email *</Label>
+                        <Label htmlFor="unit-manager-email">Email</Label>
                         <Input
                           id="unit-manager-email"
                           type="email"
@@ -491,7 +490,7 @@ const SiteCreation = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="unit-manager-mobile">Mobile *</Label>
+                        <Label htmlFor="unit-manager-mobile">Mobile</Label>
                         <Input
                           id="unit-manager-mobile"
                           placeholder="e.g., +44 20 7123 4567"
@@ -540,7 +539,7 @@ const SiteCreation = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Location Picker</CardTitle>
+                  <CardTitle className="text-lg">Location Information</CardTitle>
                 </div>
                 {expandedSections.locationPicker ? (
                   <ChevronDown className="h-5 w-5 text-gray-500" />
@@ -558,44 +557,17 @@ const SiteCreation = () => {
                   <div>
                     <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
                     
-                    {/* Location Picker Integration */}
-                    <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
-                      <div className="text-center">
-                        <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h5 className="text-lg font-medium text-gray-900 mb-2">Location Picker</h5>
-                        <p className="text-gray-600 mb-4">
-                          Use the integrated location picker to select site coordinates and address
-                        </p>
-                        <Button
-                          onClick={() => setShowLocationModal(true)}
-                          variant="outline"
-                          className="bg-white hover:bg-gray-50"
-                        >
-                          <Search className="h-4 w-4 mr-2" />
-                          Open Location Picker
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Location Display (when coordinates are selected) */}
-                    {(formData.latitude && formData.longitude) && (
-                      <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                          <span className="font-medium text-green-800">Location Selected</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700">Coordinates:</span>
-                            <p className="text-gray-900">{formData.latitude}, {formData.longitude}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-700">Address:</span>
-                            <p className="text-gray-900">{formData.location || 'Not specified'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* Location Picker Component */}
+                    <LocationPicker
+                      onLocationSelect={(location) => {
+                        handleInputChange('latitude', location.lat);
+                        handleInputChange('longitude', location.lng);
+                        handleInputChange('location', location.address);
+                      }}
+                      initialLocation={formData.latitude && formData.longitude ? 
+                        { lat: formData.latitude, lng: formData.longitude } : undefined
+                      }
+                    />
 
                     {/* Manual Override Fields */}
                     <div className="mt-6">
@@ -703,19 +675,6 @@ const SiteCreation = () => {
                       onChange={(e) => handleInputChange('siteNotes', e.target.value)}
                       rows={4}
                     />
-                    <p className="text-sm text-gray-500 mt-1">
-                      These notes will be added to the site with your name and role
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="additional-site-details">Additional Site Details</Label>
-                    <Textarea
-                      id="additional-site-details"
-                      placeholder="Enter any additional site details..."
-                      value={formData.additionalSiteDetails}
-                      onChange={(e) => handleInputChange('additionalSiteDetails', e.target.value)}
-                      rows={4}
-                    />
                   </div>
                 </div>
               </CardContent>
@@ -745,37 +704,6 @@ const SiteCreation = () => {
           </Button>
         </div>
       </div>
-
-      {/* Location Picker Modal */}
-      {showLocationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl h-3/4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Location Picker</h3>
-              <Button
-                variant="ghost"
-                onClick={() => setShowLocationModal(false)}
-                size="sm"
-              >
-                ✕
-              </Button>
-            </div>
-            <div className="h-full">
-              {/* LocationIQ Widget will be integrated here */}
-              <div className="bg-gray-100 rounded-lg p-8 text-center">
-                <MapPin className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Location Picker</h4>
-                <p className="text-gray-600 mb-4">
-                  This will integrate with the LocationIQ widget from the stepper flow
-                </p>
-                <p className="text-sm text-gray-500">
-                  For now, please manually enter the location details above
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
