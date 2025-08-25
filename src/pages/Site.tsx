@@ -775,21 +775,22 @@ const SiteDetail = () => {
 
   // Create stepper steps based on site status
   const [stepperSteps, setStepperSteps] = useState<EnhancedStepperStep[]>([]);
+  const [manuallyUpdatedSteps, setManuallyUpdatedSteps] = useState(false);
   
   // Initialize and update stepper steps when site status changes
   useEffect(() => {
-    if (site?.status) {
-      console.log('Updating stepper steps for status:', site.status);
+    if (site?.status && !manuallyUpdatedSteps) {
+      console.log('Auto-updating stepper steps for status:', site.status);
       const baseSteps = createStepperSteps(site.status as UnifiedSiteStatus);
       const updatedSteps = baseSteps.map((step, index) => ({
         ...step,
         isExpanded: expandedSteps.has(index),
         canCollapse: true
       }));
-      console.log('New stepper steps:', updatedSteps);
+      console.log('Auto-updated stepper steps:', updatedSteps);
       setStepperSteps(updatedSteps);
     }
-  }, [site?.status, expandedSteps]);
+  }, [site?.status, expandedSteps, manuallyUpdatedSteps]);
 
   // Initialize stepper steps when component mounts
   useEffect(() => {
@@ -810,8 +811,13 @@ const SiteDetail = () => {
       const newExpandedSteps = new Set(expandedSteps);
       newExpandedSteps.add(selectedStep);
       setExpandedSteps(newExpandedSteps);
+      
+      // Reset manual update flag when user manually changes steps
+      if (manuallyUpdatedSteps) {
+        setManuallyUpdatedSteps(false);
+      }
     }
-  }, [selectedStep]);
+  }, [selectedStep, manuallyUpdatedSteps]);
 
   if (loading) {
     return (
@@ -1068,6 +1074,7 @@ const SiteDetail = () => {
           }));
           console.log('New stepper steps after completion:', newStepperSteps);
           setStepperSteps(newStepperSteps);
+          setManuallyUpdatedSteps(true); // Prevent auto-override
           
           // Move to next step
           console.log('Setting selected step to:', 1);
@@ -1114,6 +1121,7 @@ const SiteDetail = () => {
           canCollapse: true
         }));
         setStepperSteps(newStepperSteps);
+        setManuallyUpdatedSteps(true); // Prevent auto-override
         
         // Move to next step if not the last step
         if (stepIndex < 6) {
