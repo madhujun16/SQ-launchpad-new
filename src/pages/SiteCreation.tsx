@@ -26,7 +26,22 @@ import {
   ArrowLeft,
   Loader,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Mail,
+  Phone,
+  Wifi,
+  Zap,
+  Monitor,
+  Printer,
+  Smartphone,
+  Tv,
+  Camera,
+  Navigation,
+  Globe,
+  Map,
+  Info,
+  Settings,
+  Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
@@ -59,6 +74,29 @@ interface SiteData {
   deploymentEngineer: string;
   location: string;
   stakeholders: Stakeholder[];
+  // Additional fields from stepper flow
+  foodCourtName: string;
+  unitManagerName: string;
+  jobTitle: string;
+  unitManagerEmail: string;
+  unitManagerMobile: string;
+  additionalContactName: string;
+  additionalContactEmail: string;
+  siteStudyDate: string;
+  postcode: string;
+  region: string;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+  counters: number;
+  floorPlan: 'yes' | 'no' | 'pending';
+  mealSessions: string[];
+  smartQSolutions: string[];
+  additionalHardware: string[];
+  networkRequirements: string;
+  powerRequirements: string;
+  siteNotes: string;
+  additionalSiteDetails: string;
 }
 
 const SiteCreation = () => {
@@ -76,7 +114,29 @@ const SiteCreation = () => {
     operationsManager: '',
     deploymentEngineer: '',
     location: '',
-    stakeholders: []
+    stakeholders: [],
+    foodCourtName: '',
+    unitManagerName: '',
+    jobTitle: '',
+    unitManagerEmail: '',
+    unitManagerMobile: '',
+    additionalContactName: '',
+    additionalContactEmail: '',
+    siteStudyDate: new Date().toISOString().split('T')[0],
+    postcode: '',
+    region: '',
+    country: 'United Kingdom',
+    latitude: null,
+    longitude: null,
+    counters: 0,
+    floorPlan: 'pending',
+    mealSessions: [],
+    smartQSolutions: [],
+    additionalHardware: [],
+    networkRequirements: '',
+    powerRequirements: '',
+    siteNotes: '',
+    additionalSiteDetails: ''
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -86,8 +146,13 @@ const SiteCreation = () => {
   const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     general: true,
+    contact: false,
     location: false,
-    stakeholders: false
+    infrastructure: false,
+    software: false,
+    hardware: false,
+    stakeholders: false,
+    notes: false
   });
 
   // Check if user has permission to create sites
@@ -331,11 +396,9 @@ const SiteCreation = () => {
                             <SelectValue placeholder="Select organisation" />
                           </SelectTrigger>
                           <SelectContent>
-                            {organizations.map((org) => (
-                              <SelectItem key={org.id} value={org.id}>
-                                {org.name}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="selected-org">Selected Organization Name</SelectItem>
+                            <SelectItem value="compass">Compass</SelectItem>
+                            <SelectItem value="others">Others</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -425,6 +488,120 @@ const SiteCreation = () => {
             )}
           </Card>
 
+          {/* Contact Information Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('contact')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-green-600" />
+                  <CardTitle className="text-lg">Contact Information</CardTitle>
+                </div>
+                {expandedSections.contact ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Primary and additional contact details
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.contact && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Primary Contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="food-court-name">Food Court Name *</Label>
+                        <Input
+                          id="food-court-name"
+                          placeholder="e.g., JLR Whitley"
+                          value={formData.foodCourtName}
+                          onChange={(e) => handleInputChange('foodCourtName', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="unit-manager-name">Unit Manager Name *</Label>
+                        <Input
+                          id="unit-manager-name"
+                          placeholder="e.g., Sarah Johnson"
+                          value={formData.unitManagerName}
+                          onChange={(e) => handleInputChange('unitManagerName', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="job-title">Job Title</Label>
+                        <Input
+                          id="job-title"
+                          placeholder="e.g., Operations Manager"
+                          value={formData.jobTitle}
+                          onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="unit-manager-email">Email *</Label>
+                        <Input
+                          id="unit-manager-email"
+                          type="email"
+                          placeholder="e.g., sarah.johnson@company.com"
+                          value={formData.unitManagerEmail}
+                          onChange={(e) => handleInputChange('unitManagerEmail', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="unit-manager-mobile">Mobile *</Label>
+                        <Input
+                          id="unit-manager-mobile"
+                          placeholder="e.g., +44 20 7123 4567"
+                          value={formData.unitManagerMobile}
+                          onChange={(e) => handleInputChange('unitManagerMobile', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="site-study-date">Site Study Date</Label>
+                        <Input
+                          id="site-study-date"
+                          type="date"
+                          value={formData.siteStudyDate}
+                          onChange={(e) => handleInputChange('siteStudyDate', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Additional Contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="additional-contact-name">Additional Contact Name</Label>
+                        <Input
+                          id="additional-contact-name"
+                          placeholder="e.g., John Smith"
+                          value={formData.additionalContactName}
+                          onChange={(e) => handleInputChange('additionalContactName', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="additional-contact-email">Additional Contact Email</Label>
+                        <Input
+                          id="additional-contact-email"
+                          type="email"
+                          placeholder="e.g., john.smith@company.com"
+                          value={formData.additionalContactEmail}
+                          onChange={(e) => handleInputChange('additionalContactEmail', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           {/* Location Information Section */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader 
@@ -448,16 +625,239 @@ const SiteCreation = () => {
             </CardHeader>
             {expandedSections.location && (
               <CardContent className="pt-0">
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <Label htmlFor="address">Site Address *</Label>
+                        <Input
+                          id="address"
+                          placeholder="Enter site address"
+                          value={formData.location}
+                          onChange={(e) => handleInputChange('location', e.target.value)}
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Enter the complete site address
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postcode">Postcode *</Label>
+                        <Input
+                          id="postcode"
+                          placeholder="e.g., CV3 4LF"
+                          value={formData.postcode}
+                          onChange={(e) => handleInputChange('postcode', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="region">Region *</Label>
+                        <Input
+                          id="region"
+                          placeholder="e.g., West Midlands"
+                          value={formData.region}
+                          onChange={(e) => handleInputChange('region', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          placeholder="e.g., United Kingdom"
+                          value={formData.country}
+                          onChange={(e) => handleInputChange('country', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="latitude">Latitude</Label>
+                        <Input
+                          id="latitude"
+                          type="number"
+                          step="any"
+                          placeholder="e.g., 52.4862"
+                          value={formData.latitude || ''}
+                          onChange={(e) => handleInputChange('latitude', e.target.value ? parseFloat(e.target.value) : null)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="longitude">Longitude</Label>
+                        <Input
+                          id="longitude"
+                          type="number"
+                          step="any"
+                          placeholder="e.g., -1.8904"
+                          value={formData.longitude || ''}
+                          onChange={(e) => handleInputChange('longitude', e.target.value ? parseFloat(e.target.value) : null)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Infrastructure Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('infrastructure')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Building className="h-5 w-5 text-purple-600" />
+                  <CardTitle className="text-lg">Infrastructure Assessment</CardTitle>
+                </div>
+                {expandedSections.infrastructure ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Site infrastructure and operational details
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.infrastructure && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="counters">Number of Counters *</Label>
+                      <Input
+                        id="counters"
+                        type="number"
+                        placeholder="e.g., 4"
+                        value={formData.counters}
+                        onChange={(e) => handleInputChange('counters', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="floor-plan">Floor Plan Available</Label>
+                      <Select 
+                        value={formData.floorPlan} 
+                        onValueChange={(value) => handleInputChange('floorPlan', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location Details</Label>
+                    <Label htmlFor="meal-sessions">Meal Sessions</Label>
                     <Textarea
-                      id="location"
-                      placeholder="Enter detailed location information including address, coordinates, and any specific location details..."
-                      value={formData.location}
-                      onChange={(e) => handleInputChange('location', e.target.value)}
-                      rows={6}
-                      className="border-2 border-dashed border-gray-300"
+                      id="meal-sessions"
+                      placeholder="e.g., Breakfast, Lunch, Dinner"
+                      value={formData.mealSessions.join(', ')}
+                      onChange={(e) => handleInputChange('mealSessions', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Software Scoping Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('software')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-lg">Software Scoping</CardTitle>
+                </div>
+                {expandedSections.software ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Define software requirements and solutions
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.software && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="smart-q-solutions">Required SmartQ Solutions *</Label>
+                    <Textarea
+                      id="smart-q-solutions"
+                      placeholder="Enter required SmartQ solutions (comma-separated)"
+                      value={formData.smartQSolutions.join(', ')}
+                      onChange={(e) => handleInputChange('smartQSolutions', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                      rows={3}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Examples: Order Management, Payment Processing, Inventory Tracking, Analytics Dashboard
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Hardware Scoping Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('hardware')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-orange-600" />
+                  <CardTitle className="text-lg">Hardware Scoping</CardTitle>
+                </div>
+                {expandedSections.hardware ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Hardware requirements and technical specifications
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.hardware && (
+              <CardContent className="pt-0">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="additional-hardware">Additional Hardware</Label>
+                    <Textarea
+                      id="additional-hardware"
+                      placeholder="e.g., POS Terminals, Receipt Printers, Barcode Scanners"
+                      value={formData.additionalHardware.join(', ')}
+                      onChange={(e) => handleInputChange('additionalHardware', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="network-requirements">Network Requirements</Label>
+                    <Textarea
+                      id="network-requirements"
+                      placeholder="e.g., High-speed internet connection required, minimum 100Mbps bandwidth"
+                      value={formData.networkRequirements}
+                      onChange={(e) => handleInputChange('networkRequirements', e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="power-requirements">Power Requirements</Label>
+                    <Textarea
+                      id="power-requirements"
+                      placeholder="e.g., Standard 230V power outlets, backup power recommended"
+                      value={formData.powerRequirements}
+                      onChange={(e) => handleInputChange('powerRequirements', e.target.value)}
+                      rows={2}
                     />
                   </div>
                 </div>
@@ -537,11 +937,19 @@ const SiteCreation = () => {
                         </div>
                         <div className="space-y-1 md:col-span-2">
                           <Label>Organization</Label>
-                          <Input
-                            placeholder="Organization name"
-                            value={stakeholder.organization}
-                            onChange={(e) => updateStakeholder(stakeholder.id, 'organization', e.target.value)}
-                          />
+                          <Select 
+                            value={stakeholder.organization} 
+                            onValueChange={(value) => updateStakeholder(stakeholder.id, 'organization', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="selected-org">Selected Organization Name</SelectItem>
+                              <SelectItem value="compass">Compass</SelectItem>
+                              <SelectItem value="others">Others</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
@@ -554,6 +962,77 @@ const SiteCreation = () => {
               </CardContent>
             )}
           </Card>
+
+          {/* Site Notes Section */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader 
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection('notes')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-indigo-600" />
+                  <CardTitle className="text-lg">Site Notes</CardTitle>
+                </div>
+                {expandedSections.notes ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
+              <CardDescription className="text-gray-600">
+                Additional notes and site details
+              </CardDescription>
+            </CardHeader>
+            {expandedSections.notes && (
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="site-notes">Site Notes</Label>
+                    <Textarea
+                      id="site-notes"
+                      placeholder="Enter site notes and additional information..."
+                      value={formData.siteNotes}
+                      onChange={(e) => handleInputChange('siteNotes', e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="additional-site-details">Additional Site Details</Label>
+                    <Textarea
+                      id="additional-site-details"
+                      placeholder="Enter any additional site details..."
+                      value={formData.additionalSiteDetails}
+                      onChange={(e) => handleInputChange('additionalSiteDetails', e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+
+        {/* Bottom Create Site Button */}
+        <div className="mt-8 flex justify-center">
+          <Button 
+            onClick={handleSubmit} 
+            disabled={submitting}
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg text-lg"
+            size="lg"
+          >
+            {submitting ? (
+              <>
+                <Loader className="h-5 w-5 mr-2 animate-spin" />
+                Creating Site...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Create Site
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
