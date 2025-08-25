@@ -24,7 +24,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Building,
-  Calendar,
+  CalendarDays,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -87,7 +87,7 @@ import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
 import { SitesService } from '@/services/sitesService';
 import { getOrganisations, type Organisation } from '@/services/organisationsService';
 import { Loader } from '@/components/ui/loader';
-import { Calendar as CalendarIcon } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 
@@ -2087,11 +2087,12 @@ const SiteDetail = () => {
                                 className="w-full cursor-pointer bg-white"
                                 disabled={!canEditField('suggestedGoLiveDate', 1)}
                               />
-                              <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                              <CalendarDays className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                             </div>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
-                            <CalendarIcon
+                            <Calendar
+                              mode="single"
                               selected={site?.goLiveDate ? new Date(site.goLiveDate) : undefined}
                               onSelect={(date: Date | undefined) => {
                                 if (date && site) {
@@ -2113,6 +2114,7 @@ const SiteDetail = () => {
                                 }
                               }}
                               disabled={(date) => date <= new Date()}
+                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
