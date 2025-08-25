@@ -779,12 +779,14 @@ const SiteDetail = () => {
   // Initialize and update stepper steps when site status changes
   useEffect(() => {
     if (site?.status) {
+      console.log('Updating stepper steps for status:', site.status);
       const baseSteps = createStepperSteps(site.status as UnifiedSiteStatus);
       const updatedSteps = baseSteps.map((step, index) => ({
         ...step,
         isExpanded: expandedSteps.has(index),
         canCollapse: true
       }));
+      console.log('New stepper steps:', updatedSteps);
       setStepperSteps(updatedSteps);
     }
   }, [site?.status, expandedSteps]);
@@ -1056,12 +1058,23 @@ const SiteDetail = () => {
             prevSites.map(s => s.id === site.id ? updatedSite : s)
           );
           
+          // Force stepper steps to update immediately
+          console.log('Forcing stepper steps update for new status:', newStatus);
+          const newBaseSteps = createStepperSteps(newStatus as UnifiedSiteStatus);
+          const newStepperSteps = newBaseSteps.map((step, index) => ({
+            ...step,
+            isExpanded: index === 1, // Expand the next step (Site Study)
+            canCollapse: true
+          }));
+          console.log('New stepper steps after completion:', newStepperSteps);
+          setStepperSteps(newStepperSteps);
+          
           // Move to next step
+          console.log('Setting selected step to:', 1);
           setSelectedStep(1);
           
           // Show success message
           toast.success('Site Creation completed successfully!');
-          // Stepper steps will automatically update due to the useEffect dependency on site.status
           return;
         }
 
@@ -1093,6 +1106,15 @@ const SiteDetail = () => {
             prevSites.map(s => s.id === site.id ? updatedSite : s)
           );
         
+        // Force stepper steps to update immediately
+        const newBaseSteps = createStepperSteps(newStatus as UnifiedSiteStatus);
+        const newStepperSteps = newBaseSteps.map((step, index) => ({
+          ...step,
+          isExpanded: stepIndex < 6 ? index === stepIndex + 1 : index === stepIndex, // Expand the next step
+          canCollapse: true
+        }));
+        setStepperSteps(newStepperSteps);
+        
         // Move to next step if not the last step
         if (stepIndex < 6) {
           setSelectedStep(stepIndex + 1);
@@ -1101,8 +1123,6 @@ const SiteDetail = () => {
         // Show success message
         const stepNames = ['Site Creation', 'Site Study', 'Scoping', 'Approval', 'Procurement', 'Deployment', 'Go-Live'];
         toast.success(`${stepNames[stepIndex]} completed successfully!`);
-        
-        // Stepper steps will automatically update due to the useEffect dependency on site.status
         
       } catch (error) {
         console.error('Error marking step as completed:', error);
