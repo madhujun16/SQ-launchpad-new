@@ -84,7 +84,6 @@ import { LocationPicker } from '@/components/ui/location-picker';
 import { getHardwareRecommendations, getRecommendationRules } from '@/services/platformConfiguration';
 import { LayoutImageUpload } from '@/components/LayoutImageUpload';
 import { GlobalSiteNotesModal } from '@/components/GlobalSiteNotesModal';
-import { StakeholderManager } from '@/components/StakeholderManager';
 import { SitesService } from '@/services/sitesService';
 import { getOrganisations, type Organisation } from '@/services/organisationsService';
 import { Loader } from '@/components/ui/loader';
@@ -242,7 +241,6 @@ const SiteDetail = () => {
     address: string;
   } | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
-  const [showStakeholderModal, setShowStakeholderModal] = useState(false);
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [selectedOrganisation, setSelectedOrganisation] = useState<Organisation | null>(null);
 
@@ -1387,95 +1385,7 @@ const SiteDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Contact Information Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="mr-2 h-5 w-5" />
-                    Contact Information
-                  </CardTitle>
-                  <CardDescription>
-                    Primary and additional contact details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Primary Contact */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Primary Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
-                          Unit Manager Name
-                        </label>
-                        <Input 
-                          defaultValue={site.unitManagerName || ''} 
-                          placeholder="e.g., Sarah Johnson"
-                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                          disabled={!canEditSiteCreation()}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Job Title</label>
-                        <Input 
-                          defaultValue={site.jobTitle || ''} 
-                          placeholder="e.g., Operations Manager"
-                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                          disabled={!canEditSiteCreation()}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
-                          Email
-                        </label>
-                        <Input 
-                          type="email"
-                          defaultValue={site.unitManagerEmail || ''} 
-                          placeholder="e.g., sarah.johnson@company.com"
-                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                          disabled={!canEditSiteCreation()}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
-                          Mobile
-                        </label>
-                        <Input 
-                          defaultValue={site.unitManagerMobile || ''} 
-                          placeholder="e.g., +44 20 7123 4567"
-                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                          disabled={!canEditSiteCreation()}
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Additional Contact */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Additional Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Additional Contact Name</label>
-                        <Input 
-                          defaultValue={site.additionalContactName || ''} 
-                          placeholder="e.g., John Smith"
-                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                          disabled={!canEditSiteCreation()}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Additional Contact Email</label>
-                        <Input 
-                          type="email"
-                          defaultValue={site.additionalContactEmail || ''} 
-                          placeholder="e.g., john.smith@company.com"
-                          className={`w-full ${!canEditSiteCreation() ? "bg-gray-50" : ""}`}
-                          disabled={!canEditSiteCreation()}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Site Notes Card */}
               <Card>
@@ -1568,6 +1478,96 @@ const SiteDetail = () => {
 
             {/* Site Study Content - Enhanced with All Required Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 📊 Contact Information Card - Moved to top for logical flow */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    Contact Information
+                  </CardTitle>
+                  <CardDescription>
+                    Primary and additional contact details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Primary Contact */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Primary Contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Unit Manager Name
+                        </label>
+                        <Input 
+                          defaultValue="Sarah Johnson"
+                          placeholder="e.g., Sarah Johnson"
+                          className={`w-full ${!canEditField('unitManagerName', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('unitManagerName', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Job Title</label>
+                        <Input 
+                          defaultValue="Operations Manager"
+                          placeholder="e.g., Operations Manager"
+                          className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('jobTitle', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Email
+                        </label>
+                        <Input 
+                          type="email"
+                          defaultValue="sarah.johnson@company.com"
+                          placeholder="e.g., sarah.johnson@company.com"
+                          className={`w-full ${!canEditField('unitManagerEmail', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('unitManagerEmail', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Mobile
+                        </label>
+                        <Input 
+                          defaultValue="+44 7700 900123"
+                          placeholder="e.g., +44 7700 900123"
+                          className={`w-full ${!canEditField('unitManagerMobile', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('unitManagerMobile', 1)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Contact */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Additional Contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Additional Contact Name</label>
+                        <Input 
+                          defaultValue="John Smith"
+                          placeholder="e.g., John Smith"
+                          className={`w-full ${!canEditField('additionalContactName', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('additionalContactName', 1)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Additional Contact Email</label>
+                        <Input 
+                          type="email"
+                          defaultValue="john.smith@company.com"
+                          placeholder="e.g., john.smith@company.com"
+                          className={`w-full ${!canEditField('additionalContactEmail', 1) ? "bg-gray-50" : ""}`}
+                          disabled={!canEditField('additionalContactEmail', 1)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* 🏗️ Infrastructure Assessment */}
               <Card>
                 <CardHeader>
@@ -1615,7 +1615,7 @@ const SiteDetail = () => {
                         <label className="text-sm font-medium text-gray-700">Country</label>
                         <Input 
                           defaultValue="United Kingdom"
-                          placeholder="Enter country"
+                          placeholder="Enter region"
                           className={`w-full ${!canEditField('country', 1) ? "bg-gray-50" : ""}`}
                           disabled={!canEditField('country', 1)}
                         />
@@ -1657,64 +1657,6 @@ const SiteDetail = () => {
                           placeholder="Enter meal sessions (comma-separated)"
                           className={`w-full ${!canEditField('mealSessions', 1) ? "bg-gray-50" : ""}`}
                           disabled={!canEditField('mealSessions', 1)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 📊 General Information Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Building className="mr-2 h-5 w-5" />
-                    General Information
-                  </CardTitle>
-                  <CardDescription>
-                    Key contacts and operational details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Email</label>
-                        <Input 
-                          defaultValue="sarah.johnson@company.com"
-                          placeholder="Enter email address"
-                          type="email"
-                          className={`w-full ${!canEditField('email', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('email', 1)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Unit Manager</label>
-                        <Input 
-                          defaultValue="Sarah Johnson"
-                          placeholder="Enter unit manager name"
-                          className={`w-full ${!canEditField('unitManager', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('unitManager', 1)}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Job Title</label>
-                        <Input 
-                          defaultValue="Operations Manager"
-                          placeholder="Enter job title"
-                          className={`w-full ${!canEditField('jobTitle', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('jobTitle', 1)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">Mobile</label>
-                        <Input 
-                          defaultValue="+44 7700 900123"
-                          placeholder="Enter mobile number"
-                          className={`w-full ${!canEditField('mobile', 1) ? "bg-gray-50" : ""}`}
-                          disabled={!canEditField('mobile', 1)}
                         />
                       </div>
                     </div>
@@ -2080,77 +2022,7 @@ const SiteDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* 👥 Stakeholder Management - Updated with Add Button */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="mr-2 h-5 w-5" />
-                    Stakeholder Management
-                  </CardTitle>
-                  <CardDescription>
-                    Key stakeholders and site contacts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Stakeholders */}
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium text-gray-900 border-b pb-2">Key Stakeholders</h4>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex items-center space-x-2"
-                        disabled={!canEditField('stakeholders', 1)}
-                        onClick={() => setShowStakeholderModal(true)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Add Stakeholders</span>
-                      </Button>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Primary Contact</label>
-                          <Input 
-                            defaultValue="Sarah Johnson"
-                            placeholder="Enter primary contact name"
-                            className={`w-full ${!canEditField('primaryContact', 1) ? "bg-gray-50" : ""}`}
-                            disabled={!canEditField('primaryContact', 1)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Role</label>
-                          <Input 
-                            defaultValue="Site Manager"
-                            placeholder="Enter contact role"
-                            className={`w-full ${!canEditField('contactRole', 1) ? "bg-gray-50" : ""}`}
-                            disabled={!canEditField('contactRole', 1)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Email</label>
-                          <Input 
-                            defaultValue="sarah.johnson@company.com"
-                            type="email"
-                            placeholder="Enter contact email"
-                            className={`w-full ${!canEditField('contactEmail', 1) ? "bg-gray-50" : ""}`}
-                            disabled={!canEditField('contactEmail', 1)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700">Phone</label>
-                          <Input 
-                            defaultValue="+44 20 7123 4567"
-                            placeholder="Enter contact phone"
-                            className={`w-full ${!canEditField('contactPhone', 1) ? "bg-gray-50" : ""}`}
-                            disabled={!canEditField('contactPhone', 1)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
 
               {/* Readiness & Risks Card */}
               <Card className="lg:col-span-2">
@@ -3588,15 +3460,7 @@ const SiteDetail = () => {
         />
       )}
 
-      {/* Stakeholder Manager Modal */}
-      {site && (
-        <StakeholderManager
-          isOpen={showStakeholderModal}
-          onClose={() => setShowStakeholderModal(false)}
-          siteId={site.id}
-          siteName={site.name}
-        />
-      )}
+
     </div>
   );
 };
