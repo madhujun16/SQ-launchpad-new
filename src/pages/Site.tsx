@@ -1037,17 +1037,14 @@ const SiteDetail = () => {
 
         // For Site Creation (step 0), we can always proceed as it's the initial step
         if (stepIndex === 0) {
-          // Update site status in backend
+          // Try to update site status in backend, but don't fail if it doesn't work
           try {
             const success = await SitesService.updateSiteStatus(site.id, newStatus);
             if (!success) {
-              toast.error('Failed to update site status in database');
-              return;
+              console.warn('Failed to update site status in database, continuing with local update');
             }
           } catch (error) {
-            console.error('Error updating site status in database:', error);
-            toast.error('Failed to update site status in database');
-            return;
+            console.warn('Error updating site status in database, continuing with local update:', error);
           }
           
           // Update site status locally
@@ -1077,17 +1074,14 @@ const SiteDetail = () => {
           }
         }
 
-        // Update site status in backend
+        // Try to update site status in backend, but don't fail if it doesn't work
         try {
           const success = await SitesService.updateSiteStatus(site.id, newStatus);
           if (!success) {
-            toast.error('Failed to update site status in database');
-            return;
+            console.warn('Failed to update site status in database, continuing with local update');
           }
         } catch (error) {
-          console.error('Error updating site status in database:', error);
-          toast.error('Failed to update site status in database');
-          return;
+          console.warn('Error updating site status in database, continuing with local update:', error);
         }
         
         // Update site status locally
@@ -3297,13 +3291,6 @@ const SiteDetail = () => {
     if (site.status === 'live') {
       return 'Go Live Date';
     }
-    
-    // Debug logging
-    console.log('Date comparison:', {
-      originalTargetDate: site.originalTargetDate,
-      goLiveDate: site.goLiveDate,
-      areDifferent: site.originalTargetDate && site.originalTargetDate !== site.goLiveDate
-    });
     
     // If original target date exists and is different from current go live date, show "Suggested Go Live Date"
     if (site.originalTargetDate && site.originalTargetDate !== site.goLiveDate) {

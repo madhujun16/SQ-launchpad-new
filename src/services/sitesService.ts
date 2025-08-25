@@ -292,7 +292,29 @@ export class SitesService {
   // Update site status
   static async updateSiteStatus(siteId: string, status: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      console.log('Attempting to update site status:', { siteId, status });
+      
+      // First, let's check if the site exists
+      const { data: existingSite, error: fetchError } = await supabase
+        .from('sites')
+        .select('id, status')
+        .eq('id', siteId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching existing site:', fetchError);
+        return false;
+      }
+
+      if (!existingSite) {
+        console.error('Site not found:', siteId);
+        return false;
+      }
+
+      console.log('Current site status:', existingSite.status);
+
+      // Update the status
+      const { error: updateError } = await supabase
         .from('sites')
         .update({ 
           status,
@@ -300,14 +322,21 @@ export class SitesService {
         })
         .eq('id', siteId);
 
-      if (error) {
-        console.error('Error updating site status:', error);
+      if (updateError) {
+        console.error('Error updating site status:', updateError);
+        console.error('Error details:', {
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint
+        });
         return false;
       }
 
+      console.log('Site status updated successfully');
       return true;
     } catch (error) {
-      console.error('Error in updateSiteStatus:', error);
+      console.error('Exception in updateSiteStatus:', error);
       return false;
     }
   }
