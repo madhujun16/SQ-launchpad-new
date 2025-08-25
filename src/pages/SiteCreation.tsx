@@ -120,7 +120,7 @@ const SiteCreation = () => {
   const [expandedSections, setExpandedSections] = useState({
     general: true,
     contact: false,
-    location: false,
+    locationPicker: false,
     notes: false
   });
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -531,111 +531,138 @@ const SiteCreation = () => {
             )}
           </Card>
 
-          {/* Location Information Section */}
+          {/* Location Picker Section */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader 
               className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('location')}
+              onClick={() => toggleSection('locationPicker')}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Location Information</CardTitle>
+                  <CardTitle className="text-lg">Location Picker</CardTitle>
                 </div>
-                {expandedSections.location ? (
+                {expandedSections.locationPicker ? (
                   <ChevronDown className="h-5 w-5 text-gray-500" />
                 ) : (
                   <ChevronRight className="h-5 w-5 text-gray-500" />
                 )}
               </div>
               <CardDescription className="text-gray-600">
-                Site location details and coordinates
+                Select site location using the integrated location picker
               </CardDescription>
             </CardHeader>
-            {expandedSections.location && (
+            {expandedSections.locationPicker && (
               <CardContent className="pt-0">
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Details</h4>
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
                     
-                    {/* Location Picker Button */}
-                    <div className="mb-4">
-                      <Button
-                        onClick={() => setShowLocationModal(true)}
-                        variant="outline"
-                        className="w-full md:w-auto"
-                      >
-                        <Search className="h-4 w-4 mr-2" />
-                        Use Location Picker
-                      </Button>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Click to open the location picker and select site coordinates
-                      </p>
+                    {/* Location Picker Integration */}
+                    <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300">
+                      <div className="text-center">
+                        <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h5 className="text-lg font-medium text-gray-900 mb-2">Location Picker</h5>
+                        <p className="text-gray-600 mb-4">
+                          Use the integrated location picker to select site coordinates and address
+                        </p>
+                        <Button
+                          onClick={() => setShowLocationModal(true)}
+                          variant="outline"
+                          className="bg-white hover:bg-gray-50"
+                        >
+                          <Search className="h-4 w-4 mr-2" />
+                          Open Location Picker
+                        </Button>
+                      </div>
                     </div>
 
-                    {/* Manual Location Inputs */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <Label htmlFor="address">Site Address *</Label>
-                        <Input
-                          id="address"
-                          placeholder="Enter site address"
-                          value={formData.location}
-                          onChange={(e) => handleInputChange('location', e.target.value)}
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                          Enter the complete site address
-                        </p>
+                    {/* Location Display (when coordinates are selected) */}
+                    {(formData.latitude && formData.longitude) && (
+                      <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span className="font-medium text-green-800">Location Selected</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-700">Coordinates:</span>
+                            <p className="text-gray-900">{formData.latitude}, {formData.longitude}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Address:</span>
+                            <p className="text-gray-900">{formData.location || 'Not specified'}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="postcode">Postcode *</Label>
-                        <Input
-                          id="postcode"
-                          placeholder="e.g., CV3 4LF"
-                          value={formData.postcode}
-                          onChange={(e) => handleInputChange('postcode', e.target.value)}
-                        />
+                    )}
+
+                    {/* Manual Override Fields */}
+                    <div className="mt-6">
+                      <h5 className="font-medium text-gray-900 mb-3">Manual Override (Optional)</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Site Address</Label>
+                          <Input
+                            id="address"
+                            placeholder="Enter site address"
+                            value={formData.location}
+                            onChange={(e) => handleInputChange('location', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="postcode">Postcode</Label>
+                          <Input
+                            id="postcode"
+                            placeholder="e.g., CV3 4LF"
+                            value={formData.postcode}
+                            onChange={(e) => handleInputChange('postcode', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="region">Region</Label>
+                          <Input
+                            id="region"
+                            placeholder="e.g., West Midlands"
+                            value={formData.region}
+                            onChange={(e) => handleInputChange('region', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="country">Country</Label>
+                          <Input
+                            id="country"
+                            placeholder="e.g., United Kingdom"
+                            value={formData.country}
+                            onChange={(e) => handleInputChange('country', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="latitude">Latitude</Label>
+                          <Input
+                            id="latitude"
+                            type="number"
+                            step="any"
+                            placeholder="e.g., 52.4862"
+                            value={formData.latitude || ''}
+                            onChange={(e) => handleInputChange('latitude', e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="longitude">Longitude</Label>
+                          <Input
+                            id="longitude"
+                            type="number"
+                            step="any"
+                            placeholder="e.g., -1.8904"
+                            value={formData.longitude || ''}
+                            onChange={(e) => handleInputChange('longitude', e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="region">Region *</Label>
-                        <Input
-                          id="region"
-                          placeholder="e.g., West Midlands"
-                          value={formData.region}
-                          onChange={(e) => handleInputChange('region', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input
-                          id="country"
-                          placeholder="e.g., United Kingdom"
-                          value={formData.country}
-                          onChange={(e) => handleInputChange('country', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="latitude">Latitude</Label>
-                        <Input
-                          id="latitude"
-                          type="number"
-                          step="any"
-                          placeholder="e.g., 52.4862"
-                          value={formData.latitude || ''}
-                          onChange={(e) => handleInputChange('latitude', e.target.value ? parseFloat(e.target.value) : null)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="longitude">Longitude</Label>
-                        <Input
-                          id="longitude"
-                          type="number"
-                          step="any"
-                          placeholder="e.g., -1.8904"
-                          value={formData.longitude || ''}
-                          onChange={(e) => handleInputChange('longitude', e.target.value ? parseFloat(e.target.value) : null)}
-                        />
-                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Use these fields to manually adjust location details if needed
+                      </p>
                     </div>
                   </div>
                 </div>
