@@ -183,9 +183,20 @@ const MobileNavigation = React.memo(({
   
   if (!isOpen) return null;
   
+  const handleNavigationClick = (path: string) => {
+    console.log('🔍 Navigation clicked:', path);
+    onClose();
+  };
+
+  const handleRoleSwitchClick = (role: UserRole) => {
+    console.log('🔍 Role switch clicked:', role);
+    onRoleSwitch(role);
+    onClose();
+  };
+  
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-80 bg-white">
+      <SheetContent side="left" className="w-80 bg-white z-[9999]">
         <SheetHeader className="border-b pb-4">
           <SheetTitle className="text-lg font-semibold text-gray-900">Navigation</SheetTitle>
           <SheetDescription className="text-sm text-gray-600">Access your Launchpad features</SheetDescription>
@@ -196,8 +207,8 @@ const MobileNavigation = React.memo(({
             <Link
               key={item.path}
               to={item.path}
-              onClick={onClose}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              onClick={() => handleNavigationClick(item.path)}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 currentPath === item.path
                   ? 'bg-gray-100 text-gray-900 border border-gray-200'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -212,8 +223,8 @@ const MobileNavigation = React.memo(({
           {currentRole === 'admin' && (
             <Link
               to="/platform-configuration"
-              onClick={onClose}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              onClick={() => handleNavigationClick('/platform-configuration')}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 currentPath === '/platform-configuration'
                   ? 'bg-gray-100 text-gray-900 border border-gray-200'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -227,8 +238,8 @@ const MobileNavigation = React.memo(({
           {/* Enhanced Stepper Demo Link */}
           <Link
             to="/demo/enhanced-stepper"
-            onClick={onClose}
-            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            onClick={() => handleNavigationClick('/demo/enhanced-stepper')}
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
               currentPath === '/demo/enhanced-stepper'
                 ? 'bg-gray-100 text-gray-900 border border-gray-200'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
@@ -255,11 +266,8 @@ const MobileNavigation = React.memo(({
                 {availableRoles.map((role) => (
                   <button
                     key={role}
-                    onClick={() => {
-                      onRoleSwitch(role);
-                      onClose();
-                    }}
-                    className={`w-full text-left px-2 py-1 rounded text-sm ${
+                    onClick={() => handleRoleSwitchClick(role)}
+                    className={`w-full text-left px-2 py-1 rounded text-sm cursor-pointer ${
                       role === currentRole
                         ? 'bg-gray-100 text-gray-900 border border-gray-200'
                         : 'text-gray-700 hover:bg-gray-100'
@@ -341,8 +349,13 @@ const Header = () => {
   }, []);
 
   const handleRoleSwitch = useCallback((role: UserRole) => {
-    switchRole(role);
-    setIsMobileMenuOpen(false);
+    console.log('🔍 Role switch called with role:', role);
+    try {
+      switchRole(role);
+      setIsMobileMenuOpen(false);
+    } catch (error) {
+      console.error('🔍 Error switching role:', error);
+    }
   }, [switchRole]);
 
   const handleSignOut = useCallback(async () => {
