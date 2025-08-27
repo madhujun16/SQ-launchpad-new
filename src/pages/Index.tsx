@@ -47,16 +47,17 @@ import Header from '@/components/Header';
 import DashboardStats from "@/components/DashboardStats";
 import WorkflowCard from "@/components/WorkflowCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { canAccessPage } from '@/lib/roles';
 
 // Lazy load dashboard components
-const SimpleAdminDashboard = lazy(() => import('@/components/dashboards/SimpleAdminDashboard'));
+
 const SimpleOpsManagerDashboard = lazy(() => import('@/components/dashboards/SimpleOpsManagerDashboard'));
 const SimpleDeploymentEngineerDashboard = lazy(() => import('@/components/dashboards/SimpleDeploymentEngineerDashboard'));
 
 const Index = () => {
   const { currentRole } = useAuth();
+  const navigate = useNavigate();
   const roleConfig = currentRole ? getRoleConfig(currentRole) : null;
 
   // Render role-specific dashboard
@@ -64,16 +65,66 @@ const Index = () => {
     switch (currentRole) {
       case 'admin':
         return (
-          <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center bg-white/90">
-              <div className="text-center">
-                <Loader size="lg" />
-                <p className="text-gray-600 mt-4">Loading admin dashboard...</p>
+          <div className="min-h-screen bg-white/90 p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+                <p className="text-muted-foreground">
+                  Welcome to the admin dashboard. Use the navigation menu to access different sections.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="p-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Users className="h-5 w-5" />
+                      <span>User Management</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Manage user accounts, roles, and permissions
+                    </p>
+                    <Button className="mt-4" onClick={() => navigate('/platform-configuration')}>
+                      Go to Platform Configuration
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card className="p-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Building className="h-5 w-5" />
+                      <span>Site Management</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      View and manage cafeteria sites
+                    </p>
+                    <Button className="mt-4" onClick={() => navigate('/sites')}>
+                      Go to Sites
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card className="p-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Package className="h-5 w-5" />
+                      <span>Asset Management</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Manage hardware inventory and licenses
+                    </p>
+                    <Button className="mt-4" onClick={() => navigate('/assets')}>
+                      Go to Assets
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
-          }>
-            <SimpleAdminDashboard />
-          </Suspense>
+          </div>
         );
       case 'ops_manager':
         return (

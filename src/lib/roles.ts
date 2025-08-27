@@ -58,7 +58,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/assets/inventory',
       '/assets/license-management',
       '/platform-configuration',
-      '/platform-configuration/admin',
+  
       // Note: Integrations and Forecast routes removed - not integrated into main navigation
       '/admin', 
       '/site-study', 

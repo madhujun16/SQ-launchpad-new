@@ -80,13 +80,21 @@ const Sites = () => {
   useEffect(() => {
     const fetchSites = async () => {
       try {
+        console.log('🔍 Starting to fetch sites...');
         setLoading(true);
         const sitesData = await SitesService.getAllSites();
-        console.log('Fetched sites from database:', sitesData);
+        console.log('🔍 Fetched sites from database:', sitesData);
+        console.log('🔍 Number of sites:', sitesData.length);
+        console.log('🔍 Sites data structure:', sitesData);
+        
         setSites(sitesData);
         setFilteredSites(sitesData);
+        
+        if (sitesData.length === 0) {
+          console.log('⚠️ No sites returned from service');
+        }
       } catch (error) {
-        console.error('Error fetching sites:', error);
+        console.error('❌ Error fetching sites:', error);
       } finally {
         setLoading(false);
       }
@@ -97,6 +105,7 @@ const Sites = () => {
 
   // Filter sites based on search term and status
   useEffect(() => {
+    console.log('🔍 Filtering sites. Total sites:', sites.length);
     let filtered = sites;
 
     // Apply search filter
@@ -424,8 +433,20 @@ const Sites = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSites.map((site) => (
-                    <TableRow key={site.id}>
+              {filteredSites.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <div className="flex flex-col items-center space-y-2">
+                      <Building className="h-8 w-8 text-gray-400" />
+                      <p>No sites found</p>
+                      <p className="text-sm">Total sites in state: {sites.length}</p>
+                      <p className="text-sm">Filtered sites: {filteredSites.length}</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredSites.map((site) => (
+                  <TableRow key={site.id}>
                   <TableCell className="font-medium">
                     {site.name}
                   </TableCell>
@@ -532,7 +553,8 @@ const Sites = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-              ))}
+                  ))
+                )}
             </TableBody>
           </Table>
           </CardContent>

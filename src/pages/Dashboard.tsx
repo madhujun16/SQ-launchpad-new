@@ -177,9 +177,14 @@ const WidgetsGrid = ({ widgets }: { widgets: DashboardWidget[] }) => {
 
 // Main Dashboard Component
 const Dashboard = () => {
+  console.log('🔧 Dashboard: Component rendering');
+  
+  // Call useAuth hook at the top level (Rules of Hooks requirement)
   const { currentRole, profile, loading: authLoading } = useAuth();
   const { getTabAccess } = useRoleAccess();
   const navigate = useNavigate();
+  
+  console.log('🔧 Dashboard: useAuth result:', { currentRole, profile, authLoading });
   
   // State
   const [allRequests, setAllRequests] = useState<RequestRow[]>([]);
@@ -266,7 +271,7 @@ const Dashboard = () => {
     setSiteCosts(costsSeed);
   }, []);
 
-  // Add error handling for role configuration
+  // Enhanced error handling for role configuration
   let roleConfig;
   try {
     roleConfig = getRoleConfig(currentRole || 'admin');
@@ -275,12 +280,15 @@ const Dashboard = () => {
     roleConfig = getRoleConfig('admin'); // Fallback to admin
   }
 
-  // Loading states
+  // Enhanced loading states with better error handling
   if (authLoading) {
+    console.log('Dashboard: Auth still loading, showing loader');
     return <DashboardLoading />;
   }
 
+  // Check if auth context is properly initialized
   if (!profile || !currentRole) {
+    console.log('Dashboard: Auth context not ready, profile:', profile, 'currentRole:', currentRole);
     return <DashboardLoading />;
   }
 

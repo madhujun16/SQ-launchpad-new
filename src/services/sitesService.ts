@@ -61,126 +61,167 @@ export interface CreateSiteData {
 }
 
 export class SitesService {
-  // Get all sites with organization information
+  // Get all sites with user assignments
   static async getAllSites(): Promise<Site[]> {
     try {
+      console.log('🔍 Fetching sites from database...');
+      
+      // Check if we have an active session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('🔍 Session check:', { session: !!session, sessionError });
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+      }
+      
+      // First, let's try a simple query to see what's in the sites table
+      console.log('🔍 Making Supabase query...');
+      
+      // Test 1: Try to get just the count first
+      const { count, error: countError } = await supabase
+        .from('sites')
+        .select('*', { count: 'exact', head: true });
+      
+      console.log('🔍 Count test:', { count, countError });
+      
+      // Test 2: Try to get just one record
+      const { data: singleRecord, error: singleError } = await supabase
+        .from('sites')
+        .select('id, name')
+        .limit(1);
+      
+      console.log('🔍 Single record test:', { singleRecord, singleError });
+      
+      // Test 3: Full query
       const { data, error } = await supabase
         .from('sites')
-        .select(`
-          *,
-          organizations (
-            id,
-            name,
-            sector,
-            logo_url,
-            description
-          )
-        `)
+        .select('*')
         .order('name');
+      
+      console.log('🔍 Full query result:', { data: data?.length || 0, error });
 
       if (error) {
-        console.error('Error fetching sites:', error);
+        console.error('❌ Error fetching sites:', error);
         return [];
       }
 
-      // Transform the data to match our Site interface
-      return data?.map((site: any) => ({
-        id: site.id,
-        name: site.name,
-        organization_id: site.organization_id || site.organizations?.id || '',
-        organization_name: site.organization_name || site.organizations?.name || '',
-        organization_logo: site.organizations?.logo_url || null,
-        location: site.location || site.address || '',
-        status: site.status,
-        target_live_date: site.target_live_date || site.go_live_date || '',
-        assigned_ops_manager: site.assigned_ops_manager || site.assigned_ops_manager_id || '',
-        assigned_deployment_engineer: site.assigned_deployment_engineer || site.assigned_deployment_engineer_id || '',
-        sector: site.sector || '',
-        unit_code: site.unit_code || '',
-        criticality_level: site.criticality_level || 'medium',
-        team_assignment: site.team_assignment || '',
-        stakeholders: site.stakeholders || [],
-        notes: site.description || site.notes || '',
-        // Contact information fields (optional, may not exist in database yet)
-        unitManagerName: site.unit_manager_name || '',
-        jobTitle: site.job_title || '',
-        unitManagerEmail: site.unit_manager_email || '',
-        unitManagerMobile: site.unit_manager_mobile || '',
-        additionalContactName: site.additional_contact_name || '',
-        additionalContactEmail: site.additional_contact_email || '',
-        // Location fields (optional, may not exist in database yet)
-        latitude: site.latitude,
-        longitude: site.longitude,
-        postcode: site.postcode,
-        region: site.region,
-        country: site.country,
-        created_at: site.created_at,
-        updated_at: site.updated_at
-      })) || [];
+      console.log('🔍 Raw sites data:', data);
+      console.log('🔍 Number of sites found:', data?.length || 0);
+
+      if (!data || data.length === 0) {
+        console.log('⚠️ No sites found in database');
+        return [];
+      }
+
+             // Transform the data to match our Site interface
+       const transformedSites = data.map((site: any) => {
+         console.log('🔍 Processing site:', site);
+         
+         const transformedSite: any = {
+           id: site.id,
+           name: site.name || 'Unnamed Site',
+           organization_id: site.organization_id || '',
+           organization_name: site.organization_name || 'Organization',
+           organization_logo: site.organization_logo || null,
+           location: site.location || site.address || 'Location not specified',
+           status: site.status || 'Unknown',
+           target_live_date: site.target_live_date || site.target_go_live || '',
+           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
+           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
+           sector: site.sector || '',
+           unit_code: site.unit_code || site.food_court_unit || '',
+           criticality_level: site.criticality_level || 'medium',
+           team_assignment: site.team_assignment || '',
+           stakeholders: site.stakeholders || [],
+           notes: site.description || '',
+           // Contact information fields
+           unitManagerName: site.unit_manager_name || '',
+           jobTitle: site.job_title || '',
+           unitManagerEmail: site.unit_manager_email || '',
+           unitManagerMobile: site.unit_manager_mobile || '',
+           additionalContactName: site.additional_contact_name || '',
+           additionalContactEmail: site.additional_contact_email || '',
+           // Location fields
+           latitude: site.latitude || null,
+           longitude: site.longitude || null,
+           postcode: site.postcode || '',
+           region: site.region || '',
+           country: site.country || '',
+           created_at: site.created_at || new Date().toISOString(),
+           updated_at: site.updated_at || new Date().toISOString()
+         };
+         
+         return transformedSite;
+       });
+
+      console.log('✅ Transformed sites:', transformedSites);
+      return transformedSites;
     } catch (error) {
-      console.error('Error in getAllSites:', error);
+      console.error('❌ Error in getAllSites:', error);
       return [];
     }
   }
 
-  // Get site by ID
+  // Get site by ID with user assignments
   static async getSiteById(siteId: string): Promise<Site | null> {
     try {
+      console.log('🔍 Fetching site by ID:', siteId);
+      
       const { data, error } = await supabase
         .from('sites')
-        .select(`
-          *,
-          organizations (
-            id,
-            name,
-            sector,
-            logo_url,
-            description
-          )
-        `)
+        .select('*')
         .eq('id', siteId)
         .single();
 
       if (error) {
-        console.error('Error fetching site:', error);
+        console.error('❌ Error fetching site:', error);
         return null;
       }
 
-      return {
+      if (!data) {
+        console.log('⚠️ No site found with ID:', siteId);
+        return null;
+      }
+
+      console.log('🔍 Raw site data:', data);
+
+      const transformedSite: any = {
         id: data.id,
-        name: data.name,
-        organization_id: data.organization_id || data.organizations?.id || '',
-        organization_name: data.organization_name || data.organizations?.name || '',
-        organization_logo: data.organizations?.logo_url || null,
-        location: data.location || data.address || '',
-        status: data.status,
-        target_live_date: data.target_live_date || data.go_live_date || '',
-        assigned_ops_manager: data.assigned_ops_manager || data.assigned_ops_manager_id || '',
-        assigned_deployment_engineer: data.assigned_deployment_engineer || data.assigned_deployment_engineer_id || '',
+        name: data.name || 'Unnamed Site',
+        organization_id: data.organization_id || '',
+        organization_name: data.organization_name || 'Organization',
+        organization_logo: data.organization_logo || null,
+        location: data.location || 'Location not specified',
+        status: data.status || 'Unknown',
+        target_live_date: data.target_live_date || '',
+        assigned_ops_manager: data.assigned_ops_manager || 'Unassigned',
+        assigned_deployment_engineer: data.assigned_deployment_engineer || 'Unassigned',
         sector: data.sector || '',
-        unit_code: data.unit_code || '',
+        unit_code: data.unit_code || data.food_court_unit || '',
         criticality_level: data.criticality_level || 'medium',
         team_assignment: data.team_assignment || '',
         stakeholders: data.stakeholders || [],
-        notes: data.description || data.notes || '',
-        // Contact information fields (optional, may not exist in database yet)
+        notes: data.description || '',
+        // Contact information fields
         unitManagerName: data.unit_manager_name || '',
         jobTitle: data.job_title || '',
         unitManagerEmail: data.unit_manager_email || '',
         unitManagerMobile: data.unit_manager_mobile || '',
         additionalContactName: data.additional_contact_name || '',
         additionalContactEmail: data.additional_contact_email || '',
-        // Location fields (optional, may not exist in database yet)
-        latitude: data.latitude,
-        longitude: data.longitude,
-        postcode: data.postcode,
-        region: data.region,
-        country: data.country,
-        created_at: data.created_at,
-        updated_at: data.updated_at
+        // Location fields
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        postcode: data.postcode || '',
+        region: data.region || '',
+        country: data.country || '',
+        created_at: data.created_at || new Date().toISOString(),
+        updated_at: data.updated_at || new Date().toISOString()
       };
+      
+      return transformedSite;
     } catch (error) {
-      console.error('Error in getSiteById:', error);
+      console.error('❌ Error in getSiteById:', error);
       return null;
     }
   }
@@ -401,6 +442,86 @@ export class SitesService {
       return true;
     } catch (error) {
       console.error('Error in deleteSite:', error);
+      return false;
+    }
+  }
+
+  // Get all users for assignment purposes
+  static async getAllUsers(): Promise<Array<{ user_id: string; full_name: string; email: string; role: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          user_id,
+          full_name,
+          email,
+          user_roles (
+            role
+          )
+        `)
+        .order('full_name');
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+
+      // Transform the data to flatten the roles
+      return data?.map((user: any) => ({
+        user_id: user.user_id,
+        full_name: user.full_name || user.email,
+        email: user.email,
+        role: user.user_roles?.[0]?.role || 'user'
+      })) || [];
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      return [];
+    }
+  }
+
+  // Assign users to a site
+  static async assignUsersToSite(
+    siteId: string, 
+    opsManagerId: string | null, 
+    deploymentEngineerId: string | null
+  ): Promise<boolean> {
+    try {
+      // First, update the site table
+      const { error: siteError } = await supabase
+        .from('sites')
+        .update({
+          assigned_ops_manager_id: opsManagerId,
+          assigned_deployment_engineer_id: deploymentEngineerId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', siteId);
+
+      if (siteError) {
+        console.error('Error updating site assignments:', siteError);
+        return false;
+      }
+
+      // Then, update or insert into site_assignments table
+      const { error: assignmentError } = await supabase
+        .from('site_assignments')
+        .upsert({
+          site_id: siteId,
+          ops_manager_id: opsManagerId,
+          deployment_engineer_id: deploymentEngineerId,
+          assigned_by: 'system', // This should be the current user's ID in a real app
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'site_id'
+        });
+
+      if (assignmentError) {
+        console.error('Error updating site assignments:', assignmentError);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in assignUsersToSite:', error);
       return false;
     }
   }

@@ -67,7 +67,7 @@ export const useRoleAccess = () => {
         return { canAccess: false, accessLevel: 'none', message: 'Access denied' };
 
       case '/platform-configuration':
-      case '/platform-configuration/admin':
+      
       case '/admin':
         if (currentRole === 'admin') {
           return { canAccess: true, accessLevel: 'full' };

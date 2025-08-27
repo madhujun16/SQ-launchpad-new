@@ -4,22 +4,27 @@ import { useAuth } from '../hooks/useAuth';
 import { Loader } from './ui/loader';
 
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const authData = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  console.log('🔧 AuthGuard: Component rendering');
   
-  // Destructure with safe defaults
-  const { user, loading, currentRole } = authData || {};
-  
-  // Additional safety check for context availability
-  if (!authData || typeof authData.loading === 'undefined') {
-    console.log('🔧 AuthGuard: Context not ready, showing loader');
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
-        <Loader size="lg" />
-      </div>
-    );
-  }
+  try {
+    const authData = useAuth();
+    console.log('🔧 AuthGuard: useAuth result:', authData);
+    
+    const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Destructure with safe defaults
+    const { user, loading, currentRole } = authData || {};
+    
+    // Additional safety check for context availability
+    if (!authData || typeof authData.loading === 'undefined') {
+      console.log('🔧 AuthGuard: Context not ready, showing loader');
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white/90">
+          <Loader size="lg" />
+        </div>
+      );
+    }
 
   useEffect(() => {
     if (!loading && !user && location.pathname !== '/auth') {
@@ -50,7 +55,18 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return null;
   }
 
-  return <>{children}</>;
+    return <>{children}</>;
+  } catch (error) {
+    console.error('🔧 AuthGuard: Error in component:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white/90">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">Authentication Error</div>
+          <div className="text-gray-600">Please refresh the page</div>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default AuthGuard;

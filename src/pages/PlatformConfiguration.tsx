@@ -60,7 +60,9 @@ interface Organization {
   name: string;
   description: string;
   sector: string;
-  created_at: string;
+  unit_code: string;
+  created_by: string;
+  created_on: string;
   updated_at: string;
 }
 
@@ -180,6 +182,10 @@ export default function PlatformConfiguration() {
     ops_manager_count: 0,
     deployment_engineer_count: 0
   });
+
+  // New state for organization search
+  const [orgSearchTerm, setOrgSearchTerm] = useState('');
+  const [orgSectorFilter, setOrgSectorFilter] = useState('all');
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -341,7 +347,9 @@ export default function PlatformConfiguration() {
         name: 'Chartwells',
         description: 'Leading food service provider for education sector',
         sector: 'Education',
-        created_at: new Date().toISOString(),
+        unit_code: 'CHT',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -349,7 +357,9 @@ export default function PlatformConfiguration() {
         name: 'HSBC',
         description: 'Global banking and financial services',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'HSB',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -357,7 +367,9 @@ export default function PlatformConfiguration() {
         name: 'Levy',
         description: 'Premium sports and entertainment hospitality',
         sector: 'Sports & Leisure',
-        created_at: new Date().toISOString(),
+        unit_code: 'LEV',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -365,7 +377,9 @@ export default function PlatformConfiguration() {
         name: 'B&I',
         description: 'Business and Industry food services',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'BI',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -373,7 +387,9 @@ export default function PlatformConfiguration() {
         name: 'Compass One',
         description: 'Specialized food service solutions',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'COM',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -381,7 +397,9 @@ export default function PlatformConfiguration() {
         name: 'Minley Station',
         description: 'Defence sector food services',
         sector: 'Defence',
-        created_at: new Date().toISOString(),
+        unit_code: 'MIN',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -389,7 +407,9 @@ export default function PlatformConfiguration() {
         name: 'Peabody',
         description: 'Housing and community services',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'PEA',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -397,7 +417,9 @@ export default function PlatformConfiguration() {
         name: 'RA',
         description: 'Restaurant Associates - premium dining',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'RA',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -405,7 +427,9 @@ export default function PlatformConfiguration() {
         name: 'SSE',
         description: 'Energy and utilities sector',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'SSE',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -413,7 +437,9 @@ export default function PlatformConfiguration() {
         name: 'JLR - Whitley',
         description: 'Jaguar Land Rover manufacturing',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'JLR',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -421,7 +447,9 @@ export default function PlatformConfiguration() {
         name: 'Baxter Health',
         description: 'Healthcare and medical services',
         sector: 'Healthcare & Senior Living',
-        created_at: new Date().toISOString(),
+        unit_code: 'BXT',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -429,7 +457,9 @@ export default function PlatformConfiguration() {
         name: 'NEXT',
         description: 'Retail and fashion sector',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'NEXT',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       {
@@ -437,7 +467,9 @@ export default function PlatformConfiguration() {
         name: 'Porsche',
         description: 'Automotive luxury brand',
         sector: 'Business & Industry',
-        created_at: new Date().toISOString(),
+        unit_code: 'POR',
+        created_by: 'admin',
+        created_on: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
     ];
@@ -472,29 +504,31 @@ export default function PlatformConfiguration() {
     try {
       setLoading(true);
       
-      // Load users with their actual roles using the new secure function
+      // Load users with their actual roles using direct query to bypass PostgREST schema cache issue
       try {
-      const { data: usersData, error: usersError } = await supabase.rpc('list_safe_profiles');
-      
-      if (usersError) {
-        console.error('Error loading users:', usersError);
-        toast.error('Failed to load users');
-          // Set empty array as fallback
+        const { data: usersData, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, user_id, email, full_name, created_at, updated_at')
+          .order('created_at', { ascending: false });
+        
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+          toast.error('Failed to load users');
           setUsers([]);
-      } else if (usersData && usersData.length > 0) {
-        // Fetch actual roles for each user from user_roles table
-        const usersWithRoles = await Promise.all(
-          usersData.map(async (user) => {
+        } else if (usersData && usersData.length > 0) {
+          // Fetch actual roles for each user from user_roles table
+          const usersWithRoles = await Promise.all(
+            usersData.map(async (user) => {
               try {
-            const { data: rolesData } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', user.user_id);
-            
-            return {
-          ...user,
-              user_roles: rolesData?.map(r => ({ role: r.role })) || []
-            };
+                const { data: rolesData } = await supabase
+                  .from('user_roles')
+                  .select('role')
+                  .eq('user_id', user.user_id);
+                
+                return {
+                  ...user,
+                  user_roles: rolesData?.map(r => ({ role: r.role })) || []
+                };
               } catch (roleError) {
                 console.error('Error fetching roles for user:', user.email, roleError);
                 return {
@@ -502,12 +536,12 @@ export default function PlatformConfiguration() {
                   user_roles: []
                 };
               }
-          })
-        );
-        
-        setUsers(usersWithRoles);
-      } else {
-        // No users found, show empty state
+            })
+          );
+          
+          setUsers(usersWithRoles);
+        } else {
+          // No users found, show empty state
           setUsers([]);
         }
       } catch (usersException) {
@@ -552,7 +586,18 @@ export default function PlatformConfiguration() {
           setOrganizations([]);
       } else {
           if (orgsData && orgsData.length > 0) {
-            setOrganizations(orgsData);
+            // Map database data to Organization interface with defaults for new fields
+            const mappedOrgs = orgsData.map((org: any) => ({
+              id: org.id,
+              name: org.name,
+              description: org.description || '',
+              sector: org.sector || '',
+              unit_code: org.unit_code || '',
+              created_by: org.created_by || 'system',
+              created_on: org.created_on || org.created_at || new Date().toISOString(),
+              updated_at: org.updated_at || new Date().toISOString()
+            }));
+            setOrganizations(mappedOrgs);
           } else {
             // No organizations found, seed defaults from Excel data
             await seedDefaultOrganizations();
@@ -946,10 +991,11 @@ export default function PlatformConfiguration() {
     }
   };
 
-  // User management functions
-  const addUser = () => {
-    navigate('/platform-configuration/admin');
-  };
+      // User management functions
+    const addUser = () => {
+      // This function is now handled in PlatformConfigurationEnhanced.tsx
+      console.log('Add user functionality moved to enhanced version');
+    };
 
   const editUser = (user: User) => {
     setEditingUser(user);
@@ -1048,7 +1094,9 @@ export default function PlatformConfiguration() {
       name: '',
       description: '',
       sector: '',
-      created_at: new Date().toISOString(),
+      unit_code: '',
+      created_by: '',
+      created_on: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     setEditingOrganization(newOrg);
@@ -1088,6 +1136,9 @@ export default function PlatformConfiguration() {
               name: editingOrganization.name,
               description: editingOrganization.description,
               sector: editingOrganization.sector,
+              unit_code: editingOrganization.unit_code,
+              created_by: editingOrganization.created_by,
+              created_on: editingOrganization.created_on,
               updated_at: new Date().toISOString()
             })
             .eq('id', editingOrganization.id);
@@ -1107,7 +1158,10 @@ export default function PlatformConfiguration() {
             .insert([{
               name: editingOrganization.name,
               description: editingOrganization.description,
-              sector: editingOrganization.sector
+              sector: editingOrganization.sector,
+              unit_code: editingOrganization.unit_code,
+              created_by: editingOrganization.created_by,
+              created_on: editingOrganization.created_on
             }])
             .select()
             .single();
@@ -1123,7 +1177,9 @@ export default function PlatformConfiguration() {
             name: data.name,
             description: data.description,
             sector: data.sector || '',
-            created_at: data.created_at,
+            unit_code: data.unit_code || '',
+            created_by: data.created_by || '',
+            created_on: data.created_on || '',
             updated_at: data.updated_at
           };
           
@@ -1317,10 +1373,6 @@ export default function PlatformConfiguration() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">User Accounts ({users.length})</h3>
-                    <Button onClick={addUser}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add User
-                    </Button>
                   </div>
                   
                   {/* User Statistics */}
@@ -1392,6 +1444,10 @@ export default function PlatformConfiguration() {
                         <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button onClick={addUser} className="ml-auto">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add User
+                    </Button>
                   </div>
 
                   {/* Users Table */}
@@ -2028,6 +2084,33 @@ export default function PlatformConfiguration() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="orgUnitCode">Unit Code</Label>
+                <Input
+                  value={editingOrganization.unit_code}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, unit_code: e.target.value})}
+                  placeholder="Enter unit code"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="orgCreatedBy">Created By</Label>
+                <Input
+                  value={editingOrganization.created_by}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, created_by: e.target.value})}
+                  placeholder="Enter creator's name"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="orgCreatedOn">Created On</Label>
+                <Input
+                  value={editingOrganization.created_on}
+                  onChange={(e) => setEditingOrganization({...editingOrganization, created_on: e.target.value})}
+                  placeholder="Enter creation date"
+                />
               </div>
               
               <div className="flex space-x-2">

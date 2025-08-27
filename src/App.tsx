@@ -21,12 +21,11 @@ const Sites = lazy(() => import("./pages/Sites"));
 const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"));
 const Deployment = lazy(() => import("./pages/Deployment"));
 const Assets = lazy(() => import("./pages/Assets"));
-const PlatformConfiguration = lazy(() => import("./pages/PlatformConfiguration"));
-const Admin = lazy(() => import("./pages/Admin"));
+const PlatformConfiguration = lazy(() => import("./pages/PlatformConfigurationEnhanced"));
+
 const Forecast = lazy(() => import("./pages/Forecast"));
 
-// Demo pages
-const EnhancedStepperDemo = lazy(() => import("./pages/EnhancedStepperDemo"));
+
 
 // Sites-related pages
 
@@ -303,35 +302,10 @@ function App() {
                       </AuthGuard>
                     }
                   />
-                  <Route
-                    path="/platform-configuration/admin"
-                    element={
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Admin />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    }
-                  />
+
                   {/* Note: Integrations and Forecast routes removed - not integrated into main navigation */}
 
-                  {/* Demo routes */}
-                  <Route
-                    path="/demo/enhanced-stepper"
-                    element={
-                      <AuthGuard>
-                        <Layout>
-                          <Suspense fallback={<PageLoader />}>
-                            <EnhancedStepperDemo />
-                          </Suspense>
-                        </Layout>
-                      </AuthGuard>
-                    }
-                  />
+
 
                   {/* Legacy route redirects */}
                   <Route path="/site-study" element={<Navigate to="/sites" replace />} />
@@ -341,7 +315,7 @@ function App() {
                   <Route path="/hardware-master" element={<Navigate to="/approvals-procurement/hardware-master" replace />} />
                   <Route path="/inventory" element={<Navigate to="/assets/inventory" replace />} />
                   <Route path="/license-management" element={<Navigate to="/assets/license-management" replace />} />
-                  <Route path="/admin" element={<Navigate to="/platform-configuration/admin" replace />} />
+
                   {/* Legacy redirects for unused routes removed */}
 
                   <Route path="*" element={<NotFound />} />

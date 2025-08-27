@@ -169,7 +169,8 @@ const MobileNavigation = React.memo(({
   currentRole,
   availableRoles,
   onClose, 
-  onRoleSwitch
+  onRoleSwitch,
+  onNavigate
 }: { 
   isOpen: boolean; 
   navigationItems: NavigationItem[]; 
@@ -178,6 +179,7 @@ const MobileNavigation = React.memo(({
   availableRoles: UserRole[];
   onClose: () => void; 
   onRoleSwitch: (role: UserRole) => void; 
+  onNavigate: (path: string) => void;
 }) => {
   console.log('🔍 MobileNavigation render:', { isOpen, currentPath, currentRole, navigationItemsCount: navigationItems.length, availableRoles });
   
@@ -185,73 +187,91 @@ const MobileNavigation = React.memo(({
   
   const handleNavigationClick = (path: string) => {
     console.log('🔍 Navigation clicked:', path);
+    console.log('🔍 Current path:', currentPath);
+    console.log('🔍 Paths match?', currentPath === path);
+    
+    // Don't navigate if we're already on the same page
+    if (currentPath === path) {
+      console.log('🔍 Already on this page, just closing menu');
+      onClose();
+      return;
+    }
+    
+    // Close menu first, then navigate
+    console.log('🔍 Closing menu and preparing to navigate');
     onClose();
+    
+    // Use a small delay to ensure menu closes before navigation
+    setTimeout(() => {
+      console.log('🔍 Navigating to:', path);
+      onNavigate(path);
+    }, 100);
   };
 
   const handleRoleSwitchClick = (role: UserRole) => {
     console.log('🔍 Role switch clicked:', role);
-    onRoleSwitch(role);
+    
+    // Don't switch if it's the same role
+    if (currentRole === role) {
+      console.log('🔍 Already on this role, just closing menu');
+      onClose();
+      return;
+    }
+    
+    // Close menu first, then switch role
     onClose();
+    
+    // Use a small delay to ensure menu closes before role switch
+    setTimeout(() => {
+      console.log('🔍 Switching to role:', role);
+      onRoleSwitch(role);
+    }, 100);
   };
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-80 bg-white z-[9999]">
-        <SheetHeader className="border-b pb-4">
+      <SheetContent side="left" className="w-[85vw] max-w-sm bg-white z-[9999] overflow-y-auto">
+        <SheetHeader className="border-b pb-4 sticky top-0 bg-white z-10">
           <SheetTitle className="text-lg font-semibold text-gray-900">Navigation</SheetTitle>
           <SheetDescription className="text-sm text-gray-600">Access your Launchpad features</SheetDescription>
         </SheetHeader>
         
-        <div className="mt-6 space-y-2">
+        <div className="mt-6 space-y-2 pb-6">
           {navigationItems.map((item) => (
-            <Link
+            <button
               key={item.path}
-              to={item.path}
               onClick={() => handleNavigationClick(item.path)}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`w-full text-left flex items-center space-x-3 px-3 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer touch-manipulation ${
                 currentPath === item.path
-                  ? 'bg-gray-100 text-gray-900 border border-gray-200'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-green-50 text-green-900 border border-green-200'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100'
               }`}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-4 w-4 flex-shrink-0" />
               <span>{item.label}</span>
-            </Link>
+            </button>
           ))}
           
           {/* Platform Configuration Link - Admin Only */}
           {currentRole === 'admin' && (
-            <Link
-              to="/platform-configuration"
+            <button
               onClick={() => handleNavigationClick('/platform-configuration')}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`w-full text-left flex items-center space-x-3 px-3 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer touch-manipulation ${
                 currentPath === '/platform-configuration'
-                  ? 'bg-gray-100 text-gray-900 border border-gray-200'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-green-50 text-green-900 border border-green-200'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100'
               }`}
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4 flex-shrink-0" />
               <span>Platform Configuration</span>
-            </Link>
+            </button>
           )}
 
-          {/* Enhanced Stepper Demo Link */}
-          <Link
-            to="/demo/enhanced-stepper"
-            onClick={() => handleNavigationClick('/demo/enhanced-stepper')}
-            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-              currentPath === '/demo/enhanced-stepper'
-                ? 'bg-gray-100 text-gray-900 border border-gray-200'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            <span>Enhanced Stepper Demo</span>
-          </Link>
+
         </div>
         
         <div className="mt-8 pt-6 border-t">
-          <div className="px-3 py-2">
+          <div className="px-3 py-3">
             <p className="text-sm font-medium text-gray-900">
               {getRoleConfig(currentRole || 'admin').displayName}
             </p>
@@ -261,16 +281,16 @@ const MobileNavigation = React.memo(({
           {/* Role Switcher in Mobile Menu - Only show if user has multiple roles */}
           {availableRoles.length > 1 && (
             <div className="mt-4 px-3">
-              <p className="text-xs text-gray-500 mb-2">Switch Role</p>
-              <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">Switch Role</p>
+              <div className="space-y-2">
                 {availableRoles.map((role) => (
                   <button
                     key={role}
                     onClick={() => handleRoleSwitchClick(role)}
-                    className={`w-full text-left px-2 py-1 rounded text-sm cursor-pointer ${
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors touch-manipulation ${
                       role === currentRole
-                        ? 'bg-gray-100 text-gray-900 border border-gray-200'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-green-50 text-green-900 border border-green-200'
+                        : 'text-gray-700 hover:bg-gray-50 active:bg-gray-100'
                     }`}
                   >
                     {role === currentRole && (
@@ -282,6 +302,23 @@ const MobileNavigation = React.memo(({
               </div>
             </div>
           )}
+          
+                     {/* Sign Out Button */}
+           <div className="mt-6 pt-6 border-t">
+             <button
+               onClick={() => {
+                 // Handle sign out - close menu first, then navigate
+                 onClose();
+                 setTimeout(() => {
+                   window.location.href = '/auth';
+                 }, 100);
+               }}
+               className="w-full text-left flex items-center space-x-3 px-3 py-3 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 cursor-pointer transition-colors touch-manipulation"
+             >
+               <LogOut className="h-4 w-4 flex-shrink-0" />
+               <span>Sign Out</span>
+             </button>
+           </div>
         </div>
       </SheetContent>
     </Sheet>
@@ -547,15 +584,16 @@ const Header = () => {
         </div>
       </div>
       
-      <MobileNavigation
-        isOpen={isMobileMenuOpen}
-        navigationItems={navigationItems}
-        currentPath={currentPath}
-        currentRole={currentRole}
-        availableRoles={availableRoles}
-        onClose={handleMobileMenuClose}
-                    onRoleSwitch={handleRoleSwitch}
-          />
+             <MobileNavigation
+         isOpen={isMobileMenuOpen}
+         navigationItems={navigationItems}
+         currentPath={currentPath}
+         currentRole={currentRole}
+         availableRoles={availableRoles}
+         onClose={handleMobileMenuClose}
+         onRoleSwitch={handleRoleSwitch}
+         onNavigate={navigate}
+       />
         </header>
   );
 };
