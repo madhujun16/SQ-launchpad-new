@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Loader } from '@/components/ui/loader';
 import { Upload, Edit, Trash2, Image as ImageIcon, FileText, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUploadService, type UploadedFile } from '@/services/fileUploadService';
@@ -24,26 +25,37 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [showFileInput, setShowFileInput] = useState(false);
 
-  useEffect(() => {
-    if (siteId) {
-      loadExistingImage();
-    }
-  }, [siteId]);
-
-  const loadExistingImage = async () => {
+  const loadExistingImage = useCallback(async () => {
     try {
       setIsLoading(true);
-      const result = await FileUploadService.getSiteFiles(siteId);
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Loading timeout')), 10000)
+      );
+      
+      const result = await Promise.race([
+        FileUploadService.getSiteFiles(siteId),
+        timeoutPromise
+      ]) as { success: boolean; files?: UploadedFile[] };
       
       if (result.success && result.files && result.files.length > 0) {
         setExistingImage(result.files[0]);
       }
     } catch (error) {
       console.error('Error loading existing image:', error);
+      // Set loading to false even on error to prevent infinite loading
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [siteId]);
+
+  useEffect(() => {
+    if (siteId) {
+      loadExistingImage();
+    }
+  }, [siteId, loadExistingImage]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -166,7 +178,7 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   if (isLoading) {
     return (
       <div className="text-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+        <Loader size="md" />
         <p className="text-sm text-gray-500 mt-2">Loading...</p>
       </div>
     );

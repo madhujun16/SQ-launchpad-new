@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -1003,7 +1004,9 @@ const HardwareScoping = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="dt-approval-date">D&T Approval Date</Label>
-                        <Input id="dt-approval-date" type="date" />
+                        <DatePicker 
+                          onChange={(date) => {/* TODO: Handle date change */}}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="dt-approval-status">D&T Approval Status</Label>
@@ -1045,7 +1048,9 @@ const HardwareScoping = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ops-approval-date">Ops Manager Approval Date</Label>
-                        <Input id="ops-approval-date" type="date" />
+                        <DatePicker 
+                          onChange={(date) => {/* TODO: Handle date change */}}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="ops-approval-status">Ops Manager Approval Status</Label>
@@ -1072,11 +1077,15 @@ const HardwareScoping = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="estimated-dispatch">Estimated Dispatch Date</Label>
-                        <Input id="estimated-dispatch" type="date" />
+                        <DatePicker 
+                          onChange={(date) => {/* TODO: Handle date change */}}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="required-installation">Required Installation Date</Label>
-                        <Input id="required-installation" type="date" />
+                        <DatePicker 
+                          onChange={(date) => {/* TODO: Handle date change */}}
+                        />
                       </div>
                     </div>
                   </div>

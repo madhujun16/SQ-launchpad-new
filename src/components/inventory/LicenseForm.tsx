@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreateLicenseForm, Site, InventoryItem, LICENSE_STATUS_OPTIONS, LICENSE_TYPE_OPTIONS, LicenseType, LicenseStatus } from '@/types/inventory';
@@ -149,11 +150,8 @@ export function LicenseForm({
             <div className="space-y-4">
               <div>
                 <Label htmlFor="start_date">Start Date *</Label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  {...register('start_date')}
-                  className={errors.start_date ? 'border-red-500' : ''}
+                <DatePicker
+                  onChange={(date) => setValue('start_date', date ? date.toISOString().split('T')[0] : '')}
                 />
                 {errors.start_date && (
                   <p className="text-sm text-red-500 mt-1">{errors.start_date.message}</p>
@@ -162,19 +160,15 @@ export function LicenseForm({
 
               <div>
                 <Label htmlFor="expiry_date">Expiry Date</Label>
-                <Input
-                  id="expiry_date"
-                  type="date"
-                  {...register('expiry_date')}
+                <DatePicker
+                  onChange={(date) => setValue('expiry_date', date ? date.toISOString().split('T')[0] : '')}
                 />
               </div>
 
               <div>
                 <Label htmlFor="renewal_date">Renewal Date</Label>
-                <Input
-                  id="renewal_date"
-                  type="date"
-                  {...register('renewal_date')}
+                <DatePicker
+                  onChange={(date) => setValue('renewal_date', date ? date.toISOString().split('T')[0] : '')}
                 />
               </div>
 

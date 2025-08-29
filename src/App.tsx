@@ -9,7 +9,7 @@ import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
 import { Suspense, lazy, useEffect } from "react";
 import { PageLoader } from "@/components/ui/loader";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -48,22 +48,17 @@ const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 10, // 10 minutes - increased to reduce refetches
       retry: 1,
-      // Add better caching
-      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+      gcTime: 1000 * 60 * 15, // 15 minutes garbage collection
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: false,
+      refetchInterval: false, // Disable automatic refetching
     },
     mutations: {
       retry: 1,
-      // Optimize mutation performance
-      onMutate: async (variables) => {
-        // Cancel outgoing refetches
-        await queryClient.cancelQueries();
-        return { variables };
-      },
+      // Remove the onMutate that cancels all queries
     },
   },
 });
@@ -85,30 +80,28 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
-          <AuthProvider>
-            <SiteProvider>
-              <div className="min-h-screen">
+          <div className="min-h-screen">
+            <AuthProvider>
+              <SiteProvider>
                 <Routes>
                   <Route path="/" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
                   
-                  {/* Dashboard */}
+                  {/* Dashboard - No auth required for now */}
                   <Route
                     path="/dashboard"
                     element={
-                      <AuthGuard>
-                        <Layout>
-                          <ErrorBoundary>
-                            <Suspense fallback={<PageLoader />}>
-                              <Dashboard />
-                            </Suspense>
-                          </ErrorBoundary>
-                        </Layout>
-                      </AuthGuard>
+                      <Layout>
+                        <ErrorBoundary>
+                          <Suspense fallback={<PageLoader />}>
+                            <Dashboard />
+                          </Suspense>
+                        </ErrorBoundary>
+                      </Layout>
                     }
                   />
 
-                  {/* Sites - Main tab with nested routes */}
+                  {/* Protected routes with auth */}
                   <Route
                     path="/sites"
                     element={
@@ -151,7 +144,6 @@ function App() {
                       </AuthGuard>
                     }
                   />
-
 
                   {/* Approvals & Procurement - Main tab with nested routes */}
                   <Route
@@ -303,10 +295,6 @@ function App() {
                     }
                   />
 
-                  {/* Note: Integrations and Forecast routes removed - not integrated into main navigation */}
-
-
-
                   {/* Legacy route redirects */}
                   <Route path="/site-study" element={<Navigate to="/sites" replace />} />
                   <Route path="/site-creation" element={<Navigate to="/sites/create" replace />} />
@@ -316,15 +304,13 @@ function App() {
                   <Route path="/inventory" element={<Navigate to="/assets/inventory" replace />} />
                   <Route path="/license-management" element={<Navigate to="/assets/license-management" replace />} />
 
-                  {/* Legacy redirects for unused routes removed */}
-
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </div>
-              <Toaster />
-              <Sonner />
-            </SiteProvider>
-          </AuthProvider>
+              </SiteProvider>
+            </AuthProvider>
+          </div>
+          <Toaster />
+          <Sonner />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

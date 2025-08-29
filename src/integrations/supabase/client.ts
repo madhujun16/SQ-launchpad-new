@@ -2,9 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Supabase configuration - using direct values (no env variables needed in Lovable)
-const SUPABASE_URL = "https://ngzvoekvwgjinagdvdhf.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nenZvZWt2d2dqaW5hZ2R2ZGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NzE1MzksImV4cCI6MjA2OTM0NzUzOX0.uYNZPJvpIRVBQYrP1JilauuF2evR-vgvSNp3RnnWHGw";
+// Supabase configuration - use environment variables with fallbacks for production
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ngzvoekvwgjinagdvdhf.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nenZvZWt2d2dqaW5hZ2R2ZGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NzE1MzksImV4cCI6MjA2OTM0NzUzOX0.uYNZPJvpIRVBQYrP1JilauuF2evR-vgvSNp3RnnWHGw";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -14,70 +14,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-    // Set session to last 30 days
     storageKey: 'smartq-launchpad-auth',
     detectSessionInUrl: true,
-    // Optimize token refresh
-    flowType: 'pkce',
-    debug: false
+    flowType: 'pkce'
   },
-  // Optimize database performance
   db: {
     schema: 'public'
   },
-  // Optimize realtime performance
   realtime: {
     params: {
       eventsPerSecond: 10
     }
-  },
-  // Global headers for better caching
-  global: {
-    headers: {
-      'Cache-Control': 'public, max-age=300, s-maxage=600'
-    }
   }
 });
-
-// Create a cached version for better performance
-export const createCachedSupabaseClient = () => {
-  // Cache for database queries
-  const queryCache = new Map();
-  
-  return {
-    ...supabase,
-    // Override from method to add caching
-    from: (table: any) => {
-      const originalFrom = supabase.from(table);
-      
-      return {
-        ...originalFrom,
-        select: (columns: string = '*') => {
-          const cacheKey = `${table}:${columns}`;
-          
-          // Check cache first
-          if (queryCache.has(cacheKey)) {
-            const cached = queryCache.get(cacheKey);
-            if (Date.now() - cached.timestamp < 300000) { // 5 minutes cache
-              return Promise.resolve(cached.data);
-            }
-          }
-          
-          // If not cached, make the request
-          return originalFrom.select(columns).then(result => {
-            if (result.data && !result.error) {
-              queryCache.set(cacheKey, {
-                data: result,
-                timestamp: Date.now()
-              });
-            }
-            return result;
-          });
-        }
-      };
-    }
-  };
-};
-
-// Export the cached client
-export const supabaseCached = createCachedSupabaseClient();

@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Calendar, AlertTriangle, CheckCircle2, Clock, FileDown, Plus, Edit3 } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
 
 type MilestoneKey =
   | 'site_study'
@@ -302,11 +303,17 @@ const Forecast: React.FC = () => {
           <div className="space-y-3">
             <div>
               <label className="text-sm">Start Date</label>
-              <Input type="date" value={editStart} onChange={(e) => setEditStart(e.target.value)} />
+              <DatePicker 
+                value={editStart ? new Date(editStart) : undefined}
+                onChange={(date) => setEditStart(date ? date.toISOString().split('T')[0] : '')}
+              />
             </div>
             <div>
               <label className="text-sm">End Date</label>
-              <Input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} />
+              <DatePicker 
+                value={editEnd ? new Date(editEnd) : undefined}
+                onChange={(date) => setEditEnd(date ? date.toISOString().split('T')[0] : '')}
+              />
             </div>
             <div>
               <label className="text-sm">Notes</label>

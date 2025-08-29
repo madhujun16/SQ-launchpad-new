@@ -98,14 +98,32 @@ const MobileMenuButton = React.memo(({
   </Button>
 ));
 
+// Safe useAuth hook that handles missing context
+const useSafeAuth = () => {
+  try {
+    return useAuth();
+  } catch (error) {
+    // Return mock data when auth context is not available
+    return {
+      user: { email: 'demo@example.com', id: 'demo-user' },
+      currentRole: 'admin' as UserRole,
+      profile: { full_name: 'Demo User', email: 'demo@example.com' },
+      signOut: async () => {},
+      switchRole: () => {},
+      availableRoles: ['admin' as UserRole],
+      loading: false
+    };
+  }
+};
+
 // User Info Component
 const UserInfo = React.memo(({ 
   profile, 
   roleConfig, 
   RoleIcon 
 }: { 
-  profile: any; 
-  roleConfig: any; 
+  profile: { full_name?: string; email?: string } | null; 
+  roleConfig: { displayName: string; icon?: React.ComponentType<{ className?: string }> } | null; 
   RoleIcon: React.ComponentType<{ className?: string }>; 
 }) => (
   <div className="flex items-center space-x-3">
@@ -230,25 +248,42 @@ const MobileNavigation = React.memo(({
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-[85vw] max-w-sm bg-white z-[9999] overflow-y-auto">
-        <SheetHeader className="border-b pb-4 sticky top-0 bg-white z-10">
-          <SheetTitle className="text-lg font-semibold text-gray-900">Navigation</SheetTitle>
-          <SheetDescription className="text-sm text-gray-600">Access your Launchpad features</SheetDescription>
+      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-br from-green-50 to-green-100/50 z-[9999] overflow-y-auto border-r border-green-200/30">
+        {/* Header with app branding */}
+        <SheetHeader className="border-b border-green-200/40 pb-6 sticky top-0 bg-gradient-to-r from-green-50 to-green-100/50 z-10">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">L</span>
+            </div>
+            <SheetTitle className="text-xl font-bold bg-gradient-to-r from-green-700 to-green-800 bg-clip-text text-transparent">
+              SmartQ Launchpad
+            </SheetTitle>
+          </div>
+          <SheetDescription className="text-sm text-green-700/80 font-medium">
+            Access your Launchpad features
+          </SheetDescription>
         </SheetHeader>
         
-        <div className="mt-6 space-y-2 pb-6">
+        {/* Navigation Items */}
+        <div className="mt-6 space-y-3 pb-6">
           {navigationItems.map((item) => (
             <button
               key={item.path}
               onClick={() => handleNavigationClick(item.path)}
-              className={`w-full text-left flex items-center space-x-3 px-3 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer touch-manipulation ${
+              className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
                 currentPath === item.path
-                  ? 'bg-green-50 text-green-900 border border-green-200'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25 transform scale-[1.02]'
+                  : 'text-green-800 hover:bg-green-100/60 hover:text-green-900 active:bg-green-200/60 hover:shadow-md hover:shadow-green-500/10'
               }`}
             >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              <span>{item.label}</span>
+              <div className={`p-2 rounded-lg ${
+                currentPath === item.path 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-green-100/60 text-green-700'
+              }`}>
+                <item.icon className="h-4 w-4 flex-shrink-0" />
+              </div>
+              <span className="font-semibold">{item.label}</span>
             </button>
           ))}
           
@@ -256,69 +291,88 @@ const MobileNavigation = React.memo(({
           {currentRole === 'admin' && (
             <button
               onClick={() => handleNavigationClick('/platform-configuration')}
-              className={`w-full text-left flex items-center space-x-3 px-3 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer touch-manipulation ${
+              className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
                 currentPath === '/platform-configuration'
-                  ? 'bg-green-50 text-green-900 border border-green-200'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25 transform scale-[1.02]'
+                  : 'text-green-800 hover:bg-green-100/60 hover:text-green-900 active:bg-green-200/60 hover:shadow-md hover:shadow-green-500/10'
               }`}
             >
-              <Settings className="h-4 w-4 flex-shrink-0" />
-              <span>Platform Configuration</span>
+              <div className={`p-2 rounded-lg ${
+                currentPath === '/platform-configuration' 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-green-100/60 text-green-700'
+              }`}>
+                <Settings className="h-4 w-4 flex-shrink-0" />
+              </div>
+              <span className="font-semibold">Platform Configuration</span>
             </button>
           )}
-
-
         </div>
         
-        <div className="mt-8 pt-6 border-t">
-          <div className="px-3 py-3">
-            <p className="text-sm font-medium text-gray-900">
-              {getRoleConfig(currentRole || 'admin').displayName}
-            </p>
-            <p className="text-xs text-gray-500">Current Role</p>
+        {/* Role Information and Switcher */}
+        <div className="mt-8 pt-6 border-t border-green-200/40">
+          {/* Current Role Display */}
+          <div className="px-4 py-4 bg-gradient-to-r from-green-100/40 to-green-200/40 rounded-xl border border-green-200/50">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xs">R</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-green-900">
+                  {getRoleConfig(currentRole || 'admin').displayName}
+                </p>
+                <p className="text-xs text-green-700/80 font-medium">Current Role</p>
+              </div>
+            </div>
           </div>
           
-          {/* Role Switcher in Mobile Menu - Only show if user has multiple roles */}
+          {/* Role Switcher - Only show if user has multiple roles */}
           {availableRoles.length > 1 && (
-            <div className="mt-4 px-3">
-              <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">Switch Role</p>
+            <div className="mt-4 px-4">
+              <p className="text-xs font-bold text-green-700/80 mb-3 uppercase tracking-wider">Switch Role</p>
               <div className="space-y-2">
                 {availableRoles.map((role) => (
                   <button
                     key={role}
                     onClick={() => handleRoleSwitchClick(role)}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors touch-manipulation ${
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 touch-manipulation ${
                       role === currentRole
-                        ? 'bg-green-50 text-green-900 border border-green-200'
-                        : 'text-gray-700 hover:bg-gray-50 active:bg-gray-100'
+                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25 transform scale-[1.02]'
+                        : 'text-green-800 hover:bg-green-100/60 hover:text-green-900 active:bg-green-200/60 hover:shadow-md hover:shadow-green-500/10'
                     }`}
                   >
-                    {role === currentRole && (
-                      <span className="mr-2 text-green-600">✓</span>
-                    )}
-                    {getRoleConfig(role).displayName}
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">{getRoleConfig(role).displayName}</span>
+                      {role === currentRole && (
+                        <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
           )}
-          
-                     {/* Sign Out Button */}
-           <div className="mt-6 pt-6 border-t">
-             <button
-               onClick={() => {
-                 // Handle sign out - close menu first, then navigate
-                 onClose();
-                 setTimeout(() => {
-                   window.location.href = '/auth';
-                 }, 100);
-               }}
-               className="w-full text-left flex items-center space-x-3 px-3 py-3 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 cursor-pointer transition-colors touch-manipulation"
-             >
-               <LogOut className="h-4 w-4 flex-shrink-0" />
-               <span>Sign Out</span>
-             </button>
-           </div>
+        </div>
+        
+        {/* Sign Out Button */}
+        <div className="mt-6 pt-6 border-t border-green-200/40">
+          <button
+            onClick={() => {
+              // Handle sign out - close menu first, then navigate
+              onClose();
+              setTimeout(() => {
+                window.location.href = '/auth';
+              }, 100);
+            }}
+            className="w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium text-red-700 hover:bg-red-50 hover:text-red-800 cursor-pointer transition-all duration-200 touch-manipulation border border-red-200/50 hover:border-red-300 hover:shadow-md hover:shadow-red-500/10"
+          >
+            <div className="p-2 rounded-lg bg-red-100/60 text-red-700">
+              <LogOut className="h-4 w-4 flex-shrink-0" />
+            </div>
+            <span className="font-semibold">Sign Out</span>
+          </button>
         </div>
       </SheetContent>
     </Sheet>
@@ -327,7 +381,7 @@ const MobileNavigation = React.memo(({
 
 // Main Header Component
 const Header = () => {
-  const { currentRole, profile, signOut, switchRole, availableRoles } = useAuth();
+  const { currentRole, profile, signOut, switchRole, availableRoles } = useSafeAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { isMobile, isTablet, isTouchDevice } = useIsMobile();

@@ -40,6 +40,7 @@ export interface Organization {
   sector: string;
   logo_url?: string;
   description?: string;
+  sites_count?: number; // Number of sites mapped to this organization
   created_at: string;
   updated_at: string;
 }
@@ -61,100 +62,138 @@ export interface CreateSiteData {
 }
 
 export class SitesService {
+  // Simple in-memory cache for sites
+  private static sitesCache: { data: Site[]; timestamp: number } | null = null;
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   // Get all sites with user assignments
   static async getAllSites(): Promise<Site[]> {
     try {
+      // Check cache first
+      if (this.sitesCache && (Date.now() - this.sitesCache.timestamp) < this.CACHE_DURATION) {
+        console.log('🔍 Returning sites from cache');
+        return this.sitesCache.data;
+      }
+
       console.log('🔍 Fetching sites from database...');
       
       // Check if we have an active session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('🔍 Session check:', { session: !!session, sessionError });
       
       if (sessionError) {
         console.error('❌ Session error:', sessionError);
+        return [];
       }
       
-      // First, let's try a simple query to see what's in the sites table
-      console.log('🔍 Making Supabase query...');
+      if (!session) {
+        console.error('❌ No active session');
+        return [];
+      }
       
-      // Test 1: Try to get just the count first
-      const { count, error: countError } = await supabase
-        .from('sites')
-        .select('*', { count: 'exact', head: true });
+      console.log('🔍 Making optimized Supabase query...');
       
-      console.log('🔍 Count test:', { count, countError });
-      
-      // Test 2: Try to get just one record
-      const { data: singleRecord, error: singleError } = await supabase
-        .from('sites')
-        .select('id, name')
-        .limit(1);
-      
-      console.log('🔍 Single record test:', { singleRecord, singleError });
-      
-      // Test 3: Full query
+      // Optimized single query with only necessary fields
       const { data, error } = await supabase
         .from('sites')
-        .select('*')
+        .select(`
+          id,
+          name,
+          organization_id,
+          address,
+          location,
+          workflow_status,
+          status,
+          target_go_live,
+          target_live_date,
+          assigned_ops_manager,
+          assigned_deployment_engineer,
+          sector,
+          food_court_unit,
+          unit_code,
+          criticality_level,
+          team_assignment,
+          stakeholders,
+          description,
+          notes,
+          unit_manager_name,
+          job_title,
+          unit_manager_email,
+          unit_manager_mobile,
+          additional_contact_name,
+          additional_contact_email,
+          latitude,
+          longitude,
+          postcode,
+          region,
+          country,
+          created_at,
+          updated_at,
+          organizations!inner(
+            id,
+            name,
+            sector,
+            logo_url,
+            description
+          )
+        `)
         .order('name');
-      
-      console.log('🔍 Full query result:', { data: data?.length || 0, error });
 
       if (error) {
         console.error('❌ Error fetching sites:', error);
         return [];
       }
 
-      console.log('🔍 Raw sites data:', data);
-      console.log('🔍 Number of sites found:', data?.length || 0);
+      console.log('🔍 Sites fetched successfully:', data?.length || 0);
 
       if (!data || data.length === 0) {
         console.log('⚠️ No sites found in database');
         return [];
       }
 
-             // Transform the data to match our Site interface
-       const transformedSites = data.map((site: any) => {
-         console.log('🔍 Processing site:', site);
-         
-         const transformedSite: any = {
-           id: site.id,
-           name: site.name || 'Unnamed Site',
-           organization_id: site.organization_id || '',
-           organization_name: site.organization_name || 'Organization',
-           organization_logo: site.organization_logo || null,
-           location: site.location || site.address || 'Location not specified',
-           status: site.status || 'Unknown',
-           target_live_date: site.target_live_date || site.target_go_live || '',
-           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
-           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
-           sector: site.sector || '',
-           unit_code: site.unit_code || site.food_court_unit || '',
-           criticality_level: site.criticality_level || 'medium',
-           team_assignment: site.team_assignment || '',
-           stakeholders: site.stakeholders || [],
-           notes: site.description || '',
-           // Contact information fields
-           unitManagerName: site.unit_manager_name || '',
-           jobTitle: site.job_title || '',
-           unitManagerEmail: site.unit_manager_email || '',
-           unitManagerMobile: site.unit_manager_mobile || '',
-           additionalContactName: site.additional_contact_name || '',
-           additionalContactEmail: site.additional_contact_email || '',
-           // Location fields
-           latitude: site.latitude || null,
-           longitude: site.longitude || null,
-           postcode: site.postcode || '',
-           region: site.region || '',
-           country: site.country || '',
-           created_at: site.created_at || new Date().toISOString(),
-           updated_at: site.updated_at || new Date().toISOString()
-         };
-         
-         return transformedSite;
-       });
+      // Transform the data to match our Site interface
+      const transformedSites = data.map((site: any) => {
+        return {
+          id: site.id,
+          name: site.name || 'Unnamed Site',
+          organization_id: site.organization_id || site.organizations?.id || '',
+          organization_name: site.organizations?.name || 'Organization',
+          organization_logo: site.organizations?.logo_url || null,
+          location: site.address || site.location || 'Location not specified',
+          status: site.workflow_status || site.status || 'Unknown',
+          target_live_date: site.target_go_live || site.target_live_date || '',
+          assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
+          assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
+          sector: site.organizations?.sector || '',
+          unit_code: site.food_court_unit || '',
+          criticality_level: 'medium' as const,
+          team_assignment: '',
+          stakeholders: [],
+          notes: site.description || '',
+          // Contact information fields
+          unitManagerName: '',
+          jobTitle: '',
+          unitManagerEmail: '',
+          unitManagerMobile: '',
+          additionalContactName: '',
+          additionalContactEmail: '',
+          // Location fields
+          latitude: null,
+          longitude: null,
+          postcode: '',
+          region: '',
+          country: '',
+          created_at: site.created_at || new Date().toISOString(),
+          updated_at: site.updated_at || new Date().toISOString()
+        } as Site;
+      });
 
-      console.log('✅ Transformed sites:', transformedSites);
+      // Update cache
+      this.sitesCache = {
+        data: transformedSites,
+        timestamp: Date.now()
+      };
+
+      console.log('✅ Sites transformed and cached successfully:', transformedSites.length);
       return transformedSites;
     } catch (error) {
       console.error('❌ Error in getAllSites:', error);
@@ -289,20 +328,42 @@ export class SitesService {
     }
   }
 
-  // Get all organizations
+  // Get all organizations with sites count
   static async getAllOrganizations(): Promise<Organization[]> {
     try {
-      const { data, error } = await supabase
+      // First get all organizations
+      const { data: organizations, error: orgError } = await supabase
         .from('organizations')
         .select('*')
         .order('name');
 
-      if (error) {
-        console.error('Error fetching organizations:', error);
+      if (orgError) {
+        console.error('Error fetching organizations:', orgError);
         return [];
       }
 
-      return data || [];
+      if (!organizations || organizations.length === 0) {
+        return [];
+      }
+
+      // Get sites count for each organization
+      const organizationsWithCount = await Promise.all(
+        organizations.map(async (org) => {
+          const { count, error: countError } = await supabase
+            .from('sites')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', org.id);
+
+          if (countError) {
+            console.warn(`Error counting sites for organization ${org.name}:`, countError);
+            return { ...org, sites_count: 0 };
+          }
+
+          return { ...org, sites_count: count || 0 };
+        })
+      );
+
+      return organizationsWithCount;
     } catch (error) {
       console.error('Error in getAllOrganizations:', error);
       return [];
@@ -524,5 +585,11 @@ export class SitesService {
       console.error('Error in assignUsersToSite:', error);
       return false;
     }
+  }
+
+  // Clear cache when data is modified
+  static clearCache(): void {
+    this.sitesCache = null;
+    console.log('🔍 Sites cache cleared');
   }
 }

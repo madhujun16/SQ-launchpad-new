@@ -1576,7 +1576,7 @@ export default function PlatformConfiguration() {
                   <div className="space-y-3">
                     {softwareModules.map(software => (
                       <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                        <div className="flex-1 grid grid-cols-5 gap-4">
+                        <div className="flex-1 grid grid-cols-4 gap-4">
                           <div>
                             <Label className="text-sm font-medium">Name</Label>
                             <p className="text-sm text-gray-900">{software.name}</p>
@@ -1592,12 +1592,6 @@ export default function PlatformConfiguration() {
                           <div>
                             <Label className="text-sm font-medium">Setup Fee</Label>
                             <p className="text-sm text-gray-600">£{software.setup_fee || 0}</p>
-                          </div>
-                          <div>
-                            <Label className="text-sm font-medium">Status</Label>
-                            <Badge variant={software.is_active ? "default" : "secondary"}>
-                              {software.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
                           </div>
                         </div>
                         <div className="flex space-x-2">

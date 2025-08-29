@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -257,28 +258,22 @@ export function DeployInventoryForm({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="dispatch_date">Date of Dispatch</Label>
-              <Input
-                id="dispatch_date"
-                type="date"
-                {...register('dispatch_date')}
+              <DatePicker
+                onChange={(date) => setValue('dispatch_date', date ? date.toISOString().split('T')[0] : '')}
               />
             </div>
 
             <div>
               <Label htmlFor="delivery_date">Date of Delivery</Label>
-              <Input
-                id="delivery_date"
-                type="date"
-                {...register('delivery_date')}
+              <DatePicker
+                onChange={(date) => setValue('delivery_date', date ? date.toISOString().split('T')[0] : '')}
               />
             </div>
 
             <div>
               <Label htmlFor="installed_date">Installed Date</Label>
-              <Input
-                id="installed_date"
-                type="date"
-                {...register('installed_date')}
+              <DatePicker
+                onChange={(date) => setValue('installed_date', date ? date.toISOString().split('T')[0] : '')}
               />
             </div>
           </div>

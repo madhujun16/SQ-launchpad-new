@@ -9,6 +9,9 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
 	const { isMobile, isTablet } = useIsMobile();
 
+	// Don't show loading state here - let individual components handle their own loading
+	// The AuthGuard already handles the loading state
+
 	return (
 		<div className="min-h-screen light-app">
 			<Header />

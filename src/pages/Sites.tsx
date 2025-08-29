@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,19 +50,161 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+// Memoized Site Row Component for better performance
+const SiteRow = React.memo(({ 
+  site, 
+  onView, 
+  onEdit, 
+  onNotes, 
+  onArchive, 
+  onDelete 
+}: {
+  site: Site;
+  onView: (site: Site) => void;
+  onEdit: (site: Site) => void;
+  onNotes: (site: Site) => void;
+  onArchive: (site: Site) => void;
+  onDelete: (site: Site) => void;
+}) => {
+  const statusColor = useMemo(() => getStatusColor(site.status), [site.status]);
+  const statusDisplay = useMemo(() => getStatusDisplayName(site.status), [site.status]);
+  
+  return (
+    <TableRow key={site.id} className="hover:bg-gray-50">
+      <TableCell className="font-medium">
+        <div className="flex items-center space-x-2">
+          <Building className="h-4 w-4 text-gray-500" />
+          <span>{site.name}</span>
+        </div>
+      </TableCell>
+      <TableCell>{site.organization_name}</TableCell>
+      <TableCell>{site.location}</TableCell>
+      <TableCell>
+        <Badge className={statusColor}>
+          {statusDisplay}
+        </Badge>
+      </TableCell>
+      <TableCell>{site.assigned_ops_manager}</TableCell>
+      <TableCell>{site.assigned_deployment_engineer}</TableCell>
+      <TableCell>{site.target_live_date}</TableCell>
+      <TableCell>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onView(site)}
+            className="h-8 w-8 p-0"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(site)}
+            className="h-8 w-8 p-0"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNotes(site)}
+            className="h-8 w-8 p-0"
+          >
+            <StickyNote className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onArchive(site)}
+            className="h-8 w-8 p-0"
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(site)}
+            className="h-8 w-8 p-0"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
+SiteRow.displayName = 'SiteRow';
+
+// Memoized Search and Filter Component
+const SearchAndFilters = React.memo(({ 
+  searchTerm, 
+  statusFilter, 
+  onSearchChange, 
+  onStatusFilterChange, 
+  onClearFilters 
+}: {
+  searchTerm: string;
+  statusFilter: string;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onStatusFilterChange: (value: string) => void;
+  onClearFilters: () => void;
+}) => {
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex-1">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search sites by name, location, or organization..."
+            value={searchTerm}
+            onChange={onSearchChange}
+            className="pl-10"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="planning">Planning</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="review">Review</SelectItem>
+            <SelectItem value="deployed">Deployed</SelectItem>
+            <SelectItem value="live">Live</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" onClick={onClearFilters}>
+          <Filter className="h-4 w-4 mr-2" />
+          Clear
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+SearchAndFilters.displayName = 'SearchAndFilters';
+
 const Sites = () => {
   const navigate = useNavigate();
   const { currentRole, loading: authLoading } = useAuth();
   const { getTabAccess } = useRoleAccess();
+  
+  // State management
   const [sites, setSites] = useState<Site[]>([]);
   const [filteredSites, setFilteredSites] = useState<Site[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [showNotesModal, setShowNotesModal] = useState(false);
   
-  // New state for Archive and Delete modals
+  // Modal states
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
@@ -71,49 +213,23 @@ const Sites = () => {
   const [otherDeleteReason, setOtherDeleteReason] = useState('');
 
   // Check access permissions
-  const tabAccess = getTabAccess('/sites');
+  const tabAccess = useMemo(() => getTabAccess('/sites'), [getTabAccess]);
+  
   if (!tabAccess.canAccess) {
     return <AccessDenied />;
   }
 
-  // Fetch sites from database
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        console.log('🔍 Starting to fetch sites...');
-        setLoading(true);
-        const sitesData = await SitesService.getAllSites();
-        console.log('🔍 Fetched sites from database:', sitesData);
-        console.log('🔍 Number of sites:', sitesData.length);
-        console.log('🔍 Sites data structure:', sitesData);
-        
-        setSites(sitesData);
-        setFilteredSites(sitesData);
-        
-        if (sitesData.length === 0) {
-          console.log('⚠️ No sites returned from service');
-        }
-      } catch (error) {
-        console.error('❌ Error fetching sites:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSites();
-  }, []);
-
-  // Filter sites based on search term and status
-  useEffect(() => {
-    console.log('🔍 Filtering sites. Total sites:', sites.length);
+  // Memoized filtered sites to prevent unnecessary recalculations
+  const memoizedFilteredSites = useMemo(() => {
     let filtered = sites;
 
     // Apply search filter
     if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(site =>
-        site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        site.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        site.organization_name.toLowerCase().includes(searchTerm.toLowerCase())
+        site.name.toLowerCase().includes(searchLower) ||
+        site.location.toLowerCase().includes(searchLower) ||
+        site.organization_name.toLowerCase().includes(searchLower)
       );
     }
 
@@ -122,64 +238,91 @@ const Sites = () => {
       filtered = filtered.filter(site => site.status === statusFilter);
     }
 
-    setFilteredSites(filtered);
+    return filtered;
   }, [sites, searchTerm, statusFilter]);
 
-  // Handle search input change
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Update filtered sites when memoized result changes
+  useEffect(() => {
+    setFilteredSites(memoizedFilteredSites);
+  }, [memoizedFilteredSites]);
+
+  // Fetch sites from database - optimized with error handling
+  useEffect(() => {
+    const fetchSites = async () => {
+      if (authLoading) return; // Wait for auth to complete
+      
+      try {
+        console.log('🔍 Starting to fetch sites...');
+        setLoading(true);
+        setError(null);
+        
+        const sitesData = await SitesService.getAllSites();
+        console.log('🔍 Fetched sites from database:', sitesData.length);
+        
+        setSites(sitesData);
+        
+        if (sitesData.length === 0) {
+          console.log('⚠️ No sites returned from service');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching sites:', error);
+        setError('Failed to load sites. Please try again.');
+        toast.error('Failed to load sites');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSites();
+  }, [authLoading]);
+
+  // Memoized event handlers to prevent unnecessary re-renders
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-  };
+  }, []);
 
-  // Handle status filter change
-  const handleStatusFilterChange = (value: string) => {
+  const handleStatusFilterChange = useCallback((value: string) => {
     setStatusFilter(value);
-  };
+  }, []);
 
-  // Clear all filters
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchTerm('');
     setStatusFilter('all');
-  };
+  }, []);
 
-  // Handle view site (read-only mode for Live sites)
-  const handleViewSite = (site: Site) => {
+  const handleViewSite = useCallback((site: Site) => {
     navigate(`/sites/${site.id}?mode=view`);
-  };
+  }, [navigate]);
 
-  // Handle edit site (with stepper flow based on status)
-  const handleEditSite = (site: Site) => {
+  const handleEditSite = useCallback((site: Site) => {
     navigate(`/sites/${site.id}?mode=edit`);
-  };
+  }, [navigate]);
 
-  // Handle site notes
-  const handleSiteNotes = (site: Site) => {
+  const handleSiteNotes = useCallback((site: Site) => {
     setSelectedSite(site);
     setShowNotesModal(true);
-  };
+  }, []);
 
-  // Handle archive site
-  const handleArchiveSite = (site: Site) => {
+  const handleArchiveSite = useCallback((site: Site) => {
     setSelectedSite(site);
     setArchiveReason('');
     setOtherArchiveReason('');
     setShowArchiveModal(true);
-  };
+  }, []);
 
-  // Handle delete site
-  const handleDeleteSite = (site: Site) => {
+  const handleDeleteSite = useCallback((site: Site) => {
     setSelectedSite(site);
     setDeleteReason('');
     setOtherDeleteReason('');
     setShowDeleteModal(true);
-  };
+  }, []);
 
-  // Handle create new site
-  const handleCreateSite = () => {
+  const handleCreateSite = useCallback(() => {
     navigate('/sites/create');
-  };
+  }, [navigate]);
 
   // Confirm archive site
-  const confirmArchiveSite = async () => {
+  const confirmArchiveSite = useCallback(async () => {
     if (!selectedSite || !archiveReason) {
       toast.error('Please select a reason for archiving');
       return;
@@ -198,19 +341,17 @@ const Sites = () => {
       setSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
       setFilteredSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
       
-      toast.success(`Site "${selectedSite!.name}" has been archived successfully`);
+      toast.success('Site archived successfully');
       setShowArchiveModal(false);
       setSelectedSite(null);
-      setArchiveReason('');
-      setOtherArchiveReason('');
     } catch (error) {
       console.error('Error archiving site:', error);
-      toast.error('Failed to archive site. Please try again.');
+      toast.error('Failed to archive site');
     }
-  };
+  }, [selectedSite, archiveReason, otherArchiveReason]);
 
   // Confirm delete site
-  const confirmDeleteSite = async () => {
+  const confirmDeleteSite = useCallback(async () => {
     if (!selectedSite || !deleteReason) {
       toast.error('Please select a reason for deletion');
       return;
@@ -229,481 +370,286 @@ const Sites = () => {
       setSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
       setFilteredSites(prevSites => prevSites.filter(s => s.id !== selectedSite!.id));
       
-      toast.success(`Site "${selectedSite!.name}" has been deleted successfully`);
+      toast.success('Site deleted successfully');
       setShowDeleteModal(false);
       setSelectedSite(null);
-      setDeleteReason('');
-      setOtherDeleteReason('');
     } catch (error) {
       console.error('Error deleting site:', error);
-      toast.error('Failed to delete site. Please try again.');
+      toast.error('Failed to delete site');
     }
-  };
+  }, [selectedSite, deleteReason, otherDeleteReason]);
 
-  // Check if site is live (deployed and operational)
-  const isSiteLive = (status: string) => {
-    return status === 'live' || status === 'go_live' || status === 'activated';
-  };
-
-  // Check if site is not yet deployed
-  const isSiteNotDeployed = (status: string) => {
-    return status === 'site_created' || status === 'site_creation' || 
-           status === 'site_study_done' || status === 'scoping_done' || 
-           status === 'approved' || status === 'procurement_done';
-  };
-
-  // Get unique statuses for filter dropdown
-  const uniqueStatuses = Array.from(new Set(sites.map(site => site.status))).sort();
-
-  // Map database statuses to display names and colors
-  const getStatusDisplayNameFromDB = (status: string) => {
-    const statusMap: Record<string, { name: string; color: string }> = {
-      // New finalized statuses
-      'site_created': { 
-        name: 'Site Created', 
-        color: 'bg-gray-100 text-gray-800 border-gray-200' 
-      },
-      'site_study_done': { 
-        name: 'Site Study Done', 
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
-      },
-      'scoping_done': { 
-        name: 'Scoping Done', 
-        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-      },
-      'approved': { 
-        name: 'Approved', 
-        color: 'bg-purple-100 text-purple-800 border-purple-200' 
-      },
-      'procurement_done': { 
-        name: 'Procurement Done', 
-        color: 'bg-blue-100 text-blue-800 border-blue-200' 
-      },
-      'deployed': { 
-        name: 'Deployed', 
-        color: 'bg-green-100 text-green-800 border-green-200' 
-      },
-      'live': { 
-        name: 'Live', 
-        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
-      },
-      // Legacy status mappings for backward compatibility
-      'created': { 
-        name: 'Site Created', 
-        color: 'bg-gray-100 text-gray-800 border-gray-200' 
-      },
-      'site_creation': { 
-        name: 'Site Created', 
-        color: 'bg-gray-100 text-gray-800 border-gray-200' 
-      },
-      'site_study': { 
-        name: 'Site Study Done', 
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
-      },
-      'study_completed': { 
-        name: 'Site Study Done', 
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200' 
-      },
-      'software_scoping': { 
-        name: 'Scoping Done', 
-        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-      },
-      'hardware_scoping': { 
-        name: 'Scoping Done', 
-        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-      },
-      'hardware_scoped': { 
-        name: 'Scoping Done', 
-        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-      },
-      'approval': { 
-        name: 'Approved', 
-        color: 'bg-purple-100 text-purple-800 border-purple-200' 
-      },
-      'procurement': { 
-        name: 'Procurement Done', 
-        color: 'bg-blue-100 text-blue-800 border-blue-200' 
-      },
-      'deployment': { 
-        name: 'Deployed', 
-        color: 'bg-green-100 text-green-800 border-green-200' 
-      },
-      'go_live': { 
-        name: 'Live', 
-        color: 'bg-blue-100 text-blue-800 border-blue-200' 
-      },
-      'activated': { 
-        name: 'Live', 
-        color: 'bg-emerald-100 text-emerald-800 border-emerald-200' 
-      },
-      'configuration_in_progress': { 
-        name: 'Scoping Done', 
-        color: 'bg-indigo-100 text-indigo-800 border-indigo-200' 
-      },
-      'on_hold': { 
-        name: 'Site Created', 
-        color: 'bg-gray-100 text-gray-800 border-gray-200' 
-      }
-    };
-    return statusMap[status] || { name: status, color: 'bg-gray-100 text-gray-800 border-gray-200' };
-  };
-
-  if (loading) {
+  // Loading state
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Loading sites...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Loading sites...</p>
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Sites</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      {/* Page Header with Create Site Button */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">Sites</h1>
-          <p className="text-gray-600">Manage client sites and track deployment progress</p>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites Management</h1>
+          <p className="text-gray-600">
+            Manage and monitor all your deployment sites
+          </p>
         </div>
+        <Button onClick={handleCreateSite} className="mt-4 sm:mt-0">
+          <Plus className="h-4 w-4 mr-2" />
+          Create New Site
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
+            <Building className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{sites.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all organizations
+            </p>
+          </CardContent>
+        </Card>
         
-        {/* Create Site Button - Only visible to Admin users */}
-        {currentRole === 'admin' && (
-          <Button 
-            onClick={handleCreateSite}
-            className="bg-gradient-to-r from-black to-green-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:from-gray-900 hover:to-green-700 transition-all duration-200 shadow-lg"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Create Site</span>
-          </Button>
-        )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Sites</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {sites.filter(site => ['in_progress', 'review'].includes(site.status)).length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Currently in progress
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Live Sites</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {sites.filter(site => site.status === 'live').length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Successfully deployed
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {sites.filter(site => site.status === 'review').length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Awaiting approval
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-                <Input
-            placeholder="Search by site name, organization, or location..."
-                  value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full"
-                />
-              </div>
-        <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="site_created">Site Created</SelectItem>
-              <SelectItem value="site_study_done">Site Study Done</SelectItem>
-              <SelectItem value="scoping_done">Scoping Done</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="procurement_done">Procurement Done</SelectItem>
-              <SelectItem value="deployed">Deployed</SelectItem>
-                  <SelectItem value="live">Live</SelectItem>
-                </SelectContent>
-              </Select>
-          <Button variant="outline" onClick={clearFilters}>
-            Clear Filters
-              </Button>
+      <SearchAndFilters
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        onSearchChange={handleSearchChange}
+        onStatusFilterChange={handleStatusFilterChange}
+        onClearFilters={clearFilters}
+      />
+
+      {/* Sites Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sites</CardTitle>
+          <CardDescription>
+            {filteredSites.length} of {sites.length} sites
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {filteredSites.length === 0 ? (
+            <div className="text-center py-8">
+              <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'No sites match your current filters' 
+                  : 'No sites found'}
+              </p>
+              {(searchTerm || statusFilter !== 'all') && (
+                <Button variant="outline" onClick={clearFilters} className="mt-2">
+                  Clear Filters
+                </Button>
+              )}
             </div>
-      </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Site Name</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ops Manager</TableHead>
+                    <TableHead>Deployment Engineer</TableHead>
+                    <TableHead>Target Live Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSites.map((site) => (
+                    <SiteRow
+                      key={site.id}
+                      site={site}
+                      onView={handleViewSite}
+                      onEdit={handleEditSite}
+                      onNotes={handleSiteNotes}
+                      onArchive={handleArchiveSite}
+                      onDelete={handleDeleteSite}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Sites Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sites Overview</CardTitle>
-            <CardDescription>
-              Manage and track all client sites in the deployment pipeline.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Site Name</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Target Go-Live</TableHead>
-                <TableHead>Assigned Team</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSites.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                    <div className="flex flex-col items-center space-y-2">
-                      <Building className="h-8 w-8 text-gray-400" />
-                      <p>No sites found</p>
-                      <p className="text-sm">Total sites in state: {sites.length}</p>
-                      <p className="text-sm">Filtered sites: {filteredSites.length}</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredSites.map((site) => (
-                  <TableRow key={site.id}>
-                  <TableCell className="font-medium">
-                    {site.name}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {site.organization_logo ? (
-                        <img 
-                          src={site.organization_logo} 
-                          alt={`${site.organization_name} logo`}
-                          className="h-6 w-6 object-contain rounded"
-                          onError={(e) => {
-                            // Hide the image if it fails to load
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <Building className="h-4 w-4 text-gray-600" />
-                      )}
-                      <span>{site.organization_name}</span>
-                    </div>
-                  </TableCell>
-                      <TableCell>
-                    <Badge 
-                      variant="outline" 
-                      className={`${getStatusDisplayNameFromDB(site.status).color}`}
-                    >
-                      {getStatusDisplayNameFromDB(site.status).name}
-                        </Badge>
-                      </TableCell>
-                  <TableCell>
-                    {site.target_live_date ? new Date(site.target_live_date).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3 text-gray-400" />
-                        <span>{site.assigned_ops_manager || 'Unassigned'}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Wrench className="h-3 w-3 text-gray-400" />
-                        <span>{site.assigned_deployment_engineer || 'Unassigned'}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          {/* Notes icon - Always visible */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleSiteNotes(site)}
-                            title="Site Notes"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          
-                          {/* For Live sites: Show View and Archive */}
-                          {isSiteLive(site.status) && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewSite(site)}
-                                title="View Site (Read-only)"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleArchiveSite(site)}
-                                title="Archive Site"
-                                className="text-orange-600 hover:text-orange-800"
-                              >
-                                <Archive className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          
-                          {/* For non-Live sites: Show Edit only */}
-                          {!isSiteLive(site.status) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditSite(site)}
-                              title="Edit Site (with Stepper Flow)"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          
-                          {/* Delete icon - Only for sites not yet deployed and admin users */}
-                          {isSiteNotDeployed(site.status) && currentRole === 'admin' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSite(site)}
-                              title="Delete Site"
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-            </TableBody>
-          </Table>
-          </CardContent>
-        </Card>
+             {/* Modals */}
+       {selectedSite && (
+         <GlobalSiteNotesModal
+           isOpen={showNotesModal}
+           onClose={() => setShowNotesModal(false)}
+           siteId={selectedSite.id}
+           siteName={selectedSite.name}
+         />
+       )}
 
-      {/* Global Site Notes Modal */}
-      {selectedSite && (
-        <GlobalSiteNotesModal
-          isOpen={showNotesModal}
-          onClose={() => {
-            setShowNotesModal(false);
-            setSelectedSite(null);
-          }}
-          siteId={selectedSite.id}
-          siteName={selectedSite.name}
-        />
-      )}
-
-      {/* Archive Site Modal */}
+      {/* Archive Modal */}
       <Dialog open={showArchiveModal} onOpenChange={setShowArchiveModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Please specify the reason for archiving this site</DialogTitle>
+            <DialogTitle>Archive Site</DialogTitle>
             <DialogDescription>
-              Select the primary reason for archiving "{selectedSite?.name}". This information will be logged for audit purposes.
+              Are you sure you want to archive "{selectedSite?.name}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <RadioGroup value={archiveReason} onValueChange={setArchiveReason}>
-              <div className="space-y-3">
+            <div>
+              <Label>Reason for archiving</Label>
+              <RadioGroup value={archiveReason} onValueChange={setArchiveReason}>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="site_closed" id="archive-reason-1" />
-                  <Label htmlFor="archive-reason-1">Site getting closed (e.g., permanent shutdown)</Label>
+                  <RadioGroupItem value="completed" id="completed" />
+                  <Label htmlFor="completed">Project completed</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="lost_contract" id="archive-reason-2" />
-                  <Label htmlFor="archive-reason-2">Lost contract or business (e.g., client contract ended)</Label>
+                  <RadioGroupItem value="cancelled" id="cancelled" />
+                  <Label htmlFor="cancelled">Project cancelled</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="business_restructuring" id="archive-reason-3" />
-                  <Label htmlFor="archive-reason-3">Business restructuring (merger, acquisition, organisational changes)</Label>
+                  <RadioGroupItem value="other" id="other" />
+                  <Label htmlFor="other">Other</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="site_replaced" id="archive-reason-4" />
-                  <Label htmlFor="archive-reason-4">Site replaced or consolidated with another location</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="regulatory_compliance" id="archive-reason-5" />
-                  <Label htmlFor="archive-reason-5">Regulatory/compliance requirement (e.g., legal hold, audit requirement)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="temporary_pause" id="archive-reason-6" />
-                  <Label htmlFor="archive-reason-6">Temporary operational pause (e.g., seasonal or strategic pause)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="other" id="archive-reason-7" />
-                  <Label htmlFor="archive-reason-7">Other</Label>
-                </div>
-              </div>
-            </RadioGroup>
-            
-            {archiveReason === 'other' && (
-              <div className="space-y-2">
-                <Label htmlFor="other-archive-reason">Please provide details</Label>
+              </RadioGroup>
+              {archiveReason === 'other' && (
                 <Textarea
-                  id="other-archive-reason"
-                  placeholder="Please describe the reason for archiving this site..."
+                  placeholder="Please provide details..."
                   value={otherArchiveReason}
                   onChange={(e) => setOtherArchiveReason(e.target.value)}
-                  className="min-h-[80px]"
+                  className="mt-2"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowArchiveModal(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={confirmArchiveSite}
-              disabled={!archiveReason || (archiveReason === 'other' && !otherArchiveReason.trim())}
-            >
+            <Button onClick={confirmArchiveSite}>
               Archive Site
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Site Modal */}
+      {/* Delete Modal */}
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Please specify the reason for deleting this site</DialogTitle>
+            <DialogTitle>Delete Site</DialogTitle>
             <DialogDescription>
-              Select the primary reason for deleting "{selectedSite?.name}". This action cannot be undone and will be logged for audit purposes.
+              Are you sure you want to permanently delete "{selectedSite?.name}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <RadioGroup value={deleteReason} onValueChange={setDeleteReason}>
-              <div className="space-y-3">
+            <div>
+              <Label>Reason for deletion</Label>
+              <RadioGroup value={deleteReason} onValueChange={setDeleteReason}>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="created_mistake" id="delete-reason-1" />
-                  <Label htmlFor="delete-reason-1">Created by mistake (erroneous site creation)</Label>
+                  <RadioGroupItem value="duplicate" id="duplicate" />
+                  <Label htmlFor="duplicate">Duplicate entry</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="lost_contract" id="delete-reason-2" />
-                  <Label htmlFor="delete-reason-2">Lost contract or business cancellation</Label>
+                  <RadioGroupItem value="error" id="error" />
+                  <Label htmlFor="error">Data entry error</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="duplicate_record" id="delete-reason-3" />
-                  <Label htmlFor="delete-reason-3">Duplicate site record in the system</Label>
+                  <RadioGroupItem value="other" id="other" />
+                  <Label htmlFor="other">Other</Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="data_cleanup" id="delete-reason-4" />
-                  <Label htmlFor="delete-reason-4">Data cleanup (removal of outdated, incomplete, or incorrect information)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="regulatory_legal" id="delete-reason-5" />
-                  <Label htmlFor="delete-reason-5">Regulatory or legal mandate for data deletion (e.g., right to erasure)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="other" id="delete-reason-6" />
-                  <Label htmlFor="delete-reason-6">Other</Label>
-                </div>
-              </div>
-            </RadioGroup>
-            
-            {deleteReason === 'other' && (
-              <div className="space-y-2">
-                <Label htmlFor="other-delete-reason">Please provide details</Label>
+              </RadioGroup>
+              {deleteReason === 'other' && (
                 <Textarea
-                  id="other-delete-reason"
-                  placeholder="Please describe the reason for deleting this site..."
+                  placeholder="Please provide details..."
                   value={otherDeleteReason}
                   onChange={(e) => setOtherDeleteReason(e.target.value)}
-                  className="min-h-[80px]"
+                  className="mt-2"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={confirmDeleteSite}
-              disabled={!deleteReason || (deleteReason === 'other' && !otherDeleteReason.trim())}
-              variant="destructive"
-            >
+            <Button variant="destructive" onClick={confirmDeleteSite}>
               Delete Site
             </Button>
           </DialogFooter>

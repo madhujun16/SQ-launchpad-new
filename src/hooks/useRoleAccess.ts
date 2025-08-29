@@ -8,7 +8,14 @@ export interface TabAccess {
 }
 
 export const useRoleAccess = () => {
-  const { currentRole, profile } = useAuth();
+  const { currentRole, profile, loading } = useAuth();
+  
+  // Return early if still loading
+  if (loading) {
+    return {
+      getTabAccess: () => ({ canAccess: false, accessLevel: 'none', message: 'Loading...' })
+    };
+  }
 
   const getTabAccess = (tabPath: string): TabAccess => {
     if (!currentRole) {
@@ -67,7 +74,11 @@ export const useRoleAccess = () => {
         return { canAccess: false, accessLevel: 'none', message: 'Access denied' };
 
       case '/platform-configuration':
-      
+        if (currentRole === 'admin') {
+          return { canAccess: true, accessLevel: 'full' };
+        }
+        return { canAccess: false, accessLevel: 'none', message: 'Admin access required' };
+
       case '/admin':
         if (currentRole === 'admin') {
           return { canAccess: true, accessLevel: 'full' };

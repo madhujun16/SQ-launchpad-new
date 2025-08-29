@@ -14,40 +14,56 @@ export class UserService {
   // Get all users with their roles
   static async getAllUsers(): Promise<UserWithRole[]> {
     try {
+      // Use the same approach as PlatformConfiguration - load profiles first, then roles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, user_id, email, full_name, created_at, updated_at')
         .order('full_name');
 
-      if (profilesError) throw profilesError;
-
-      const { data: userRolesData, error: userRolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-
-      if (userRolesError) throw userRolesError;
-
-      // Combine profiles with their roles
-      const usersWithRoles: UserWithRole[] = [];
-      
-      for (const profile of profilesData || []) {
-        const userRoles = userRolesData?.filter(role => role.user_id === profile.user_id) || [];
-        
-        // Create an entry for each role the user has
-        for (const userRole of userRoles) {
-          usersWithRoles.push({
-            id: userRole.id,
-            user_id: profile.user_id,
-            email: profile.email,
-            full_name: profile.full_name || profile.email,
-            role: userRole.role,
-            created_at: profile.created_at,
-            updated_at: profile.updated_at
-          });
-        }
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        return [];
       }
 
-      return usersWithRoles;
+      if (!profilesData || profilesData.length === 0) {
+        console.log('No profiles found');
+        return [];
+      }
+
+      // Fetch roles for each user
+      const usersWithRoles = await Promise.all(
+        profilesData.map(async (profile) => {
+          try {
+            const { data: rolesData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', profile.user_id);
+            
+            // Create an entry for each role the user has
+            const userRoles: UserWithRole[] = [];
+            if (rolesData && rolesData.length > 0) {
+              for (const roleData of rolesData) {
+                userRoles.push({
+                  id: profile.id,
+                  user_id: profile.user_id,
+                  email: profile.email,
+                  full_name: profile.full_name || profile.email,
+                  role: roleData.role,
+                  created_at: profile.created_at,
+                  updated_at: profile.updated_at
+                });
+              }
+            }
+            return userRoles;
+          } catch (roleError) {
+            console.error('Error fetching roles for user:', profile.email, roleError);
+            return [];
+          }
+        })
+      );
+
+      // Flatten the array of arrays
+      return usersWithRoles.flat();
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
@@ -57,33 +73,51 @@ export class UserService {
   // Get users by specific role
   static async getUsersByRole(role: 'admin' | 'ops_manager' | 'deployment_engineer'): Promise<UserWithRole[]> {
     try {
-      const { data: userRolesData, error: userRolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          id,
-          role,
-          user_id,
-          profiles!inner(
-            email,
-            full_name,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('role', role)
-        .order('profiles.full_name');
+      // Use the same approach as PlatformConfiguration - load profiles first, then roles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, user_id, email, full_name, created_at, updated_at')
+        .order('full_name');
 
-      if (userRolesError) throw userRolesError;
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        return [];
+      }
 
-      return (userRolesData || []).map(userRole => ({
-        id: userRole.id,
-        user_id: userRole.user_id,
-        email: userRole.profiles.email,
-        full_name: userRole.profiles.full_name || userRole.profiles.email,
-        role: userRole.role,
-        created_at: userRole.profiles.created_at,
-        updated_at: userRole.profiles.updated_at
-      }));
+      if (!profilesData || profilesData.length === 0) {
+        return [];
+      }
+
+      // Filter users by role
+      const usersWithRole = await Promise.all(
+        profilesData.map(async (profile) => {
+          try {
+            const { data: rolesData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', profile.user_id)
+              .eq('role', role);
+            
+            if (rolesData && rolesData.length > 0) {
+              return {
+                id: profile.id,
+                user_id: profile.user_id,
+                email: profile.email,
+                full_name: profile.full_name || profile.email,
+                role: role,
+                created_at: profile.created_at,
+                updated_at: profile.updated_at
+              };
+            }
+            return null;
+          } catch (roleError) {
+            console.error('Error fetching roles for user:', profile.email, roleError);
+            return null;
+          }
+        })
+      );
+
+      return usersWithRole.filter(user => user !== null) as UserWithRole[];
     } catch (error) {
       console.error(`Error fetching users with role ${role}:`, error);
       return [];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,9 +54,9 @@ export function GlobalSiteNotesModal({
     if (isOpen && siteId) {
       loadNotes();
     }
-  }, [isOpen, siteId]);
+  }, [isOpen, siteId, loadNotes]);
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     setIsLoading(true);
     try {
       const siteStudy = await SiteStudyService.getSiteStudyBySiteId(siteId);
@@ -95,7 +95,7 @@ export function GlobalSiteNotesModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [siteId]);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) {
@@ -208,7 +208,7 @@ export function GlobalSiteNotesModal({
                   <select
                     id="noteType"
                     value={noteType}
-                    onChange={(e) => setNoteType(e.target.value as any)}
+                    onChange={(e) => setNoteType(e.target.value as 'general' | 'technical' | 'operational' | 'other')}
                     className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="general">General</option>

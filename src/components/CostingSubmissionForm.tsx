@@ -95,7 +95,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
     setItems(items.filter(item => item.id !== id));
   };
 
-  const updateItem = (id: string, field: keyof CostingFormItem, value: any) => {
+  const updateItem = (id: string, field: keyof CostingFormItem, value: string | number | boolean) => {
     setItems(items.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
@@ -154,7 +154,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await (CostingService.createCostingApproval as any)({
+      await CostingService.createCostingApproval({
         site_id: siteId,
         ops_manager_id: selectedOpsManager,
         costing_items: items.map(item => ({

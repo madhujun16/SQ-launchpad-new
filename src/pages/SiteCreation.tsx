@@ -47,6 +47,7 @@ import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { UserService, UserWithRole } from '@/services/userService';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface SiteData {
   name: string;
@@ -356,11 +357,9 @@ const SiteCreation = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="target-live-date">Target Live Date *</Label>
-                        <Input
-                          id="target-live-date"
-                          type="date"
-                          value={formData.targetLiveDate}
-                          onChange={(e) => handleInputChange('targetLiveDate', e.target.value)}
+                        <DatePicker
+                          value={formData.targetLiveDate ? new Date(formData.targetLiveDate) : undefined}
+                          onChange={(date) => handleInputChange('targetLiveDate', date ? date.toISOString().split('T')[0] : '')}
                         />
                       </div>
                       <div className="space-y-2">
