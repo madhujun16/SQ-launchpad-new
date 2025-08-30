@@ -7,11 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { RocketIcon } from '@/components/ui/RocketIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { secureLog } from '@/config/security';
-import { Loader } from '@/components/ui/loader';
+import { OTPInput } from '@/components/ui/OTPInput';
 
 const Auth = () => {
   const { signInWithOtp, verifyOtp, user } = useAuth();
@@ -23,12 +23,26 @@ const Auth = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  // Resend timer effect
+  useEffect(() => {
+    if (otpSent && resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpSent, resendTimer]);
+
+  const startResendTimer = () => {
+    setResendTimer(60); // 60 seconds
+  };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,15 +69,16 @@ const Auth = () => {
       toast.error('Failed to send OTP');
     } else {
       setOtpSent(true);
+      startResendTimer();
       toast.success('OTP sent to your email');
     }
     setLoading(false);
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp) {
-      setError('Please enter the OTP');
+  const handleVerifyOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      setError('Please enter the complete 6-digit code');
       return;
     }
 
@@ -73,25 +88,41 @@ const Auth = () => {
       return;
     }
 
-    setLoading(true);
+    setVerifying(true);
     setError('');
 
     const { error } = await verifyOtp(email, otp);
 
     if (error) {
-      setError(error || 'Invalid OTP');
-      toast.error('Invalid OTP');
+      setError('Incorrect code. Please try again.');
+      setVerifying(false);
     } else {
       toast.success('Login successful');
       navigate('/dashboard');
     }
-    setLoading(false);
+  };
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    
+    setError('');
+    setOtp('');
+    const { error } = await signInWithOtp(email);
+    
+    if (error) {
+      setError('Failed to resend OTP');
+    } else {
+      startResendTimer();
+      toast.success('OTP resent to your email');
+    }
   };
 
   const handleBackToEmail = () => {
     setOtpSent(false);
     setOtp('');
     setError('');
+    setResendTimer(0);
+    setVerifying(false);
   };
 
 
@@ -126,38 +157,58 @@ const Auth = () => {
                 </Alert>
               )}
 
-              <div className="space-y-3">
-                <Label htmlFor="otp" className={`${isMobile ? 'text-sm' : 'text-base'} font-medium text-white/80`}>
-                  One-Time Code
-                </Label>
-                <div className="relative">
-                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 text-white/50 ${isMobile ? 'h-5 w-5' : 'h-5 w-5'}`} />
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className={`
-                      pl-12 pr-4 ${isMobile ? 'h-12 text-lg' : 'h-14 text-lg'} rounded-xl
-                      bg-white/10 text-white placeholder-white/50 border-white/20 focus:ring-[#30E481] focus:border-[#30E481]
-                    `}
-                    maxLength={6}
-                    required
-                  />
-                </div>
-              </div>
+                             <div className="space-y-4">
+                 <Label className={`${isMobile ? 'text-sm' : 'text-base'} font-medium text-white/80 text-center block`}>
+                   Enter 6-digit code
+                 </Label>
+                 <OTPInput
+                   length={6}
+                   value={otp}
+                   onChange={setOtp}
+                   error={!!error}
+                   disabled={verifying}
+                 />
+                 
+                 {otp.length === 6 && !verifying && (
+                   <Button
+                     type="button"
+                     onClick={() => handleVerifyOtp()}
+                     className="w-full bg-[#1CB255] hover:bg-[#17a04c] text-white font-semibold py-3 rounded-xl transition-colors"
+                   >
+                     Continue
+                   </Button>
+                 )}
+               </div>
 
-              <Button
-                type="submit"
-                className={`
-                  w-full shadow-lg rounded-xl bg-[#1CB255] hover:bg-[#17a04c]
-                  ${isMobile ? 'h-12 text-lg' : 'h-14 text-lg'} font-semibold active:scale-95 transition-all duration-200
-                `}
-                disabled={loading}
-              >
-                {loading ? 'Verifying...' : 'Verify OTP'}
-              </Button>
+                             {verifying && (
+                 <div className="text-center text-[#1CB255] text-sm">
+                   <div className="flex items-center justify-center gap-2">
+                     <div className="w-4 h-4 border-2 border-[#1CB255] border-t-transparent rounded-full animate-spin"></div>
+                     Verifying your OTP...
+                   </div>
+                 </div>
+               )}
+
+               {error && (
+                 <div className="text-center text-red-400 text-sm bg-red-900/20 rounded-lg p-3">
+                   <div className="flex items-center justify-center gap-2">
+                     <XCircle className="w-4 h-4" />
+                     {error}
+                   </div>
+                 </div>
+               )}
+
+               <div className="text-center space-y-3">
+                 <Button
+                   type="button"
+                   variant="ghost"
+                   onClick={handleResendOtp}
+                   disabled={resendTimer > 0}
+                   className={`text-[#1CB255] hover:text-[#17a04c] hover:bg-[#1CB255]/10 ${isMobile ? 'text-sm h-11' : 'text-base h-12'} rounded-xl`}
+                 >
+                   {resendTimer > 0 ? `Resend code in ${resendTimer}s` : 'Resend code'}
+                 </Button>
+               </div>
 
               <div className="text-center">
                 <Button
