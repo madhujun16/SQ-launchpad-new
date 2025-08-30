@@ -48,6 +48,7 @@ import { SitesService, type Site, type Organization } from '@/services/sitesServ
 import { LocationPicker } from '@/components/ui/location-picker';
 import { UserService, UserWithRole } from '@/services/userService';
 import { DatePicker } from '@/components/ui/date-picker';
+import { PageLoader } from '@/components/ui/loader';
 
 interface SiteData {
   name: string;
@@ -233,14 +234,7 @@ const SiteCreation = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading site creation form...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
