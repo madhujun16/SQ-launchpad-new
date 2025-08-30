@@ -253,12 +253,20 @@ const Sites = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-      {/* Header with Create Site Button */}
-      <div className="mb-8 flex justify-between items-start">
+            {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites</h1>
+        <p className="text-gray-600">
+          Manage client sites and track deployment progress.
+        </p>
+      </div>
+
+      {/* Sites Overview Section with Create Site Button */}
+      <div className="mb-6 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites</h1>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-1">Sites Overview</h2>
           <p className="text-gray-600">
-            Manage client sites and track deployment progress.
+            Manage and track all client sites in the deployment pipeline.
           </p>
         </div>
         <Button 
@@ -270,10 +278,11 @@ const Sites = () => {
         </Button>
       </div>
 
-        {/* Search and Filters */}
-        <div className="space-y-4 mb-6">
+      {/* Search and Filters - All in One Line (Desktop) */}
+      <div className="mb-6">
+        <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
           {/* Search Bar */}
-          <div className="w-full">
+          <div className="flex-1 lg:flex-none lg:w-80">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -285,36 +294,31 @@ const Sites = () => {
             </div>
           </div>
           
-          {/* Filters Row */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="site_created">Site Created</SelectItem>
-                <SelectItem value="site_study_done">Site Study Done</SelectItem>
-                <SelectItem value="scoping_done">Scoping Done</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="procurement_done">Procurement Done</SelectItem>
-                <SelectItem value="deployed">Deployed</SelectItem>
-                <SelectItem value="live">Live</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">
-              Clear Filters
-            </Button>
-          </div>
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="site_created">Site Created</SelectItem>
+              <SelectItem value="site_study_done">Site Study Done</SelectItem>
+              <SelectItem value="scoping_done">Scoping Done</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="procurement_done">Procurement Done</SelectItem>
+              <SelectItem value="deployed">Deployed</SelectItem>
+              <SelectItem value="live">Live</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Clear Filters Button */}
+          <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+            Clear Filters
+          </Button>
         </div>
-
-        {/* Sites Overview */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Sites Overview</h2>
-          <p className="text-gray-600 mb-4">
-            Manage and track all client sites in the deployment pipeline.
-          </p>
       </div>
+
+
 
       {/* Sites Table */}
         <Card className="shadow-sm">
