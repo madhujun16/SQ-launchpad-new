@@ -163,43 +163,76 @@ const Sites = () => {
     const isDeployed = site.status === 'deployed';
     
     if (isLive) {
-      // Live sites: ONLY Archive (no View, no Delete)
+      // Live sites: View + Archive (2 buttons)
       return (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleArchiveSite(site)}
-          className="h-8 w-8 p-0 hover:bg-orange-50"
-          title="Archive Site"
-        >
-          <Archive className="h-4 w-4 text-orange-600" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewSite(site)}
+            className="h-8 w-8 p-0 hover:bg-blue-50"
+            title="View Site"
+          >
+            <Eye className="h-4 w-4 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleArchiveSite(site)}
+            className="h-8 w-8 p-0 hover:bg-orange-50"
+            title="Archive Site"
+          >
+            <Archive className="h-4 w-4 text-orange-600" />
+          </Button>
+        </>
       );
     } else if (isDeployed) {
-      // Deployed sites: ONLY Edit (no View, no Delete)
+      // Deployed sites: View + Edit (2 buttons)
       return (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleEditSite(site)}
-          className="h-8 w-8 p-0 hover:bg-green-50"
-          title="Edit Site"
-        >
-          <Edit className="h-4 w-4 text-green-600" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewSite(site)}
+            className="h-8 w-8 p-0 hover:bg-blue-50"
+            title="View Site"
+          >
+            <Eye className="h-4 w-4 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditSite(site)}
+            className="h-8 w-8 p-0 hover:bg-green-50"
+            title="Edit Site"
+          >
+            <Edit className="h-4 w-4 text-green-600" />
+          </Button>
+        </>
       );
     } else {
-      // Other states: ONLY Delete (no Edit, no View)
+      // Other states: Edit + Delete (2 buttons)
       return (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleDeleteSite(site)}
-          className="h-8 w-8 p-0 hover:bg-red-50"
-          title="Delete Site"
-        >
-          <Trash2 className="h-4 w-4 text-red-600" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditSite(site)}
+            className="h-8 w-8 p-0 hover:bg-green-50"
+            title="Edit Site"
+          >
+            <Edit className="h-4 w-4 text-green-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteSite(site)}
+            className="h-8 w-8 p-0 hover:bg-red-50"
+            title="Delete Site"
+          >
+            <Trash2 className="h-4 w-4 text-red-600" />
+          </Button>
+        </>
       );
     }
   };
