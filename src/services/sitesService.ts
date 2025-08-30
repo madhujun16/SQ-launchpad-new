@@ -94,10 +94,15 @@ export class SitesService {
       
       console.log('🔍 Making simple Supabase query...');
       
-      // Simple query to get basic site data
+      // Query to get sites with user assignments and organization data
       const { data, error } = await supabase
         .from('sites')
-        .select('*')
+        .select(`
+          *,
+          assigned_ops_manager_profile:profiles!assigned_ops_manager_id(full_name),
+          assigned_deployment_engineer_profile:profiles!assigned_deployment_engineer_id(full_name),
+          organization:organizations(name, logo_url)
+        `)
         .order('name');
 
       if (error) {
@@ -112,43 +117,43 @@ export class SitesService {
         return [];
       }
 
-      // Transform the data to match our Site interface
-      const transformedSites = data.map((site: any) => {
-        return {
-          id: site.id,
-          name: site.name || 'Unnamed Site',
-          organization_id: site.organization_id || '',
-          organization_name: site.organization_name || 'Organization', // Should come from backend join
-          organization_logo: site.organization_logo || null,
-          location: site.address || site.location || 'Location not specified',
-          status: site.workflow_status || site.status || 'Unknown',
-          target_live_date: site.suggested_go_live || site.target_go_live || '', // Show suggested go-live as target
-          suggested_go_live: site.suggested_go_live || site.target_go_live || '',
-          assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
-          assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
-          sector: site.sector || '',
-          unit_code: site.unit_code || site.food_court_unit || '',
-          criticality_level: site.criticality_level || 'medium',
-          team_assignment: site.team_assignment || '',
-          stakeholders: site.stakeholders || [],
-          notes: site.description || site.notes || '',
-          // Contact information fields
-          unitManagerName: site.unit_manager_name || '',
-          jobTitle: site.job_title || '',
-          unitManagerEmail: site.unit_manager_email || '',
-          unitManagerMobile: site.unit_manager_mobile || '',
-          additionalContactName: site.additional_contact_name || '',
-          additionalContactEmail: site.additional_contact_email || '',
-          // Location fields
-          latitude: site.latitude || null,
-          longitude: site.longitude || null,
-          postcode: site.postcode || '',
-          region: site.region || '',
-          country: site.country || '',
-          created_at: site.created_at || new Date().toISOString(),
-          updated_at: site.updated_at || new Date().toISOString()
-        } as Site;
-      });
+             // Transform the data to match our Site interface
+       const transformedSites = data.map((site: any) => {
+         return {
+           id: site.id,
+           name: site.name || 'Unnamed Site',
+           organization_id: site.organization_id || '',
+           organization_name: site.organization?.name || 'Organization',
+           organization_logo: site.organization?.logo_url || null,
+           location: site.address || site.location || 'Location not specified',
+           status: site.workflow_status || site.status || 'Unknown',
+           target_live_date: site.suggested_go_live || site.target_go_live || '', // Show suggested go-live as target
+           suggested_go_live: site.suggested_go_live || site.target_go_live || '',
+           assigned_ops_manager: site.assigned_ops_manager_profile?.full_name || 'Unassigned',
+           assigned_deployment_engineer: site.assigned_deployment_engineer_profile?.full_name || 'Unassigned',
+           sector: site.sector || '',
+           unit_code: site.unit_code || site.food_court_unit || '',
+           criticality_level: site.criticality_level || 'medium',
+           team_assignment: site.team_assignment || '',
+           stakeholders: site.stakeholders || [],
+           notes: site.description || site.notes || '',
+           // Contact information fields
+           unitManagerName: site.unit_manager_name || '',
+           jobTitle: site.job_title || '',
+           unitManagerEmail: site.unit_manager_email || '',
+           unitManagerMobile: site.unit_manager_mobile || '',
+           additionalContactName: site.additional_contact_name || '',
+           additionalContactEmail: site.additional_contact_email || '',
+           // Location fields
+           latitude: site.latitude || null,
+           longitude: site.longitude || null,
+           postcode: site.postcode || '',
+           region: site.region || '',
+           country: site.country || '',
+           created_at: site.created_at || new Date().toISOString(),
+           updated_at: site.updated_at || new Date().toISOString()
+         } as Site;
+       });
 
       // Update cache
       this.sitesCache = {

@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 // TODO: Backend needs to provide proper data for:
-// - organization_name (currently hardcoded as 'Organization')
-// - suggested_go_live (from site study step)
-// - target_live_date (original target date)
-// - assigned_ops_manager (actual user names)
-// - assigned_deployment_engineer (actual user names)
-// - status (user-friendly names from backend)
+// - suggested_go_live (from site study step) - currently showing in Target Go-Live column
+// - target_live_date (original target date) - removed from display
+// - status (user-friendly names from backend) - currently using getStatusDisplayName
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -193,30 +190,19 @@ const Sites = () => {
           </Button>
         </>
       );
-    } else if (isDeployed) {
-      // Deployed sites: View + Edit (2 buttons)
-      return (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewSite(site)}
-            className="h-8 w-8 p-0 hover:bg-blue-50"
-            title="View Site"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditSite(site)}
-            className="h-8 w-8 p-0 hover:bg-green-50"
-            title="Edit Site"
-          >
-            <Edit className="h-4 w-4 text-green-600" />
-          </Button>
-        </>
-      );
+                   } else if (isDeployed) {
+                 // Deployed sites: Edit only (1 button)
+                 return (
+                   <Button
+                     variant="ghost"
+                     size="sm"
+                     onClick={() => handleEditSite(site)}
+                     className="h-8 w-8 p-0 hover:bg-green-50"
+                     title="Edit Site"
+                   >
+                     <Edit className="h-4 w-4 text-green-600" />
+                   </Button>
+                 );
     } else {
       // Other states: Edit + Delete (2 buttons)
       return (
@@ -345,7 +331,6 @@ const Sites = () => {
                     <TableHead>Organization</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Target Go-Live</TableHead>
-                    <TableHead>Original Target</TableHead>
                     <TableHead>Assigned Team</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -353,7 +338,7 @@ const Sites = () => {
                 <TableBody>
                   {filteredSites.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={6} className="text-center py-8">
                         <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600">
                           {searchTerm || statusFilter !== 'all' 
@@ -393,7 +378,6 @@ const Sites = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>{site.suggested_go_live || site.target_live_date || 'N/A'}</TableCell>
-                        <TableCell>{site.target_live_date || 'N/A'}</TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</div>
