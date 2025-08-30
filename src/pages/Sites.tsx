@@ -253,24 +253,22 @@ const Sites = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-      {/* Header */}
-        <div className="mb-8">
+      {/* Header with Create Site Button */}
+      <div className="mb-8 flex justify-between items-start">
+        <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites</h1>
           <p className="text-gray-600">
             Manage client sites and track deployment progress.
           </p>
         </div>
-
-        {/* Create Site Button - Master Button Above Search/Filters */}
-        <div className="mb-6">
-          <Button 
-            onClick={handleCreateSite} 
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
-          >
-            <Plus className="h-5 w-5 mr-3" />
-            + Create Site
-          </Button>
-        </div>
+        <Button 
+          onClick={handleCreateSite} 
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
+        >
+          <Plus className="h-5 w-5 mr-3" />
+          Create Site
+        </Button>
+      </div>
 
         {/* Search and Filters */}
         <div className="space-y-4 mb-6">
@@ -289,26 +287,24 @@ const Sites = () => {
           
           {/* Filters Row */}
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="site_created">Site Created</SelectItem>
-                  <SelectItem value="site_study_done">Site Study Done</SelectItem>
-                  <SelectItem value="scoping_done">Scoping Done</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="procurement_done">Procurement Done</SelectItem>
-                  <SelectItem value="deployed">Deployed</SelectItem>
-                  <SelectItem value="live">Live</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">
-                Clear Filters
-              </Button>
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="site_created">Site Created</SelectItem>
+                <SelectItem value="site_study_done">Site Study Done</SelectItem>
+                <SelectItem value="scoping_done">Scoping Done</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="procurement_done">Procurement Done</SelectItem>
+                <SelectItem value="deployed">Deployed</SelectItem>
+                <SelectItem value="live">Live</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">
+              Clear Filters
+            </Button>
           </div>
         </div>
 
