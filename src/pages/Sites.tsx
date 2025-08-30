@@ -1,4 +1,11 @@
 import React, { useState, useEffect } from 'react';
+// TODO: Backend needs to provide proper data for:
+// - organization_name (currently hardcoded as 'Organization')
+// - suggested_go_live (from site study step)
+// - target_live_date (original target date)
+// - assigned_ops_manager (actual user names)
+// - assigned_deployment_engineer (actual user names)
+// - status (user-friendly names from backend)
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -338,7 +345,7 @@ const Sites = () => {
                     <TableHead>Organization</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Target Go-Live</TableHead>
-                    <TableHead>Suggested Go-Live</TableHead>
+                    <TableHead>Original Target</TableHead>
                     <TableHead>Assigned Team</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -385,8 +392,8 @@ const Sites = () => {
                             {getStatusDisplayName(site.status)}
                           </Badge>
                         </TableCell>
+                        <TableCell>{site.suggested_go_live || site.target_live_date || 'N/A'}</TableCell>
                         <TableCell>{site.target_live_date || 'N/A'}</TableCell>
-                        <TableCell>{site.suggested_go_live || 'N/A'}</TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</div>
