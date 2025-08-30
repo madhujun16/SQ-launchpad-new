@@ -10,6 +10,7 @@ export interface Site {
   location: string;
   status: string;
   target_live_date?: string;
+  suggested_go_live?: string;
   assigned_ops_manager?: string;
   assigned_deployment_engineer?: string;
   sector?: string;
@@ -117,11 +118,12 @@ export class SitesService {
           id: site.id,
           name: site.name || 'Unnamed Site',
           organization_id: '', // Not available in current schema
-          organization_name: 'Organization', // Default value
+          organization_name: 'Organization', // Default value - should come from backend
           organization_logo: null,
           location: site.address || 'Location not specified',
           status: site.workflow_status || site.status || 'Unknown',
           target_live_date: site.target_go_live || '',
+          suggested_go_live: site.suggested_go_live || site.target_go_live || '',
           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
           sector: '',

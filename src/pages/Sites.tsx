@@ -268,6 +268,17 @@ const Sites = () => {
           </p>
         </div>
 
+        {/* Create Site Button - Master Button Above Search/Filters */}
+        <div className="mb-6">
+          <Button 
+            onClick={handleCreateSite} 
+            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
+          >
+            <Plus className="h-5 w-5 mr-3" />
+            + Create Site
+          </Button>
+        </div>
+
         {/* Search and Filters */}
         <div className="space-y-4 mb-6">
           {/* Search Bar */}
@@ -283,7 +294,7 @@ const Sites = () => {
             </div>
           </div>
           
-          {/* Filters and Create Button Row */}
+          {/* Filters Row */}
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -305,10 +316,6 @@ const Sites = () => {
                 Clear Filters
               </Button>
             </div>
-            <Button onClick={handleCreateSite} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              + Create Site
-            </Button>
           </div>
         </div>
 
@@ -331,6 +338,7 @@ const Sites = () => {
                     <TableHead>Organization</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Target Go-Live</TableHead>
+                    <TableHead>Suggested Go-Live</TableHead>
                     <TableHead>Assigned Team</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -338,7 +346,7 @@ const Sites = () => {
                 <TableBody>
                   {filteredSites.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600">
                           {searchTerm || statusFilter !== 'all' 
@@ -378,9 +386,10 @@ const Sites = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>{site.target_live_date || 'N/A'}</TableCell>
+                        <TableCell>{site.suggested_go_live || 'N/A'}</TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div>{site.assigned_ops_manager || 'Unassigned'}</div>
+                            <div className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</div>
                             <div className="text-gray-500">{site.assigned_deployment_engineer || 'Unassigned'}</div>
                           </div>
                         </TableCell>
