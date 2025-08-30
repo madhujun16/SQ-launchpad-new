@@ -14,12 +14,9 @@ import { secureLog } from '@/config/security';
 import { Loader } from '@/components/ui/loader';
 
 const Auth = () => {
-  const authData = useAuth();
+  const { signInWithOtp, verifyOtp, user } = useAuth();
   const navigate = useNavigate();
   const { isMobile, isTablet } = useIsMobile();
-  
-  // Destructure with safe defaults
-  const { signInWithOtp, verifyOtp, user } = authData || {};
   
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -97,42 +94,19 @@ const Auth = () => {
     setError('');
   };
 
-  // Show loading state if auth context is not ready
-  if (!authData || !signInWithOtp || !verifyOtp) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
-        <div className="text-center">
-          <Loader size="lg" />
-        </div>
-      </div>
-    );
-  }
+
 
   return (
-    <div className={`
-      min-h-screen flex items-center justify-center 
-      header-black-green
-      relative overflow-hidden
-      p-4 sm:p-6
-    `}>
-      {/* Subtle green glows */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl" style={{background:'radial-gradient(closest-side, rgba(48,228,129,0.12), rgba(0,0,0,0))'}}></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl" style={{background:'radial-gradient(closest-side, rgba(28,178,85,0.10), rgba(0,0,0,0))'}}></div>
-      </div>
+    <div className="auth-page-background flex items-center justify-center p-4 sm:p-6">
 
       <Card className={`
-        w-full shadow-2xl border border-white/10
-        bg-white/5 backdrop-blur-xl text-white
-        ${isMobile ? 'max-w-sm' : isTablet ? 'max-w-md' : 'max-w-md'}
-        relative z-10
+        w-full border border-white/20
+        bg-white/10 text-white
+        ${isMobile ? 'max-w-sm' : 'max-w-md'}
       `}>
         <CardHeader className={`${isMobile ? 'p-6' : 'p-8'} text-center space-y-4`}>
-          <div className={`
-            mx-auto bg-white/10 rounded-full flex items-center justify-center shadow-lg
-            ${isMobile ? 'w-16 h-16' : 'w-20 h-20'}
-          `}>
-            <RocketIcon size={isMobile ? 32 : 40} className="text-white" />
+          <div className="mx-auto bg-white/10 rounded-full flex items-center justify-center w-16 h-16">
+            <RocketIcon size={32} className="text-white" />
           </div>
           <CardTitle className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold`}> 
             {otpSent ? 'Enter OTP' : 'Welcome Back'}

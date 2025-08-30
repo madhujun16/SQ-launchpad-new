@@ -104,7 +104,11 @@ function App() {
             <Routes>
               {/* Public routes - no providers needed */}
               <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={
+                <AuthProvider>
+                  <Auth />
+                </AuthProvider>
+              } />
               
               {/* Protected routes - wrapped with providers */}
               <Route
