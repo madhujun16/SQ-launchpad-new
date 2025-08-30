@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// Button Style Guide for Create Site buttons across the app:
-// className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm"
-// Text format: "+ Create [Item]" (with plus icon)
-// Mobile: w-full sm:w-auto for responsive width
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +12,7 @@ import {
   Edit,
   Trash2,
   Plus,
+  Archive,
   Clock,
   CheckCircle,
   Activity
@@ -26,6 +23,9 @@ import { SitesService, type Site } from '@/services/sitesService';
 import { toast } from 'sonner';
 import { PageLoader } from '@/components/ui/loader';
 import { getStatusColor, getStatusDisplayName } from '@/lib/siteTypes';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const Sites = () => {
   const navigate = useNavigate();
@@ -38,61 +38,22 @@ const Sites = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [archiveReason, setArchiveReason] = useState('');
 
-  // Fetch sites
+  // Fetch sites from backend only
   useEffect(() => {
     const fetchSites = async () => {
       try {
         setLoading(true);
         const sitesData = await SitesService.getAllSites();
-        
-        // If no sites from backend, use mock data for now
-        if (!sitesData || sitesData.length === 0) {
-          console.log('No sites from backend, using mock data');
-          const mockSites = [
-            {
-              id: '1',
-              name: '250 ER Restaurant',
-              organization_name: 'Peabody',
-              location: 'London',
-              status: 'deployed',
-              target_live_date: '9/1/2025',
-              assigned_ops_manager: 'Peabody Team',
-              assigned_deployment_engineer: 'Deployment Team',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: '2',
-              name: 'Baxter Health Restaurant',
-              organization_name: 'Baxter Health',
-              location: 'Manchester',
-              status: 'site_created',
-              target_live_date: '5/5/2025',
-              assigned_ops_manager: 'Baxter Health Team',
-              assigned_deployment_engineer: 'Deployment Team',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              id: '3',
-              name: 'BP Pulse Arena',
-              organization_name: 'The NEC',
-              location: 'Birmingham',
-              status: 'live',
-              target_live_date: '8/20/2025',
-              assigned_ops_manager: 'Levy Team',
-              assigned_deployment_engineer: 'Deployment Team',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ];
-          setSites(mockSites);
-          setFilteredSites(mockSites);
-        } else {
-          setSites(sitesData);
-          setFilteredSites(sitesData);
-        }
+        setSites(sitesData);
+        setFilteredSites(sitesData);
       } catch (error) {
         console.error('Error fetching sites:', error);
         setError('Failed to load sites');
@@ -134,18 +95,56 @@ const Sites = () => {
     navigate(`/sites/${site.id}?mode=edit`);
   };
 
-  const handleDeleteSite = async (site: Site) => {
-    if (window.confirm(`Are you sure you want to delete "${site.name}"?`)) {
-      try {
-        await SitesService.deleteSite(site.id);
-        toast.success('Site deleted successfully');
-        // Refresh sites
-        const updatedSites = sites.filter(s => s.id !== site.id);
-        setSites(updatedSites);
-      } catch (error) {
-        console.error('Error deleting site:', error);
-        toast.error('Failed to delete site');
-      }
+  const handleDeleteSite = (site: Site) => {
+    setSelectedSite(site);
+    setDeleteReason('');
+    setDeleteModalOpen(true);
+  };
+
+  const handleArchiveSite = (site: Site) => {
+    setSelectedSite(site);
+    setArchiveReason('');
+    setArchiveModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedSite || !deleteReason) return;
+    
+    try {
+      await SitesService.deleteSite(selectedSite.id);
+      toast.success('Site deleted successfully');
+      
+      // Refresh sites
+      const updatedSites = sites.filter(s => s.id !== selectedSite.id);
+      setSites(updatedSites);
+      setDeleteModalOpen(false);
+      setSelectedSite(null);
+      setDeleteReason('');
+    } catch (error) {
+      console.error('Error deleting site:', error);
+      toast.error('Failed to delete site');
+    }
+  };
+
+  const confirmArchive = async () => {
+    if (!selectedSite || !archiveReason) return;
+    
+    try {
+      // Update site status to archived
+      await SitesService.updateSiteStatus(selectedSite.id, 'archived');
+      toast.success('Site archived successfully');
+      
+      // Refresh sites
+      const updatedSites = sites.map(s => 
+        s.id === selectedSite.id ? { ...s, status: 'archived' } : s
+      );
+      setSites(updatedSites);
+      setArchiveModalOpen(false);
+      setSelectedSite(null);
+      setArchiveReason('');
+    } catch (error) {
+      console.error('Error archiving site:', error);
+      toast.error('Failed to archive site');
     }
   };
 
@@ -156,6 +155,86 @@ const Sites = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
+  };
+
+  // Get action buttons based on site status
+  const getActionButtons = (site: Site) => {
+    const isLive = site.status === 'live';
+    const isDeployed = site.status === 'deployed';
+    
+    if (isLive) {
+      // Live sites: View + Archive
+      return (
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewSite(site)}
+            className="h-8 w-8 p-0 hover:bg-blue-50"
+            title="View Site"
+          >
+            <Eye className="h-4 w-4 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleArchiveSite(site)}
+            className="h-8 w-8 p-0 hover:bg-orange-50"
+            title="Archive Site"
+          >
+            <Archive className="h-4 w-4 text-orange-600" />
+          </Button>
+        </>
+      );
+    } else if (isDeployed) {
+      // Deployed sites: View + Edit (no delete)
+      return (
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewSite(site)}
+            className="h-8 w-8 p-0 hover:bg-blue-50"
+            title="View Site"
+          >
+            <Eye className="h-4 w-4 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditSite(site)}
+            className="h-8 w-8 p-0 hover:bg-green-50"
+            title="Edit Site"
+          >
+            <Edit className="h-4 w-4 text-green-600" />
+          </Button>
+        </>
+      );
+    } else {
+      // Other states: Edit + Delete
+      return (
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditSite(site)}
+            className="h-8 w-8 p-0 hover:bg-green-50"
+            title="Edit Site"
+          >
+            <Edit className="h-4 w-4 text-green-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteSite(site)}
+            className="h-8 w-8 p-0 hover:bg-red-50"
+            title="Delete Site"
+          >
+            <Trash2 className="h-4 w-4 text-red-600" />
+          </Button>
+        </>
+      );
+    }
   };
 
   // Loading state
@@ -214,9 +293,10 @@ const Sites = () => {
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="site_created">Site Created</SelectItem>
-                  <SelectItem value="planning">Planning</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="review">Review</SelectItem>
+                  <SelectItem value="site_study_done">Site Study Done</SelectItem>
+                  <SelectItem value="scoping_done">Scoping Done</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="procurement_done">Procurement Done</SelectItem>
                   <SelectItem value="deployed">Deployed</SelectItem>
                   <SelectItem value="live">Live</SelectItem>
                 </SelectContent>
@@ -276,8 +356,18 @@ const Sites = () => {
                     filteredSites.map((site) => (
                       <TableRow key={site.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">
-                          <div className="flex items-center space-x-2">
-                            <Building className="h-4 w-4 text-gray-500" />
+                          <div className="flex items-center space-x-3">
+                            {site.organization_logo ? (
+                              <img 
+                                src={site.organization_logo} 
+                                alt={`${site.organization_name} logo`}
+                                className="h-8 w-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <Building className="h-4 w-4 text-gray-500" />
+                              </div>
+                            )}
                             <span>{site.name}</span>
                           </div>
                         </TableCell>
@@ -296,30 +386,7 @@ const Sites = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewSite(site)}
-                              className="h-8 w-8 p-0 hover:bg-blue-50"
-                            >
-                              <Eye className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditSite(site)}
-                              className="h-8 w-8 p-0 hover:bg-green-50"
-                            >
-                              <Edit className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSite(site)}
-                              className="h-8 w-8 p-0 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
+                            {getActionButtons(site)}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -336,6 +403,118 @@ const Sites = () => {
           Showing {filteredSites.length} of {sites.length} sites
         </div>
       </div>
+
+      {/* Delete Site Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Please specify the reason for deleting this site</DialogTitle>
+            <DialogDescription>
+              Select the primary reason for deleting "{selectedSite?.name}". This action cannot be undone and will be logged for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <RadioGroup value={deleteReason} onValueChange={setDeleteReason}>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="created_by_mistake" id="reason1" />
+                  <Label htmlFor="reason1">Created by mistake (erroneous site creation)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="lost_contract" id="reason2" />
+                  <Label htmlFor="reason2">Lost contract or business cancellation</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="duplicate_record" id="reason3" />
+                  <Label htmlFor="reason3">Duplicate site record in the system</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="data_cleanup" id="reason4" />
+                  <Label htmlFor="reason4">Data cleanup (removal of outdated, incomplete, or incorrect information)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="regulatory_mandate" id="reason5" />
+                  <Label htmlFor="reason5">Regulatory or legal mandate for data deletion (e.g., right to erasure)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="other" id="reason6" />
+                  <Label htmlFor="reason6">Other</Label>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={!deleteReason}
+            >
+              Delete Site
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Archive Site Modal */}
+      <Dialog open={archiveModalOpen} onOpenChange={setArchiveModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Please specify the reason for archiving this site</DialogTitle>
+            <DialogDescription>
+              Select the primary reason for archiving "{selectedSite?.name}". This information will be logged for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <RadioGroup value={archiveReason} onValueChange={setArchiveReason}>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="site_closed" id="archive1" />
+                  <Label htmlFor="archive1">Site getting closed (e.g., permanent shutdown)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="lost_contract" id="archive2" />
+                  <Label htmlFor="archive2">Lost contract or business (e.g., client contract ended)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="business_restructuring" id="archive3" />
+                  <Label htmlFor="archive3">Business restructuring (merger, acquisition, organisational changes)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="site_replaced" id="archive4" />
+                  <Label htmlFor="archive4">Site replaced or consolidated with another location</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="regulatory_compliance" id="archive5" />
+                  <Label htmlFor="archive5">Regulatory/compliance requirement (e.g., legal hold, audit requirement)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="temporary_pause" id="archive6" />
+                  <Label htmlFor="archive6">Temporary operational pause (e.g., seasonal or strategic pause)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="other" id="archive7" />
+                  <Label htmlFor="archive7">Other</Label>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArchiveModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmArchive}
+              disabled={!archiveReason}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Archive Site
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

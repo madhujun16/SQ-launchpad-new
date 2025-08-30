@@ -70,7 +70,8 @@ export type UnifiedSiteStatus =
   | 'approved' 
   | 'procurement_done' 
   | 'deployed' 
-  | 'live';
+  | 'live'
+  | 'archived';
 
 // Stepper step interface - Updated to match EnhancedStepperStep
 export interface StepperStep {
@@ -93,7 +94,8 @@ export const getStepperStepFromStatus = (status: UnifiedSiteStatus): number => {
     approved: 3,
     procurement_done: 4,
     deployed: 5,
-    live: 6
+    live: 6,
+    archived: 7
   };
   return statusMap[status] || 0;
 };
@@ -192,6 +194,8 @@ export const getStatusColor = (status: string) => {
       return 'bg-yellow-500';
     case 'site_created':
       return 'bg-gray-500';
+    case 'archived':
+      return 'bg-gray-400';
     // Legacy status mappings for backward compatibility
     case 'created':
       return 'bg-gray-500';
@@ -223,6 +227,8 @@ export const getStatusDisplayName = (status: string) => {
       return 'Deployed';
     case 'live':
       return 'Live';
+    case 'archived':
+      return 'Archived';
     // Legacy status mappings for backward compatibility
     case 'created':
       return 'Site Created';
