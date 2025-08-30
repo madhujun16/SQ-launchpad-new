@@ -163,76 +163,43 @@ const Sites = () => {
     const isDeployed = site.status === 'deployed';
     
     if (isLive) {
-      // Live sites: View + Archive
+      // Live sites: ONLY Archive (no View, no Delete)
       return (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewSite(site)}
-            className="h-8 w-8 p-0 hover:bg-blue-50"
-            title="View Site"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleArchiveSite(site)}
-            className="h-8 w-8 p-0 hover:bg-orange-50"
-            title="Archive Site"
-          >
-            <Archive className="h-4 w-4 text-orange-600" />
-          </Button>
-        </>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleArchiveSite(site)}
+          className="h-8 w-8 p-0 hover:bg-orange-50"
+          title="Archive Site"
+        >
+          <Archive className="h-4 w-4 text-orange-600" />
+        </Button>
       );
     } else if (isDeployed) {
-      // Deployed sites: View + Edit (no delete)
+      // Deployed sites: ONLY Edit (no View, no Delete)
       return (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewSite(site)}
-            className="h-8 w-8 p-0 hover:bg-blue-50"
-            title="View Site"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditSite(site)}
-            className="h-8 w-8 p-0 hover:bg-green-50"
-            title="Edit Site"
-          >
-            <Edit className="h-4 w-4 text-green-600" />
-          </Button>
-        </>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleEditSite(site)}
+          className="h-8 w-8 p-0 hover:bg-green-50"
+          title="Edit Site"
+        >
+          <Edit className="h-4 w-4 text-green-600" />
+        </Button>
       );
     } else {
-      // Other states: Edit + Delete
+      // Other states: ONLY Delete (no Edit, no View)
       return (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditSite(site)}
-            className="h-8 w-8 p-0 hover:bg-green-50"
-            title="Edit Site"
-          >
-            <Edit className="h-4 w-4 text-green-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteSite(site)}
-            className="h-8 w-8 p-0 hover:bg-red-50"
-            title="Delete Site"
-          >
-            <Trash2 className="h-4 w-4 text-red-600" />
-          </Button>
-        </>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleDeleteSite(site)}
+          className="h-8 w-8 p-0 hover:bg-red-50"
+          title="Delete Site"
+        >
+          <Trash2 className="h-4 w-4 text-red-600" />
+        </Button>
       );
     }
   };
@@ -260,7 +227,7 @@ const Sites = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+      {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites</h1>
           <p className="text-gray-600">
@@ -318,9 +285,9 @@ const Sites = () => {
           <p className="text-gray-600 mb-4">
             Manage and track all client sites in the deployment pipeline.
           </p>
-        </div>
+      </div>
 
-        {/* Sites Table */}
+      {/* Sites Table */}
         <Card className="shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -395,8 +362,8 @@ const Sites = () => {
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
 
         {/* Summary */}
         <div className="mt-6 text-center text-sm text-gray-500">
@@ -440,8 +407,8 @@ const Sites = () => {
                   <RadioGroupItem value="other" id="reason6" />
                   <Label htmlFor="reason6">Other</Label>
                 </div>
-              </div>
-            </RadioGroup>
+                </div>
+              </RadioGroup>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
@@ -498,8 +465,8 @@ const Sites = () => {
                   <RadioGroupItem value="other" id="archive7" />
                   <Label htmlFor="archive7">Other</Label>
                 </div>
-              </div>
-            </RadioGroup>
+                </div>
+              </RadioGroup>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setArchiveModalOpen(false)}>
