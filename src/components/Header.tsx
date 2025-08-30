@@ -13,6 +13,8 @@ import {
   BarChart3, 
   Settings, 
   User, 
+  Users,
+  Database,
   LogOut, 
   Menu,
   RefreshCw,
@@ -46,7 +48,7 @@ const NAVIGATION_ITEMS = [
 // Logo Component
 const Logo = React.memo(() => (
   <Link to="/" className="flex items-center space-x-3">
-    <span className="text-2xl font-bold text-white">Launchpad</span>
+    <span className="text-2xl font-bold text-white">SmartQ Launchpad</span>
     <div className="flex items-center">
       <RocketIcon className="h-10 w-10 text-green-400" />
     </div>
@@ -82,10 +84,12 @@ const DesktopNavigation = React.memo(({
 // Mobile Menu Button Component
 const MobileMenuButton = React.memo(({ 
   isOpen, 
-  onClick 
+  onClick,
+  disabled 
 }: { 
   isOpen: boolean; 
   onClick: () => void; 
+  disabled: boolean;
 }) => (
   <Button
     variant="ghost"
@@ -93,28 +97,11 @@ const MobileMenuButton = React.memo(({
     className="lg:hidden text-white hover:bg-white/10 p-2"
     onClick={onClick}
     aria-label="Toggle mobile menu"
+    disabled={disabled}
   >
     {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
   </Button>
 ));
-
-// Safe useAuth hook that handles missing context
-const useSafeAuth = () => {
-  try {
-    return useAuth();
-  } catch (error) {
-    // Return mock data when auth context is not available
-    return {
-      user: { email: 'demo@example.com', id: 'demo-user' },
-      currentRole: 'admin' as UserRole,
-      profile: { full_name: 'Demo User', email: 'demo@example.com' },
-      signOut: async () => {},
-      switchRole: () => {},
-      availableRoles: ['admin' as UserRole],
-      loading: false
-    };
-  }
-};
 
 // User Info Component
 const UserInfo = React.memo(({ 
@@ -188,7 +175,8 @@ const MobileNavigation = React.memo(({
   availableRoles,
   onClose, 
   onRoleSwitch,
-  onNavigate
+  onNavigate,
+  isReady
 }: { 
   isOpen: boolean; 
   navigationItems: NavigationItem[]; 
@@ -198,88 +186,90 @@ const MobileNavigation = React.memo(({
   onClose: () => void; 
   onRoleSwitch: (role: UserRole) => void; 
   onNavigate: (path: string) => void;
+  isReady: boolean;
 }) => {
-  console.log('🔍 MobileNavigation render:', { isOpen, currentPath, currentRole, navigationItemsCount: navigationItems.length, availableRoles });
-  
   if (!isOpen) return null;
   
+  // Show loading state if navigation is not ready
+  if (!isReady) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent side="left" className="w-[85vw] max-w-sm bg-gray-900 z-[9999] overflow-y-auto border-r border-gray-700">
+          <SheetHeader className="border-b border-gray-700 pb-6 sticky top-0 bg-gray-800 z-10">
+            <div className="flex items-center space-x-3 mb-2">
+              <SheetTitle className="text-xl font-bold text-white">
+                SmartQ Launchpad
+              </SheetTitle>
+              <RocketIcon className="h-5 w-5 text-green-400" />
+            </div>
+            <SheetDescription className="text-sm text-gray-300 font-medium">
+              Loading navigation...
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+              <p className="text-gray-400 text-sm">Preparing navigation...</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+  
   const handleNavigationClick = (path: string) => {
-    console.log('🔍 Navigation clicked:', path);
-    console.log('🔍 Current path:', currentPath);
-    console.log('🔍 Paths match?', currentPath === path);
-    
-    // Don't navigate if we're already on the same page
-    if (currentPath === path) {
-      console.log('🔍 Already on this page, just closing menu');
-      onClose();
-      return;
-    }
-    
-    // Close menu first, then navigate
-    console.log('🔍 Closing menu and preparing to navigate');
+    // Close menu first
     onClose();
     
-    // Use a small delay to ensure menu closes before navigation
-    setTimeout(() => {
-      console.log('🔍 Navigating to:', path);
-      onNavigate(path);
-    }, 100);
+    // Navigate immediately without delay
+    onNavigate(path);
   };
 
   const handleRoleSwitchClick = (role: UserRole) => {
-    console.log('🔍 Role switch clicked:', role);
-    
     // Don't switch if it's the same role
     if (currentRole === role) {
-      console.log('🔍 Already on this role, just closing menu');
       onClose();
       return;
     }
     
     // Close menu first, then switch role
     onClose();
-    
-    // Use a small delay to ensure menu closes before role switch
-    setTimeout(() => {
-      console.log('🔍 Switching to role:', role);
-      onRoleSwitch(role);
-    }, 100);
+    onRoleSwitch(role);
   };
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gradient-to-br from-green-50 to-green-100/50 z-[9999] overflow-y-auto border-r border-green-200/30">
-        {/* Header with app branding */}
-        <SheetHeader className="border-b border-green-200/40 pb-6 sticky top-0 bg-gradient-to-r from-green-50 to-green-100/50 z-10">
+      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gray-900 z-[9999] overflow-y-auto border-r border-gray-700">
+        {/* Header with app branding - simplified theme */}
+        <SheetHeader className="border-b border-gray-700 pb-6 sticky top-0 bg-gray-800 z-10">
           <div className="flex items-center space-x-3 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">L</span>
-            </div>
-            <SheetTitle className="text-xl font-bold bg-gradient-to-r from-green-700 to-green-800 bg-clip-text text-transparent">
+            <SheetTitle className="text-xl font-bold text-white">
               SmartQ Launchpad
             </SheetTitle>
+            <RocketIcon className="h-5 w-5 text-green-400" />
           </div>
-          <SheetDescription className="text-sm text-green-700/80 font-medium">
+          <SheetDescription className="text-sm text-gray-300 font-medium">
             Access your Launchpad features
           </SheetDescription>
         </SheetHeader>
         
-        {/* Navigation Items */}
-        <div className="mt-6 space-y-3 pb-6">
+        {/* Main Navigation Items */}
+        <div className="mt-6 space-y-2 pb-6">
           {navigationItems.map((item) => (
             <button
               key={item.path}
               onClick={() => handleNavigationClick(item.path)}
-              className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
+              className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
                 currentPath === item.path
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25 transform scale-[1.02]'
-                  : 'text-green-800 hover:bg-green-100/60 hover:text-green-900 active:bg-green-200/60 hover:shadow-md hover:shadow-green-500/10'
+                  ? 'bg-gray-700 text-white border border-gray-600'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
               }`}
             >
               <div className={`p-2 rounded-lg ${
                 currentPath === item.path 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-green-100/60 text-green-700'
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gray-600 text-gray-300'
               }`}>
                 <item.icon className="h-4 w-4 flex-shrink-0" />
               </div>
@@ -287,41 +277,107 @@ const MobileNavigation = React.memo(({
             </button>
           ))}
           
-          {/* Platform Configuration Link - Admin Only */}
+          {/* Platform Configuration Section - Admin Only */}
           {currentRole === 'admin' && (
-            <button
-              onClick={() => handleNavigationClick('/platform-configuration')}
-              className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
-                currentPath === '/platform-configuration'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25 transform scale-[1.02]'
-                  : 'text-green-800 hover:bg-green-100/60 hover:text-green-900 active:bg-green-200/60 hover:shadow-md hover:shadow-green-500/10'
-              }`}
-            >
-              <div className={`p-2 rounded-lg ${
-                currentPath === '/platform-configuration' 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-green-100/60 text-green-700'
-              }`}>
-                <Settings className="h-4 w-4 flex-shrink-0" />
+            <div className="space-y-2 mt-6 pt-6 border-t border-gray-700">
+              <div className="px-4 py-2">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Platform Configuration
+                </p>
               </div>
-              <span className="font-semibold">Platform Configuration</span>
-            </button>
+              
+              {/* Organizations Management */}
+              <button
+                onClick={() => handleNavigationClick('/platform-configuration/organizations')}
+                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
+                  currentPath === '/platform-configuration/organizations'
+                    ? 'bg-gray-700 text-white border border-gray-600'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/organizations' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-600 text-gray-300'
+                }`}>
+                  <Building className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">Organizations</span>
+              </button>
+
+              {/* User Management */}
+              <button
+                onClick={() => handleNavigationClick('/platform-configuration/users')}
+                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
+                  currentPath === '/platform-configuration/users'
+                    ? 'bg-gray-700 text-white border border-gray-600'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/users' 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-gray-600 text-gray-300'
+                }`}>
+                  <Users className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">User Management</span>
+              </button>
+
+              {/* Software & Hardware */}
+              <button
+                onClick={() => handleNavigationClick('/platform-configuration/software-hardware')}
+                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
+                  currentPath === '/platform-configuration/software-hardware'
+                    ? 'bg-gray-700 text-white border border-gray-600'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/software-hardware' 
+                    ? 'bg-purple-500 text-white' 
+                    : 'bg-gray-600 text-gray-300'
+                }`}>
+                  <Database className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">Software & Hardware</span>
+              </button>
+
+              {/* Audit & Logs */}
+              <button
+                onClick={() => handleNavigationClick('/platform-configuration/audit-logs')}
+                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
+                  currentPath === '/platform-configuration/audit-logs'
+                    ? 'bg-gray-700 text-white border border-gray-600'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/audit-logs' 
+                    ? 'bg-orange-500 text-white' 
+                    : 'bg-gray-600 text-gray-300'
+                }`}>
+                  <FileText className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">Audit & Logs</span>
+              </button>
+            </div>
           )}
         </div>
         
         {/* Role Information and Switcher */}
-        <div className="mt-8 pt-6 border-t border-green-200/40">
+        <div className="mt-6 pt-6 border-t border-gray-700">
           {/* Current Role Display */}
-          <div className="px-4 py-4 bg-gradient-to-r from-green-100/40 to-green-200/40 rounded-xl border border-green-200/50">
+          <div className="px-4 py-4 bg-gray-800 rounded-lg border border-gray-600">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">R</span>
               </div>
               <div>
-                <p className="text-sm font-bold text-green-900">
+                <p className="text-sm font-bold text-white">
                   {getRoleConfig(currentRole || 'admin').displayName}
                 </p>
-                <p className="text-xs text-green-700/80 font-medium">Current Role</p>
+                <p className="text-xs text-gray-300 font-medium">Current Role</p>
               </div>
             </div>
           </div>
@@ -329,22 +385,22 @@ const MobileNavigation = React.memo(({
           {/* Role Switcher - Only show if user has multiple roles */}
           {availableRoles.length > 1 && (
             <div className="mt-4 px-4">
-              <p className="text-xs font-bold text-green-700/80 mb-3 uppercase tracking-wider">Switch Role</p>
+              <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Switch Role</p>
               <div className="space-y-2">
                 {availableRoles.map((role) => (
                   <button
                     key={role}
                     onClick={() => handleRoleSwitchClick(role)}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 touch-manipulation ${
+                    className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 touch-manipulation ${
                       role === currentRole
-                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25 transform scale-[1.02]'
-                        : 'text-green-800 hover:bg-green-100/60 hover:text-green-900 active:bg-green-200/60 hover:shadow-md hover:shadow-green-500/10'
+                        ? 'bg-gray-700 text-white border border-gray-600'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">{getRoleConfig(role).displayName}</span>
                       {role === currentRole && (
-                        <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs">✓</span>
                         </div>
                       )}
@@ -357,18 +413,15 @@ const MobileNavigation = React.memo(({
         </div>
         
         {/* Sign Out Button */}
-        <div className="mt-6 pt-6 border-t border-green-200/40">
+        <div className="mt-6 pt-6 border-t border-gray-700">
           <button
             onClick={() => {
-              // Handle sign out - close menu first, then navigate
               onClose();
-              setTimeout(() => {
-                window.location.href = '/auth';
-              }, 100);
+              window.location.href = '/auth';
             }}
-            className="w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-xl text-sm font-medium text-red-700 hover:bg-red-50 hover:text-red-800 cursor-pointer transition-all duration-200 touch-manipulation border border-red-200/50 hover:border-red-300 hover:shadow-md hover:shadow-red-500/10"
+            className="w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer transition-all duration-200 touch-manipulation border border-red-600/30 hover:border-red-500/50"
           >
-            <div className="p-2 rounded-lg bg-red-100/60 text-red-700">
+            <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
               <LogOut className="h-4 w-4 flex-shrink-0" />
             </div>
             <span className="font-semibold">Sign Out</span>
@@ -381,12 +434,20 @@ const MobileNavigation = React.memo(({
 
 // Main Header Component
 const Header = () => {
-  const { currentRole, profile, signOut, switchRole, availableRoles } = useSafeAuth();
+  const { currentRole, profile, signOut, switchRole, availableRoles, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { isMobile, isTablet, isTouchDevice } = useIsMobile();
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+
+  // Wait for auth to be ready before allowing navigation
+  useEffect(() => {
+    if (!authLoading && currentRole) {
+      setIsNavigationReady(true);
+    }
+  }, [authLoading, currentRole]);
 
   // Memoized values
   const roleConfig = useMemo(() => {
@@ -398,15 +459,15 @@ const Header = () => {
 
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
 
-  // Memoized navigation structure
+  // Memoized navigation structure - only show when auth is ready
   const navigationItems = useMemo(() => {
-    if (!currentRole) return [];
+    if (!currentRole || !isNavigationReady) return [];
 
     return NAVIGATION_ITEMS.map(item => ({
       ...item,
       canAccess: canAccessPage(currentRole, item.path)
     })).filter(item => item.canAccess);
-  }, [currentRole]);
+  }, [currentRole, isNavigationReady]);
 
   // Memoized roles for switching
   const rolesForSwitch = useMemo(() => {
@@ -418,34 +479,33 @@ const Header = () => {
 
   // Memoized handlers
   const handleMobileMenuToggle = useCallback(() => {
-    console.log('🔍 Mobile menu toggle clicked, current state:', isMobileMenuOpen);
-    try {
-      setIsMobileMenuOpen(prev => {
-        const newState = !prev;
-        console.log('🔍 Setting mobile menu to:', newState);
-        return newState;
-      });
-    } catch (error) {
-      console.error('🔍 Error toggling mobile menu:', error);
+    // Only allow opening if auth is ready
+    if (!isNavigationReady) {
+      console.log('Navigation not ready yet, auth still loading...');
+      return;
     }
-  }, [isMobileMenuOpen]);
+    
+    try {
+      setIsMobileMenuOpen(prev => !prev);
+    } catch (error) {
+      console.error('Error toggling mobile menu:', error);
+    }
+  }, [isNavigationReady]);
 
   const handleMobileMenuClose = useCallback(() => {
-    console.log('🔍 Mobile menu close called');
     try {
       setIsMobileMenuOpen(false);
     } catch (error) {
-      console.error('🔍 Error closing mobile menu:', error);
+      console.error('Error closing mobile menu:', error);
     }
   }, []);
 
   const handleRoleSwitch = useCallback((role: UserRole) => {
-    console.log('🔍 Role switch called with role:', role);
     try {
       switchRole(role);
       setIsMobileMenuOpen(false);
     } catch (error) {
-      console.error('🔍 Error switching role:', error);
+      console.error('Error switching role:', error);
     }
   }, [switchRole]);
 
@@ -473,8 +533,8 @@ const Header = () => {
     }
   }, [isMobileMenuOpen]);
 
-  // Early return if no role config
-  if (!roleConfig) {
+  // Early return if no role config or auth still loading
+  if (authLoading || !roleConfig) {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600">
         <div className="container mx-auto px-4">
@@ -585,15 +645,43 @@ const Header = () => {
                       )}
                       
                       {currentRole === 'admin' && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/platform-configuration" className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                            <div className="flex items-center space-x-2">
-                              <Settings className="h-4 w-4 text-gray-600" />
-                              <span className="text-sm text-gray-700">Platform Configuration</span>
-                            </div>
-                            <span className="text-xs text-gray-500">→</span>
-                          </Link>
-                        </DropdownMenuItem>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <DropdownMenuItem className="flex items-center justify-between px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                              <div className="flex items-center space-x-2">
+                                <Settings className="h-4 w-4 text-gray-600" />
+                                <span className="text-sm text-gray-700">Platform Configuration</span>
+                              </div>
+                              <span className="text-xs text-gray-500">→</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="ml-2">
+                            <DropdownMenuItem asChild>
+                              <Link to="/platform-configuration/organizations" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                                <Building className="h-4 w-4 mr-2 text-blue-600" />
+                                <span className="text-sm text-gray-700">Organizations</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/platform-configuration/users" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                                <Users className="h-4 w-4 mr-2 text-green-600" />
+                                <span className="text-sm text-gray-700">User Management</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/platform-configuration/software-hardware" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                                <Database className="h-4 w-4 mr-2 text-purple-600" />
+                                <span className="text-sm text-gray-700">Software & Hardware</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/platform-configuration/audit-logs" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                                <FileText className="h-4 w-4 mr-2 text-orange-600" />
+                                <span className="text-sm text-gray-700">Audit & Logs</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>
@@ -632,23 +720,25 @@ const Header = () => {
             {/* Mobile Menu Button - Always visible on mobile */}
             <MobileMenuButton 
               isOpen={isMobileMenuOpen} 
-              onClick={handleMobileMenuToggle} 
+              onClick={handleMobileMenuToggle}
+              disabled={!isNavigationReady}
             />
           </div>
         </div>
       </div>
       
-             <MobileNavigation
-         isOpen={isMobileMenuOpen}
-         navigationItems={navigationItems}
-         currentPath={currentPath}
-         currentRole={currentRole}
-         availableRoles={availableRoles}
-         onClose={handleMobileMenuClose}
-         onRoleSwitch={handleRoleSwitch}
-         onNavigate={navigate}
-       />
-        </header>
+      <MobileNavigation
+        isOpen={isMobileMenuOpen}
+        navigationItems={navigationItems}
+        currentPath={currentPath}
+        currentRole={currentRole}
+        availableRoles={availableRoles}
+        onClose={handleMobileMenuClose}
+        onRoleSwitch={handleRoleSwitch}
+        onNavigate={navigate}
+        isReady={isNavigationReady}
+      />
+    </header>
   );
 };
 

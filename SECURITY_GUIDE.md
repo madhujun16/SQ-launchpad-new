@@ -28,7 +28,8 @@ This document outlines the security measures implemented in the SmartQ LaunchPad
 # Required for production
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+# LocationIQ is used for geocoding through Supabase Edge Functions
+# No external API keys needed for this project
 
 # Security controls
 VITE_ENABLE_DEBUG_LOGS=false
@@ -48,7 +49,7 @@ CSP: {
   'script-src': ["'self'", "'unsafe-inline'"],
   'style-src': ["'self'", "'unsafe-inline'"],
   'img-src': ["'self'", "data:", "https:"],
-  'connect-src': ["'self'", "https://*.supabase.co", "https://*.googleapis.com"],
+  'connect-src': ["'self'", "https://*.supabase.co"],
   'frame-src': ["'self'"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],

@@ -136,7 +136,7 @@
 
 - **Geolocation Integration**:
   - GPS coordinate capture
-  - Google Maps integration
+  - LocationIQ integration through Supabase Edge Functions
   - OpenStreetMap integration
   - Location accuracy tracking
 

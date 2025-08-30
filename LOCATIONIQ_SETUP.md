@@ -19,7 +19,7 @@ The application now uses LocationIQ API for geocoding and reverse geocoding func
 - **Search Bar**: Enter addresses or postcodes to find locations
 - **Current Location Button**: Use device GPS automatically
 - **Manual Coordinate Input**: Enter lat/lng manually
-- **Interactive Map**: Click to set locations (when Google Maps is available)
+- **Interactive Map**: Click to set locations using LocationIQ geocoding
 - **Real-time Updates**: Address updates as you interact
 
 ## API Configuration

@@ -7,7 +7,7 @@ import AuthGuard from "@/components/AuthGuard";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RoleBasedRoute } from "@/components/RoleBasedRoute";
 import { SiteProvider } from "@/contexts/SiteContext";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy } from "react";
 import { PageLoader } from "@/components/ui/loader";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
@@ -15,96 +15,125 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 
-// Lazy load heavy components
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Sites = lazy(() => import("./pages/Sites"));
-const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"));
-const Deployment = lazy(() => import("./pages/Deployment"));
-const Assets = lazy(() => import("./pages/Assets"));
-const PlatformConfiguration = lazy(() => import("./pages/PlatformConfigurationEnhanced"));
+// Lazy load heavy components with better chunking
+const Dashboard = lazy(() => import("./pages/Dashboard"), {
+  webpackChunkName: "dashboard"
+});
+const Sites = lazy(() => import("./pages/Sites"), {
+  webpackChunkName: "sites"
+});
+const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"), {
+  webpackChunkName: "approvals"
+});
+const Deployment = lazy(() => import("./pages/Deployment"), {
+  webpackChunkName: "deployment"
+});
+const Assets = lazy(() => import("./pages/Assets"), {
+  webpackChunkName: "assets"
+});
 
-const Forecast = lazy(() => import("./pages/Forecast"));
+// Platform Configuration separate pages
+const OrganizationsManagement = lazy(() => import("./pages/OrganizationsManagement"), {
+  webpackChunkName: "platform-config"
+});
+const UserManagement = lazy(() => import("./pages/UserManagement"), {
+  webpackChunkName: "platform-config"
+});
+const SoftwareHardwareManagement = lazy(() => import("./pages/SoftwareHardwareManagement"), {
+  webpackChunkName: "platform-config"
+});
+const AuditLogs = lazy(() => import("./pages/AuditLogs"), {
+  webpackChunkName: "platform-config"
+});
 
-
+const Forecast = lazy(() => import("./pages/Forecast"), {
+  webpackChunkName: "forecast"
+});
 
 // Sites-related pages
-
-const Site = lazy(() => import("./pages/Site"));
-const SiteCreation = lazy(() => import("./pages/SiteCreation"));
+const Site = lazy(() => import("./pages/Site"), {
+  webpackChunkName: "sites"
+});
+const SiteCreation = lazy(() => import("./pages/SiteCreation"), {
+  webpackChunkName: "sites"
+});
 
 // Approvals & Procurement related pages
-const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"));
-const HardwareScoping = lazy(() => import("./pages/HardwareScoping"));
-const HardwareMaster = lazy(() => import("./pages/HardwareMaster"));
+const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"), {
+  webpackChunkName: "approvals"
+});
+const HardwareScoping = lazy(() => import("./pages/HardwareScoping"), {
+  webpackChunkName: "approvals"
+});
+const HardwareMaster = lazy(() => import("./pages/HardwareMaster"), {
+  webpackChunkName: "assets"
+});
 
 // Assets-related pages
-const Inventory = lazy(() => import("./pages/Inventory"));
-const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
+const Inventory = lazy(() => import("./pages/Inventory"), {
+  webpackChunkName: "assets"
+});
+const LicenseManagement = lazy(() => import("./pages/LicenseManagement"), {
+  webpackChunkName: "assets"
+});
 
-// Platform Configuration related pages
-// Note: Integrations and Forecast are not currently integrated into main navigation
-
-// Create a client
+// Create a client with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 10, // 10 minutes - increased to reduce refetches
+      staleTime: 1000 * 60 * 5, // 5 minutes - reduced for better performance
       retry: 1,
-      gcTime: 1000 * 60 * 15, // 15 minutes garbage collection
+      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: false,
-      refetchInterval: false, // Disable automatic refetching
+      refetchInterval: false,
     },
     mutations: {
       retry: 1,
-      // Remove the onMutate that cancels all queries
     },
   },
 });
 
 function App() {
-  // TEMPORARILY DISABLED: Performance service causing issues
-  // useEffect(() => {
-  //   performanceService.preloadCriticalResources();
-  //   performanceService.optimizeBundleLoading();
-    
-  //   const interval = setInterval(() => {
-  //     performanceService.optimizeMemory();
-  //   }, 30000);
-    
-  //   return () => clearInterval(interval);
-  // }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <div className="min-h-screen">
-            <AuthProvider>
-              <SiteProvider>
-                <Routes>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/auth" element={<Auth />} />
-                  
-                  {/* Dashboard - No auth required for now */}
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <Layout>
-                        <ErrorBoundary>
-                          <Suspense fallback={<PageLoader />}>
-                            <Dashboard />
-                          </Suspense>
-                        </ErrorBoundary>
-                      </Layout>
-                    }
-                  />
+            <Routes>
+              {/* Public routes - no providers needed */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Protected routes - wrapped with providers */}
+              <Route
+                path="/dashboard"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <ErrorBoundary>
+                              <Suspense fallback={<PageLoader />}>
+                                <Dashboard />
+                              </Suspense>
+                            </ErrorBoundary>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  {/* Protected routes with auth */}
-                  <Route
-                    path="/sites"
-                    element={
+              {/* Protected routes with auth */}
+              <Route
+                path="/sites"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -114,11 +143,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/sites/create"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/sites/create"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -128,11 +162,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/sites/:id"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/sites/:id"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -142,13 +181,17 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  {/* Approvals & Procurement - Main tab with nested routes */}
-                  <Route
-                    path="/approvals-procurement"
-                    element={
+              {/* Approvals & Procurement */}
+              <Route
+                path="/approvals-procurement"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -158,11 +201,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/approvals-procurement/hardware-approvals"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/approvals-procurement/hardware-approvals"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -172,11 +220,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/approvals-procurement/hardware-scoping"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/approvals-procurement/hardware-scoping"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -186,11 +239,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/approvals-procurement/hardware-master"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/approvals-procurement/hardware-master"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -200,13 +258,17 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  {/* Deployment */}
-                  <Route
-                    path="/deployment"
-                    element={
+              {/* Deployment */}
+              <Route
+                path="/deployment"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -216,29 +278,17 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  {/* Forecast */}
-                  <Route
-                    path="/forecast"
-                    element={
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Forecast />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    }
-                  />
-
-                  {/* Assets - Main tab with nested routes */}
-                  <Route
-                    path="/assets"
-                    element={
+              {/* Assets */}
+              <Route
+                path="/assets"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -248,11 +298,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/assets/inventory"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/assets/inventory"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -262,11 +317,16 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/assets/license-management"
-                    element={
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/assets/license-management"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
@@ -276,38 +336,119 @@ function App() {
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  {/* Platform Configuration - Main tab with nested routes */}
-                  <Route
-                    path="/platform-configuration"
-                    element={
+              {/* Platform Configuration separate pages */}
+              <Route
+                path="/platform-configuration/organizations"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
                       <AuthGuard>
                         <RoleBasedRoute>
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
-                              <PlatformConfiguration />
+                              <OrganizationsManagement />
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
                       </AuthGuard>
-                    }
-                  />
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  {/* Legacy route redirects */}
-                  <Route path="/site-study" element={<Navigate to="/sites" replace />} />
-                  <Route path="/site-creation" element={<Navigate to="/sites/create" replace />} />
-                  <Route path="/hardware-approvals" element={<Navigate to="/approvals-procurement/hardware-approvals" replace />} />
-                  <Route path="/hardware-scoping" element={<Navigate to="/approvals-procurement/hardware-scoping" replace />} />
-                  <Route path="/hardware-master" element={<Navigate to="/approvals-procurement/hardware-master" replace />} />
-                  <Route path="/inventory" element={<Navigate to="/assets/inventory" replace />} />
-                  <Route path="/license-management" element={<Navigate to="/assets/license-management" replace />} />
+              <Route
+                path="/platform-configuration/users"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <UserManagement />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </SiteProvider>
-            </AuthProvider>
+              <Route
+                path="/platform-configuration/software-hardware"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <SoftwareHardwareManagement />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/platform-configuration/audit-logs"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <AuditLogs />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Forecast */}
+              <Route
+                path="/forecast"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <Forecast />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Legacy route redirects */}
+              <Route path="/site-study" element={<Navigate to="/sites" replace />} />
+              <Route path="/site-creation" element={<Navigate to="/sites/create" replace />} />
+              <Route path="/hardware-approvals" element={<Navigate to="/approvals-procurement/hardware-approvals" replace />} />
+              <Route path="/hardware-scoping" element={<Navigate to="/approvals-procurement/hardware-scoping" replace />} />
+              <Route path="/hardware-master" element={<Navigate to="/approvals-procurement/hardware-master" replace />} />
+              <Route path="/inventory" element={<Navigate to="/assets/inventory" replace />} />
+              <Route path="/license-management" element={<Navigate to="/assets/license-management" replace />} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </div>
           <Toaster />
           <Sonner />

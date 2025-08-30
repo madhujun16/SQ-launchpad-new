@@ -21,9 +21,24 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   db: {
     schema: 'public'
   },
+  // Optimized realtime configuration - reduced for better performance
   realtime: {
     params: {
-      eventsPerSecond: 10
+      eventsPerSecond: 5 // Reduced from 10 to 5
     }
+  },
+  // Add global configuration for better performance
+  global: {
+    headers: {
+      'X-Client-Info': 'smartq-launchpad-web'
+    }
+  }
+});
+
+// Add error handling and performance monitoring
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    // Clear any cached data on sign out
+    localStorage.removeItem('smartq-launchpad-auth');
   }
 });

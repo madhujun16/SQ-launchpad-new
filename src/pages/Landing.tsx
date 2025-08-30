@@ -80,7 +80,7 @@ const Landing = () => {
           </div>
 
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+            <Card className="card-surface">
               <CardHeader className="p-6 space-y-3">
                 <div className="icon-badge-green w-max">
                   <Target className="h-6 w-6" color="#1CB255" />
@@ -92,49 +92,41 @@ const Landing = () => {
               </CardHeader>
             </Card>
 
-            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+            <Card className="card-surface">
               <CardHeader className="p-6 space-y-3">
                 <div className="icon-badge-green w-max">
                   <BarChart3 className="h-6 w-6" color="#1CB255" />
                 </div>
                 <CardTitle className="text-white text-xl">Smart Insights</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Intelligent suggestions for optimal hardware and software configurations based on your requirements.
+                  Data-driven decision making with comprehensive analytics and predictive modeling.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+            <Card className="card-surface">
               <CardHeader className="p-6 space-y-3">
                 <div className="icon-badge-green w-max">
                   <Users className="h-6 w-6" color="#1CB255" />
                 </div>
                 <CardTitle className="text-white text-xl">Team Collaboration</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Role-based access control with streamlined approval processes for seamless team coordination.
+                  Seamless coordination between stakeholders with real-time updates and task management.
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="card-surface hover:scale-105 transition-transform duration-300">
+            <Card className="card-surface">
               <CardHeader className="p-6 space-y-3">
                 <div className="icon-badge-green w-max">
                   <Wallet className="h-6 w-6" color="#1CB255" />
                 </div>
-                <CardTitle className="text-white text-xl">Cost Control</CardTitle>
+                <CardTitle className="text-white text-xl">Cost Optimization</CardTitle>
                 <CardDescription className="text-white/75 leading-relaxed">
-                  Automated cost management with real-time budgeting, approvals, and forecasting capabilities.
+                  Maximize ROI with intelligent procurement, inventory management, and resource allocation.
                 </CardDescription>
               </CardHeader>
             </Card>
-          </div>
-
-          <div className="section-divider my-10" />
-
-          <div className="text-center">
-            <p className="text-white/80 max-w-3xl mx-auto leading-relaxed">
-              Transform complex deployments into predictable, manageable projects with measurable operational gains.
-            </p>
           </div>
         </div>
       </section>

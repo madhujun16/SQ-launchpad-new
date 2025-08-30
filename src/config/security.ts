@@ -20,7 +20,7 @@ export const SECURITY_CONFIG = {
     'script-src': ["'self'", "'unsafe-inline'"],
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", "data:", "https:"],
-    'connect-src': ["'self'", "https://*.supabase.co", "https://*.googleapis.com"],
+    'connect-src': ["'self'", "https://*.supabase.co"],
     'frame-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],

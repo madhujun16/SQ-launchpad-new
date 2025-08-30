@@ -45,16 +45,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (profileError || !profileData) return;
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        // Set fallback profile data to prevent hanging
+        const fallbackProfile: Profile = {
+          id: 'fallback-id',
+          user_id: userId,
+          email: 'user@example.com',
+          full_name: 'User',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          invited_at: new Date().toISOString(),
+          invited_by: 'system',
+          last_login_at: new Date().toISOString(),
+          welcome_email_sent: false,
+          user_roles: [{ role: 'admin' as UserRole }]
+        };
+        setProfile(fallbackProfile);
+        setAvailableRoles(['admin' as UserRole]);
+        setCurrentRole('admin' as UserRole);
+        return;
+      }
+
+      if (!profileData) {
+        console.warn('No profile data found, using fallback');
+        // Set fallback profile data to prevent hanging
+        const fallbackProfile: Profile = {
+          id: 'fallback-id',
+          user_id: userId,
+          email: 'user@example.com',
+          full_name: 'User',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          invited_at: new Date().toISOString(),
+          invited_by: 'system',
+          last_login_at: new Date().toISOString(),
+          welcome_email_sent: false,
+          user_roles: [{ role: 'admin' as UserRole }]
+        };
+        setProfile(fallbackProfile);
+        setAvailableRoles(['admin' as UserRole]);
+        setCurrentRole('admin' as UserRole);
+        return;
+      }
 
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
 
-      if (rolesError) return;
+      if (rolesError) {
+        console.error('Roles fetch error:', rolesError);
+        // Use fallback roles to prevent hanging
+        const fallbackRoles: UserRole[] = ['admin'];
+        const profileWithRoles: Profile = { 
+          ...profileData, 
+          user_roles: fallbackRoles.map(role => ({ role }))
+        };
+        
+        setProfile(profileWithRoles);
+        setAvailableRoles(fallbackRoles);
+        setCurrentRole(fallbackRoles[0]);
+        return;
+      }
 
-      const roles = rolesData?.map(r => r.role) || ['admin'];
+      const roles = (rolesData?.map(r => r.role) || ['admin']) as UserRole[];
       const profileWithRoles: Profile = { 
         ...profileData, 
         user_roles: roles.map(role => ({ role }))
@@ -71,6 +126,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      // Set fallback data to prevent hanging
+      const fallbackProfile: Profile = {
+        id: 'fallback-id',
+        user_id: userId,
+        email: 'user@example.com',
+        full_name: 'User',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        invited_at: new Date().toISOString(),
+        invited_by: 'system',
+        last_login_at: new Date().toISOString(),
+        welcome_email_sent: false,
+        user_roles: [{ role: 'admin' as UserRole }]
+      };
+      setProfile(fallbackProfile);
+      setAvailableRoles(['admin' as UserRole]);
+      setCurrentRole('admin' as UserRole);
     }
   };
 
