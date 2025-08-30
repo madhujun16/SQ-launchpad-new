@@ -36,8 +36,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileCache, setProfileCache] = useState<Map<string, { profile: Profile; timestamp: number }>>(new Map());
 
   const fetchProfile = async (userId: string) => {
+    // Check cache first (5 minute cache)
+    const cached = profileCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
+      setProfile(cached.profile);
+      setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || ['admin']);
+      const savedRole = localStorage.getItem('currentRole') as UserRole;
+      if (savedRole && cached.profile.user_roles?.some(r => r.role === savedRole)) {
+        setCurrentRole(savedRole);
+      } else {
+        setCurrentRole(cached.profile.user_roles?.[0]?.role || 'admin');
+      }
+      return;
+    }
+
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -118,6 +133,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setProfile(profileWithRoles);
       setAvailableRoles(roles);
       
+      // Cache the profile data
+      setProfileCache(prev => new Map(prev).set(userId, {
+        profile: profileWithRoles,
+        timestamp: Date.now()
+      }));
+      
       const savedRole = localStorage.getItem('currentRole') as UserRole;
       if (savedRole && roles.includes(savedRole)) {
         setCurrentRole(savedRole);
@@ -159,6 +180,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setProfile(null);
       setCurrentRole(null);
       setAvailableRoles([]);
+      setProfileCache(new Map());
       localStorage.removeItem('currentRole');
     } catch (error) {
       console.error('Sign out error:', error);

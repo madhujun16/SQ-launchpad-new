@@ -19,6 +19,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 // Simple mock data - no heavy operations
 const MOCK_METRICS = [
@@ -102,7 +103,8 @@ const MOCK_USER_ROLE: UserRole = 'admin';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const currentRole = MOCK_USER_ROLE as UserRole;
+  const { user, profile, currentRole } = useAuth();
+  const userRole = currentRole || 'deployment_engineer';
 
   const handleViewAll = (path: string) => {
     navigate(path);
@@ -147,7 +149,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {currentRole === 'admin' ? 'Administrator' : currentRole === 'ops_manager' ? 'Operations Manager' : 'Deployment Engineer'}
+            Welcome back, {profile?.full_name || user?.email?.split('@')[0] || 'User'}
           </h1>
           <p className="text-gray-600">
             Here's what's happening with your deployment projects today.
