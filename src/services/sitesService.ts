@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface Site {
   id: string;
@@ -90,52 +91,12 @@ export class SitesService {
         return [];
       }
       
-      console.log('🔍 Making optimized Supabase query...');
+      console.log('🔍 Making simple Supabase query...');
       
-      // Optimized single query with only necessary fields
+      // Simple query to get basic site data
       const { data, error } = await supabase
         .from('sites')
-        .select(`
-          id,
-          name,
-          organization_id,
-          address,
-          location,
-          workflow_status,
-          status,
-          target_go_live,
-          target_live_date,
-          assigned_ops_manager,
-          assigned_deployment_engineer,
-          sector,
-          food_court_unit,
-          unit_code,
-          criticality_level,
-          team_assignment,
-          stakeholders,
-          description,
-          notes,
-          unit_manager_name,
-          job_title,
-          unit_manager_email,
-          unit_manager_mobile,
-          additional_contact_name,
-          additional_contact_email,
-          latitude,
-          longitude,
-          postcode,
-          region,
-          country,
-          created_at,
-          updated_at,
-          organizations!inner(
-            id,
-            name,
-            sector,
-            logo_url,
-            description
-          )
-        `)
+        .select('*')
         .order('name');
 
       if (error) {
@@ -155,20 +116,20 @@ export class SitesService {
         return {
           id: site.id,
           name: site.name || 'Unnamed Site',
-          organization_id: site.organization_id || site.organizations?.id || '',
-          organization_name: site.organizations?.name || 'Organization',
-          organization_logo: site.organizations?.logo_url || null,
-          location: site.address || site.location || 'Location not specified',
+          organization_id: '', // Not available in current schema
+          organization_name: 'Organization', // Default value
+          organization_logo: null,
+          location: site.address || 'Location not specified',
           status: site.workflow_status || site.status || 'Unknown',
-          target_live_date: site.target_go_live || site.target_live_date || '',
+          target_live_date: site.target_go_live || '',
           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
-          sector: site.organizations?.sector || '',
-          unit_code: site.food_court_unit || '',
+          sector: '',
+          unit_code: '',
           criticality_level: 'medium' as const,
           team_assignment: '',
           stakeholders: [],
-          notes: site.description || '',
+          notes: '',
           // Contact information fields
           unitManagerName: '',
           jobTitle: '',
