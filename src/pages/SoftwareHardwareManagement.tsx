@@ -384,8 +384,10 @@ export default function SoftwareHardwareManagement() {
       const existingMappings = mappings.filter(m => m.software_module_id === selectedSoftwareModule);
       const existingHardwareIds = new Set(existingMappings.map(m => m.hardware_item_id));
       
-      // Filter out hardware items that already have mappings
+      // Filter out hardware items that already have mappings and placeholder values
       const newMappingsToInsert = editingMappingItems.filter(item => 
+        item.hardware_item_id && 
+        item.hardware_item_id !== 'placeholder' &&
         !existingHardwareIds.has(item.hardware_item_id)
       );
       
@@ -468,7 +470,7 @@ export default function SoftwareHardwareManagement() {
   // Helper functions for managing mapping items
   const addMappingItem = () => {
     setEditingMappingItems(prev => [...prev, {
-      hardware_item_id: '',
+      hardware_item_id: 'placeholder', // Use a placeholder value instead of empty string
       quantity: 1,
       is_required: false
     }]);
@@ -695,7 +697,7 @@ export default function SoftwareHardwareManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
+                  {categories.filter(category => category && category.trim() !== '').map(category => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -1169,7 +1171,7 @@ export default function SoftwareHardwareManagement() {
                      <SelectValue placeholder="Select software module" />
                    </SelectTrigger>
                    <SelectContent>
-                     {softwareModules.map(software => (
+                     {softwareModules.filter(software => software.id && software.name).map(software => (
                        <SelectItem key={software.id} value={software.id}>
                          {software.name}
                        </SelectItem>
@@ -1256,7 +1258,7 @@ export default function SoftwareHardwareManagement() {
                                 <SelectValue placeholder="Select hardware" />
                               </SelectTrigger>
                                                              <SelectContent>
-                                 {hardwareItems.map(hardware => {
+                                 {hardwareItems.filter(hardware => hardware.id && hardware.name).map(hardware => {
                                    const isAlreadyMapped = alreadyMappedHardwareIds.has(hardware.id);
                                    return (
                                      <SelectItem 

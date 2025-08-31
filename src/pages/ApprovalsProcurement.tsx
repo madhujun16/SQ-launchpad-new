@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AppTable } from '@/components/ui/AppTable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -38,47 +37,71 @@ import {
   CreditCard,
   Settings,
   List,
-  CheckSquare
+  CheckSquare,
+  History,
+  ArrowRight,
+  Check,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
-import { Loader } from '@/components/ui/loader';
+import { PageLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
-import { CostingApprovalCard } from '@/components/CostingApprovalCard';
-import { CostingService } from '@/services/costingService';
-import { CostingApproval } from '@/types/costing';
+import { toast } from 'sonner';
 
-interface RequestHistoryEntry {
+// Interfaces
+interface ApprovalRequest {
   id: string;
-  action: 'submitted' | 'approved' | 'rejected' | 'comment';
-  user: string;
-  timestamp: string;
-  comment?: string;
+  siteName: string;
+  siteId: string;
+  deploymentEngineer: string;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected' | 'changes_requested';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  totalCost: number;
+  softwareCount: number;
+  hardwareCount: number;
+  comments?: string;
+  rejectionReason?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewComment?: string;
+  siteStudyReport?: string; // PDF URL or file path
+  scopingDetails?: {
+    software: Array<{
+      name: string;
+      monthlyFee: number;
+      setupFee: number;
+      description?: string;
+    }>;
+    hardware: Array<{
+      name: string;
+      quantity: number;
+      unitCost: number;
+      totalCost: number;
+      description?: string;
+    }>;
+  };
+  siteDetails?: {
+    location: string;
+    type: string;
+    capacity: number;
+    currentStatus: string;
+  };
 }
 
-interface ScopingItem { name: string; units?: number; monthlyFee?: number; setupFee?: number; unitCost?: number }
-interface ScopingSummary { software: ScopingItem[]; hardware: ScopingItem[] }
-
-interface HardwareRequest {
+interface ApprovalHistory {
   id: string;
-  site_name: string;
-  site_id: string;
-  requested_by: string;
-  requested_at: string;
-  status: 'pending' | 'approved' | 'rejected' | 'procurement' | 'dispatched' | 'delivered';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  items_count: number;
-  total_value: number;
-  assigned_ops_manager?: string;
-  assigned_deployment_engineer?: string;
-  comments?: string;
-  rejection_reason?: string;
-  procurement_status?: string;
-  expected_delivery?: string;
-  history?: RequestHistoryEntry[];
-  scoping_summary?: ScopingSummary;
+  siteName: string;
+  deploymentEngineer: string;
+  submittedAt: string;
+  reviewedAt: string;
+  reviewedBy: string;
+  status: 'approved' | 'rejected';
+  totalCost: number;
+  reviewComment?: string;
 }
 
 const ApprovalsProcurement = () => {
@@ -86,26 +109,18 @@ const ApprovalsProcurement = () => {
   const { getTabAccess } = useRoleAccess();
   const navigate = useNavigate();
   const roleConfig = getRoleConfig(currentRole || 'admin');
-  const RoleIconComp = roleConfig.icon; // fix dynamic icon
   
-  const [requests, setRequests] = useState<HardwareRequest[]>([]);
-  const [filteredRequests, setFilteredRequests] = useState<HardwareRequest[]>([]);
+  // State
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [selectedRequest, setSelectedRequest] = useState<HardwareRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
-  const [showOutcomeDialog, setShowOutcomeDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
   const [reviewComment, setReviewComment] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-  
-  // Costing approvals state
-  const [costingApprovals, setCostingApprovals] = useState<CostingApproval[]>([]);
-  const [filteredCostingApprovals, setFilteredCostingApprovals] = useState<CostingApproval[]>([]);
-  const [costingStatusFilter, setCostingStatusFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState('hardware');
 
   // Check access permissions
   const tabAccess = getTabAccess('/approvals-procurement');
@@ -119,188 +134,147 @@ const ApprovalsProcurement = () => {
     );
   }
 
-  // Mock data & async loads
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-    const mockRequests: HardwareRequest[] = [
+  // Mock data
+  const mockPendingRequests: ApprovalRequest[] = [
       {
         id: '1',
-        site_name: 'Birmingham South',
-        site_id: '3',
-        requested_by: 'Tom Wilson',
-        requested_at: '2024-01-16T10:30:00Z',
+      siteName: 'Birmingham South Cafeteria',
+      siteId: 'site-001',
+      deploymentEngineer: 'Tom Wilson',
+      submittedAt: '2024-01-16T10:30:00Z',
         status: 'pending',
         priority: 'high',
-        items_count: 2,
-        total_value: 4500,
-        assigned_ops_manager: 'Emma Davis',
-        assigned_deployment_engineer: 'Tom Wilson',
-          comments: 'Need additional POS terminals for peak hours',
-          history: [
-            { id: crypto.randomUUID(), action: 'submitted', user: 'Tom Wilson', timestamp: '2024-01-16T10:30:00Z' }
-          ],
-          scoping_summary: {
-            software: [ { name: 'POS System', monthlyFee: 25, setupFee: 150 }, { name: 'Kiosk Software', monthlyFee: 20, setupFee: 100 } ],
-            hardware: [ { name: 'POS Terminals', units: 2, unitCost: 700 }, { name: 'Receipt Printers', units: 1, unitCost: 120 } ]
+      totalCost: 4500,
+      softwareCount: 2,
+      hardwareCount: 3,
+      comments: 'Additional POS terminals needed for peak hours',
+      siteStudyReport: '/reports/birmingham-south-site-study.pdf',
+      scopingDetails: {
+        software: [
+          { name: 'POS System Pro', monthlyFee: 25, setupFee: 150, description: 'Advanced point-of-sale system with inventory management' },
+          { name: 'Kiosk Software', monthlyFee: 20, setupFee: 100, description: 'Self-service ordering system' }
+        ],
+        hardware: [
+          { name: 'POS Terminals', quantity: 2, unitCost: 700, totalCost: 1400, description: 'Touchscreen POS terminals with card readers' },
+          { name: 'Receipt Printers', quantity: 1, unitCost: 120, totalCost: 120, description: 'Thermal receipt printers' },
+          { name: 'Barcode Scanners', quantity: 2, unitCost: 85, totalCost: 170, description: 'USB barcode scanners' }
+        ]
+      },
+      siteDetails: {
+        location: 'Birmingham, UK',
+        type: 'Cafeteria',
+        capacity: 150,
+        currentStatus: 'Operational'
           }
       },
       {
         id: '2',
-        site_name: 'Leeds Central',
-        site_id: '4',
-        requested_by: 'Chris Taylor',
-        requested_at: '2024-01-17T14:20:00Z',
-        status: 'approved',
+      siteName: 'Leeds Central Office',
+      siteId: 'site-002',
+      deploymentEngineer: 'Chris Taylor',
+      submittedAt: '2024-01-17T14:20:00Z',
+      status: 'changes_requested',
         priority: 'medium',
-        items_count: 5,
-        total_value: 12000,
-        assigned_ops_manager: 'Lisa Anderson',
-        assigned_deployment_engineer: 'Chris Taylor',
+      totalCost: 12000,
+      softwareCount: 3,
+      hardwareCount: 5,
         comments: 'Complete hardware setup for new cafeteria',
-        procurement_status: 'ordered',
-          expected_delivery: '2024-01-25',
-          history: [
-            { id: crypto.randomUUID(), action: 'submitted', user: 'Chris Taylor', timestamp: '2024-01-17T14:20:00Z' },
-            { id: crypto.randomUUID(), action: 'approved', user: 'Lisa Anderson', timestamp: '2024-01-18T09:00:00Z', comment: 'Looks good. Proceed.' }
-          ],
-          scoping_summary: {
-            software: [ { name: 'POS System', monthlyFee: 25, setupFee: 150 }, { name: 'Kitchen Display', monthlyFee: 20, setupFee: 100 } ],
-            hardware: [ { name: 'POS Terminals', units: 4, unitCost: 700 } ]
-          }
+      reviewComment: 'Please reduce hardware costs by 20%',
+      siteStudyReport: '/reports/leeds-central-site-study.pdf',
+      scopingDetails: {
+        software: [
+          { name: 'POS System Pro', monthlyFee: 25, setupFee: 150, description: 'Advanced point-of-sale system' },
+          { name: 'Kitchen Display', monthlyFee: 20, setupFee: 100, description: 'Kitchen order management system' },
+          { name: 'Inventory Management', monthlyFee: 15, setupFee: 80, description: 'Stock tracking and management' }
+        ],
+        hardware: [
+          { name: 'POS Terminals', quantity: 4, unitCost: 700, totalCost: 2800, description: 'Touchscreen POS terminals' },
+          { name: 'Kitchen Displays', quantity: 2, unitCost: 350, totalCost: 700, description: 'Kitchen order displays' },
+          { name: 'Receipt Printers', quantity: 2, unitCost: 120, totalCost: 240, description: 'Thermal receipt printers' },
+          { name: 'Barcode Scanners', quantity: 3, unitCost: 85, totalCost: 255, description: 'USB barcode scanners' },
+          { name: 'Cash Drawers', quantity: 2, unitCost: 150, totalCost: 300, description: 'Electronic cash drawers' }
+        ]
       },
-      {
-        id: '3',
-        site_name: 'Liverpool East',
-        site_id: '5',
-        requested_by: 'Anna Garcia',
-        requested_at: '2024-01-18T09:15:00Z',
-        status: 'rejected',
-        priority: 'low',
-        items_count: 1,
-        total_value: 800,
-        assigned_ops_manager: 'Mark Thompson',
-        assigned_deployment_engineer: 'Anna Garcia',
-        comments: 'Request for additional display screen',
-          rejection_reason: 'Budget constraints - alternative solution available',
-          history: [
-            { id: crypto.randomUUID(), action: 'submitted', user: 'Anna Garcia', timestamp: '2024-01-18T09:15:00Z' },
-            { id: crypto.randomUUID(), action: 'rejected', user: 'Mark Thompson', timestamp: '2024-01-19T11:00:00Z', comment: 'Please reduce scope and resubmit.' }
-          ],
-          scoping_summary: {
-            software: [ { name: 'Self-Service Kiosks', monthlyFee: 15, setupFee: 80 } ],
-            hardware: [ { name: 'Tablets', units: 1, unitCost: 250 } ]
-          }
-      },
-      {
-        id: '4',
-        site_name: 'Manchester North',
-        site_id: '2',
-        requested_by: 'David Brown',
-        requested_at: '2024-01-19T11:45:00Z',
-        status: 'procurement',
-        priority: 'urgent',
-        items_count: 3,
-        total_value: 7500,
-        assigned_ops_manager: 'Sarah Wilson',
-        assigned_deployment_engineer: 'David Brown',
-        comments: 'Critical hardware for deployment next week',
-        procurement_status: 'in_progress',
-          expected_delivery: '2024-01-22',
-          history: [
-            { id: crypto.randomUUID(), action: 'submitted', user: 'David Brown', timestamp: '2024-01-19T11:45:00Z' },
-            { id: crypto.randomUUID(), action: 'approved', user: 'Sarah Wilson', timestamp: '2024-01-20T10:10:00Z', comment: 'Proceed to procurement.' }
-          ],
-          scoping_summary: {
-            software: [ { name: 'Kitchen Display', monthlyFee: 20, setupFee: 100 } ],
-            hardware: [ { name: 'KDS Screens', units: 3, unitCost: 300 } ]
-          }
-      },
-      {
-        id: '5',
-        site_name: 'London Central',
-        site_id: '1',
-        requested_by: 'Mike Johnson',
-        requested_at: '2024-01-20T16:30:00Z',
-        status: 'dispatched',
-        priority: 'medium',
-        items_count: 4,
-        total_value: 9800,
-        assigned_ops_manager: 'John Smith',
-        assigned_deployment_engineer: 'Mike Johnson',
-        comments: 'Replacement hardware for maintenance',
-        procurement_status: 'shipped',
-          expected_delivery: '2024-01-23',
-          history: [
-            { id: crypto.randomUUID(), action: 'submitted', user: 'Mike Johnson', timestamp: '2024-01-20T16:30:00Z' },
-            { id: crypto.randomUUID(), action: 'approved', user: 'John Smith', timestamp: '2024-01-21T08:30:00Z', comment: 'Approved and ordered.' }
-          ],
-          scoping_summary: {
-            software: [ { name: 'Inventory Management', monthlyFee: 0, setupFee: 0 } ],
-            hardware: [ { name: 'Barcode Scanners', units: 2, unitCost: 180 } ]
-          }
-        }
-      ];
-
-    let filteredRequestsData = mockRequests;
-    if (currentRole === 'deployment_engineer') {
-      const currentUserName = profile?.full_name || profile?.email || '';
-      filteredRequestsData = mockRequests.filter(request => 
-        request.requested_by === currentUserName || 
-        request.assigned_deployment_engineer === currentUserName
-      );
-    } else if (currentRole === 'ops_manager') {
-      const currentUserName = profile?.full_name || profile?.email || '';
-      filteredRequestsData = mockRequests.filter(request => 
-        request.assigned_ops_manager === currentUserName
-      );
-    }
-
-      if (!isMounted) return;
-    setRequests(filteredRequestsData);
-    setFilteredRequests(filteredRequestsData);
-    
-      if (isMounted && (currentRole === 'ops_manager' || currentRole === 'admin')) {
-        try {
-      const approvals = await CostingService.getCostingApprovals();
-          if (!isMounted) return;
-      setCostingApprovals(approvals);
-      setFilteredCostingApprovals(approvals);
-        } catch (e) {
-          // swallow error for mock/demo
-        }
+      siteDetails: {
+        location: 'Leeds, UK',
+        type: 'Office Cafeteria',
+        capacity: 200,
+        currentStatus: 'Under Construction'
       }
-
-      if (isMounted) setLoading(false);
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentRole, profile]);
-
-  // Timeout handling to prevent infinite loading
-  useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        console.warn('⚠️ Approvals loading timeout - forcing display');
-        setLoadingTimeout(true);
-        setLoading(false);
-      }, 10000); // 10 seconds
-
-      return () => clearTimeout(timer);
-    } else {
-      setLoadingTimeout(false);
+    },
+    {
+      id: '3',
+      siteName: 'Liverpool East Mall',
+      siteId: 'site-003',
+      deploymentEngineer: 'Anna Garcia',
+      submittedAt: '2024-01-18T09:15:00Z',
+      status: 'pending',
+        priority: 'urgent',
+      totalCost: 8000,
+      softwareCount: 1,
+      hardwareCount: 4,
+      comments: 'Self-service kiosk installation',
+      siteStudyReport: '/reports/liverpool-east-site-study.pdf',
+      scopingDetails: {
+        software: [
+          { name: 'Self-Service Kiosks', monthlyFee: 15, setupFee: 80, description: 'Touchscreen ordering system for customers' }
+        ],
+        hardware: [
+          { name: 'Touchscreen Kiosks', quantity: 2, unitCost: 1200, totalCost: 2400, description: 'Large touchscreen displays' },
+          { name: 'Payment Terminals', quantity: 2, unitCost: 150, totalCost: 300, description: 'Card payment terminals' },
+          { name: 'Receipt Printers', quantity: 2, unitCost: 120, totalCost: 240, description: 'Thermal receipt printers' },
+          { name: 'Network Equipment', quantity: 1, unitCost: 500, totalCost: 500, description: 'WiFi routers and switches' }
+        ]
+      },
+      siteDetails: {
+        location: 'Liverpool, UK',
+        type: 'Shopping Mall',
+        capacity: 500,
+        currentStatus: 'Planning Phase'
+      }
     }
-  }, [loading]);
+  ];
 
+  const mockApprovalHistory: ApprovalHistory[] = [
+    {
+      id: 'hist-1',
+      siteName: 'Manchester North',
+      deploymentEngineer: 'David Brown',
+      submittedAt: '2024-01-15T11:45:00Z',
+      reviewedAt: '2024-01-16T09:00:00Z',
+      reviewedBy: 'Emma Davis',
+      status: 'approved',
+      totalCost: 8500,
+      reviewComment: 'Approved with minor cost optimizations'
+    },
+    {
+      id: 'hist-2',
+      siteName: 'Bristol Central',
+      deploymentEngineer: 'Sarah Johnson',
+      submittedAt: '2024-01-14T16:30:00Z',
+      reviewedAt: '2024-01-15T14:20:00Z',
+      reviewedBy: 'Mark Thompson',
+      status: 'rejected',
+      totalCost: 15000,
+      reviewComment: 'Cost exceeds budget by 40%. Please revise scope.'
+    }
+  ];
+
+  // Simulate loading
   useEffect(() => {
-    let filtered = requests;
+    const timer = setTimeout(() => setLoading(false), 1000);
+      return () => clearTimeout(timer);
+  }, []);
+
+  // Filtered data
+  const filteredPendingRequests = useMemo(() => {
+    let filtered = mockPendingRequests;
 
     if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(request =>
-        request.site_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.requested_by.toLowerCase().includes(searchTerm.toLowerCase())
+        request.siteName.toLowerCase().includes(searchLower) ||
+        request.deploymentEngineer.toLowerCase().includes(searchLower)
       );
     }
 
@@ -312,538 +286,640 @@ const ApprovalsProcurement = () => {
       filtered = filtered.filter(request => request.priority === priorityFilter);
     }
 
-    setFilteredRequests(filtered);
-  }, [requests, searchTerm, statusFilter, priorityFilter]);
+    return filtered;
+  }, [searchTerm, statusFilter, priorityFilter]);
 
-  // Filter costing approvals
-  useEffect(() => {
-    let filtered = costingApprovals;
-    if (costingStatusFilter !== 'all') {
-      filtered = filtered.filter(approval => approval.status === costingStatusFilter);
+  const filteredHistory = useMemo(() => {
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return mockApprovalHistory.filter(request =>
+        request.siteName.toLowerCase().includes(searchLower) ||
+        request.deploymentEngineer.toLowerCase().includes(searchLower)
+      );
     }
-    setFilteredCostingApprovals(filtered);
-  }, [costingApprovals, costingStatusFilter]);
+    return mockApprovalHistory;
+  }, [searchTerm]);
 
-  const getStatusConfig = (status: string) => {
-    const configs = {
-      pending: { label: 'Pending Review', color: 'bg-orange-100 text-orange-800', icon: Clock },
-      approved: { label: 'Approved', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: XCircle },
-      procurement: { label: 'In Procurement', color: 'bg-blue-100 text-blue-800', icon: Package },
-      dispatched: { label: 'Dispatched', color: 'bg-purple-100 text-purple-800', icon: Truck },
-      delivered: { label: 'Delivered', color: 'bg-green-100 text-green-800', icon: CheckCircle }
-    };
-    return configs[status as keyof typeof configs] || configs.pending;
+     // Helper functions
+   // Priority levels: Set by deployment engineer during site study
+   // - urgent: Site opening < 2 weeks, high revenue impact
+   // - high: Site opening 2-4 weeks, medium revenue impact  
+   // - medium: Site opening 1-2 months, standard deployment
+   // - low: Site opening > 2 months, low priority
+   const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'changes_requested': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const getPriorityConfig = (priority: string) => {
-    const configs = {
-      low: { label: 'Low', color: 'bg-gray-100 text-gray-800', icon: TrendingDown },
-      medium: { label: 'Medium', color: 'bg-blue-100 text-blue-800', icon: Activity },
-      high: { label: 'High', color: 'bg-orange-100 text-orange-800', icon: TrendingUp },
-      urgent: { label: 'Urgent', color: 'bg-red-100 text-red-800', icon: AlertCircle }
-    };
-    return configs[priority as keyof typeof configs] || configs.medium;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const handleReviewRequest = (request: HardwareRequest, action: 'approve' | 'reject') => {
+  const handleReview = (request: ApprovalRequest, action: 'approve' | 'reject') => {
     setSelectedRequest(request);
     setReviewAction(action);
     setReviewComment('');
     setShowReviewDialog(true);
   };
 
-  const handleSubmitReview = () => {
-    if (!selectedRequest || !reviewComment.trim()) return;
+  const handleViewDetails = (request: ApprovalRequest) => {
+    setSelectedRequest(request);
+    setShowDetailsDialog(true);
+  };
 
-    const updatedRequests = requests.map(req => {
-      if (req.id === selectedRequest.id) {
-        const now = new Date().toISOString();
-        const newHistory: RequestHistoryEntry = {
-          id: crypto.randomUUID(),
-          action: (reviewAction === 'approve' ? 'approved' : 'rejected'),
-          user: profile?.full_name || profile?.email || 'Ops Manager',
-          timestamp: now,
-          comment: reviewComment
-        };
-        return {
-          ...req,
-          status: (reviewAction === 'approve' ? 'approved' : 'rejected') as HardwareRequest['status'],
-          rejection_reason: reviewAction === 'reject' ? reviewComment : undefined,
-          comments: reviewComment,
-          history: [...(req.history || []), newHistory]
-        };
-      }
-      return req;
-    });
+  const submitReview = async () => {
+    if (!selectedRequest || !reviewComment.trim()) {
+      toast.error('Please provide a review comment');
+      return;
+    }
 
-    setRequests(updatedRequests);
+    setLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast.success(`Request ${reviewAction === 'approve' ? 'approved' : 'rejected'} successfully`);
     setShowReviewDialog(false);
     setSelectedRequest(null);
     setReviewComment('');
+      setLoading(false);
+    }, 1000);
   };
 
-  const handleCostingStatusFilter = (status: string) => {
-    setCostingStatusFilter(status);
-    if (status === 'all') {
-      setFilteredCostingApprovals(costingApprovals);
-    } else {
-      const filtered = costingApprovals.filter(approval => approval.status === status);
-      setFilteredCostingApprovals(filtered);
-    }
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setPriorityFilter('all');
   };
 
-  const handleCostingStatusChange = () => {
-    CostingService.getCostingApprovals().then(approvals => {
-      setCostingApprovals(approvals);
-      setFilteredCostingApprovals(approvals);
-    });
-  };
-
-  const canReviewRequests = currentRole === 'ops_manager';
-
-  const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending', label: 'Pending Review' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'procurement', label: 'In Procurement' },
-    { value: 'dispatched', label: 'Dispatched' },
-    { value: 'delivered', label: 'Delivered' }
-  ];
-
-  const costingStatusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending_review', label: 'Pending Review' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'resubmitted', label: 'Resubmitted' }
-  ];
-
-  const priorityOptions = [
-    { value: 'all', label: 'All Priorities' },
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' }
-  ];
-
-  const pendingCount = filteredRequests.filter(r => r.status === 'pending').length;
-  const resubmissionCount = filteredRequests.filter(r => r.status === 'rejected').length;
-
-  const getLastActionTime = (req: HardwareRequest, action: RequestHistoryEntry['action']) => {
-    const entries = (req.history || []).filter(h => h.action === action);
-    if (entries.length === 0) return null;
-    return entries[entries.length - 1].timestamp;
-  };
-
-  if (loading && !loadingTimeout) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Loading approvals...</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <PageLoader />;
   }
 
-  if (loadingTimeout) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
-        <div className="text-center">
-          <div className="text-orange-600 mb-4">
-            <AlertCircle className="h-12 w-12 mx-auto" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
-          <p className="text-gray-600 mb-4">The approvals page is still loading. This might be due to:</p>
-          <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1 mb-4">
-            <li>• Slow database connection</li>
-            <li>• Authentication service delay</li>
-            <li>• Network connectivity issues</li>
-          </ul>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const computeSoftwareTotals = (summary?: ScopingSummary) => {
-    const monthly = summary?.software.reduce((acc, s) => acc + (s.monthlyFee || 0), 0) || 0;
-    const setup = summary?.software.reduce((acc, s) => acc + (s.setupFee || 0), 0) || 0;
-    return { monthly, setup };
-  };
-  const computeHardwareTotal = (summary?: ScopingSummary) => {
-    return summary?.hardware.reduce((acc, h) => acc + (h.unitCost || 0) * (h.units || 1), 0) || 0;
-  };
-
-  return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
+    <div className="container mx-auto px-4 py-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="icon-badge-green"><CheckSquare className="nav-icon" color="#1CB255" /></span>
-            <h1 className="pro-h2">Approvals & Procurement</h1>
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Approvals & Procurement</h1>
+            <p className="text-gray-600 mt-2">
+              Review and approve hardware/software requests from deployment engineers
+            </p>
+        </div>
+          <div className="flex items-center space-x-3">
+            <Badge variant="outline" className="text-sm">
+              {roleConfig.displayName}
+            </Badge>
+      </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-6 w-6 text-yellow-600" />
           </div>
-          <p className="pro-subtle mt-1">
-            Review hardware requests and manage procurement workflow
-            {tabAccess.message && (
-              <span className="block text-sm text-blue-700 mt-1">
-                {tabAccess.message}
-              </span>
-            )}
+              <div>
+                <p className="text-sm text-gray-600">Pending Reviews</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {mockPendingRequests.filter(r => r.status === 'pending').length}
+                </p>
+        </div>
+      </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Changes Requested</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {mockPendingRequests.filter(r => r.status === 'changes_requested').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+        <div>
+                <p className="text-sm text-gray-600">Approved This Month</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {mockApprovalHistory.filter(h => h.status === 'approved').length}
+                </p>
+          </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Value Pending</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  £{mockPendingRequests.reduce((sum, r) => sum + r.totalCost, 0).toLocaleString()}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="flex items-center space-x-1">
-            <RoleIconComp className="h-3 w-3" />
-            <span>{roleConfig.displayName}</span>
-          </Badge>
         </div>
+          </CardContent>
+        </Card>
       </div>
-      <div className="divider-soft" />
 
+             {/* Main Content */}
+       {/* Tab Navigation */}
+       <div className="mb-6">
+         <div className="flex space-x-1 bg-white p-1 rounded-lg border">
+           <Button
+             variant={activeTab === 'pending' ? 'default' : 'ghost'}
+             onClick={() => setActiveTab('pending')}
+             className="flex-1"
+           >
+             <Clock className="h-4 w-4 mr-2" />
+             Pending Approvals ({mockPendingRequests.length})
+           </Button>
+           <Button
+             variant={activeTab === 'history' ? 'default' : 'ghost'}
+             onClick={() => setActiveTab('history')}
+             className="flex-1"
+           >
+             <History className="h-4 w-4 mr-2" />
+             Approval History
+           </Button>
+                  </div>
+       </div>
+
+       {/* Content based on active tab */}
+       {activeTab === 'pending' && (
+         <div className="space-y-6">
           {/* Filters */}
-      <Card className="pro-card">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search by site or requester..."
+                      placeholder="Search by site name or engineer..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
                 </div>
+                </div>
+                
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full lg:w-48">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="changes_requested">Changes Requested</SelectItem>
                   </SelectContent>
                 </Select>
+
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full lg:w-48">
                     <SelectValue placeholder="Filter by priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    {priorityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">All Priority</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
                   </SelectContent>
                 </Select>
-            <Button variant="light-outline" className="flex items-center space-x-2 hover-glow-green" onClick={() => { setSearchTerm(''); setStatusFilter('all'); setPriorityFilter('all'); }}>
-                  <Filter className="h-4 w-4" />
-                  <span>Clear Filters</span>
+
+                <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+                  Clear Filters
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-      {/* Consolidated list of all requests */}
-      <Card className="pro-card">
-                <CardHeader>
-          <div className="flex items-center gap-2">
-            <span className="icon-badge-green"><List className="nav-icon" color="#1CB255" /></span>
-            <CardTitle className="pro-h3">All Hardware Requests</CardTitle>
+          {/* Requests Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredPendingRequests.map((request) => (
+              <Card key={request.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{request.siteName}</CardTitle>
+                      <CardDescription className="mt-1">
+                        Requested by {request.deploymentEngineer}
+                      </CardDescription>
           </div>
-          <CardDescription className="pro-subtle">All requests including pending and resubmissions</CardDescription>
+                    <div className="flex flex-col items-end space-y-2">
+                      <Badge className={getPriorityColor(request.priority)}>
+                        {request.priority}
+                      </Badge>
+                      <Badge className={getStatusColor(request.status)}>
+                        {request.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
-          <AppTable
-            headers={[
-              'Site',
-              'Requester',
-              'Requested',
-              'Status',
-              'Priority',
-              'Items',
-              'Total Value',
-              'Actions',
-            ]}
-          >
-                      {filteredRequests.map((request) => {
-                        const statusConfig = getStatusConfig(request.status);
-                        const priorityConfig = getPriorityConfig(request.priority);
-                        const StatusIcon = statusConfig.icon;
-                        const PriorityIcon = priorityConfig.icon;
-                        return (
-                          <TableRow key={request.id}>
-                    <TableCell><div className="font-medium">{request.site_name}</div></TableCell>
-                    <TableCell><div className="flex items-center gap-1"><User className="h-3 w-3 text-gray-400" /><span>{request.requested_by}</span></div></TableCell>
-                    <TableCell><div className="flex items-center gap-1"><Calendar className="h-3 w-3 text-gray-400" /><span>{new Date(request.requested_at).toLocaleDateString()}</span></div></TableCell>
-                    <TableCell><Badge className={`${statusConfig.color} flex items-center gap-1`}><StatusIcon className="h-3 w-3" />{statusConfig.label}</Badge></TableCell>
-                    <TableCell><Badge className={`${priorityConfig.color} flex items-center gap-1`}><PriorityIcon className="h-3 w-3" />{priorityConfig.label}</Badge></TableCell>
-                    <TableCell><div className="flex items-center gap-1"><Package className="h-3 w-3 text-gray-400" /><span>{request.items_count} items</span></div></TableCell>
-                    <TableCell><div className="flex items-center gap-1"><DollarSign className="h-3 w-3 text-gray-400" /><span>£{request.total_value.toLocaleString()}</span></div></TableCell>
-                            <TableCell>
-                      <div className="flex items-center gap-2">
-                        {currentRole === 'ops_manager' && (
-                          <>
-                            <Button variant="ghost" size="sm" onClick={() => handleReviewRequest(request, 'approve')}><CheckCircle className="h-4 w-4 text-green-600" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleReviewRequest(request, 'reject')}><XCircle className="h-4 w-4 text-red-600" /></Button>
-                          </>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => { setSelectedRequest(request); setShowOutcomeDialog(true); }}><Eye className="h-4 w-4" /></Button>
+                
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Total Cost</p>
+                      <p className="font-semibold text-lg">£{request.totalCost.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Submitted</p>
+                      <p className="font-medium">
+                        {new Date(request.submittedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <Package className="h-4 w-4 text-blue-600" />
+                      <span>{request.softwareCount} Software</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Truck className="h-4 w-4 text-green-600" />
+                      <span>{request.hardwareCount} Hardware</span>
+                    </div>
+                  </div>
+
+                  {request.comments && (
+                    <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                      <p className="font-medium mb-1">Comments:</p>
+                      <p>{request.comments}</p>
+                    </div>
+                  )}
+
+                  {request.reviewComment && (
+                    <div className="text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
+                      <p className="font-medium mb-1">Review Comment:</p>
+                      <p>{request.reviewComment}</p>
+                    </div>
+                  )}
+
+                  <div className="flex space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(request)}
+                      className="flex-1"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleReview(request, 'approve')}
+                      className="flex-1"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleReview(request, 'reject')}
+                      className="flex-1"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredPendingRequests.length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No pending approvals</h3>
+                <p className="text-gray-600">All approval requests have been processed.</p>
+              </CardContent>
+            </Card>
+          )}
+         </div>
+       )}
+
+       {activeTab === 'history' && (
+         <div className="space-y-6">
+          {/* History Filters */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search approval history..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
                               </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-          </AppTable>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
+          {/* History Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Site</TableHead>
+                      <TableHead>Engineer</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Reviewed</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total Cost</TableHead>
+                      <TableHead>Reviewer</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredHistory.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.siteName}</TableCell>
+                        <TableCell>{item.deploymentEngineer}</TableCell>
+                        <TableCell>
+                          {new Date(item.submittedAt).toLocaleDateString()}
+                            </TableCell>
+                        <TableCell>
+                          {new Date(item.reviewedAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(item.status)}>
+                            {item.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          £{item.totalCost.toLocaleString()}
+                        </TableCell>
+                        <TableCell>{item.reviewedBy}</TableCell>
+                          </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+         </div>
+       )}
+
       {/* Review Dialog */}
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {reviewAction === 'approve' ? 'Approve Hardware Request' : 'Reject Hardware Request'}
+              {reviewAction === 'approve' ? 'Approve Request' : 'Reject Request'}
             </DialogTitle>
             <DialogDescription>
-              {selectedRequest && (
-                <div className="mt-2">
-                  <p><strong>Site:</strong> {selectedRequest.site_name}</p>
-                  <p><strong>Requested by:</strong> {selectedRequest.requested_by}</p>
-                  <p><strong>Value:</strong> £{selectedRequest.total_value?.toLocaleString()}</p>
-                  <p><strong>Items:</strong> {selectedRequest.items_count}</p>
-                </div>
-              )}
+              {selectedRequest?.siteName} - {selectedRequest?.deploymentEngineer}
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4">
             <div>
-              <Label htmlFor="review-comment">
-                {reviewAction === 'approve' ? 'Approval Comments' : 'Rejection Reason'} *
-              </Label>
+              <Label htmlFor="review-comment">Review Comment</Label>
               <Textarea
                 id="review-comment"
-                placeholder={
-                  reviewAction === 'approve' 
-                    ? 'Add any comments about this approval...' 
-                    : 'Please provide a reason for rejection...'
-                }
+                placeholder={`Enter your ${reviewAction === 'approve' ? 'approval' : 'rejection'} comment...`}
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="mt-2"
+                rows={4}
               />
             </div>
           </div>
-          <div className="flex justify-end space-x-2 mt-6">
+
+          <DialogFooter>
             <Button variant="outline" onClick={() => setShowReviewDialog(false)}>
               Cancel
             </Button>
             <Button 
-              variant={reviewAction === 'approve' ? 'gradient' : 'destructive'}
-              onClick={handleSubmitReview}
-              disabled={!reviewComment.trim()}
+              onClick={submitReview}
+              className={reviewAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
             >
-              {reviewAction === 'approve' ? 'Approve Request' : 'Reject Request'}
+              {reviewAction === 'approve' ? 'Approve' : 'Reject'}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Outcome Dialog (read-only) for all roles; shows status, feedback, and audit trail */}
-      <Dialog open={showOutcomeDialog} onOpenChange={setShowOutcomeDialog}>
-        <DialogContent className="md:max-w-[1100px] w-full">
+      {/* Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Building className="h-5 w-5" />
+              <span>Site Study Details</span>
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRequest?.siteName} - Requested by {selectedRequest?.deploymentEngineer}
+            </DialogDescription>
+          </DialogHeader>
+          
           {selectedRequest && (
-            <div className="space-y-4">
-              {/* Role banner for Deployment Engineer */}
-              {currentRole === 'deployment_engineer' && (
-                <Alert>
-                  <AlertDescription>
-                    You are viewing the approval outcome for this site. Actions can only be taken by your Ops Manager.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Header Row */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-semibold">{selectedRequest.site_name}</h3>
-                  {(() => {
-                    const cfg = getStatusConfig(selectedRequest.status);
-                    const Icon = cfg.icon;
-                    return (
-                      <Badge className={`${cfg.color} flex items-center gap-1`}>
-                        <Icon className="h-3 w-3" />
-                        {cfg.label}
-                      </Badge>
-                    );
-                  })()}
+            <div className="space-y-6">
+              {/* Site Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Site Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Location</Label>
+                      <p className="text-sm">{selectedRequest.siteDetails?.location}</p>
                 </div>
-                <div className="text-sm text-gray-500">Submitted {new Date(selectedRequest.requested_at).toLocaleString()}</div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Type</Label>
+                      <p className="text-sm">{selectedRequest.siteDetails?.type}</p>
               </div>
-
-              {/* Outcome banner */}
-              {selectedRequest.status === 'approved' ? (
-                <div className="p-3 bg-green-50 border border-green-200 rounded">
-                  <div className="flex items-center gap-2 text-green-800">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Approved on {new Date(getLastActionTime(selectedRequest, 'approved') || selectedRequest.requested_at).toLocaleString()}</span>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Capacity</Label>
+                      <p className="text-sm">{selectedRequest.siteDetails?.capacity} people</p>
                   </div>
-                  <p className="text-sm text-green-900 mt-2">Proceeding to Procurement.</p>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Current Status</Label>
+                      <p className="text-sm">{selectedRequest.siteDetails?.currentStatus}</p>
                 </div>
-              ) : selectedRequest.status === 'rejected' ? (
-                <div className="p-3 bg-red-50 border border-red-200 rounded">
-                  <div className="flex items-center gap-2 text-red-800">
-                    <XCircle className="h-4 w-4" />
-                    <span>Rejected on {new Date(getLastActionTime(selectedRequest, 'rejected') || selectedRequest.requested_at).toLocaleString()}</span>
                   </div>
-                  <p className="text-sm text-red-900 mt-2 font-medium">Feedback from Ops Manager</p>
-                  <p className="text-sm text-red-900 whitespace-pre-wrap">{selectedRequest.rejection_reason || selectedRequest.comments || 'No comments provided.'}</p>
-                </div>
-              ) : (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded text-blue-900">Awaiting final decision.</div>
-              )}
+                </CardContent>
+              </Card>
 
-              {/* Two-column layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left column: History */}
+              {/* Software Requirements */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Approval History</CardTitle>
-                    <CardDescription>Timeline of actions</CardDescription>
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <Package className="h-5 w-5" />
+                    <span>Software Requirements</span>
+                  </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2 max-h-[360px] overflow-auto pr-1">
-                      {(selectedRequest.history || []).map((h) => (
-                        <div key={h.id} className="flex items-start gap-3 p-2 border rounded">
-                          <div className="mt-0.5">
-                            {h.action === 'approved' ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : h.action === 'rejected' ? (
-                              <XCircle className="h-4 w-4 text-red-600" />
-                            ) : (
-                              <Clock className="h-4 w-4 text-gray-500" />
-                            )}
+                  <div className="space-y-3">
+                    {selectedRequest.scopingDetails?.software.map((software, index) => (
+                      <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium">{software.name}</h4>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">£{software.monthlyFee}/month</p>
+                            <p className="text-sm text-gray-600">£{software.setupFee} setup</p>
                           </div>
-                          <div>
-                            <div className="text-sm"><span className="font-medium capitalize">{h.action}</span> by {h.user}</div>
-                            <div className="text-xs text-gray-500">{new Date(h.timestamp).toLocaleString()}</div>
-                            {h.comment && (<div className="text-sm mt-1 whitespace-pre-wrap">{h.comment}</div>)}
                           </div>
+                        {software.description && (
+                          <p className="text-sm text-gray-600">{software.description}</p>
+                        )}
                         </div>
                       ))}
-                      {(selectedRequest.history || []).length === 0 && (
-                        <p className="text-sm text-gray-500">No history available.</p>
-                      )}
                     </div>
-                    {currentRole === 'deployment_engineer' && selectedRequest.status === 'rejected' && (
-                      <div className="mt-4">
-                        <Button onClick={() => navigate(`/sites/${selectedRequest.site_id}/study`)} className="hover-glow-green">
-                          Edit & Resubmit
-                        </Button>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
 
-                {/* Right column: Scoping Summary & Cost Breakdown */}
-                <div className="space-y-6">
-                  {/* Scoping Summary */}
-                  {selectedRequest.scoping_summary && (
+              {/* Hardware Requirements */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-base">Software & Hardware Summary</CardTitle>
-                        <CardDescription>Selected software and hardware requirements</CardDescription>
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <Truck className="h-5 w-5" />
+                    <span>Hardware Requirements</span>
+                  </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium mb-1">Software</p>
-                          <div className="space-y-1">
-                            {selectedRequest.scoping_summary.software.map((s, i) => (
-                              <div key={i} className="flex items-center justify-between p-2 border rounded">
-                                <span className="text-sm">{s.name}</span>
-                                <Badge variant="secondary">Selected</Badge>
+                <CardContent>
+                  <div className="space-y-3">
+                    {selectedRequest.scopingDetails?.hardware.map((hardware, index) => (
+                      <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium">{hardware.name}</h4>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">Qty: {hardware.quantity}</p>
+                            <p className="text-sm text-gray-600">£{hardware.unitCost} each</p>
+                            <p className="font-medium">£{hardware.totalCost} total</p>
+                              </div>
+                          </div>
+                        {hardware.description && (
+                          <p className="text-sm text-gray-600">{hardware.description}</p>
+                        )}
                               </div>
                             ))}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium mb-1">Hardware</p>
-                          <div className="space-y-1">
-                            {selectedRequest.scoping_summary.hardware.map((h, i) => (
-                              <div key={i} className="flex items-center justify-between p-2 border rounded">
-                                <span className="text-sm">{h.name}</span>
-                                <Badge variant="outline">{h.units ?? 1} units</Badge>
-                              </div>
-                            ))}
-                          </div>
                         </div>
                       </CardContent>
                     </Card>
-                  )}
 
-                  {/* Cost Breakdown */}
-                  {selectedRequest.scoping_summary && (
+              {/* Cost Summary */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-base">Cost Breakdown</CardTitle>
-                        <CardDescription>Per item pricing and totals</CardDescription>
+                  <CardTitle className="text-lg flex items-center space-x-2">
+                    <DollarSign className="h-5 w-5" />
+                    <span>Cost Summary</span>
+                  </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-sm font-medium mb-1">Software</p>
-                          <div className="space-y-1">
-                            {selectedRequest.scoping_summary.software.map((s, i) => (
-                              <div key={i} className="grid grid-cols-3 gap-2 p-2 border rounded text-sm">
-                                <div>{s.name}</div>
-                                <div className="text-gray-600">Monthly £{(s.monthlyFee || 0).toLocaleString()}</div>
-                                <div className="text-gray-600">Setup £{(s.setupFee || 0).toLocaleString()}</div>
+                      <Label className="text-sm font-medium text-gray-600">Total Hardware Cost</Label>
+                      <p className="text-lg font-bold">
+                        £{selectedRequest.scopingDetails?.hardware.reduce((sum, h) => sum + h.totalCost, 0).toLocaleString()}
+                      </p>
                               </div>
-                            ))}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Total Software Setup</Label>
+                      <p className="text-lg font-bold">
+                        £{selectedRequest.scopingDetails?.software.reduce((sum, s) => sum + s.setupFee, 0).toLocaleString()}
+                      </p>
                           </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Monthly Software Fees</Label>
+                      <p className="text-lg font-bold">
+                        £{selectedRequest.scopingDetails?.software.reduce((sum, s) => sum + s.monthlyFee, 0).toLocaleString()}/month
+                      </p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium mb-1">Hardware</p>
-                          <div className="space-y-1">
-                            {selectedRequest.scoping_summary.hardware.map((h, i) => (
-                              <div key={i} className="grid grid-cols-4 gap-2 p-2 border rounded text-sm">
-                                <div>{h.name}</div>
-                                <div className="text-gray-600">Unit £{(h.unitCost || 0).toLocaleString()}</div>
-                                <div className="text-gray-600">Qty {h.units || 1}</div>
-                                <div className="text-gray-800 font-medium">£{(((h.unitCost || 0) * (h.units || 1))).toLocaleString()}</div>
+                      <Label className="text-sm font-medium text-gray-600">Total Project Cost</Label>
+                      <p className="text-2xl font-bold text-green-600">
+                        £{selectedRequest.totalCost.toLocaleString()}
+                      </p>
                               </div>
-                            ))}
                           </div>
+                </CardContent>
+              </Card>
+
+              {/* Site Study Report */}
+              {selectedRequest.siteStudyReport && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center space-x-2">
+                      <FileText className="h-5 w-5" />
+                      <span>Site Study Report</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-8 w-8 text-blue-600" />
+                        <div>
+                          <p className="font-medium">Site Study Report</p>
+                          <p className="text-sm text-gray-600">PDF document with detailed site analysis</p>
                         </div>
-                        <div className="p-3 bg-gray-50 border rounded text-sm">
-                          {(() => {
-                            const sw = computeSoftwareTotals(selectedRequest.scoping_summary);
-                            const hw = computeHardwareTotal(selectedRequest.scoping_summary);
-                            return (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div>Software Monthly Total: <span className="font-semibold">£{sw.monthly.toLocaleString()}</span></div>
-                                <div>Software Setup Total: <span className="font-semibold">£{sw.setup.toLocaleString()}</span></div>
-                                <div>Hardware Total: <span className="font-semibold">£{hw.toLocaleString()}</span></div>
                               </div>
-                            );
-                          })()}
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-1" />
+                        Download PDF
+                      </Button>
                         </div>
                       </CardContent>
                     </Card>
                   )}
-                </div>
-              </div>
             </div>
           )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowDetailsDialog(false);
+                handleReview(selectedRequest!, 'approve');
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Approve Request
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
