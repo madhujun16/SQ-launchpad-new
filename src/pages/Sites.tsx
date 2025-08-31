@@ -263,16 +263,14 @@ const Sites = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-            {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites</h1>
-        <p className="text-gray-600">
-          Manage client sites and track deployment progress.
-        </p>
-      </div>
-
-      {/* Create Site Button Section */}
-      <div className="mb-6 flex justify-end">
+            {/* Header with Create Site Button */}
+      <div className="mb-6 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sites</h1>
+          <p className="text-gray-600">
+            Manage client sites and track deployment progress.
+          </p>
+        </div>
         <Button 
           onClick={handleCreateSite} 
           className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
@@ -283,7 +281,7 @@ const Sites = () => {
       </div>
 
       {/* Search and Filters - All in One Line (Desktop) */}
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
           {/* Search Bar */}
           <div className="flex-1 lg:flex-none lg:w-80">
@@ -325,7 +323,7 @@ const Sites = () => {
 
 
       {/* Sites Table */}
-        <Card className="shadow-sm">
+        <Card className="shadow-sm mt-2">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
