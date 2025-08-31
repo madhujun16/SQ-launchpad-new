@@ -45,10 +45,10 @@ const MOCK_METRICS = [
     color: 'text-green-600'
   },
   {
-    title: 'Active platform users',
-    value: '24',
-    change: '+3 this month',
-    icon: Users,
+    title: 'Platform Health Score',
+    value: '94%',
+    change: '+2% this week',
+    icon: BarChart3,
     color: 'text-purple-600'
   }
 ];
@@ -85,8 +85,10 @@ const MOCK_REQUESTS = [
 ];
 
 const MOCK_PLATFORM_DATA = {
-  totalRequests: 4,
-  approvedRequests: 1
+  approvalRequests: 4,
+  avgResponseTime: '2.3 days',
+  softwareLicenses: 156,
+  totalAssets: 89
 };
 
 const MOCK_FINANCIAL_DATA = {
@@ -220,40 +222,44 @@ const Dashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Target className="h-5 w-5 text-blue-600" />
-                <span>Platform Overview</span>
+                <span>Operations Overview</span>
               </CardTitle>
               <CardDescription>
-                System performance and user activity
+                Key operational metrics and resource tracking
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Total Requests</p>
+                  <p className="text-sm text-gray-600">Approval Requests</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.totalRequests}
+                    {MOCK_PLATFORM_DATA.approvalRequests}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Approved</p>
+                  <p className="text-sm text-gray-600">Avg Response Time</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.approvedRequests}
+                    {MOCK_PLATFORM_DATA.avgResponseTime}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Active Sites</p>
+                  <p className="text-sm text-gray-600">Software Licenses</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_FINANCIAL_DATA.totalSites}
+                    {MOCK_PLATFORM_DATA.softwareLicenses}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Users Online</p>
-                  <p className="text-2xl font-bold text-gray-900">24</p>
+                  <p className="text-sm text-gray-600">Total Assets</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {MOCK_PLATFORM_DATA.totalAssets}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+
 
         {/* Recent Requests */}
         <Card className="mb-8">

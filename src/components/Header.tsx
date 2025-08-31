@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   Home, 
@@ -52,6 +52,13 @@ const Logo = React.memo(() => (
     <div className="flex items-center">
       <RocketIcon className="h-10 w-10 text-green-400" />
     </div>
+  </Link>
+));
+
+// Mobile Logo Component (logo only)
+const MobileLogo = React.memo(() => (
+  <Link to="/" className="flex items-center">
+    <RocketIcon className="h-8 w-8 text-green-400" />
   </Link>
 ));
 
@@ -193,28 +200,18 @@ const MobileNavigation = React.memo(({
   // Show loading state if navigation is not ready
   if (!isReady) {
     return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent side="left" className="w-[85vw] max-w-sm bg-gray-900 z-[9999] overflow-y-auto border-r border-gray-700">
-          <SheetHeader className="border-b border-gray-700 pb-6 sticky top-0 bg-gray-800 z-10">
-            <div className="flex items-center space-x-3 mb-2">
-              <SheetTitle className="text-xl font-bold text-white">
-                SmartQ Launchpad
-              </SheetTitle>
-              <RocketIcon className="h-5 w-5 text-green-400" />
-            </div>
-            <SheetDescription className="text-sm text-gray-300 font-medium">
-              Loading navigation...
-            </SheetDescription>
-          </SheetHeader>
-          
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-              <p className="text-gray-400 text-sm">Preparing navigation...</p>
-            </div>
+      <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center">
+        <div className="bg-gray-900 rounded-lg p-8 max-w-sm w-[85vw]">
+          <div className="flex items-center space-x-3 mb-4">
+            <RocketIcon className="h-6 w-6 text-green-400" />
+            <h2 className="text-xl font-bold text-white">SmartQ Launchpad</h2>
           </div>
-        </SheetContent>
-      </Sheet>
+          <p className="text-sm text-gray-300 mb-6">Loading navigation...</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+          </div>
+        </div>
+      </div>
     );
   }
   
@@ -222,8 +219,10 @@ const MobileNavigation = React.memo(({
     // Close menu first
     onClose();
     
-    // Navigate immediately without delay
-    onNavigate(path);
+    // Use setTimeout to ensure the menu closes before navigation
+    setTimeout(() => {
+      onNavigate(path);
+    }, 100);
   };
 
   const handleRoleSwitchClick = (role: UserRole) => {
@@ -235,53 +234,73 @@ const MobileNavigation = React.memo(({
     
     // Close menu first, then switch role
     onClose();
-    onRoleSwitch(role);
+    setTimeout(() => {
+      onRoleSwitch(role);
+    }, 100);
+  };
+
+  const handleSignOut = () => {
+    onClose();
+    setTimeout(() => {
+      window.location.href = '/auth';
+    }, 100);
   };
   
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-[85vw] max-w-sm bg-gray-900 z-[9999] overflow-y-auto border-r border-gray-700">
-        {/* Header with app branding - simplified theme */}
-        <SheetHeader className="border-b border-gray-700 pb-6 sticky top-0 bg-gray-800 z-10">
-          <div className="flex items-center space-x-3 mb-2">
-            <SheetTitle className="text-xl font-bold text-white">
-              SmartQ Launchpad
-            </SheetTitle>
-            <RocketIcon className="h-5 w-5 text-green-400" />
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50 z-[9998]" 
+        onClick={onClose}
+      />
+      
+      {/* Sidebar */}
+      <div className="fixed top-0 left-0 h-full w-[85vw] max-w-sm bg-gradient-to-b from-black to-green-800 z-[9999] overflow-y-auto border-r border-green-600 transform transition-transform duration-300 ease-in-out">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-black to-green-800 border-b border-green-600 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <span className="text-xl font-bold text-white">SmartQ Launchpad</span>
+              <RocketIcon className="h-6 w-6 text-green-400" />
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <SheetDescription className="text-sm text-gray-300 font-medium">
-            Access your Launchpad features
-          </SheetDescription>
-        </SheetHeader>
+          <p className="text-sm text-white/80">Access your Launchpad features</p>
+        </div>
         
-        {/* Main Navigation Items */}
-        <div className="mt-6 space-y-2 pb-6">
+        {/* Navigation Items */}
+        <div className="p-4 space-y-2">
           {navigationItems.map((item) => (
             <button
               key={item.path}
               onClick={() => handleNavigationClick(item.path)}
-              className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
-                currentPath === item.path
-                  ? 'bg-gray-700 text-white border border-gray-600'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
-              }`}
-            >
-              <div className={`p-2 rounded-lg ${
-                currentPath === item.path 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-600 text-gray-300'
-              }`}>
-                <item.icon className="h-4 w-4 flex-shrink-0" />
-              </div>
+                             className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                 currentPath === item.path
+                   ? 'bg-white/5 text-white border-2 border-green-400'
+                   : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+               }`}
+             >
+               <div className={`p-2 rounded-lg ${
+                 currentPath === item.path 
+                   ? 'bg-white/10 text-white' 
+                   : 'bg-white/10 text-white/85'
+               }`}>
+                 <item.icon className="h-4 w-4 flex-shrink-0" />
+               </div>
               <span className="font-semibold">{item.label}</span>
             </button>
           ))}
           
           {/* Platform Configuration Section - Admin Only */}
           {currentRole === 'admin' && (
-            <div className="space-y-2 mt-6 pt-6 border-t border-gray-700">
+            <div className="space-y-2 mt-6 pt-6 border-t border-green-600">
               <div className="px-4 py-2">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                <p className="text-xs font-bold text-white/60 uppercase tracking-wider">
                   Platform Configuration
                 </p>
               </div>
@@ -289,87 +308,59 @@ const MobileNavigation = React.memo(({
               {/* Organizations Management */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/organizations')}
-                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
-                  currentPath === '/platform-configuration/organizations'
-                    ? 'bg-gray-700 text-white border border-gray-600'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
-                }`}
+                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                   currentPath === '/platform-configuration/organizations'
+                     ? 'bg-white/5 text-white border-2 border-green-400'
+                     : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                 }`}
               >
-                <div className={`p-2 rounded-lg ${
-                  currentPath === '/platform-configuration/organizations' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-600 text-gray-300'
-                }`}>
-                  <Building className="h-4 w-4 flex-shrink-0" />
-                </div>
-                <span className="font-semibold">Organizations</span>
+                <span className="font-semibold ml-4">Organizations</span>
               </button>
 
               {/* User Management */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/users')}
-                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
-                  currentPath === '/platform-configuration/users'
-                    ? 'bg-gray-700 text-white border border-gray-600'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
-                }`}
+                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                   currentPath === '/platform-configuration/users'
+                     ? 'bg-white/5 text-white border-2 border-green-400'
+                     : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                 }`}
               >
-                <div className={`p-2 rounded-lg ${
-                  currentPath === '/platform-configuration/users' 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-gray-600 text-gray-300'
-                }`}>
-                  <Users className="h-4 w-4 flex-shrink-0" />
-                </div>
-                <span className="font-semibold">User Management</span>
+                <span className="font-semibold ml-4">User Management</span>
               </button>
 
               {/* Software & Hardware */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/software-hardware')}
-                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
-                  currentPath === '/platform-configuration/software-hardware'
-                    ? 'bg-gray-700 text-white border border-gray-600'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
-                }`}
+                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                   currentPath === '/platform-configuration/software-hardware'
+                     ? 'bg-white/5 text-white border-2 border-green-400'
+                     : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                 }`}
               >
-                <div className={`p-2 rounded-lg ${
-                  currentPath === '/platform-configuration/software-hardware' 
-                    ? 'bg-purple-500 text-white' 
-                    : 'bg-gray-600 text-gray-300'
-                }`}>
-                  <Database className="h-4 w-4 flex-shrink-0" />
-                </div>
-                <span className="font-semibold">Software & Hardware</span>
+                <span className="font-semibold ml-4">Software & Hardware</span>
               </button>
 
               {/* Audit & Logs */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/audit-logs')}
-                className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer touch-manipulation ${
-                  currentPath === '/platform-configuration/audit-logs'
-                    ? 'bg-gray-700 text-white border border-gray-600'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
-                }`}
+                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                   currentPath === '/platform-configuration/audit-logs'
+                     ? 'bg-white/5 text-white border-2 border-green-400'
+                     : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                 }`}
               >
-                <div className={`p-2 rounded-lg ${
-                  currentPath === '/platform-configuration/audit-logs' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'bg-gray-600 text-gray-300'
-                }`}>
-                  <FileText className="h-4 w-4 flex-shrink-0" />
-                </div>
-                <span className="font-semibold">Audit & Logs</span>
+                <span className="font-semibold ml-4">Audit & Logs</span>
               </button>
             </div>
           )}
         </div>
         
         {/* Role Information and Switcher */}
-        <div className="mt-6 pt-6 border-t border-gray-700">
+        <div className="p-4 mt-6 pt-6 border-t border-green-600">
           {/* Current Role Display */}
-          <div className="px-4 py-4 bg-gray-800 rounded-lg border border-gray-600">
-            <div className="flex items-center space-x-3 mb-3">
+          <div className="px-4 py-4 bg-white/5 rounded-lg border border-white/10 mb-4">
+            <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">R</span>
               </div>
@@ -377,25 +368,25 @@ const MobileNavigation = React.memo(({
                 <p className="text-sm font-bold text-white">
                   {getRoleConfig(currentRole || 'admin').displayName}
                 </p>
-                <p className="text-xs text-gray-300 font-medium">Current Role</p>
+                <p className="text-xs text-white/60 font-medium">Current Role</p>
               </div>
             </div>
           </div>
           
           {/* Role Switcher - Only show if user has multiple roles */}
           {availableRoles.length > 1 && (
-            <div className="mt-4 px-4">
-              <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Switch Role</p>
+            <div className="mb-6">
+              <p className="text-xs font-bold text-white/60 mb-3 uppercase tracking-wider px-4">Switch Role</p>
               <div className="space-y-2">
                 {availableRoles.map((role) => (
                   <button
                     key={role}
                     onClick={() => handleRoleSwitchClick(role)}
-                    className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 touch-manipulation ${
-                      role === currentRole
-                        ? 'bg-gray-700 text-white border border-gray-600'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-600'
-                    }`}
+                                         className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 ${
+                       role === currentRole
+                         ? 'bg-white/5 text-white border-2 border-green-400'
+                         : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">{getRoleConfig(role).displayName}</span>
@@ -410,25 +401,20 @@ const MobileNavigation = React.memo(({
               </div>
             </div>
           )}
-        </div>
-        
-        {/* Sign Out Button */}
-        <div className="mt-6 pt-6 border-t border-gray-700">
+          
+          {/* Sign Out Button */}
           <button
-            onClick={() => {
-              onClose();
-              window.location.href = '/auth';
-            }}
-            className="w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer transition-all duration-200 touch-manipulation border border-red-600/30 hover:border-red-500/50"
+            onClick={handleSignOut}
+            className="w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium text-red-300 hover:bg-red-500/20 hover:text-red-200 cursor-pointer transition-all duration-200 border border-red-500/30 hover:border-red-400/50"
           >
-            <div className="p-2 rounded-lg bg-red-500/20 text-red-400">
+            <div className="p-2 rounded-lg bg-red-500/20 text-red-300">
               <LogOut className="h-4 w-4 flex-shrink-0" />
             </div>
             <span className="font-semibold">Sign Out</span>
           </button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </>
   );
 });
 
@@ -540,7 +526,12 @@ const Header = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Logo />
+              <div className="hidden lg:block">
+                <Logo />
+              </div>
+              <div className="lg:hidden">
+                <MobileLogo />
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="animate-pulse bg-green-200 h-8 w-32 rounded"></div>
@@ -556,7 +547,12 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Logo />
+            <div className="hidden lg:block">
+              <Logo />
+            </div>
+            <div className="lg:hidden">
+              <MobileLogo />
+            </div>
           </div>
           
           <DesktopNavigation 
@@ -658,26 +654,22 @@ const Header = () => {
                           <DropdownMenuContent align="start" className="ml-2">
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/organizations" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <Building className="h-4 w-4 mr-2 text-blue-600" />
-                                <span className="text-sm text-gray-700">Organizations</span>
+                                <span className="text-sm text-gray-700 ml-4">Organizations</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/users" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <Users className="h-4 w-4 mr-2 text-green-600" />
-                                <span className="text-sm text-gray-700">User Management</span>
+                                <span className="text-sm text-gray-700 ml-4">User Management</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/software-hardware" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <Database className="h-4 w-4 mr-2 text-purple-600" />
-                                <span className="text-sm text-gray-700">Software & Hardware</span>
+                                <span className="text-sm text-gray-700 ml-4">Software & Hardware</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/audit-logs" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <FileText className="h-4 w-4 mr-2 text-orange-600" />
-                                <span className="text-sm text-gray-700">Audit & Logs</span>
+                                <span className="text-sm text-gray-700 ml-4">Audit & Logs</span>
                               </Link>
                             </DropdownMenuItem>
                           </DropdownMenuContent>

@@ -3,6 +3,36 @@ import React, { useState, useEffect, useMemo } from 'react';
 // - suggested_go_live (from site study step) - currently showing in Target Go-Live column
 // - target_live_date (original target date) - removed from display
 // - status (user-friendly names from backend) - currently using getStatusDisplayName
+
+// Organization Logo Component with Error Handling
+const OrganizationLogo: React.FC<{ src?: string | null; alt: string }> = ({ src, alt }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Check if src is valid - if it's null, undefined, empty, or looks like a malformed URL
+  const isValidUrl = src && 
+    src.trim() !== '' && 
+    !src.includes('FFFFFF?text=') && 
+    !src.includes('placeholder.com') &&
+    (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:'));
+
+  // If src is invalid or there was a previous error, show fallback
+  if (!isValidUrl || imageError) {
+    return (
+      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+        <Building className="h-4 w-4 text-gray-500" />
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={src} 
+      alt={alt}
+      className="h-8 w-8 rounded-full object-cover"
+      onError={() => setImageError(true)}
+    />
+  );
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +86,8 @@ const Sites = () => {
     const fetchSites = async () => {
       try {
         setLoading(true);
+        // Clear cache to force fresh data fetch
+        SitesService.clearCache();
         const sitesData = await SitesService.getAllSites();
         setSites(sitesData);
       } catch (error) {
@@ -120,8 +152,9 @@ const Sites = () => {
     if (!selectedSite || !deleteReason) return;
     
     try {
-      await SitesService.deleteSite(selectedSite.id);
-      toast.success('Site deleted successfully');
+      // Archive the site instead of hard deleting
+      await SitesService.archiveSite(selectedSite.id, deleteReason);
+      toast.success('Site archived successfully');
       
       // Refresh sites
       const updatedSites = sites.filter(s => s.id !== selectedSite.id);
@@ -130,8 +163,8 @@ const Sites = () => {
       setSelectedSite(null);
       setDeleteReason('');
     } catch (error) {
-      console.error('Error deleting site:', error);
-      toast.error('Failed to delete site');
+      console.error('Error archiving site:', error);
+      toast.error('Failed to archive site');
     }
   };
 
@@ -139,14 +172,12 @@ const Sites = () => {
     if (!selectedSite || !archiveReason) return;
     
     try {
-      // Update site status to archived
-      await SitesService.updateSiteStatus(selectedSite.id, 'archived');
+      // Archive the site using the new archiving method
+      await SitesService.archiveSite(selectedSite.id, archiveReason);
       toast.success('Site archived successfully');
       
       // Refresh sites
-      const updatedSites = sites.map(s => 
-        s.id === selectedSite.id ? { ...s, status: 'archived' } : s
-      );
+      const updatedSites = sites.filter(s => s.id !== selectedSite.id);
       setSites(updatedSites);
       setArchiveModalOpen(false);
       setSelectedSite(null);
@@ -172,9 +203,14 @@ const Sites = () => {
   };
 
   // Get action buttons based on site status
+  // Archive/Delete is only allowed for: Created, In Progress, Planning, and Live sites
+  // Deployed sites can only be edited (no archive/delete)
+  // All other statuses can only be edited and viewed (no archive/delete)
   const getActionButtons = (site: Site) => {
     const isLive = site.status === 'live';
     const isDeployed = site.status === 'deployed';
+    const isCreated = site.status === 'Created';
+    const isInProgress = site.status === 'In Progress' || site.status === 'Planning';
     
     if (isLive) {
       // Live sites: View + Archive (2 buttons)
@@ -200,21 +236,21 @@ const Sites = () => {
           </Button>
         </>
       );
-                   } else if (isDeployed) {
-                 // Deployed sites: Edit only (1 button)
-                 return (
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={() => handleEditSite(site)}
-                     className="h-8 w-8 p-0 hover:bg-green-50"
-                     title="Edit Site"
-                   >
-                     <Edit className="h-4 w-4 text-green-600" />
-                   </Button>
-                 );
-    } else {
-      // Other states: Edit + Delete (2 buttons)
+    } else if (isDeployed) {
+      // Deployed sites: Edit only (1 button)
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleEditSite(site)}
+          className="h-8 w-8 p-0 hover:bg-green-50"
+          title="Edit Site"
+        >
+          <Edit className="h-4 w-4 text-green-600" />
+        </Button>
+      );
+    } else if (isCreated || isInProgress) {
+      // Created or In Progress sites: Edit + Archive (2 buttons)
       return (
         <>
           <Button
@@ -231,9 +267,33 @@ const Sites = () => {
             size="sm"
             onClick={() => handleDeleteSite(site)}
             className="h-8 w-8 p-0 hover:bg-red-50"
-            title="Delete Site"
+            title="Archive Site"
           >
             <Trash2 className="h-4 w-4 text-red-600" />
+          </Button>
+        </>
+      );
+    } else {
+      // All other statuses: Edit + View (2 buttons) - no delete/archive
+      return (
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditSite(site)}
+            className="h-8 w-8 p-0 hover:bg-green-50"
+            title="Edit Site"
+          >
+            <Edit className="h-4 w-4 text-green-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewSite(site)}
+            className="h-8 w-8 p-0 hover:bg-blue-50"
+            title="View Site"
+          >
+            <Eye className="h-4 w-4 text-blue-600" />
           </Button>
         </>
       );
@@ -303,7 +363,7 @@ const Sites = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-                              <SelectItem value="Created">Created</SelectItem>
+                              <SelectItem value="site_created">Created</SelectItem>
               <SelectItem value="site_study_done">Site Study Done</SelectItem>
               <SelectItem value="scoping_done">Scoping Done</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
@@ -317,7 +377,7 @@ const Sites = () => {
           <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
             Clear Filters
           </Button>
-        </div>
+            </div>
       </div>
 
 
@@ -360,10 +420,9 @@ const Sites = () => {
                         <TableCell className="font-medium">
                           <div className="flex items-center space-x-3">
                             {site.organization_logo ? (
-                              <img 
+                              <OrganizationLogo 
                                 src={site.organization_logo} 
                                 alt={`${site.organization_name} logo`}
-                                className="h-8 w-8 rounded-full object-cover"
                               />
                             ) : (
                               <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
@@ -444,13 +503,13 @@ const Sites = () => {
         </div>
       </div>
 
-      {/* Delete Site Modal */}
+      {/* Archive Site Modal (Delete Button) */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Please specify the reason for deleting this site</DialogTitle>
+            <DialogTitle>Please specify the reason for archiving this site</DialogTitle>
             <DialogDescription>
-              Select the primary reason for deleting "{selectedSite?.name}". This action cannot be undone and will be logged for audit purposes.
+              Select the primary reason for archiving "{selectedSite?.name}". This action will be logged for audit purposes.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -492,7 +551,7 @@ const Sites = () => {
               onClick={confirmDelete}
               disabled={!deleteReason}
             >
-              Delete Site
+              Archive Site
             </Button>
           </DialogFooter>
         </DialogContent>

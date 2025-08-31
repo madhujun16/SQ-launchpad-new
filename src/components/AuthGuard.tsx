@@ -35,7 +35,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
         <div className="text-center">
           <Loader size="lg" className="text-white" />
-          <p className="text-white mt-4">Loading authentication...</p>
+          <p className="text-white mt-4">Authenticating...</p>
           <p className="text-white mt-2 text-sm">This may take a few moments</p>
         </div>
       </div>

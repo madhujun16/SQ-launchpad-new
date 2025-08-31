@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 
 export interface Site {
   id: string;
@@ -43,6 +42,9 @@ export interface Organization {
   logo_url?: string;
   description?: string;
   sites_count?: number; // Number of sites mapped to this organization
+  is_archived?: boolean;
+  archived_at?: string;
+  archive_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -68,6 +70,8 @@ export class SitesService {
   private static sitesCache: { data: Site[]; timestamp: number } | null = null;
   private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+
+
   // Get all sites with user assignments
   static async getAllSites(): Promise<Site[]> {
     try {
@@ -92,69 +96,80 @@ export class SitesService {
         return [];
       }
       
-      console.log('🔍 Making simple Supabase query...');
+      console.log('🔍 Making Supabase query with organization join...');
       
-      // Query to get sites with organization data
-      // Note: assigned_ops_manager and assigned_deployment_engineer are stored as names (character varying)
-      // not as UUIDs, so we don't need to join with profiles table
+      // Query to get sites with organization data - only non-archived sites
       const { data, error } = await supabase
         .from('sites')
         .select(`
           *,
-          organization:organizations(name, logo_url)
+          organization:organizations(name, logo_url, sector, unit_code)
         `)
+        .eq('is_archived', false)
         .order('name');
 
       if (error) {
         console.error('❌ Error fetching sites:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         return [];
       }
 
       console.log('🔍 Sites fetched successfully:', data?.length || 0);
+      console.log('🔍 Raw data sample:', data?.[0] ? {
+        id: data[0].id,
+        name: data[0].name,
+        organization: data[0].organization,
+        status: data[0].status,
+        address: data[0].address
+      } : 'No data');
 
       if (!data || data.length === 0) {
         console.log('⚠️ No sites found in database');
         return [];
       }
 
-             // Transform the data to match our Site interface
-       // Using any type to handle schema mismatches
-       const transformedSites = data.map((site: any) => {
-         return {
-           id: site.id,
-           name: site.name || 'Unnamed Site',
-           organization_id: site.organization_id || '',
-           organization_name: site.organization?.name || site.organization_name || 'Organization',
-           organization_logo: site.organization?.logo_url || site.organization_logo || null,
-           location: site.address || site.location || 'Location not specified',
-           status: site.status || 'Unknown',
-           target_live_date: site.target_live_date || '',
-           suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
-           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
-           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
-           sector: site.sector || '',
-           unit_code: site.unit_code || site.food_court_unit || '',
-           criticality_level: site.criticality_level || 'medium',
-           team_assignment: site.team_assignment || '',
-           stakeholders: site.stakeholders || [],
-           notes: site.description || site.notes || '',
-           // Contact information fields
-           unitManagerName: site.unit_manager_name || '',
-           jobTitle: site.job_title || '',
-           unitManagerEmail: site.unit_manager_email || '',
-           unitManagerMobile: site.unit_manager_mobile || '',
-           additionalContactName: site.additional_contact_name || '',
-           additionalContactEmail: site.additional_contact_email || '',
-           // Location fields
-           latitude: site.latitude || null,
-           longitude: site.longitude || null,
-           postcode: site.postcode || '',
-           region: site.region || '',
-           country: site.country || '',
-           created_at: site.created_at || new Date().toISOString(),
-           updated_at: site.updated_at || new Date().toISOString()
-         } as Site;
-       });
+      // Transform the data to match our Site interface
+      const transformedSites = data.map((site: any) => {
+        return {
+          id: site.id,
+          name: site.name || 'Unnamed Site',
+          organization_id: site.organization_id || '',
+          organization_name: site.organization?.name || site.organization_name || 'Organization',
+          organization_logo: site.organization?.logo_url || site.organization_logo || null,
+          location: site.address || site.location || 'Location not specified',
+          status: site.status || 'Unknown',
+          target_live_date: site.target_live_date || '',
+          suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
+          assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
+          assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
+          sector: site.sector || '',
+          unit_code: site.unit_code || site.food_court_unit || '',
+          criticality_level: site.criticality_level || 'medium',
+          team_assignment: site.team_assignment || '',
+          stakeholders: site.stakeholders || [],
+          notes: site.description || site.notes || '',
+          // Contact information fields
+          unitManagerName: site.unit_manager_name || '',
+          jobTitle: site.job_title || '',
+          unitManagerEmail: site.unit_manager_email || '',
+          unitManagerMobile: site.unit_manager_mobile || '',
+          additionalContactName: site.additional_contact_name || '',
+          additionalContactEmail: site.additional_contact_email || '',
+          // Location fields
+          latitude: site.latitude || null,
+          longitude: site.longitude || null,
+          postcode: site.postcode || '',
+          region: site.region || '',
+          country: site.country || '',
+          created_at: site.created_at || new Date().toISOString(),
+          updated_at: site.updated_at || new Date().toISOString()
+        } as Site;
+      });
 
       // Update cache
       this.sitesCache = {
@@ -179,6 +194,7 @@ export class SitesService {
         .from('sites')
         .select('*')
         .eq('id', siteId)
+        .eq('is_archived', false)
         .single();
 
       if (error) {
@@ -197,32 +213,33 @@ export class SitesService {
         id: data.id,
         name: data.name || 'Unnamed Site',
         organization_id: data.organization_id || '',
-        organization_name: data.organization_name || 'Organization',
-        organization_logo: data.organization_logo || null,
-        location: data.location || 'Location not specified',
+        organization_name: 'Organization', // Would need to join with organizations table
+        organization_logo: null,
+        location: data.address || 'Location not specified',
         status: data.status || 'Unknown',
         target_live_date: data.target_live_date || '',
+        suggested_go_live: data.target_live_date || '',
         assigned_ops_manager: data.assigned_ops_manager || 'Unassigned',
         assigned_deployment_engineer: data.assigned_deployment_engineer || 'Unassigned',
-        sector: data.sector || '',
-        unit_code: data.unit_code || data.food_court_unit || '',
-        criticality_level: data.criticality_level || 'medium',
-        team_assignment: data.team_assignment || '',
-        stakeholders: data.stakeholders || [],
+        sector: 'Unknown Sector',
+        unit_code: data.unit_code || '',
+        criticality_level: 'medium', // Default value since not in schema
+        team_assignment: '',
+        stakeholders: [],
         notes: data.description || '',
-        // Contact information fields
-        unitManagerName: data.unit_manager_name || '',
-        jobTitle: data.job_title || '',
-        unitManagerEmail: data.unit_manager_email || '',
-        unitManagerMobile: data.unit_manager_mobile || '',
-        additionalContactName: data.additional_contact_name || '',
-        additionalContactEmail: data.additional_contact_email || '',
+        // Contact information fields - not in current schema, using defaults
+        unitManagerName: '',
+        jobTitle: '',
+        unitManagerEmail: '',
+        unitManagerMobile: '',
+        additionalContactName: '',
+        additionalContactEmail: '',
         // Location fields
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
+        latitude: null,
+        longitude: null,
         postcode: data.postcode || '',
-        region: data.region || '',
-        country: data.country || '',
+        region: '',
+        country: '',
         created_at: data.created_at || new Date().toISOString(),
         updated_at: data.updated_at || new Date().toISOString()
       };
@@ -241,6 +258,7 @@ export class SitesService {
         .from('sites')
         .select('*')
         .eq('organization_id', organizationId)
+        .eq('is_archived', false)
         .order('name');
 
       if (error) {
@@ -262,6 +280,7 @@ export class SitesService {
         .from('sites')
         .select('*')
         .eq('status', status)
+        .eq('is_archived', false)
         .order('name');
 
       if (error) {
@@ -283,6 +302,7 @@ export class SitesService {
         .from('sites')
         .select('*')
         .or(`name.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)
+        .eq('is_archived', false)
         .order('name');
 
       if (error) {
@@ -297,10 +317,10 @@ export class SitesService {
     }
   }
 
-  // Get all organizations with sites count
+  // Get all organizations with sites count (including archived)
   static async getAllOrganizations(): Promise<Organization[]> {
     try {
-      // First get all organizations
+      // First get all organizations (including archived)
       const { data: organizations, error: orgError } = await supabase
         .from('organizations')
         .select('*')
@@ -315,13 +335,14 @@ export class SitesService {
         return [];
       }
 
-      // Get sites count for each organization
+      // Get sites count for each organization (only active sites)
       const organizationsWithCount = await Promise.all(
         organizations.map(async (org) => {
           const { count, error: countError } = await supabase
             .from('sites')
             .select('*', { count: 'exact', head: true })
-            .eq('organization_id', org.id);
+            .eq('organization_id', org.id)
+            .eq('is_archived', false); // Only count non-archived sites
 
           if (countError) {
             console.warn(`Error counting sites for organization ${org.name}:`, countError);
@@ -456,7 +477,57 @@ export class SitesService {
     }
   }
 
-  // Delete site
+  // Archive site (soft delete)
+  static async archiveSite(siteId: string, reason: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('sites')
+        .update({
+          is_archived: true,
+          archived_at: new Date().toISOString(),
+          archive_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', siteId);
+
+      if (error) {
+        console.error('Error archiving site:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in archiveSite:', error);
+      return false;
+    }
+  }
+
+  // Unarchive site
+  static async unarchiveSite(siteId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('sites')
+        .update({
+          is_archived: false,
+          archived_at: null,
+          archive_reason: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', siteId);
+
+      if (error) {
+        console.error('Error unarchiving site:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in unarchiveSite:', error);
+      return false;
+    }
+  }
+
+  // Delete site (hard delete - use with caution)
   static async deleteSite(siteId: string): Promise<boolean> {
     try {
       const { error } = await supabase

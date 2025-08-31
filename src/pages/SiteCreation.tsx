@@ -325,7 +325,14 @@ const SiteCreation = () => {
                           <SelectContent>
                             {organizations.map((org) => (
                               <SelectItem key={org.id} value={org.id}>
-                                {org.name}
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{org.name}</span>
+                                  {org.is_archived && (
+                                    <Badge variant="outline" className="ml-2 text-xs">
+                                      Archived
+                                    </Badge>
+                                  )}
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
