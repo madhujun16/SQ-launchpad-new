@@ -94,13 +94,13 @@ export class SitesService {
       
       console.log('🔍 Making simple Supabase query...');
       
-      // Query to get sites with user assignments and organization data
+      // Query to get sites with organization data
+      // Note: assigned_ops_manager and assigned_deployment_engineer are stored as names (character varying)
+      // not as UUIDs, so we don't need to join with profiles table
       const { data, error } = await supabase
         .from('sites')
         .select(`
           *,
-          assigned_ops_manager_profile:profiles!assigned_ops_manager_id(full_name),
-          assigned_deployment_engineer_profile:profiles!assigned_deployment_engineer_id(full_name),
           organization:organizations(name, logo_url)
         `)
         .order('name');
@@ -118,19 +118,20 @@ export class SitesService {
       }
 
              // Transform the data to match our Site interface
+       // Using any type to handle schema mismatches
        const transformedSites = data.map((site: any) => {
          return {
            id: site.id,
            name: site.name || 'Unnamed Site',
            organization_id: site.organization_id || '',
-           organization_name: site.organization?.name || 'Organization',
-           organization_logo: site.organization?.logo_url || null,
+           organization_name: site.organization?.name || site.organization_name || 'Organization',
+           organization_logo: site.organization?.logo_url || site.organization_logo || null,
            location: site.address || site.location || 'Location not specified',
-           status: site.workflow_status || site.status || 'Unknown',
-           target_live_date: site.suggested_go_live || site.target_go_live || '', // Show suggested go-live as target
-           suggested_go_live: site.suggested_go_live || site.target_go_live || '',
-           assigned_ops_manager: site.assigned_ops_manager_profile?.full_name || 'Unassigned',
-           assigned_deployment_engineer: site.assigned_deployment_engineer_profile?.full_name || 'Unassigned',
+           status: site.status || 'Unknown',
+           target_live_date: site.target_live_date || '',
+           suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
+           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
+           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
            sector: site.sector || '',
            unit_code: site.unit_code || site.food_court_unit || '',
            criticality_level: site.criticality_level || 'medium',
