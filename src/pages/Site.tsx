@@ -411,7 +411,7 @@ const SiteDetail = () => {
               }
             ],
             notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
-            lastUpdated: '2024-07-30',
+            lastUpdated: '2024-12-30',
             description: 'Full POS and Kiosk implementation for ASDA Redditch location',
             hardwareScope: {
               approvalStatus: 'approved' as const
@@ -426,8 +426,8 @@ const SiteDetail = () => {
                 { id: 'barcode-scanner', quantity: 1, customizations: undefined }
               ],
               status: 'approved' as const,
-              submittedAt: '2024-01-10T10:00:00Z',
-              approvedAt: '2024-01-12T14:30:00Z',
+                      submittedAt: '2024-12-10T10:00:00Z',
+        approvedAt: '2024-12-12T14:30:00Z',
               approvedBy: 'John Smith'
             }
           };

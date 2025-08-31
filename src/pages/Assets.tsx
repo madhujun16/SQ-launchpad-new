@@ -4,12 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Search, 
   Filter, 
@@ -40,38 +38,53 @@ import {
   Monitor,
   List,
   Database,
-  Key
+  Key,
+  History
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
-import { Loader } from '@/components/ui/loader';
+import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface Asset {
   id: string;
   name: string;
-  type: string;
-  serial_number: string;
+  type: 'hardware' | 'software' | 'license' | 'certificate';
+  serial_number?: string;
+  license_key?: string;
   site_name: string;
   site_id: string;
-  status: 'in_stock' | 'assigned' | 'deployed' | 'in_maintenance' | 'retired';
-  location: string;
+  status: 'active' | 'inactive' | 'expired' | 'pending_renewal' | 'maintenance';
   assigned_to?: string;
   purchase_date: string;
-  warranty_expiry: string;
-  last_maintenance: string;
-  next_maintenance: string;
-  maintenance_schedule: string;
-  license_key?: string;
-  license_expiry?: string;
+  expiry_date?: string;
   cost: number;
-  manufacturer: string;
-  model: string;
+  manufacturer?: string;
+  model?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
+}
+
+interface AssetRequest {
+  id: string;
+  siteName: string;
+  siteId: string;
+  requestedBy: string;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  assetType: 'hardware' | 'software' | 'license' | 'certificate';
+  assetName: string;
+  quantity: number;
+  estimatedCost: number;
+  justification: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewComment?: string;
 }
 
 const Assets = () => {
@@ -86,7 +99,13 @@ const Assets = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [siteFilter, setSiteFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [activeTab, setActiveTab] = useState<'inventory' | 'licenses'>('inventory');
+  const [showAddAssetDialog, setShowAddAssetDialog] = useState(false);
+  const [newAssetRequest, setNewAssetRequest] = useState<Partial<AssetRequest>>({
+    assetType: 'hardware',
+    quantity: 1,
+    priority: 'medium'
+  });
 
   // Check access permissions
   const tabAccess = getTabAccess('/assets');
@@ -102,7 +121,6 @@ const Assets = () => {
 
   // Mock data
   useEffect(() => {
-    // Don't load data if auth context isn't ready
     if (!currentRole || !profile) {
       return;
     }
@@ -111,106 +129,89 @@ const Assets = () => {
       {
         id: '1',
         name: 'POS Terminal 001',
-        type: 'POS Terminal',
-        serial_number: 'POS-2024-001',
+        type: 'hardware',
+        serial_number: 'POS-2025-001',
         site_name: 'London Central',
         site_id: '1',
-        status: 'deployed',
-        location: 'Main Counter',
+        status: 'active',
         assigned_to: 'John Smith',
-        purchase_date: '2024-01-01',
-        warranty_expiry: '2027-01-01',
-        last_maintenance: '2024-01-15',
-        next_maintenance: '2024-04-15',
-        maintenance_schedule: 'quarterly',
-        license_key: 'LIC-POS-001-2024',
-        license_expiry: '2025-01-01',
+        purchase_date: '2025-09-01',
         cost: 2500,
         manufacturer: 'Ingenico',
         model: 'Telium 2',
         notes: 'Primary POS terminal for main counter',
-        created_at: '2024-01-01',
-        updated_at: '2024-01-15'
+        created_at: '2025-09-01',
+        updated_at: '2025-09-15'
       },
       {
         id: '2',
         name: 'Display Screen 001',
-        type: 'Display Screen',
-        serial_number: 'DS-2024-001',
+        type: 'hardware',
+        serial_number: 'DS-2025-001',
         site_name: 'Manchester North',
         site_id: '2',
-        status: 'deployed',
-        location: 'Customer Area',
+        status: 'active',
         assigned_to: 'Sarah Wilson',
-        purchase_date: '2024-01-05',
-        warranty_expiry: '2027-01-05',
-        last_maintenance: '2024-01-10',
-        next_maintenance: '2024-04-10',
-        maintenance_schedule: 'quarterly',
+        purchase_date: '2025-09-05',
         cost: 1800,
         manufacturer: 'Samsung',
         model: 'SM-T580',
         notes: 'Customer-facing display for menu and promotions',
-        created_at: '2024-01-05',
-        updated_at: '2024-01-10'
+        created_at: '2025-09-05',
+        updated_at: '2025-09-10'
       },
       {
         id: '3',
-        name: 'POS Terminal 002',
-        type: 'POS Terminal',
-        serial_number: 'POS-2024-002',
+        name: 'POS Software License',
+        type: 'software',
+        license_key: 'LIC-POS-2025-001',
         site_name: 'Birmingham South',
         site_id: '3',
-        status: 'deployed',
-        location: 'Secondary Counter',
+        status: 'active',
         assigned_to: 'Emma Davis',
-        purchase_date: '2024-01-10',
-        warranty_expiry: '2027-01-10',
-        last_maintenance: '2024-01-20',
-        next_maintenance: '2024-04-20',
-        maintenance_schedule: 'quarterly',
-        license_key: 'LIC-POS-002-2024',
-        license_expiry: '2025-01-10',
-        cost: 2500,
-        manufacturer: 'Ingenico',
-        model: 'Telium 2',
-        notes: 'Secondary POS terminal for backup',
-        created_at: '2024-01-10',
-        updated_at: '2024-01-20'
+        purchase_date: '2025-09-10',
+        expiry_date: '2026-09-10',
+        cost: 500,
+        notes: 'Annual POS software license',
+        created_at: '2025-09-10',
+        updated_at: '2025-09-10'
+      },
+      {
+        id: '4',
+        name: 'Food Safety Certificate',
+        type: 'certificate',
+        site_name: 'London Central',
+        site_id: '1',
+        status: 'active',
+        purchase_date: '2025-08-15',
+        expiry_date: '2026-08-15',
+        cost: 200,
+        notes: 'Annual food safety compliance certificate',
+        created_at: '2025-08-15',
+        updated_at: '2025-08-15'
+      },
+      {
+        id: '5',
+        name: 'Payment Processing License',
+        type: 'license',
+        license_key: 'PAY-LIC-2025-001',
+        site_name: 'Manchester North',
+        site_id: '2',
+        status: 'pending_renewal',
+        assigned_to: 'Sarah Wilson',
+        purchase_date: '2025-07-01',
+        expiry_date: '2025-12-01',
+        cost: 300,
+        notes: 'Payment processing license expiring soon',
+        created_at: '2025-07-01',
+        updated_at: '2025-11-15'
       }
     ];
 
-    // Filter assets based on user role and access level
-    let filteredAssetsData = mockAssets;
-    
-    if (currentRole === 'deployment_engineer') {
-      // For deployment engineers, only show assigned site assets
-      const currentUserName = profile?.full_name || profile?.email || '';
-      filteredAssetsData = mockAssets.filter(asset => 
-        asset.assigned_to === currentUserName
-      );
-    }
-    // Admin and Ops Manager see all assets
-
-    setAssets(filteredAssetsData);
-    setFilteredAssets(filteredAssetsData);
+    setAssets(mockAssets);
+    setFilteredAssets(mockAssets);
     setLoading(false);
   }, [currentRole, profile]);
-
-  // Timeout handling to prevent infinite loading
-  useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        console.warn('⚠️ Assets loading timeout - forcing display');
-        setLoadingTimeout(true);
-        setLoading(false);
-      }, 10000); // 10 seconds
-
-      return () => clearTimeout(timer);
-    } else {
-      setLoadingTimeout(false);
-    }
-  }, [loading]);
 
   useEffect(() => {
     let filtered = assets;
@@ -218,7 +219,8 @@ const Assets = () => {
     if (searchTerm) {
       filtered = filtered.filter(asset =>
         asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        asset.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (asset.serial_number && asset.serial_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (asset.license_key && asset.license_key.toLowerCase().includes(searchTerm.toLowerCase())) ||
         asset.site_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -231,65 +233,55 @@ const Assets = () => {
       filtered = filtered.filter(asset => asset.site_id === siteFilter);
     }
 
-    setFilteredAssets(filtered);
-  }, [assets, searchTerm, statusFilter, siteFilter]);
+    // Filter by tab
+    if (activeTab === 'inventory') {
+      filtered = filtered.filter(asset => asset.type === 'hardware');
+    } else if (activeTab === 'licenses') {
+      filtered = filtered.filter(asset => ['software', 'license', 'certificate'].includes(asset.type));
+    }
 
-  const getStatusConfig = (status: string) => {
-    const configs = {
-      in_stock: { label: 'In Stock', color: 'bg-green-100 text-green-800', icon: Package },
-      assigned: { label: 'Assigned', color: 'bg-blue-100 text-blue-800', icon: User },
-      deployed: { label: 'Deployed', color: 'bg-purple-100 text-purple-800', icon: Truck },
-      in_maintenance: { label: 'In Maintenance', color: 'bg-orange-100 text-orange-800', icon: Wrench },
-      retired: { label: 'Retired', color: 'bg-red-100 text-red-800', icon: Trash2 }
-    };
-    return configs[status as keyof typeof configs] || configs.in_stock;
+    setFilteredAssets(filtered);
+  }, [assets, searchTerm, statusFilter, siteFilter, activeTab]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'expired': return 'bg-red-100 text-red-800';
+      case 'pending_renewal': return 'bg-orange-100 text-orange-800';
+      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const canManageAssets = currentRole === 'ops_manager' || currentRole === 'admin';
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'hardware': return 'bg-blue-100 text-blue-800';
+      case 'software': return 'bg-purple-100 text-purple-800';
+      case 'license': return 'bg-indigo-100 text-indigo-800';
+      case 'certificate': return 'bg-teal-100 text-teal-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'in_stock', label: 'In Stock' },
-    { value: 'assigned', label: 'Assigned' },
-    { value: 'deployed', label: 'Deployed' },
-    { value: 'in_maintenance', label: 'In Maintenance' },
-    { value: 'retired', label: 'Retired' }
-  ];
+  const handleAddAsset = () => {
+    if (!newAssetRequest.siteName || !newAssetRequest.assetName || !newAssetRequest.justification) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
 
-  if (loading && !loadingTimeout) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
-        <div className="text-center">
-          <Loader size="lg" />
-          <p className="text-gray-600 mt-4">Loading assets...</p>
-        </div>
-      </div>
-    );
-  }
+    // In a real app, this would submit to the approval workflow
+    toast.success('Asset request submitted for approval');
+    setShowAddAssetDialog(false);
+    setNewAssetRequest({
+      assetType: 'hardware',
+      quantity: 1,
+      priority: 'medium'
+    });
+  };
 
-  if (loadingTimeout) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white/90">
-        <div className="text-center">
-          <div className="text-orange-600 mb-4">
-            <AlertCircle className="h-12 w-12 mx-auto" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Taking Longer Than Expected</h2>
-          <p className="text-gray-600 mb-4">The assets page is still loading. This might be due to:</p>
-          <ul className="text-sm text-gray-500 text-left max-w-md mx-auto space-y-1 mb-4">
-            <li>• Slow database connection</li>
-            <li>• Authentication service delay</li>
-            <li>• Network connectivity issues</li>
-          </ul>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <ContentLoader />;
   }
 
   return (
@@ -299,254 +291,377 @@ const Assets = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Assets</h1>
           <p className="text-gray-600 mt-1">
-            Manage hardware assets and track lifecycle status
-            {tabAccess.message && (
-              <span className="block text-sm text-blue-600 mt-1">
-                {tabAccess.message}
-              </span>
-            )}
+            Manage site assets, licenses, and compliance certificates
           </p>
         </div>
-        {canManageAssets && (
-          <Button variant="gradient" className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Add Asset</span>
-          </Button>
-        )}
+        <Button 
+          onClick={() => setShowAddAssetDialog(true)}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Asset Request
+        </Button>
       </div>
 
-      {/* Sub-navigation Tabs */}
-      <Tabs defaultValue="assets" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="assets" className="flex items-center space-x-2">
-            <Monitor className="h-4 w-4" />
-            <span>All Assets</span>
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center space-x-2">
-            <Database className="h-4 w-4" />
-            <span>Inventory</span>
-          </TabsTrigger>
-          <TabsTrigger value="license-management" className="flex items-center space-x-2">
-            <Key className="h-4 w-4" />
-            <span>License Management</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Asset Status Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Active Assets</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {assets.filter(a => a.status === 'active').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* All Assets Tab */}
-        <TabsContent value="assets" className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by name, serial number, or site..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Pending Renewal</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {assets.filter(a => a.status === 'pending_renewal').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Expired</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {assets.filter(a => a.status === 'expired').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total Value</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  £{assets.reduce((sum, a) => sum + a.cost, 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mb-6">
+        <div className="flex space-x-1 bg-white p-1 rounded-lg border">
+          <Button
+            variant={activeTab === 'inventory' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('inventory')}
+            className="flex-1"
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Inventory ({assets.filter(a => a.type === 'hardware').length})
+          </Button>
+          <Button
+            variant={activeTab === 'licenses' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('licenses')}
+            className="flex-1"
+          >
+            <Key className="h-4 w-4 mr-2" />
+            Licenses ({assets.filter(a => ['software', 'license', 'certificate'].includes(a.type)).length})
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by name, serial number, or site..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="pending_renewal">Pending Renewal</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={siteFilter} onValueChange={setSiteFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Sites" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sites</SelectItem>
+                <SelectItem value="1">London Central</SelectItem>
+                <SelectItem value="2">Manchester North</SelectItem>
+                <SelectItem value="3">Birmingham South</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setSiteFilter('all');
+              }}
+            >
+              <Filter className="h-4 w-4 mr-1" />
+              Clear Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Assets Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            {activeTab === 'inventory' ? (
+              <>
+                <Package className="h-5 w-5" />
+                <span>Hardware Inventory</span>
+              </>
+            ) : (
+              <>
+                <Key className="h-5 w-5" />
+                <span>Licenses & Certificates</span>
+              </>
+            )}
+          </CardTitle>
+          <CardDescription>
+            {activeTab === 'inventory' 
+              ? 'Manage hardware assets and equipment'
+              : 'Track software licenses and compliance certificates'
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Asset Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Site</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead>Cost</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAssets.map((asset) => (
+                <TableRow key={asset.id}>
+                  <TableCell>
+                    <div className="font-medium">{asset.name}</div>
+                    {asset.serial_number && (
+                      <div className="text-sm text-gray-500 font-mono">{asset.serial_number}</div>
+                    )}
+                    {asset.license_key && (
+                      <div className="text-sm text-gray-500 font-mono">{asset.license_key}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getTypeColor(asset.type)}>
+                      {asset.type.charAt(0).toUpperCase() + asset.type.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-1">
+                      <Building className="h-3 w-3 text-gray-400" />
+                      <span>{asset.site_name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(asset.status)}>
+                      {asset.status.replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {asset.assigned_to ? (
+                      <div className="flex items-center space-x-1">
+                        <User className="h-3 w-3 text-gray-400" />
+                        <span>{asset.assigned_to}</span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">Unassigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">£{asset.cost.toLocaleString()}</div>
+                    {asset.expiry_date && (
+                      <div className="text-xs text-gray-500">
+                        Expires: {new Date(asset.expiry_date).toLocaleDateString()}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Add Asset Request Dialog */}
+      <Dialog open={showAddAssetDialog} onOpenChange={setShowAddAssetDialog}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Request New Asset</DialogTitle>
+            <DialogDescription>
+              Submit a request for new hardware, software, or license. This will go through the approval process.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="site">Site *</Label>
+                <Select 
+                  value={newAssetRequest.siteId} 
+                  onValueChange={(value) => setNewAssetRequest(prev => ({ ...prev, siteId: value }))}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder="Select site" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="in_stock">In Stock</SelectItem>
-                    <SelectItem value="assigned">Assigned</SelectItem>
-                    <SelectItem value="deployed">Deployed</SelectItem>
-                    <SelectItem value="in_maintenance">In Maintenance</SelectItem>
-                    <SelectItem value="retired">Retired</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={siteFilter} onValueChange={setSiteFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by site" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sites</SelectItem>
                     <SelectItem value="1">London Central</SelectItem>
                     <SelectItem value="2">Manchester North</SelectItem>
                     <SelectItem value="3">Birmingham South</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4" />
-                  <span>Clear Filters</span>
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Asset Dashboard */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Asset Status Dashboard</CardTitle>
-              <CardDescription>
-                Overview of asset counts and status breakdowns
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
-                    {assets.filter(a => a.status === 'deployed').length}
-                  </div>
-                  <div className="text-sm text-green-600">Deployed</div>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {assets.filter(a => a.status === 'assigned').length}
-                  </div>
-                  <div className="text-sm text-blue-600">Assigned</div>
-                </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {assets.filter(a => a.status === 'in_stock').length}
-                  </div>
-                  <div className="text-sm text-yellow-600">In Stock</div>
-                </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {assets.filter(a => a.status === 'in_maintenance').length}
-                  </div>
-                  <div className="text-sm text-orange-600">Maintenance</div>
-                </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">
-                    {assets.filter(a => a.status === 'retired').length}
-                  </div>
-                  <div className="text-sm text-red-600">Retired</div>
-                </div>
-              </div>
-
-              {/* Assets Table */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Asset Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Serial Number</TableHead>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAssets.map((asset) => {
-                    const statusConfig = getStatusConfig(asset.status);
-                    const StatusIcon = statusConfig.icon;
-                    
-                    return (
-                      <TableRow key={asset.id}>
-                        <TableCell>
-                          <div className="font-medium">{asset.name}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{asset.type}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-mono text-sm">{asset.serial_number}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Building className="h-3 w-3 text-gray-400" />
-                            <span>{asset.site_name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${statusConfig.color} flex items-center space-x-1`}>
-                            <StatusIcon className="h-3 w-3" />
-                            <span>{statusConfig.label}</span>
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {asset.assigned_to ? (
-                            <div className="flex items-center space-x-1">
-                              <User className="h-3 w-3 text-gray-400" />
-                              <span>{asset.assigned_to}</span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">Unassigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Inventory Tab */}
-        <TabsContent value="inventory" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inventory Management</CardTitle>
-              <CardDescription>
-                Manage hardware and equipment inventory
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Inventory Management</h3>
-                <p className="text-gray-600 mb-4">
-                  Manage hardware and equipment inventory, track stock levels, and monitor asset lifecycle.
-                </p>
-                <Button 
-                  onClick={() => navigate('/assets/inventory')}
-                  className="flex items-center space-x-2 mx-auto"
+              <div>
+                <Label htmlFor="priority">Priority *</Label>
+                <Select 
+                  value={newAssetRequest.priority} 
+                  onValueChange={(value) => setNewAssetRequest(prev => ({ ...prev, priority: value as any }))}
                 >
-                  <Database className="h-4 w-4" />
-                  <span>View Inventory</span>
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        {/* License Management Tab */}
-        <TabsContent value="license-management" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>License Management</CardTitle>
-              <CardDescription>
-                Manage software, hardware, and service licenses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Key className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">License Management</h3>
-                <p className="text-gray-600 mb-4">
-                  Track software, hardware, and service licenses for status, renewal dates, and compliance.
-                </p>
-                <Button 
-                  onClick={() => navigate('/assets/license-management')}
-                  className="flex items-center space-x-2 mx-auto"
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="assetType">Asset Type *</Label>
+                <Select 
+                  value={newAssetRequest.assetType} 
+                  onValueChange={(value) => setNewAssetRequest(prev => ({ ...prev, assetType: value as any }))}
                 >
-                  <Key className="h-4 w-4" />
-                  <span>View License Management</span>
-                </Button>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select asset type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hardware">Hardware</SelectItem>
+                    <SelectItem value="software">Software</SelectItem>
+                    <SelectItem value="license">License</SelectItem>
+                    <SelectItem value="certificate">Certificate</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div>
+                <Label htmlFor="quantity">Quantity *</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={newAssetRequest.quantity}
+                  onChange={(e) => setNewAssetRequest(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
+                  placeholder="1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="assetName">Asset Name *</Label>
+              <Input
+                value={newAssetRequest.assetName}
+                onChange={(e) => setNewAssetRequest(prev => ({ ...prev, assetName: e.target.value }))}
+                placeholder="e.g., POS Terminal, Software License, Safety Certificate"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="estimatedCost">Estimated Cost (£) *</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={newAssetRequest.estimatedCost}
+                onChange={(e) => setNewAssetRequest(prev => ({ ...prev, estimatedCost: parseFloat(e.target.value) || 0 }))}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="justification">Justification *</Label>
+              <Textarea
+                value={newAssetRequest.justification}
+                onChange={(e) => setNewAssetRequest(prev => ({ ...prev, justification: e.target.value }))}
+                placeholder="Explain why this asset is needed..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddAssetDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAsset} className="bg-green-600 hover:bg-green-700">
+              Submit Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

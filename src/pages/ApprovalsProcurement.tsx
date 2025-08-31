@@ -104,7 +104,7 @@ interface ApprovalHistory {
   reviewComment?: string;
 }
 
-const ApprovalsProcurement = () => {
+const Approvals = () => {
   const { currentRole, profile } = useAuth();
   const { getTabAccess } = useRoleAccess();
   const navigate = useNavigate();
@@ -127,10 +127,10 @@ const ApprovalsProcurement = () => {
   
   if (!tabAccess.canAccess) {
     return (
-      <AccessDenied 
-        pageName="Approvals & Procurement"
-        customMessage="You don't have permission to access the Approvals & Procurement page."
-      />
+              <AccessDenied 
+          pageName="Approvals"
+          customMessage="You don't have permission to access the Approvals page."
+        />
     );
   }
 
@@ -141,7 +141,7 @@ const ApprovalsProcurement = () => {
       siteName: 'Birmingham South Cafeteria',
       siteId: 'site-001',
       deploymentEngineer: 'Tom Wilson',
-      submittedAt: '2024-01-16T10:30:00Z',
+              submittedAt: '2025-09-05T10:30:00Z',
         status: 'pending',
         priority: 'high',
       totalCost: 4500,
@@ -172,7 +172,7 @@ const ApprovalsProcurement = () => {
       siteName: 'Leeds Central Office',
       siteId: 'site-002',
       deploymentEngineer: 'Chris Taylor',
-      submittedAt: '2024-01-17T14:20:00Z',
+              submittedAt: '2025-09-06T14:20:00Z',
       status: 'changes_requested',
         priority: 'medium',
       totalCost: 12000,
@@ -207,7 +207,7 @@ const ApprovalsProcurement = () => {
       siteName: 'Liverpool East Mall',
       siteId: 'site-003',
       deploymentEngineer: 'Anna Garcia',
-      submittedAt: '2024-01-18T09:15:00Z',
+              submittedAt: '2025-09-07T09:15:00Z',
       status: 'pending',
         priority: 'urgent',
       totalCost: 8000,
@@ -232,16 +232,45 @@ const ApprovalsProcurement = () => {
         capacity: 500,
         currentStatus: 'Planning Phase'
       }
-    }
-  ];
+    },
+    {
+        id: '4',
+        siteName: 'London Central',
+        siteId: 'site-004',
+        deploymentEngineer: 'Sarah Wilson',
+        submittedAt: '2025-09-08T16:45:00Z',
+        status: 'pending',
+        priority: 'high',
+        totalCost: 3200,
+        softwareCount: 1,
+        hardwareCount: 2,
+        comments: 'Asset request: Additional POS terminals and software license renewal',
+        siteStudyReport: '/reports/london-central-asset-request.pdf',
+        scopingDetails: {
+          software: [
+            { name: 'POS Software License Renewal', monthlyFee: 25, setupFee: 0, description: 'Annual license renewal for existing POS system' }
+          ],
+          hardware: [
+            { name: 'POS Terminal', quantity: 1, unitCost: 2500, totalCost: 2500, description: 'Additional POS terminal for peak hours' },
+            { name: 'Receipt Printer', quantity: 1, unitCost: 200, totalCost: 200, description: 'Backup receipt printer' }
+          ]
+        },
+        siteDetails: {
+          location: 'London, UK',
+          type: 'Restaurant',
+          capacity: 120,
+          currentStatus: 'Operational'
+        }
+      }
+    ];
 
   const mockApprovalHistory: ApprovalHistory[] = [
     {
       id: 'hist-1',
       siteName: 'Manchester North',
       deploymentEngineer: 'David Brown',
-      submittedAt: '2024-01-15T11:45:00Z',
-      reviewedAt: '2024-01-16T09:00:00Z',
+      submittedAt: '2025-09-01T11:45:00Z',
+      reviewedAt: '2025-09-02T09:00:00Z',
       reviewedBy: 'Emma Davis',
       status: 'approved',
       totalCost: 8500,
@@ -251,8 +280,8 @@ const ApprovalsProcurement = () => {
       id: 'hist-2',
       siteName: 'Bristol Central',
       deploymentEngineer: 'Sarah Johnson',
-      submittedAt: '2024-01-14T16:30:00Z',
-      reviewedAt: '2024-01-15T14:20:00Z',
+      submittedAt: '2025-08-30T16:30:00Z',
+      reviewedAt: '2025-08-31T14:20:00Z',
       reviewedBy: 'Mark Thompson',
       status: 'rejected',
       totalCost: 15000,
@@ -372,9 +401,9 @@ const ApprovalsProcurement = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Approvals & Procurement</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Approvals</h1>
             <p className="text-gray-600 mt-2">
-              Review and approve hardware/software requests from deployment engineers
+              Review and approve hardware/software requests
             </p>
         </div>
           <div className="flex items-center space-x-3">
@@ -443,8 +472,8 @@ const ApprovalsProcurement = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Value Pending</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  £{mockPendingRequests.reduce((sum, r) => sum + r.totalCost, 0).toLocaleString()}
+                                <p className="text-2xl font-bold text-gray-900">
+                  £{mockPendingRequests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.totalCost, 0).toLocaleString()}
           </p>
         </div>
         </div>
@@ -462,7 +491,7 @@ const ApprovalsProcurement = () => {
              className="flex-1"
            >
              <Clock className="h-4 w-4 mr-2" />
-             Pending Approvals ({mockPendingRequests.length})
+             Pending Approvals ({mockPendingRequests.filter(r => r.status === 'pending').length})
            </Button>
            <Button
              variant={activeTab === 'history' ? 'default' : 'ghost'}
@@ -529,23 +558,34 @@ const ApprovalsProcurement = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredPendingRequests.map((request) => (
               <Card key={request.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{request.siteName}</CardTitle>
-                      <CardDescription className="mt-1">
-                        Requested by {request.deploymentEngineer}
-                      </CardDescription>
+                                 <CardHeader className="pb-3">
+                   <div className="flex items-start justify-between">
+                     <div className="flex-1">
+                       <CardTitle className="text-lg">{request.siteName}</CardTitle>
+                       <CardDescription className="mt-1">
+                         Requested by {request.deploymentEngineer}
+                       </CardDescription>
           </div>
-                    <div className="flex flex-col items-end space-y-2">
-                      <Badge className={getPriorityColor(request.priority)}>
-                        {request.priority}
-                      </Badge>
-                      <Badge className={getStatusColor(request.status)}>
-                        {request.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                  </div>
+                     <div className="flex flex-col items-end space-y-2">
+                       <div className="flex items-center space-x-2">
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleViewDetails(request)}
+                           className="h-6 w-6 p-0 hover:bg-gray-100"
+                           title="View Details"
+                         >
+                           <Eye className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                         </Button>
+                         <Badge className={getPriorityColor(request.priority)}>
+                           {request.priority}
+                         </Badge>
+                       </div>
+                       <Badge className={getStatusColor(request.status)}>
+                         {request.status.replace('_', ' ')}
+                       </Badge>
+                     </div>
+                   </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
@@ -587,35 +627,37 @@ const ApprovalsProcurement = () => {
                     </div>
                   )}
 
-                  <div className="flex space-x-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDetails(request)}
-                      className="flex-1"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleReview(request, 'approve')}
-                      className="flex-1"
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleReview(request, 'reject')}
-                      className="flex-1"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
+                                     {request.status === 'changes_requested' ? (
+                     <div className="pt-2">
+                       <div className="flex items-center justify-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                         <Clock className="h-4 w-4 mr-2 text-orange-600" />
+                         <span className="text-sm font-medium text-orange-800">
+                           Waiting for changes
+                         </span>
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="flex space-x-2 pt-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleReview(request, 'approve')}
+                         className="flex-1"
+                       >
+                         <Check className="h-4 w-4 mr-1" />
+                         Approve
+                       </Button>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handleReview(request, 'reject')}
+                         className="flex-1"
+                       >
+                         <X className="h-4 w-4 mr-1" />
+                         Reject
+                       </Button>
+                     </div>
+                   )}
                 </CardContent>
               </Card>
             ))}
@@ -668,6 +710,8 @@ const ApprovalsProcurement = () => {
                       <TableHead>Status</TableHead>
                       <TableHead>Total Cost</TableHead>
                       <TableHead>Reviewer</TableHead>
+                      <TableHead>Review Comment</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -675,21 +719,57 @@ const ApprovalsProcurement = () => {
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.siteName}</TableCell>
                         <TableCell>{item.deploymentEngineer}</TableCell>
-                        <TableCell>
+                            <TableCell>
                           {new Date(item.submittedAt).toLocaleDateString()}
                             </TableCell>
                         <TableCell>
                           {new Date(item.reviewedAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(item.status)}>
-                            {item.status}
-                          </Badge>
-                        </TableCell>
+                          <div className="flex flex-col space-y-1">
+                            <Badge className={getStatusColor(item.status)}>
+                              {item.status}
+                            </Badge>
+                            {item.status === 'approved' && (
+                              <span className="text-xs text-green-600 font-medium">
+                                Ready for procurement
+                              </span>
+                            )}
+                            {item.status === 'rejected' && (
+                              <span className="text-xs text-red-600 font-medium">
+                                Final Rejection
+                              </span>
+                            )}
+                              </div>
+                            </TableCell>
                         <TableCell className="font-medium">
                           £{item.totalCost.toLocaleString()}
                         </TableCell>
                         <TableCell>{item.reviewedBy}</TableCell>
+                        <TableCell>
+                          <div className="max-w-xs">
+                            <p className="text-sm text-gray-600 truncate" title={item.reviewComment}>
+                              {item.reviewComment || 'No comment'}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewDetails({
+                              ...item,
+                              siteId: item.id,
+                              softwareCount: 0,
+                              hardwareCount: 0,
+                              priority: 'medium'
+                            } as ApprovalRequest)}
+                            className="h-6 w-6 p-0 hover:bg-gray-100"
+                            title="View Details"
+                          >
+                            <Eye className="h-3 w-3 text-gray-500 hover:text-gray-700" />
+                          </Button>
+                            </TableCell>
                           </TableRow>
                     ))}
                   </TableBody>
@@ -926,4 +1006,4 @@ const ApprovalsProcurement = () => {
   );
 };
 
-export default ApprovalsProcurement; 
+export default Approvals; 

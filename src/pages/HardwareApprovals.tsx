@@ -143,7 +143,7 @@ const HardwareApprovals = () => {
         status: 'pending',
         priority: 'high',
         requestedBy: 'John Smith',
-        requestedDate: '2024-07-30',
+        requestedDate: '2024-12-30',
         assignedTo: 'Jessica Cleaver',
         estimatedCost: 45000,
         description: 'Complete hardware scoping for ASDA Redditch location including POS systems, kiosks, and networking equipment',
@@ -177,7 +177,7 @@ const HardwareApprovals = () => {
           }
         ],
         notes: 'Urgent request for Q4 implementation. Site visit completed.',
-        lastUpdated: '2024-07-30'
+        lastUpdated: '2024-12-30'
       },
       {
         id: '2',
@@ -187,7 +187,7 @@ const HardwareApprovals = () => {
         status: 'approved',
         priority: 'medium',
         requestedBy: 'Emma Wilson',
-        requestedDate: '2024-07-29',
+        requestedDate: '2024-12-29',
         assignedTo: 'Mike Thompson',
         estimatedCost: 32000,
         description: 'Deployment approval for multi-vendor food court hardware setup',
@@ -221,7 +221,7 @@ const HardwareApprovals = () => {
           }
         ],
         notes: 'Approved for deployment. All hardware confirmed available.',
-        lastUpdated: '2024-07-29'
+        lastUpdated: '2024-12-29'
       },
       {
         id: '3',
@@ -231,7 +231,7 @@ const HardwareApprovals = () => {
         status: 'under_review',
         priority: 'urgent',
         requestedBy: 'David Brown',
-        requestedDate: '2024-07-28',
+        requestedDate: '2024-12-28',
         assignedTo: 'Sarah Johnson',
         estimatedCost: 8500,
         description: 'Emergency maintenance request for failing POS terminals',
@@ -256,7 +256,7 @@ const HardwareApprovals = () => {
           }
         ],
         notes: 'Critical system failure affecting operations. Immediate attention required.',
-        lastUpdated: '2024-07-28'
+        lastUpdated: '2024-12-28'
       },
       {
         id: '4',
@@ -266,7 +266,7 @@ const HardwareApprovals = () => {
         status: 'rejected',
         priority: 'low',
         requestedBy: 'Jessica Cleaver',
-        requestedDate: '2024-07-27',
+        requestedDate: '2024-12-27',
         assignedTo: 'Mike Thompson',
         estimatedCost: 28000,
         description: 'System upgrade request for enhanced functionality',
@@ -291,7 +291,7 @@ const HardwareApprovals = () => {
           }
         ],
         notes: 'Rejected due to budget constraints. Consider for next fiscal year.',
-        lastUpdated: '2024-07-27'
+        lastUpdated: '2024-12-27'
       },
       {
         id: '5',
@@ -301,7 +301,7 @@ const HardwareApprovals = () => {
         status: 'pending',
         priority: 'medium',
         requestedBy: 'Emma Wilson',
-        requestedDate: '2024-07-26',
+        requestedDate: '2024-12-26',
         assignedTo: 'John Smith',
         estimatedCost: 18500,
         description: 'Initial hardware scoping for new cafeteria implementation',
@@ -326,7 +326,7 @@ const HardwareApprovals = () => {
           }
         ],
         notes: 'Standard cafeteria setup. Site survey completed.',
-        lastUpdated: '2024-07-26'
+        lastUpdated: '2024-12-26'
       }
     ];
 
@@ -412,7 +412,7 @@ const HardwareApprovals = () => {
       status: 'pending',
       priority: 'high',
       requestedBy: 'John Smith',
-      requestedDate: '2024-07-30',
+              requestedDate: '2024-12-30',
       assignedTo: 'Jessica Cleaver',
       estimatedCost: 45000,
       description: 'Complete hardware scoping for ASDA Redditch location including POS systems, kiosks, and networking equipment',
@@ -446,7 +446,7 @@ const HardwareApprovals = () => {
         }
       ],
       notes: 'Urgent request for Q4 implementation. Site visit completed.',
-      lastUpdated: '2024-07-30'
+              lastUpdated: '2024-12-30'
     },
     {
       id: '2',
@@ -456,7 +456,7 @@ const HardwareApprovals = () => {
       status: 'approved',
       priority: 'medium',
       requestedBy: 'Emma Wilson',
-      requestedDate: '2024-07-29',
+              requestedDate: '2024-12-29',
       assignedTo: 'Mike Thompson',
       estimatedCost: 32000,
       description: 'Deployment approval for multi-vendor food court hardware setup',
@@ -490,7 +490,7 @@ const HardwareApprovals = () => {
         }
       ],
       notes: 'Approved for deployment. All hardware confirmed available.',
-      lastUpdated: '2024-07-29'
+              lastUpdated: '2024-12-29'
     },
     {
       id: '3',
@@ -500,7 +500,7 @@ const HardwareApprovals = () => {
       status: 'under_review',
       priority: 'urgent',
       requestedBy: 'David Brown',
-      requestedDate: '2024-07-28',
+              requestedDate: '2024-12-28',
       assignedTo: 'Sarah Johnson',
       estimatedCost: 8500,
       description: 'Emergency maintenance request for failing POS terminals',
@@ -525,7 +525,7 @@ const HardwareApprovals = () => {
         }
       ],
       notes: 'Critical system failure affecting operations. Immediate attention required.',
-      lastUpdated: '2024-07-28'
+              lastUpdated: '2024-12-28'
     },
     {
       id: '4',
@@ -535,7 +535,7 @@ const HardwareApprovals = () => {
       status: 'rejected',
       priority: 'low',
       requestedBy: 'Jessica Cleaver',
-      requestedDate: '2024-07-27',
+              requestedDate: '2024-12-27',
       assignedTo: 'Mike Thompson',
       estimatedCost: 28000,
       description: 'System upgrade request for enhanced functionality',
@@ -560,7 +560,7 @@ const HardwareApprovals = () => {
         }
       ],
       notes: 'Rejected due to budget constraints. Consider for next fiscal year.',
-      lastUpdated: '2024-07-27'
+              lastUpdated: '2024-12-27'
     },
     {
       id: '5',
@@ -570,7 +570,7 @@ const HardwareApprovals = () => {
       status: 'pending',
       priority: 'medium',
       requestedBy: 'Emma Wilson',
-      requestedDate: '2024-07-26',
+              requestedDate: '2024-12-26',
       assignedTo: 'John Smith',
       estimatedCost: 18500,
       description: 'Initial hardware scoping for new cafeteria implementation',
@@ -595,7 +595,7 @@ const HardwareApprovals = () => {
         }
       ],
       notes: 'Standard cafeteria setup. Site survey completed.',
-      lastUpdated: '2024-07-26'
+              lastUpdated: '2024-12-26'
     }
   ];
 

@@ -85,6 +85,14 @@ export const useRoleAccess = () => {
         }
         return { canAccess: false, accessLevel: 'none', message: 'Admin access required' };
 
+      case '/forecast':
+        if (currentRole === 'admin') {
+          return { canAccess: true, accessLevel: 'full' };
+        } else if (currentRole === 'ops_manager') {
+          return { canAccess: true, accessLevel: 'assigned', message: 'Viewing assigned sites forecast only' };
+        }
+        return { canAccess: false, accessLevel: 'none', message: 'Admin or Ops Manager access required' };
+
       default:
         // Check if the path starts with any of the known tab paths
         if (tabPath.startsWith('/sites')) {
