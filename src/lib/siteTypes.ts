@@ -64,12 +64,12 @@ export interface Site {
 
 // Unified status system - Finalized sequence
 export type UnifiedSiteStatus = 
-  | 'site_created' 
-  | 'site_study_done' 
-  | 'scoping_done' 
-  | 'approved' 
-  | 'procurement_done' 
-  | 'deployed' 
+  | 'Created'
+  | 'site_study_done'
+  | 'scoping_done'
+  | 'approved'
+  | 'procurement_done'
+  | 'deployed'
   | 'live'
   | 'archived';
 
@@ -88,15 +88,15 @@ export interface StepperStep {
 // Map status to stepper step
 export const getStepperStepFromStatus = (status: UnifiedSiteStatus): number => {
   const statusMap: Record<UnifiedSiteStatus, number> = {
-    site_created: 0,
-    site_study_done: 1,
-    scoping_done: 2,
-    approved: 3,
-    procurement_done: 4,
-    deployed: 5,
-    live: 6,
-    archived: 7
-  };
+  Created: 0,
+  site_study_done: 1,
+  scoping_done: 2,
+  approved: 3,
+  procurement_done: 4,
+  deployed: 5,
+  live: 6,
+  archived: 7
+};
   return statusMap[status] || 0;
 };
 
@@ -213,8 +213,8 @@ export const getStatusColor = (status: string) => {
 export const getStatusDisplayName = (status: string) => {
   switch (status) {
     // New finalized statuses - aligned with Sites page
-    case 'site_created':
-      return 'Site Created';
+    case 'Created':
+      return 'Created';
     case 'site_study_done':
       return 'Site Study Done';
     case 'scoping_done':
@@ -252,7 +252,7 @@ export const getStatusDisplayName = (status: string) => {
 // Workflow progression validation
 export const getNextValidStatuses = (currentStatus: UnifiedSiteStatus): UnifiedSiteStatus[] => {
   switch (currentStatus) {
-    case 'site_created':
+    case 'Created':
       return ['site_study_done'];
     case 'site_study_done':
       return ['scoping_done'];
@@ -280,7 +280,7 @@ export const canProgressToStatus = (currentStatus: UnifiedSiteStatus, targetStat
 };
 
 export const validateStatusProgression = (currentStatus: UnifiedSiteStatus, targetStatus: UnifiedSiteStatus): { valid: boolean; message?: string } => {
-  const statusOrder: UnifiedSiteStatus[] = ['site_created', 'site_study_done', 'scoping_done', 'approved', 'procurement_done', 'deployed', 'live'];
+  const statusOrder: UnifiedSiteStatus[] = ['Created', 'site_study_done', 'scoping_done', 'approved', 'procurement_done', 'deployed', 'live'];
   
   const currentIndex = statusOrder.indexOf(currentStatus);
   const targetIndex = statusOrder.indexOf(targetStatus);

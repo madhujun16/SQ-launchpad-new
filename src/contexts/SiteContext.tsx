@@ -133,7 +133,7 @@ export const SiteProvider: React.FC<SiteProviderProps> = ({ children }) => {
       ...siteData,
       id: Date.now().toString(),
       lastUpdated: new Date().toISOString().split('T')[0],
-      status: 'site_created'
+      status: 'Created'
     };
     
     setSites(prevSites => [...prevSites, newSite]);

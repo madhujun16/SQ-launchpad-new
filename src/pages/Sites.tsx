@@ -303,7 +303,7 @@ const Sites = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="site_created">Site Created</SelectItem>
+                              <SelectItem value="Created">Created</SelectItem>
               <SelectItem value="site_study_done">Site Study Done</SelectItem>
               <SelectItem value="scoping_done">Scoping Done</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>

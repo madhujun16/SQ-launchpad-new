@@ -32,7 +32,7 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
       className: "bg-destructive/10 text-destructive border-destructive/20 shadow-soft"
     },
     // New finalized UnifiedSiteStatus values
-    site_created: {
+    Created: {
       label: "Site Created",
       className: "bg-gray-100 text-gray-800 border-gray-200"
     },

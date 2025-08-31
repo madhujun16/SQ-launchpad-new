@@ -389,7 +389,7 @@ const SiteDetail = () => {
             priority: 'high',
             riskLevel: 'medium',
             criticality: 'high',
-            status: 'site_created',
+            status: 'Created',
             assignedOpsManager: 'Jessica Cleaver',
             assignedDeploymentEngineer: 'John Smith',
             stakeholders: [

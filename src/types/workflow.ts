@@ -11,7 +11,7 @@ export interface SiteWorkflowStatus {
 }
 
 export type DeploymentStage = 
-  | 'site_created'
+  | 'Created'
   | 'study_in_progress'
   | 'study_completed'
   | 'hardware_scoped'
@@ -242,7 +242,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
 // Workflow stage utilities
 export const getWorkflowStageLabel = (stage: DeploymentStage): string => {
   const labels: Record<DeploymentStage, string> = {
-    site_created: 'Site Created',
+    Created: 'Created',
     study_in_progress: 'Study In Progress',
     study_completed: 'Study Completed',
     hardware_scoped: 'Hardware Scoped',
@@ -260,7 +260,7 @@ export const getWorkflowStageLabel = (stage: DeploymentStage): string => {
 
 export const getWorkflowStageColor = (stage: DeploymentStage): string => {
   const colors: Record<DeploymentStage, string> = {
-    site_created: 'bg-blue-100 text-blue-800',
+    Created: 'bg-blue-100 text-blue-800',
     study_in_progress: 'bg-yellow-100 text-yellow-800',
     study_completed: 'bg-green-100 text-green-800',
     hardware_scoped: 'bg-purple-100 text-purple-800',

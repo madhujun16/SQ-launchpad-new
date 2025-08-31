@@ -112,7 +112,7 @@ export class WorkflowService {
    * Get valid next statuses for a given current status and user role
    */
   static getValidNextStatuses(currentStatus: UnifiedSiteStatus, userRole: 'admin' | 'ops_manager' | 'deployment_engineer'): UnifiedSiteStatus[] {
-    const allStatuses: UnifiedSiteStatus[] = ['site_created', 'site_study_done', 'scoping_done', 'approved', 'procurement_done', 'deployed', 'live'];
+    const allStatuses: UnifiedSiteStatus[] = ['Created', 'site_study_done', 'scoping_done', 'approved', 'procurement_done', 'deployed', 'live'];
     
     if (userRole === 'admin') {
       // Admin can move to any status (with override)
@@ -133,7 +133,7 @@ export class WorkflowService {
     // Define role-based transition permissions
     const rolePermissions: Record<string, { from: UnifiedSiteStatus[]; to: UnifiedSiteStatus[] }> = {
       ops_manager: {
-        from: ['site_created', 'site_study_done', 'scoping_done'],
+        from: ['Created', 'site_study_done', 'scoping_done'],
         to: ['site_study_done', 'scoping_done', 'approved']
       },
       deployment_engineer: {
@@ -222,7 +222,7 @@ export class WorkflowService {
       }
 
       const stats: Record<UnifiedSiteStatus, number> = {
-        site_created: 0,
+        Created: 0,
         site_study_done: 0,
         scoping_done: 0,
         approved: 0,

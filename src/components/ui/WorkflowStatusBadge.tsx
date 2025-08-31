@@ -29,7 +29,7 @@ export const WorkflowStatusBadge: React.FC<WorkflowStatusBadgeProps> = ({
 
 const getStageIcon = (stage: DeploymentStage) => {
   switch (stage) {
-    case 'site_created':
+    case 'Created':
       return '🏗️';
     case 'study_in_progress':
       return '📋';

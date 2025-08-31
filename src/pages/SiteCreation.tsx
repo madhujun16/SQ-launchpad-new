@@ -192,7 +192,7 @@ const SiteCreation = () => {
         target_live_date: formData.targetLiveDate,
         assigned_ops_manager: formData.operationsManager,
         assigned_deployment_engineer: formData.deploymentEngineer,
-        status: 'site_created', // Initial status
+        status: 'Created', // Initial status
         sector: formData.sector,
         unit_code: formData.unitCode,
         criticality_level: formData.criticalityLevel,
