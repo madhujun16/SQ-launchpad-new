@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 // TODO: Backend needs to provide proper data for:
 // - suggested_go_live (from site study step) - currently showing in Target Go-Live column
 // - target_live_date (original target date) - removed from display
@@ -37,7 +37,6 @@ const Sites = () => {
   
   // State
   const [sites, setSites] = useState<Site[]>([]);
-  const [filteredSites, setFilteredSites] = useState<Site[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -49,6 +48,8 @@ const Sites = () => {
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [archiveReason, setArchiveReason] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50);
 
   // Fetch sites from backend only
   useEffect(() => {
@@ -57,7 +58,6 @@ const Sites = () => {
         setLoading(true);
         const sitesData = await SitesService.getAllSites();
         setSites(sitesData);
-        setFilteredSites(sitesData);
       } catch (error) {
         console.error('Error fetching sites:', error);
         setError('Failed to load sites');
@@ -70,8 +70,8 @@ const Sites = () => {
     fetchSites();
   }, []);
 
-  // Filter sites
-  useEffect(() => {
+  // Filter and paginate sites
+  const { filteredSites, totalPages, currentSites } = useMemo(() => {
     let filtered = sites;
 
     if (searchTerm) {
@@ -87,8 +87,13 @@ const Sites = () => {
       filtered = filtered.filter(site => site.status === statusFilter);
     }
 
-    setFilteredSites(filtered);
-  }, [sites, searchTerm, statusFilter]);
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentSites = filtered.slice(startIndex, endIndex);
+
+    return { filteredSites: filtered, totalPages, currentSites };
+  }, [sites, searchTerm, statusFilter, currentPage, itemsPerPage]);
 
   // Action handlers
   const handleViewSite = (site: Site) => {
@@ -159,6 +164,11 @@ const Sites = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   // Get action buttons based on site status
@@ -261,14 +271,8 @@ const Sites = () => {
         </p>
       </div>
 
-      {/* Sites Overview Section with Create Site Button */}
-      <div className="mb-6 flex justify-between items-end">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-1">Sites Overview</h2>
-          <p className="text-gray-600">
-            Manage and track all client sites in the deployment pipeline.
-          </p>
-        </div>
+      {/* Create Site Button Section */}
+      <div className="mb-6 flex justify-end">
         <Button 
           onClick={handleCreateSite} 
           className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
@@ -336,7 +340,7 @@ const Sites = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSites.length === 0 ? (
+                  {currentSites.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8">
                         <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -353,7 +357,7 @@ const Sites = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredSites.map((site) => (
+                    currentSites.map((site) => (
                       <TableRow key={site.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">
                           <div className="flex items-center space-x-3">
@@ -398,9 +402,47 @@ const Sites = () => {
         </CardContent>
       </Card>
 
-        {/* Summary */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          Showing {filteredSites.length} of {sites.length} sites
+        {/* Summary and Pagination */}
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-sm text-gray-500">
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredSites.length)} of {filteredSites.length} sites
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
