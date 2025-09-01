@@ -41,7 +41,8 @@ import {
   Map,
   Info,
   Settings,
-  Package
+  Package,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
@@ -49,6 +50,7 @@ import { LocationPicker } from '@/components/ui/location-picker';
 import { UserService, UserWithRole } from '@/services/userService';
 import { DatePicker } from '@/components/ui/date-picker';
 import { PageLoader } from '@/components/ui/loader';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SiteData {
   name: string;
@@ -57,7 +59,6 @@ interface SiteData {
   unitCode: string;
   targetLiveDate: string;
   criticalityLevel: 'low' | 'medium' | 'high';
-  teamAssignment: string;
   operationsManager: string;
   deploymentEngineer: string;
   location: string;
@@ -77,6 +78,16 @@ interface SiteData {
   additionalContactEmail: string;
 }
 
+// Predefined sector options (same as OrganizationsManagement)
+const sectorOptions = [
+  'Business & Industry',
+  'Healthcare & Senior Living',
+  'Education',
+  'Sports & Leisure',
+  'Defence',
+  'Offshore & Remote'
+];
+
 const SiteCreation = () => {
   const { currentRole, profile } = useAuth();
   const navigate = useNavigate();
@@ -88,7 +99,6 @@ const SiteCreation = () => {
     unitCode: '',
     targetLiveDate: '',
     criticalityLevel: 'medium',
-    teamAssignment: '',
     operationsManager: '',
     deploymentEngineer: '',
     location: '',
@@ -120,6 +130,17 @@ const SiteCreation = () => {
     notes: false
   });
 
+  // Add Organization modal state
+  const [addOrgModalOpen, setAddOrgModalOpen] = useState(false);
+  const [newOrganization, setNewOrganization] = useState({
+    name: '',
+    description: '',
+    sector: '',
+    unit_code: ''
+  });
+  const [logoUpload, setLogoUpload] = useState<{ file: File; preview: string } | null>(null);
+  const [savingOrg, setSavingOrg] = useState(false);
+
   // Check if user has permission to create sites
   useEffect(() => {
     if (currentRole && !hasPermission(currentRole, 'create_sites')) {
@@ -134,9 +155,10 @@ const SiteCreation = () => {
       try {
         setLoading(true);
         
-        // Fetch organizations from backend
-        const orgs = await SitesService.getAllOrganizations();
-        setOrganizations(orgs);
+        // Fetch organizations from backend (filter out archived ones)
+        const allOrgs = await SitesService.getAllOrganizations();
+        const activeOrgs = allOrgs.filter(org => !org.is_archived);
+        setOrganizations(activeOrgs);
 
         // Fetch users from backend using UserService
         const [opsManagersData, deploymentEngineersData] = await Promise.all([
@@ -155,11 +177,33 @@ const SiteCreation = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    // Only fetch if we don't have data already
+    if (organizations.length === 0 && opsManagers.length === 0 && deploymentEngineers.length === 0) {
+      fetchData();
+    }
+  }, [organizations.length, opsManagers.length, deploymentEngineers.length]);
 
   const handleInputChange = (field: keyof SiteData, value: any) => {
     setFormData({ ...formData, [field]: value });
+    
+    // Auto-populate sector and unit code when organization changes
+    if (field === 'organization' && value) {
+      const selectedOrg = organizations.find(org => org.id === value);
+      if (selectedOrg) {
+        setFormData(prev => ({
+          ...prev,
+          sector: selectedOrg.sector,
+          unitCode: selectedOrg.unit_code || ''
+        }));
+      }
+    } else if (field === 'organization' && !value) {
+      // Clear sector and unit code when organization is cleared
+      setFormData(prev => ({
+        ...prev,
+        sector: '',
+        unitCode: ''
+      }));
+    }
   };
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -172,12 +216,36 @@ const SiteCreation = () => {
   const handleSubmit = async () => {
     // Validate required fields
     if (!formData.name || !formData.organization || !formData.sector || !formData.unitCode || !formData.targetLiveDate) {
-      toast.error('Please fill in all required fields');
+      if (!formData.organization) {
+        toast.error('Please select an organization first. The sector and unit code will be automatically filled.');
+      } else if (!formData.sector || !formData.unitCode) {
+        toast.error('Please select an organization to auto-populate the sector and unit code fields.');
+      } else {
+        toast.error('Please fill in all required fields');
+      }
       return;
     }
 
     if (!formData.operationsManager || !formData.deploymentEngineer) {
       toast.error('Please assign both Operations Manager and Deployment Engineer');
+      return;
+    }
+    
+    // Validate that the selected organization exists and has the required data
+    const selectedOrg = organizations.find(org => org.id === formData.organization);
+    if (!selectedOrg) {
+      toast.error('Selected organization not found. Please select a valid organization.');
+      return;
+    }
+    
+    if (selectedOrg.sector !== formData.sector || selectedOrg.unit_code !== formData.unitCode) {
+      toast.error('Organization data mismatch. Please refresh the page and try again.');
+      return;
+    }
+    
+    // Validate that the organization is not archived
+    if (selectedOrg.is_archived) {
+      toast.error('Cannot create a site for an archived organization. Please select an active organization.');
       return;
     }
 
@@ -196,15 +264,14 @@ const SiteCreation = () => {
         sector: formData.sector,
         unit_code: formData.unitCode,
         criticality_level: formData.criticalityLevel,
-        team_assignment: formData.teamAssignment,
-        description: `Site created with sector: ${formData.sector}, unit code: ${formData.unitCode}, criticality: ${formData.criticalityLevel}, team: ${formData.teamAssignment}`
+        description: `Site created for organization: ${selectedOrg.name}, sector: ${formData.sector}, unit code: ${formData.unitCode}, priority: ${formData.criticalityLevel}`
       };
 
       // Create site using backend service
       const createdSite = await SitesService.createSite(siteData);
 
       if (createdSite) {
-        toast.success('Site created successfully!');
+        toast.success(`Site "${formData.name}" created successfully for organization "${selectedOrg.name}"!`);
         navigate('/sites');
       } else {
         toast.error('Failed to create site. Please try again.');
@@ -233,6 +300,171 @@ const SiteCreation = () => {
     return org ? org.name : formData.organization;
   };
 
+  // Add Organization functions
+  const handleAddOrganization = () => {
+    setAddOrgModalOpen(true);
+    setNewOrganization({
+      name: '',
+      description: '',
+      sector: '',
+      unit_code: ''
+    });
+    setLogoUpload(null);
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('File size must be less than 2MB');
+        return;
+      }
+
+      const preview = URL.createObjectURL(file);
+      setLogoUpload({ file, preview });
+    }
+  };
+
+  const clearLogoUpload = () => {
+    if (logoUpload?.preview) {
+      URL.revokeObjectURL(logoUpload.preview);
+    }
+    setLogoUpload(null);
+  };
+
+  const uploadLogoToStorage = async (file: File, organizationId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${organizationId}-${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('organization-logos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) {
+        console.error('Error uploading logo:', error);
+        toast.error(`Failed to upload logo: ${error.message}`);
+        return null;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('organization-logos')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error(`Failed to upload logo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return null;
+    }
+  };
+
+  const saveOrganization = async () => {
+    if (!newOrganization.name.trim()) {
+      toast.error('Organization name is required');
+      return;
+    }
+    
+    if (!newOrganization.sector) {
+      toast.error('Please select a sector');
+      return;
+    }
+    
+    if (!newOrganization.unit_code.trim()) {
+      toast.error('Unit code is required');
+      return;
+    }
+    
+    setSavingOrg(true);
+    try {
+      let logoUrl = null;
+
+      // Handle logo upload if there's a new logo
+      if (logoUpload?.file) {
+        const tempId = `temp-${Date.now()}`;
+        const uploadedLogoUrl = await uploadLogoToStorage(logoUpload.file, tempId);
+        if (uploadedLogoUrl) {
+          logoUrl = uploadedLogoUrl;
+        } else {
+          toast.error('Logo upload failed. Please try again.');
+          return;
+        }
+      }
+
+      // Add new organization
+      const { data, error } = await supabase
+        .from('organizations')
+        .insert([{
+          name: newOrganization.name.trim(),
+          description: newOrganization.description.trim(),
+          sector: newOrganization.sector,
+          unit_code: newOrganization.unit_code.trim(),
+          logo_url: logoUrl,
+          created_by: profile?.id || 'system',
+          created_on: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Supabase insert error:', error);
+        toast.error(`Failed to create organization: ${error.message}`);
+        return;
+      }
+      
+      const newOrg: Organization = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        sector: data.sector || '',
+        unit_code: data.unit_code || '',
+        logo_url: data.logo_url || logoUrl || null,
+        created_at: data.created_at || '',
+        updated_at: data.updated_at || new Date().toISOString(),
+        sites_count: 0
+      };
+      
+      // Add to local state and refresh organizations
+      setOrganizations(prev => [...prev, newOrg]);
+      
+      // Auto-select the newly created organization
+      setFormData(prev => ({
+        ...prev,
+        organization: newOrg.id,
+        sector: newOrg.sector,
+        unitCode: newOrg.unit_code
+      }));
+      
+      toast.success(`Organization "${newOrg.name}" created successfully!`);
+      
+      // Clear logo upload state and close modal
+      clearLogoUpload();
+      setAddOrgModalOpen(false);
+      setNewOrganization({
+        name: '',
+        description: '',
+        sector: '',
+        unit_code: ''
+      });
+    } catch (error) {
+      console.error('Error saving organization:', error);
+      toast.error(`Failed to save organization: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSavingOrg(false);
+    }
+  };
+
   if (loading) {
     return <PageLoader />;
   }
@@ -258,24 +490,6 @@ const SiteCreation = () => {
                 Basic site information and configuration
               </p>
             </div>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={submitting}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
-              size="lg"
-            >
-              {submitting ? (
-                <>
-                  <Loader className="h-4 w-4 mr-2 animate-spin" />
-                  Creating Site...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Create Site
-                </>
-              )}
-            </Button>
           </div>
         </div>
 
@@ -305,9 +519,21 @@ const SiteCreation = () => {
               <CardContent className="pt-0">
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Basic Site Information</h4>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900 border-b pb-2">Basic Site Information</h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddOrganization}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Organization
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label htmlFor="site-name">Site Name *</Label>
                         <Input
                           id="site-name"
@@ -316,25 +542,37 @@ const SiteCreation = () => {
                           onChange={(e) => handleInputChange('name', e.target.value)}
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label htmlFor="organization">Organisation *</Label>
+                        {organizations.length === 0 && (
+                          <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                            No organizations available - create one to continue
+                          </span>
+                        )}
                         <Select value={formData.organization} onValueChange={(value) => handleInputChange('organization', value)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select organisation" />
                           </SelectTrigger>
                           <SelectContent>
-                            {organizations.map((org) => (
-                              <SelectItem key={org.id} value={org.id}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span>{org.name}</span>
-                                  {org.is_archived && (
-                                    <Badge variant="outline" className="ml-2 text-xs">
-                                      Archived
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
+                            {organizations.length === 0 ? (
+                              <div className="p-2 text-center text-gray-500">
+                                <p>No organizations available</p>
+                                <p className="text-xs">Use the "Add Organization" button above to create one</p>
+                              </div>
+                            ) : (
+                              organizations.map((org) => (
+                                <SelectItem key={org.id} value={org.id}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{org.name}</span>
+                                    {org.is_archived && (
+                                      <Badge variant="outline" className="ml-2 text-xs">
+                                        Archived
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -342,19 +580,29 @@ const SiteCreation = () => {
                         <Label htmlFor="sector">Sector *</Label>
                         <Input
                           id="sector"
-                          placeholder="Enter sector"
+                          placeholder="Auto-populated from organization"
                           value={formData.sector}
                           onChange={(e) => handleInputChange('sector', e.target.value)}
+                          disabled
+                          className="bg-gray-50 text-gray-600"
                         />
+                        <p className="text-xs text-gray-500">
+                          {formData.organization ? 'Automatically filled from organization' : 'Select an organization to auto-fill'}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="unit-code">Unit Code *</Label>
                         <Input
                           id="unit-code"
-                          placeholder="Enter unit code"
+                          placeholder="Auto-populated from organization"
                           value={formData.unitCode}
                           onChange={(e) => handleInputChange('unitCode', e.target.value)}
+                          disabled
+                          className="bg-gray-50 text-gray-600"
                         />
+                        <p className="text-xs text-gray-500">
+                          {formData.organization ? 'Automatically filled from organization' : 'Select an organization to auto-fill'}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="target-live-date">Target Live Date *</Label>
@@ -364,7 +612,7 @@ const SiteCreation = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="criticality-level">Criticality Level</Label>
+                        <Label htmlFor="criticality-level">Priority</Label>
                         <Select value={formData.criticalityLevel} onValueChange={(value) => handleInputChange('criticalityLevel', value)}>
                           <SelectTrigger>
                             <SelectValue />
@@ -375,15 +623,6 @@ const SiteCreation = () => {
                             <SelectItem value="high">High</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="team-assignment">Team Assignment *</Label>
-                        <Input
-                          id="team-assignment"
-                          placeholder="Enter team assignment"
-                          value={formData.teamAssignment}
-                          onChange={(e) => handleInputChange('teamAssignment', e.target.value)}
-                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="operations-manager">Operations Manager *</Label>
@@ -671,7 +910,14 @@ const SiteCreation = () => {
         </div>
 
         {/* Bottom Create Site Button */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex justify-between items-center">
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/sites')}
+            className="text-gray-600 hover:text-gray-900 border-gray-300 hover:border-gray-400"
+          >
+            Cancel
+          </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={submitting}
@@ -680,18 +926,163 @@ const SiteCreation = () => {
           >
             {submitting ? (
               <>
-                <Loader className="h-5 w-5 mr-2 animate-spin" />
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
                 Creating Site...
               </>
             ) : (
               <>
-                <CheckCircle className="h-5 w-5 mr-2" />
+                <CheckCircle className="h-4 w-4 mr-2" />
                 Create Site
               </>
             )}
           </Button>
         </div>
       </div>
+
+            {/* Add Organization Modal */}
+      {addOrgModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-medium mb-4">Add Missing Organization</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Can't find the organization you're looking for? Create a new one here. It will be automatically selected and its sector and unit code will populate the form fields.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="new-org-name">Organization Name *</Label>
+                <Input
+                  id="new-org-name"
+                  placeholder="e.g., Acme Corp"
+                  value={newOrganization.name}
+                  onChange={(e) => setNewOrganization(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-org-description">Description (Optional)</Label>
+                <Textarea
+                  id="new-org-description"
+                  placeholder="Brief description of the organization"
+                  value={newOrganization.description}
+                  onChange={(e) => setNewOrganization(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-org-sector">Sector *</Label>
+                <Select value={newOrganization.sector} onValueChange={(value) => setNewOrganization(prev => ({ ...prev, sector: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectorOptions.map(option => (
+                      <SelectItem key={option} value={option}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="new-org-unit-code">Unit Code *</Label>
+                <Input
+                  id="new-org-unit-code"
+                  placeholder="e.g., ACME-001"
+                  value={newOrganization.unit_code}
+                  onChange={(e) => setNewOrganization(prev => ({ ...prev, unit_code: e.target.value }))}
+                />
+              </div>
+              
+              {/* Logo Upload Section */}
+              <div>
+                <Label htmlFor="new-org-logo">Organization Logo (Optional)</Label>
+                <div className="space-y-3">
+                  {/* Logo Upload Input */}
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      id="new-org-logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="cursor-pointer"
+                      style={{ display: 'none' }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('new-org-logo')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      Upload
+                    </Button>
+                  </div>
+                  
+                  {/* Logo Preview */}
+                  {logoUpload && (
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <img 
+                        src={logoUpload.preview} 
+                        alt="New organization logo"
+                        className="h-12 w-12 rounded-full object-cover border"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Logo Preview</p>
+                        <p className="text-xs text-gray-500">New logo selected</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearLogoUpload}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-gray-500">
+                    Upload a logo image (JPG, PNG, GIF). Max size: 2MB.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  clearLogoUpload();
+                  setAddOrgModalOpen(false);
+                  setNewOrganization({
+                    name: '',
+                    description: '',
+                    sector: '',
+                    unit_code: ''
+                  });
+                }}
+                disabled={savingOrg}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={saveOrganization}
+                disabled={savingOrg}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {savingOrg ? (
+                  <>
+                    <Loader className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Organization
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

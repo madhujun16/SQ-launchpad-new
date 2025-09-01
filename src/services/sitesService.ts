@@ -39,6 +39,7 @@ export interface Organization {
   id: string;
   name: string;
   sector: string;
+  unit_code?: string;
   logo_url?: string;
   description?: string;
   sites_count?: number; // Number of sites mapped to this organization
@@ -320,7 +321,7 @@ export class SitesService {
   // Get all organizations with sites count (including archived)
   static async getAllOrganizations(): Promise<Organization[]> {
     try {
-      // First get all organizations (including archived)
+      // Get all organizations with a single query
       const { data: organizations, error: orgError } = await supabase
         .from('organizations')
         .select('*')
@@ -335,25 +336,46 @@ export class SitesService {
         return [];
       }
 
-      // Get sites count for each organization (only active sites)
-      const organizationsWithCount = await Promise.all(
-        organizations.map(async (org) => {
-          const { count, error: countError } = await supabase
-            .from('sites')
-            .select('*', { count: 'exact', head: true })
-            .eq('organization_id', org.id)
-            .eq('is_archived', false); // Only count non-archived sites
+      // Get site counts for all organizations in a single aggregated query
+      const { data: siteCounts, error: siteCountsError } = await supabase
+        .from('sites')
+        .select('organization_id')
+        .eq('is_archived', false);
 
-          if (countError) {
-            console.warn(`Error counting sites for organization ${org.name}:`, countError);
-            return { ...org, sites_count: 0 };
+      if (siteCountsError) {
+        console.error('Error fetching site counts:', siteCountsError);
+        // Return organizations without site counts if the query fails
+        return organizations.map(org => ({ ...org, sites_count: 0 }));
+      }
+
+      // Create a map of organization_id -> site count
+      const siteCountMap = new Map<string, number>();
+      if (siteCounts) {
+        siteCounts.forEach(site => {
+          const orgId = site.organization_id;
+          if (orgId) {
+            siteCountMap.set(orgId, (siteCountMap.get(orgId) || 0) + 1);
           }
+        });
+      }
 
-          return { ...org, sites_count: count || 0 };
-        })
-      );
+      // Transform organizations with their site counts
+      const organizationsWithCounts = organizations.map((org: any) => ({
+        id: org.id,
+        name: org.name,
+        sector: org.sector || '',
+        unit_code: org.unit_code || '',
+        logo_url: org.logo_url || null,
+        description: org.description || '',
+        created_at: org.created_at || '',
+        updated_at: org.updated_at || '',
+        is_archived: org.is_archived || false,
+        archived_at: org.archived_at || null,
+        archive_reason: org.archive_reason || null,
+        sites_count: siteCountMap.get(org.id) || 0
+      }));
 
-      return organizationsWithCount;
+      return organizationsWithCounts;
     } catch (error) {
       console.error('Error in getAllOrganizations:', error);
       return [];

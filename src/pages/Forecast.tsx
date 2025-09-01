@@ -49,6 +49,8 @@ interface FinancialForecast {
   softwareCosts: number;
   avgMonthlyCostPerSite: number;
   costVariancePercentage: number;
+  projectsCount?: number;
+  statusBreakdown?: string;
 }
 
 const Forecast: React.FC = () => {
@@ -64,13 +66,13 @@ const Forecast: React.FC = () => {
 
   // Mock deployment team data
   const deploymentTeam = [
-    { id: '1', name: 'Sarah Johnson', role: 'Team Lead', projects: 2, status: 'Live' },
-    { id: '2', name: 'Emma Wilson', role: 'Deployment Engineer', projects: 2, status: 'Deployed' },
-    { id: '3', name: 'David Brown', role: 'Deployment Engineer', projects: 1, status: 'Procurement Done' },
-    { id: '4', name: 'Mike Thompson', role: 'Deployment Engineer', projects: 1, status: 'Approved' },
-    { id: '5', name: 'Lisa Chen', role: 'Deployment Engineer', projects: 0, status: 'Available' },
-    { id: '6', name: 'James Wilson', role: 'Deployment Engineer', projects: 0, status: 'Available' },
-    { id: '7', name: 'Alex Rodriguez', role: 'Deployment Engineer', projects: 0, status: 'Available' },
+    { id: '1', name: 'Sarah Johnson', role: 'Team Lead', projects: 3, status: 'Live' },
+    { id: '2', name: 'Emma Wilson', role: 'Deployment Engineer', projects: 3, status: 'Deployed' },
+    { id: '3', name: 'David Brown', role: 'Deployment Engineer', projects: 2, status: 'Procurement Done' },
+    { id: '4', name: 'Mike Thompson', role: 'Deployment Engineer', projects: 2, status: 'Approved' },
+    { id: '5', name: 'Lisa Chen', role: 'Deployment Engineer', projects: 2, status: 'Scoping Done' },
+    { id: '6', name: 'James Wilson', role: 'Deployment Engineer', projects: 2, status: 'Site Study Done' },
+    { id: '7', name: 'Alex Rodriguez', role: 'Deployment Engineer', projects: 1, status: 'Created' },
     { id: '8', name: 'Maria Garcia', role: 'Deployment Engineer', projects: 0, status: 'Available' },
     { id: '9', name: 'Tom Anderson', role: 'Deployment Engineer', projects: 0, status: 'Available' },
     { id: '10', name: 'Rachel Green', role: 'Deployment Engineer', projects: 0, status: 'Available' }
@@ -99,119 +101,228 @@ const Forecast: React.FC = () => {
     const mockForecastData: ForecastData[] = [
       {
         id: '1',
-        siteName: 'London Central',
-        status: 'live',
-        startDate: '2025-09-01',
-        targetDate: '2025-09-15',
-        actualStartDate: '2025-09-01',
-        completionDate: '2025-09-12',
-        progress: 100,
-        estimatedCost: 25000,
-        actualCost: 24500,
+        siteName: 'HSBC Canary Wharf',
+        status: 'scoping_done',
+        startDate: '2025-10-15',
+        targetDate: '2025-12-15',
+        progress: 75,
+        estimatedCost: 45000,
         assignedTeam: 'Team Alpha',
         priority: 'high',
-        riskLevel: 'low',
-        notes: 'Successfully completed ahead of schedule'
+        riskLevel: 'medium',
+        notes: 'Hardware procurement in progress'
       },
       {
         id: '2',
-        siteName: 'Manchester North',
-        status: 'deployed',
-        startDate: '2025-09-05',
-        targetDate: '2025-09-25',
-        actualStartDate: '2025-09-05',
-        progress: 85,
-        estimatedCost: 18000,
-        actualCost: 13500,
+        siteName: 'JLR Whitley Campus',
+        status: 'approved',
+        startDate: '2025-11-01',
+        targetDate: '2025-12-01',
+        progress: 60,
+        estimatedCost: 38000,
         assignedTeam: 'Team Beta',
         priority: 'medium',
-        riskLevel: 'medium',
-        notes: 'System testing phase - on track'
+        riskLevel: 'low',
+        notes: 'Waiting for final approval'
       },
       {
         id: '3',
-        siteName: 'Birmingham South',
+        siteName: 'Morgan Stanley London',
         status: 'procurement_done',
-        startDate: '2025-09-10',
-        targetDate: '2025-10-05',
-        actualStartDate: '2025-09-10',
-        progress: 70,
-        estimatedCost: 22000,
-        actualCost: 9900,
+        startDate: '2025-10-20',
+        targetDate: '2025-12-20',
+        progress: 85,
+        estimatedCost: 52000,
         assignedTeam: 'Team Gamma',
         priority: 'high',
-        riskLevel: 'medium',
-        notes: 'Hardware installation in progress'
+        riskLevel: 'low',
+        notes: 'Ready for deployment'
       },
       {
         id: '4',
-        siteName: 'Leeds Central',
-        status: 'approved',
-        startDate: '2025-10-01',
-        targetDate: '2025-10-20',
-        progress: 60,
-        estimatedCost: 15000,
+        siteName: 'Levy Restaurants',
+        status: 'deployed',
+        startDate: '2025-11-10',
+        targetDate: '2025-12-10',
+        progress: 90,
+        estimatedCost: 32000,
         assignedTeam: 'Team Delta',
         priority: 'medium',
         riskLevel: 'low',
-        notes: 'Planning phase - requirements gathering'
+        notes: 'Final testing phase'
       },
       {
         id: '5',
-        siteName: 'Liverpool East',
-        status: 'scoping_done',
-        startDate: '2025-10-15',
-        targetDate: '2025-11-05',
-        progress: 40,
-        estimatedCost: 20000,
+        siteName: 'Baxter Health',
+        status: 'live',
+        startDate: '2025-10-01',
+        targetDate: '2025-12-01',
+        progress: 100,
+        estimatedCost: 41000,
         assignedTeam: 'Team Alpha',
-        priority: 'low',
+        priority: 'high',
         riskLevel: 'low',
-        notes: 'Initial planning stage'
+        notes: 'Successfully deployed and operational'
       },
       {
         id: '6',
-        siteName: 'Cardiff Business Park',
+        siteName: 'Ford Dunton',
         status: 'site_study_done',
-        startDate: '2025-11-01',
-        targetDate: '2025-11-25',
-        progress: 20,
-        estimatedCost: 28000,
+        startDate: '2025-12-01',
+        targetDate: '2026-01-01',
+        progress: 40,
+        estimatedCost: 35000,
         assignedTeam: 'Team Beta',
         priority: 'medium',
+        riskLevel: 'medium',
+        notes: 'Scoping phase starting soon'
+      },
+      {
+        id: '7',
+        siteName: 'Marjon University',
+        status: 'scoping_done',
+        startDate: '2025-11-15',
+        targetDate: '2025-12-15',
+        progress: 70,
+        estimatedCost: 28000,
+        assignedTeam: 'Team Gamma',
+        priority: 'low',
+        riskLevel: 'low',
+        notes: 'Budget approved, procurement next'
+      },
+      {
+        id: '8',
+        siteName: 'Minley Station',
+        status: 'approved',
+        startDate: '2025-12-15',
+        targetDate: '2026-01-15',
+        progress: 55,
+        estimatedCost: 42000,
+        assignedTeam: 'Team Delta',
+        priority: 'high',
+        riskLevel: 'medium',
+        notes: 'Security clearance pending'
+      },
+      {
+        id: '9',
+        siteName: 'Chartswell Group',
+        status: 'Created',
+        startDate: '2025-10-01',
+        targetDate: '2026-01-01',
+        progress: 20,
+        estimatedCost: 31000,
+        assignedTeam: 'Team Alpha',
+        priority: 'medium',
+        riskLevel: 'low',
+        notes: 'Initial planning phase'
+      },
+      {
+        id: '10',
+        siteName: 'Compass One',
+        status: 'site_study_done',
+        startDate: '2025-12-20',
+        targetDate: '2026-01-20',
+        progress: 35,
+        estimatedCost: 36000,
+        assignedTeam: 'Team Beta',
+        priority: 'low',
+        riskLevel: 'low',
+        notes: 'Site survey completed'
+      },
+      {
+        id: '11',
+        siteName: 'Peabody Housing',
+        status: 'scoping_done',
+        startDate: '2025-11-25',
+        targetDate: '2025-12-25',
+        progress: 80,
+        estimatedCost: 29000,
+        assignedTeam: 'Team Gamma',
+        priority: 'medium',
+        riskLevel: 'low',
+        notes: 'Hardware specifications finalized'
+      },
+      {
+        id: '12',
+        siteName: 'RA Restaurants',
+        status: 'procurement_done',
+        startDate: '2025-10-30',
+        targetDate: '2025-12-30',
+        progress: 88,
+        estimatedCost: 34000,
+        assignedTeam: 'Team Delta',
+        priority: 'high',
+        riskLevel: 'low',
+        notes: 'Equipment delivery scheduled'
+      },
+      {
+        id: '13',
+        siteName: 'NEXT Retail',
+        status: 'deployed',
+        startDate: '2025-11-05',
+        targetDate: '2025-12-05',
+        progress: 92,
+        estimatedCost: 27000,
+        assignedTeam: 'Team Alpha',
+        priority: 'medium',
+        riskLevel: 'low',
+        notes: 'User training in progress'
+      },
+      {
+        id: '14',
+        siteName: 'B&I Corporate',
+        status: 'live',
+        startDate: '2025-10-10',
+        targetDate: '2025-12-10',
+        progress: 100,
+        estimatedCost: 39000,
+        assignedTeam: 'Team Beta',
+        priority: 'high',
+        riskLevel: 'low',
+        notes: 'Fully operational'
+      },
+      {
+        id: '15',
+        siteName: 'Offshore Platform Alpha',
+        status: 'scoping_done',
+        startDate: '2025-12-10',
+        targetDate: '2026-01-10',
+        progress: 65,
+        estimatedCost: 68000,
+        assignedTeam: 'Team Gamma',
+        priority: 'urgent',
         riskLevel: 'high',
-        notes: 'Complex site requirements'
+        notes: 'Specialized equipment required'
       }
     ];
 
     const mockFinancialData: FinancialForecast[] = [
       {
-        month: 'September 2025',
-        hardwareCosts: 25000,
-        softwareCosts: 8000,
-        avgMonthlyCostPerSite: 5500,
-        costVariancePercentage: 15.2
-      },
-      {
         month: 'October 2025',
-        hardwareCosts: 30000,
-        softwareCosts: 10000,
-        avgMonthlyCostPerSite: 5800,
-        costVariancePercentage: 8.5
+        hardwareCosts: 45000,
+        softwareCosts: 15000,
+        avgMonthlyCostPerSite: 6500,
+        costVariancePercentage: 12.5,
+        projectsCount: 4,
+        statusBreakdown: '2 Scoping, 2 Planning'
       },
       {
         month: 'November 2025',
-        hardwareCosts: 35000,
-        softwareCosts: 12000,
-        avgMonthlyCostPerSite: 6200,
-        costVariancePercentage: 22.1
+        hardwareCosts: 52000,
+        softwareCosts: 18000,
+        avgMonthlyCostPerSite: 6800,
+        costVariancePercentage: 8.2,
+        projectsCount: 5,
+        statusBreakdown: '3 Procurement, 2 Approved'
       },
       {
         month: 'December 2025',
-        hardwareCosts: 40000,
-        softwareCosts: 15000,
-        avgMonthlyCostPerSite: 6500,
-        costVariancePercentage: 18.7
+        hardwareCosts: 68000,
+        softwareCosts: 22000,
+        avgMonthlyCostPerSite: 7200,
+        costVariancePercentage: 18.7,
+        projectsCount: 6,
+        statusBreakdown: '4 Deployment, 2 Live'
       }
     ];
 
@@ -281,6 +392,18 @@ const Forecast: React.FC = () => {
       return item.progress >= 50;
     }).length;
 
+    // Calculate Sites Going Live in next 3 months (sites with target dates in next 3 months)
+    const threeMonthsFromNow = new Date('2025-12-31'); // End of December 2025
+    const sitesGoingLive = forecastData.filter(item => {
+      const targetDate = new Date(item.targetDate);
+      return targetDate <= threeMonthsFromNow && item.status !== 'live';
+    }).length;
+
+    // Calculate Future Costs for scoped sites only
+    const futureCosts = forecastData
+      .filter(item => item.status === 'scoping_done')
+      .reduce((sum, item) => sum + item.estimatedCost, 0);
+
     return {
       total,
       completed,
@@ -289,6 +412,8 @@ const Forecast: React.FC = () => {
       totalEstimatedCost,
       totalActualCost,
       onTrack,
+      sitesGoingLive,
+      futureCosts,
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
       onTrackRate: total > 0 ? Math.round((onTrack / total) * 100) : 0
     };
@@ -305,7 +430,7 @@ const Forecast: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Forecast Dashboard</h1>
           <p className="text-gray-600 mt-1">
-            Project timeline, financial forecasting, and performance insights
+            Project timeline, financial forecasting, and performance insights for the next 3 months
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -325,8 +450,9 @@ const Forecast: React.FC = () => {
                 <CheckCircle2 className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Completion Rate</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryMetrics.completionRate}%</p>
+                <p className="text-sm text-gray-600">Sites Going Live</p>
+                <p className="text-2xl font-bold text-gray-900">{summaryMetrics.sitesGoingLive}</p>
+                <p className="text-xs text-gray-500">Next 3 months</p>
               </div>
             </div>
           </CardContent>
@@ -341,6 +467,7 @@ const Forecast: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600">On Track</p>
                 <p className="text-2xl font-bold text-gray-900">{summaryMetrics.onTrackRate}%</p>
+                <p className="text-xs text-gray-500">Projects meeting targets</p>
               </div>
             </div>
           </CardContent>
@@ -353,8 +480,9 @@ const Forecast: React.FC = () => {
                 <DollarSign className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Budget</p>
-                <p className="text-2xl font-bold text-gray-900">£{summaryMetrics.totalEstimatedCost.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Future Costs</p>
+                <p className="text-2xl font-bold text-gray-900">£{summaryMetrics.futureCosts.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">Scoped sites only</p>
               </div>
             </div>
           </CardContent>
@@ -368,7 +496,8 @@ const Forecast: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Active Projects</p>
-                <p className="text-2xl font-bold text-gray-900">{summaryMetrics.inProgress}</p>
+                <p className="text-2xl font-bold text-gray-900">15</p>
+                <p className="text-xs text-gray-500">Currently in progress</p>
               </div>
             </div>
           </CardContent>
@@ -494,14 +623,53 @@ const Forecast: React.FC = () => {
              {/* Financial Forecast View */}
        {viewMode === 'financial' && (
          <div className="space-y-6">
+           {/* Financial Summary Card */}
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+             <Card>
+               <CardContent className="p-4">
+                 <div className="text-center">
+                   <p className="text-sm text-gray-600">Total 3-Month Budget</p>
+                   <p className="text-2xl font-bold text-gray-900">£165,000</p>
+                   <p className="text-xs text-gray-500">Oct-Dec 2025</p>
+                 </div>
+               </CardContent>
+             </Card>
+             <Card>
+               <CardContent className="p-4">
+                 <div className="text-center">
+                   <p className="text-sm text-gray-600">Total Projects</p>
+                   <p className="text-2xl font-bold text-gray-900">15</p>
+                   <p className="text-xs text-gray-500">Across 3 months</p>
+                 </div>
+               </CardContent>
+             </Card>
+             <Card>
+               <CardContent className="p-4">
+                 <div className="text-center">
+                   <p className="text-sm text-gray-600">Avg Cost per Project</p>
+                   <p className="text-2xl font-bold text-gray-900">£11,000</p>
+                   <p className="text-xs text-gray-500">Hardware + Software</p>
+                 </div>
+               </CardContent>
+             </Card>
+             <Card>
+               <CardContent className="p-4">
+                 <div className="text-center">
+                   <p className="text-sm text-gray-600">Cost Trend</p>
+                   <p className="text-2xl font-bold text-green-600">↗ +15%</p>
+                   <p className="text-xs text-gray-500">Monthly increase</p>
+                 </div>
+               </CardContent>
+             </Card>
+           </div>
+
            <Card>
              <CardHeader>
                <CardTitle className="flex items-center space-x-2">
-                 <DollarSign className="h-5 w-5" />
-                 <span>Monthly Cost Insights</span>
+                 <span>Monthly Cost Insights (Next 3 Months)</span>
                </CardTitle>
                <CardDescription>
-                 Hardware, software costs and cost variance analysis
+                 Hardware, software costs, project timelines, and cost variance analysis for upcoming deployments
                </CardDescription>
              </CardHeader>
              <CardContent>
@@ -509,7 +677,7 @@ const Forecast: React.FC = () => {
                  {financialData.map((month) => (
                    <div key={month.month} className="border rounded-lg p-4">
                      <h3 className="font-medium mb-3">{month.month}</h3>
-                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                        <div>
                          <div className="text-sm text-gray-600">Hardware Costs</div>
                          <div className="text-lg font-semibold text-blue-600">
@@ -520,6 +688,15 @@ const Forecast: React.FC = () => {
                          <div className="text-sm text-gray-600">Software Costs</div>
                          <div className="text-lg font-semibold text-purple-600">
                            £{month.softwareCosts.toLocaleString()}
+                         </div>
+                       </div>
+                       <div>
+                         <div className="text-sm text-gray-600">Projects Count</div>
+                         <div className="text-lg font-semibold text-green-600">
+                           {month.projectsCount || 0}
+                         </div>
+                         <div className="text-xs text-gray-500">
+                           {month.statusBreakdown || 'Planning phase'}
                          </div>
                        </div>
                        <div>
