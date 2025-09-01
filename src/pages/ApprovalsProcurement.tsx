@@ -50,6 +50,7 @@ import { PageLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { formatDate } from '@/lib/dateUtils';
 
 // Interfaces
 interface ApprovalRequest {
@@ -597,7 +598,7 @@ const Approvals = () => {
                     <div>
                       <p className="text-gray-600">Submitted</p>
                       <p className="font-medium">
-                        {new Date(request.submittedAt).toLocaleDateString()}
+                        {formatDate(request.submittedAt)}
                       </p>
                     </div>
                   </div>
@@ -720,10 +721,10 @@ const Approvals = () => {
                         <TableCell className="font-medium">{item.siteName}</TableCell>
                         <TableCell>{item.deploymentEngineer}</TableCell>
                             <TableCell>
-                          {new Date(item.submittedAt).toLocaleDateString()}
+                          {formatDate(item.submittedAt)}
                             </TableCell>
                         <TableCell>
-                          {new Date(item.reviewedAt).toLocaleDateString()}
+                          {formatDate(item.reviewedAt)}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col space-y-1">

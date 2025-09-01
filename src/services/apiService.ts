@@ -407,13 +407,58 @@ export class ApiService {
   // User Management APIs (Admin only)
   async getProfiles() {
     return this.handleApiCall(async () => {
+      // OPTIMIZED: Single query with JOIN to fetch all users and their roles
       return await supabase
         .from('profiles')
         .select(`
           *,
-          roles:user_roles(role)
+          user_roles!inner(role)
         `)
         .order('created_at', { ascending: false });
+    });
+  }
+
+  // OPTIMIZED: Get users by role in a single query
+  async getUsersByRole(role: string) {
+    return this.handleApiCall(async () => {
+      return await supabase
+        .from('profiles')
+        .select(`
+          *,
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', role)
+        .order('created_at', { ascending: false });
+    });
+  }
+
+  // OPTIMIZED: Get user statistics in a single query
+  async getUserStatistics() {
+    return this.handleApiCall(async () => {
+      const { data: roleStats, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .order('role');
+
+      if (roleError) throw roleError;
+
+      const stats = {
+        total_users: 0,
+        admin_count: 0,
+        ops_manager_count: 0,
+        deployment_engineer_count: 0
+      };
+
+      if (roleStats) {
+        stats.total_users = roleStats.length;
+        roleStats.forEach(role => {
+          if (role.role === 'admin') stats.admin_count++;
+          if (role.role === 'ops_manager') stats.ops_manager_count++;
+          if (role.role === 'deployment_engineer') stats.deployment_engineer_count++;
+        });
+      }
+
+      return stats;
     });
   }
 

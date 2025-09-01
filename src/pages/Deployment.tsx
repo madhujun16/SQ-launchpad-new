@@ -40,6 +40,7 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
+import { formatDate, formatDateTime } from '@/lib/dateUtils';
 
 interface AssetDetail {
   id: string;
@@ -594,7 +595,7 @@ const Deployment = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-gray-500">Target Date</div>
-                    <div className="font-medium">{new Date(deployment.targetDate).toLocaleDateString()}</div>
+                    <div className="font-medium">{formatDate(deployment.targetDate)}</div>
                         </div>
                   <div>
                     <div className="text-gray-500">Total Cost</div>
@@ -625,11 +626,11 @@ const Deployment = () => {
                         </div>
               <div>
                 <div className="text-gray-500 text-sm">Start Date</div>
-                <div className="font-medium">{selectedDeployment ? new Date(selectedDeployment.startDate).toLocaleDateString() : ''}</div>
+                <div className="font-medium">{selectedDeployment ? formatDate(selectedDeployment.startDate) : ''}</div>
                       </div>
                       <div>
                 <div className="text-gray-500 text-sm">Target Date</div>
-                <div className="font-medium">{selectedDeployment ? new Date(selectedDeployment.targetDate).toLocaleDateString() : ''}</div>
+                <div className="font-medium">{selectedDeployment ? formatDate(selectedDeployment.targetDate) : ''}</div>
                             </div>
             </DialogDescription>
           </DialogHeader>
@@ -664,7 +665,7 @@ const Deployment = () => {
                           )}
                           {step.completedAt && (
                             <div className="text-sm text-gray-500 mt-1">
-                              Completed by {step.completedBy} on {new Date(step.completedAt).toLocaleDateString()}
+                              Completed by {step.completedBy} on {formatDate(step.completedAt)}
                       </div>
                     )}
                         </div>

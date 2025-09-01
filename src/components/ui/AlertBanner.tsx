@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Alert as AlertType } from '@/types/workflow';
+import { formatDateTime, formatDate } from '@/lib/dateUtils';
 import { 
   AlertCircle, 
   AlertTriangle, 
@@ -137,13 +138,13 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({
       <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
         <div className="flex items-center space-x-2">
           <Clock className="h-3 w-3" />
-          <span>{new Date(alert.createdAt).toLocaleString()}</span>
+          <span>{formatDateTime(alert.createdAt)}</span>
         </div>
         
         {alert.expiresAt && (
           <div className="flex items-center space-x-1">
             <span>Expires:</span>
-            <span>{new Date(alert.expiresAt).toLocaleDateString()}</span>
+            <span>{formatDate(alert.expiresAt)}</span>
           </div>
         )}
       </div>

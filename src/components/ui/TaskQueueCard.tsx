@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TaskQueue } from '@/types/workflow';
 import { Clock, AlertCircle, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { formatDateTime, formatDate } from '@/lib/dateUtils';
 
 interface TaskQueueCardProps {
   task: TaskQueue;
@@ -87,7 +88,7 @@ export const TaskQueueCard: React.FC<TaskQueueCardProps> = ({
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Calendar className="h-4 w-4" />
-              <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+              <span>Due: {formatDate(task.dueDate)}</span>
             </div>
             {task.siteId && (
               <Badge variant="outline" className="text-xs">

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Package, MapPin, User, Calendar } from 'lucide-react';
+import { formatDate } from '@/lib/dateUtils';
 
 interface SimpleInventoryItemDetailsProps {
   item?: {
@@ -65,7 +66,7 @@ export const SimpleInventoryItemDetails: React.FC<SimpleInventoryItemDetailsProp
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm">
-            Added {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown'}
+            Added {item.created_at ? formatDate(item.created_at) : 'Unknown'}
           </span>
         </div>
 

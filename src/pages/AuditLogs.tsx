@@ -19,6 +19,7 @@ import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { formatDateTime } from '@/lib/dateUtils';
 import { Loader } from '@/components/ui/loader';
 
 // Interfaces
@@ -333,7 +334,7 @@ export default function AuditLogs() {
                       <TableRow key={log.id} className="hover:bg-gray-50">
                         <TableCell>
                           <span className="text-sm text-gray-600">
-                            {new Date(log.created_at).toLocaleString()}
+                            {formatDateTime(log.created_at)}
                           </span>
                         </TableCell>
                         <TableCell>

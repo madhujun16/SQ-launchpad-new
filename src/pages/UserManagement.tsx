@@ -28,6 +28,7 @@ import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { formatDate } from '@/lib/dateUtils';
 import { PageLoader } from '@/components/ui/loader';
 
 // Interfaces
@@ -88,10 +89,18 @@ export default function UserManagement() {
     try {
       setLoading(true);
       
-      // Load users with their actual roles
+      // OPTIMIZED: Load all users with their roles in a single query using JOIN
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
-        .select('id, user_id, email, full_name, created_at, updated_at')
+        .select(`
+          id,
+          user_id,
+          email,
+          full_name,
+          created_at,
+          updated_at,
+          user_roles!inner(role)
+        `)
         .order('created_at', { ascending: false });
       
       if (usersError) {
@@ -102,52 +111,45 @@ export default function UserManagement() {
       }
 
       if (usersData && usersData.length > 0) {
-        // Fetch actual roles for each user from user_roles table
-        const usersWithRoles = await Promise.all(
-          usersData.map(async (user) => {
-            const { data: rolesData } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', user.user_id);
-            
-            return {
-              ...user,
-              user_roles: rolesData?.map(r => ({ role: r.role })) || []
-            };
-          })
-        );
+        // Transform the data to match the expected format
+        const usersWithRoles = usersData.map((user: any) => ({
+          id: user.id,
+          user_id: user.user_id,
+          email: user.email,
+          full_name: user.full_name,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+          user_roles: user.user_roles || []
+        }));
         
         setUsers(usersWithRoles);
+        
+        // Calculate user statistics from the loaded data
+        const stats = {
+          total_users: usersWithRoles.length,
+          admin_count: 0,
+          ops_manager_count: 0,
+          deployment_engineer_count: 0
+        };
+
+        usersWithRoles.forEach(user => {
+          user.user_roles.forEach((role: any) => {
+            if (role.role === 'admin') stats.admin_count++;
+            if (role.role === 'ops_manager') stats.ops_manager_count++;
+            if (role.role === 'deployment_engineer') stats.deployment_engineer_count++;
+          });
+        });
+
+        setUserStats(stats);
       } else {
         setUsers([]);
+        setUserStats({
+          total_users: 0,
+          admin_count: 0,
+          ops_manager_count: 0,
+          deployment_engineer_count: 0
+        });
       }
-
-      // Calculate user statistics from the loaded data
-      const stats = {
-        total_users: usersData?.length || 0,
-        admin_count: 0,
-        ops_manager_count: 0,
-        deployment_engineer_count: 0
-      };
-
-      if (usersData) {
-        for (const user of usersData) {
-          const { data: rolesData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', user.user_id);
-          
-          if (rolesData) {
-            rolesData.forEach(role => {
-              if (role.role === 'admin') stats.admin_count++;
-              if (role.role === 'ops_manager') stats.ops_manager_count++;
-              if (role.role === 'deployment_engineer') stats.deployment_engineer_count++;
-            });
-          }
-        }
-      }
-
-      setUserStats(stats);
     } catch (error) {
       console.error('Error loading users:', error);
       setError('Failed to load users');
@@ -508,7 +510,7 @@ export default function UserManagement() {
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-gray-400" />
-                            <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                            <span>{formatDate(user.created_at)}</span>
                           </div>
                         </TableCell>
                         <TableCell>

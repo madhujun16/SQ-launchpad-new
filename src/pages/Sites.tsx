@@ -58,6 +58,7 @@ import { toast } from 'sonner';
 import { PageLoader } from '@/components/ui/loader';
 import { getStatusColor, getStatusDisplayName } from '@/lib/siteTypes';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { formatDate } from '@/lib/dateUtils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
@@ -438,7 +439,12 @@ const Sites = () => {
                             {getStatusDisplayName(site.status)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{site.suggested_go_live || site.target_live_date || 'N/A'}</TableCell>
+                        <TableCell>
+                          {site.suggested_go_live || site.target_live_date 
+                            ? formatDate(site.suggested_go_live || site.target_live_date)
+                            : 'N/A'
+                          }
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</div>

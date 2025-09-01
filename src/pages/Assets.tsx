@@ -48,6 +48,7 @@ import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { formatDate } from '@/lib/dateUtils';
 
 interface Asset {
   id: string;
@@ -522,7 +523,7 @@ const Assets = () => {
                     <div className="font-medium">£{asset.cost.toLocaleString()}</div>
                     {asset.expiry_date && (
                       <div className="text-xs text-gray-500">
-                        Expires: {new Date(asset.expiry_date).toLocaleDateString()}
+                        Expires: {formatDate(asset.expiry_date)}
                       </div>
                     )}
                   </TableCell>

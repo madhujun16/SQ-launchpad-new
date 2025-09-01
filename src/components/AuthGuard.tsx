@@ -32,7 +32,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Show loading state while auth is initializing (but with timeout)
   if (loading && !authTimeout) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+      <div className="min-h-screen flex items-center justify-center auth-loading-background">
         <div className="text-center">
           <Loader size="lg" className="text-white" />
           <p className="text-white mt-4">Authenticating...</p>
@@ -45,7 +45,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // If auth times out, show a fallback UI
   if (authTimeout && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+      <div className="min-h-screen flex items-center justify-center auth-loading-background">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Authentication Timeout</h2>

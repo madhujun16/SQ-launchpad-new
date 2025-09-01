@@ -48,7 +48,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-green-900">
+      <div className="min-h-screen flex items-center justify-center auth-loading-background">
         <Loader size="lg" />
       </div>
     );

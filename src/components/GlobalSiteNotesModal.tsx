@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { SiteStudyService } from '@/services/siteStudyService';
 import { toast } from 'sonner';
 import { Loader } from './ui/loader';
+import { formatDateTime } from '@/lib/dateUtils';
 
 interface SiteNote {
   id: string;
@@ -274,7 +275,7 @@ export function GlobalSiteNotesModal({
                           </div>
                           <div className="flex items-center gap-1 text-sm text-gray-500">
                             <Clock className="h-3 w-3" />
-                            {new Date(note.timestamp).toLocaleString()}
+                            {formatDateTime(note.timestamp)}
                           </div>
                         </div>
                         <Button

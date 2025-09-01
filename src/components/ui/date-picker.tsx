@@ -1,6 +1,6 @@
 import React from 'react';
-import { format } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
+import { formatDate } from '@/lib/dateUtils';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -50,7 +50,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           <Input 
             readOnly
             placeholder={placeholder}
-            value={dateValue ? format(dateValue, 'PPP') : ''}
+            value={dateValue ? formatDate(dateValue) : ''}
             className={`w-full cursor-pointer ${disabled ? "bg-gray-50" : "bg-white"}`}
             disabled={disabled}
           />

@@ -47,6 +47,24 @@ export const OTPInput: React.FC<OTPInputProps> = ({
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (disabled) return;
+
+    const pastedData = e.clipboardData.getData('text/plain');
+    const digits = pastedData.replace(/\D/g, '').slice(0, length);
+    
+    if (digits.length > 0) {
+      // Fill the value with the pasted digits, padding with empty strings if needed
+      const newValue = digits.padEnd(length, '').split('');
+      onChange(newValue.join(''));
+      
+      // Focus the next empty input or the last input if all are filled
+      const nextIndex = Math.min(digits.length, length - 1);
+      inputRefs.current[nextIndex]?.focus();
+    }
+  };
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (disabled) return;
 
@@ -118,6 +136,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
           onKeyDown={(e) => handleKeyDown(index, e)}
           onFocus={() => handleFocus(index)}
           onBlur={handleBlur}
+          onPaste={handlePaste}
           disabled={disabled}
           className={getInputClassName(index)}
           autoComplete="one-time-code"

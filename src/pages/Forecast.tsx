@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDate, formatDateTime } from '@/lib/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -461,11 +462,11 @@ const Forecast: React.FC = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Start:</span>
-                        <span className="ml-2 font-medium">{new Date(project.startDate).toLocaleDateString()}</span>
+                        <span className="ml-2 font-medium">{formatDate(project.startDate)}</span>
                       </div>
                       <div>
                         <span className="text-gray-600">Target:</span>
-                        <span className="ml-2 font-medium">{new Date(project.targetDate).toLocaleDateString()}</span>
+                        <span className="ml-2 font-medium">{formatDate(project.targetDate)}</span>
                       </div>
                       <div>
                         <span className="text-gray-600">Team:</span>

@@ -91,16 +91,44 @@ const Auth = () => {
     setVerifying(true);
     setError('');
 
-    const { error } = await verifyOtp(email, otp);
+    try {
+      const { error } = await verifyOtp(email, otp);
 
-    if (error) {
-      setError('Incorrect code. Please try again.');
+      if (error) {
+        setError('Incorrect code. Please try again.');
+        setVerifying(false);
+      } else {
+        toast.success('Login successful');
+        // Don't navigate here - let the useEffect handle it
+        // The user state change will trigger navigation
+      }
+    } catch (err) {
+      console.error('OTP verification error:', err);
+      setError('An unexpected error occurred. Please try again.');
       setVerifying(false);
-    } else {
-      toast.success('Login successful');
-      navigate('/dashboard');
     }
   };
+
+  // Reset verifying state if user changes
+  useEffect(() => {
+    if (user) {
+      setVerifying(false);
+      setOtp('');
+      setError('');
+    }
+  }, [user]);
+
+  // Add timeout for verification to prevent getting stuck
+  useEffect(() => {
+    if (verifying) {
+      const timeoutId = setTimeout(() => {
+        setVerifying(false);
+        setError('Verification timeout. Please try again.');
+      }, 30000); // 30 second timeout
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [verifying]);
 
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;

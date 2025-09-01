@@ -149,31 +149,41 @@ export default function OrganizationsManagement() {
       }
 
         if (orgsData && orgsData.length > 0) {
-        // Get site counts for each organization
-        const orgsWithSiteCounts = await Promise.all(
-          orgsData.map(async (org: any) => {
-            const { count: siteCount } = await supabase
-              .from('sites')
-              .select('*', { count: 'exact', head: true })
-              .eq('organization_id', org.id);
-            
-            return {
-            id: org.id,
-            name: org.name,
-            description: org.description || '',
-            sector: org.sector || '',
-            unit_code: org.unit_code || '',
-              logo_url: org.logo_url || null,
-            created_by: org.created_by || 'system',
-            created_on: org.created_on || org.created_at || new Date().toISOString(),
-              updated_at: org.updated_at || new Date().toISOString(),
-              is_archived: org.is_archived || false,
-              archived_at: org.archived_at || null,
-              archive_reason: org.archive_reason || null,
-              mapped_sites_count: siteCount || 0
-            };
-          })
-        );
+        // OPTIMIZED: Get site counts for all organizations in a single aggregated query
+        const { data: siteCounts, error: siteCountsError } = await supabase
+          .from('sites')
+          .select('organization_id')
+          .not('organization_id', 'is', null);
+
+        if (siteCountsError) {
+          console.error('Error fetching site counts:', siteCountsError);
+        }
+
+        // Create a map of organization_id -> site count
+        const siteCountMap = new Map<string, number>();
+        if (siteCounts) {
+          siteCounts.forEach(site => {
+            const orgId = site.organization_id;
+            siteCountMap.set(orgId, (siteCountMap.get(orgId) || 0) + 1);
+          });
+        }
+
+        // Transform organizations with their site counts
+        const orgsWithSiteCounts = orgsData.map((org: any) => ({
+          id: org.id,
+          name: org.name,
+          description: org.description || '',
+          sector: org.sector || '',
+          unit_code: org.unit_code || '',
+          logo_url: org.logo_url || null,
+          created_by: org.created_by || 'system',
+          created_on: org.created_on || org.created_at || new Date().toISOString(),
+          updated_at: org.updated_at || new Date().toISOString(),
+          is_archived: org.is_archived || false,
+          archived_at: org.archived_at || null,
+          archive_reason: org.archive_reason || null,
+          mapped_sites_count: siteCountMap.get(org.id) || 0
+        }));
         
         setOrganizations(orgsWithSiteCounts);
         } else {

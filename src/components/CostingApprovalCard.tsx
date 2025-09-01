@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { CostingApproval, CostingItem } from '@/types/costing';
 import { CostingService } from '@/services/costingService';
+import { formatDateTime } from '@/lib/dateUtils';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 
@@ -113,13 +114,7 @@ export const CostingApprovalCard: React.FC<CostingApprovalCardProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateTime(dateString);
   };
 
   return (

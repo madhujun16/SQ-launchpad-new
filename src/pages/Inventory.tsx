@@ -45,6 +45,7 @@ import { SimpleInventoryFiltersPanel } from '@/components/inventory/SimpleInvent
 import { InventoryItem } from '@/types/inventory';
 import { inventoryService } from '@/services/inventoryService';
 import { INVENTORY_TYPES, GROUP_TYPES, INVENTORY_STATUSES } from '@/types/inventory';
+import { formatDate } from '@/lib/dateUtils';
 
 const Inventory: React.FC = () => {
   const { profile } = useAuth();
@@ -392,7 +393,7 @@ const Inventory: React.FC = () => {
                     {item.site?.name || '-'}
                   </TableCell>
                   <TableCell>
-                    {new Date(item.created_at).toLocaleDateString()}
+                    {formatDate(item.created_at)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
