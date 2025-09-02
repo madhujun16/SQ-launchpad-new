@@ -470,7 +470,7 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
     foodCourt: 'ASDA Redditch',
     unitCode: 'AR004',
     sector: 'Eurest',
-    goLiveDate: '2025-01-15',
+    goLiveDate: '2025-11-15',
     priority: 'high',
     riskLevel: 'medium',
     criticality: 'high',
@@ -752,8 +752,8 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
   if (['deployed', 'live'].includes(status)) {
     baseSite.deployment = {
       status: 'completed',
-      startDate: '2025-01-08',
-      endDate: '2025-01-12',
+      startDate: '2025-11-08',
+      endDate: '2025-11-12',
       assignedEngineer: 'Alice Brown',
       notes: 'All hardware installed and software configured. Initial testing passed. Site ready for go-live.',
       progress: {
@@ -763,18 +763,18 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
         testing: 'completed'
       },
       timeline: {
-        hardwareDelivery: '2025-01-05',
-        installationStart: '2025-01-08',
-        installationEnd: '2025-01-10',
-        testingStart: '2025-01-11',
-        testingEnd: '2025-01-12',
-        goLiveDate: '2025-01-15'
+        hardwareDelivery: '2025-11-05',
+        installationStart: '2025-11-08',
+        installationEnd: '2025-11-10',
+        testingStart: '2025-11-11',
+        testingEnd: '2025-11-12',
+        goLiveDate: '2025-11-15'
       }
     };
   } else if (status === 'in_progress' as UnifiedSiteStatus) {
     baseSite.deployment = {
       status: 'in_progress',
-      startDate: '2025-01-08',
+      startDate: '2025-11-08',
       assignedEngineer: 'Alice Brown',
       notes: 'Deployment currently underway. POS terminals installed, working on kiosks.',
       progress: {
@@ -784,12 +784,12 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
         testing: 'pending'
       },
       timeline: {
-        hardwareDelivery: '2025-01-05',
-        installationStart: '2025-01-08',
-        installationEnd: '2025-01-10',
-        testingStart: '2025-01-11',
-        testingEnd: '2025-01-12',
-        goLiveDate: '2025-01-15'
+        hardwareDelivery: '2025-11-05',
+        installationStart: '2025-11-08',
+        installationEnd: '2025-11-10',
+        testingStart: '2025-11-11',
+        testingEnd: '2025-11-12',
+        goLiveDate: '2025-11-15'
       }
     };
   }
@@ -798,7 +798,7 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
   if (status === 'live') {
     baseSite.goLive = {
       status: 'live',
-      date: '2025-01-15',
+      date: '2025-11-15',
       signedOffBy: 'Operations Director',
       notes: 'Site successfully launched. All systems operational. Staff training completed.',
       checklist: {
@@ -808,7 +808,7 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
         finalTesting: 'completed'
       },
       timeline: {
-        targetGoLiveDate: '2025-01-15',
+        targetGoLiveDate: '2025-11-15',
         finalTesting: '2 days before',
         staffTraining: '1 week before',
         systemHandover: 'Go-Live day'
@@ -2749,67 +2749,6 @@ const SiteDetail = () => {
                             </div>
                           </div>
                           <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Go-Live Timeline */}
-              <Card className="shadow-sm border border-gray-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Calendar className="mr-2 h-5 w-5 text-purple-600" />
-                    Go-Live Timeline
-                  </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Key dates and milestones for go-live
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Key Milestones</h4>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <CalendarDays className="h-4 w-4 text-yellow-600" />
-                            <div>
-                              <p className="font-medium">Target Go-Live Date</p>
-                              <p className="text-sm text-gray-600">{site?.goLive?.timeline?.targetGoLiveDate || "2025-09-01"}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <ListChecks className="h-4 w-4 text-purple-600" />
-                            <div>
-                              <p className="font-medium">Final Testing</p>
-                              <p className="text-sm text-gray-600">{site?.goLive?.timeline?.finalTesting || "2 days before"}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <Users className="h-4 w-4 text-blue-600" />
-                            <div>
-                              <p className="font-medium">Staff Training</p>
-                              <p className="text-sm text-gray-600">{site?.goLive?.timeline?.staffTraining || "1 week before"}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <Handshake className="h-4 w-4 text-green-600" />
-                            <div>
-                              <p className="font-medium">System Handover</p>
-                              <p className="text-sm text-gray-600">{site?.goLive?.timeline?.systemHandover || "Go-Live day"}</p>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
