@@ -1905,7 +1905,7 @@ const SiteDetail = () => {
                         <div className="flex justify-between">
                           <span>Contingency (15%)</span>
                           <span>£{site?.scoping?.costSummary?.contingencyCost?.toLocaleString() || '0'}</span>
-                        </div>
+                      </div>
                       <Separator />
                       <div className="flex justify-between font-medium">
                         <span>Total CAPEX</span>
@@ -1959,17 +1959,17 @@ const SiteDetail = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Approval</h2>
-                <p className="text-gray-600 mt-1">Review and final approval for site progression</p>
+                <h2 className="text-2xl font-bold text-gray-900">Hardware & Software Approval</h2>
+                <p className="text-gray-600 mt-1">Ops Manager approval for scoped hardware and software to proceed with procurement</p>
               </div>
               <div className="flex space-x-2">
                 <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit Approval
+                  <Download className="h-4 w-4 mr-1" />
+                  Export Approval
                 </Button>
-                <Button size="sm">
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Mark as Completed
+                <Button variant="outline" size="sm">
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Send Notification
                 </Button>
               </div>
             </div>
@@ -1980,10 +1980,10 @@ const SiteDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Handshake className="mr-2 h-5 w-5 text-indigo-600" />
-                    Approval Status
+                    Approval Decision
                   </CardTitle>
                   <CardDescription className="text-gray-600">
-                    Current status of the site approval process
+                    Final decision from the assigned Ops Manager
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1993,103 +1993,65 @@ const SiteDetail = () => {
                         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                         <div>
                           <p className="font-semibold text-green-800">Approval Status</p>
-                          <p className="text-sm text-green-600">Ready for review</p>
+                          <p className="text-sm text-green-600">
+                            {site?.approval?.status === 'approved' ? 'Approved - Ready for Procurement' : 
+                             site?.approval?.status === 'changes_requested' ? 'Changes Requested - Review Required' :
+                             site?.approval?.status === 'rejected' ? 'Rejected - Project On Hold' : 'Pending Review'}
+                          </p>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 border border-green-200">
+                      <Badge className={`${
+                        site?.approval?.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                        site?.approval?.status === 'changes_requested' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                        site?.approval?.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                        'bg-gray-100 text-gray-800 border-gray-200'
+                      } border`}>
                         {site?.approval?.status ? site.approval.status.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : 'Pending'}
                       </Badge>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="requestedDate" className="text-sm font-medium text-gray-700">Requested Date</Label>
+                        <Label className="text-sm font-medium text-gray-700">Assigned Ops Manager</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <p className="text-sm text-gray-900 font-medium">{site?.approval?.approverDetails?.name || 'Sarah Johnson'}</p>
+                          <p className="text-xs text-gray-600">{site?.approval?.approverDetails?.role || 'Operations Director'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Department</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <p className="text-sm text-gray-900">{site?.approval?.approverDetails?.department || 'Operations'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Requested Date</Label>
                         <div className="p-3 bg-gray-50 rounded-lg border">
                           <p className="text-sm text-gray-900">{site?.approval?.requestedAt ? new Date(site.approval.requestedAt).toLocaleDateString() : 'Not specified'}</p>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="approvedDate" className="text-sm font-medium text-gray-700">Approved/Rejected Date</Label>
+                        <Label className="text-sm font-medium text-gray-700">Decision Date</Label>
                         <div className="p-3 bg-gray-50 rounded-lg border">
                           <p className="text-sm text-gray-900">{site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleDateString() : 'Pending'}</p>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="approvedBy" className="text-sm font-medium text-gray-700">Approved/Rejected By</Label>
-                        <div className="p-3 bg-gray-50 rounded-lg border">
-                          <p className="text-sm text-gray-900">{site?.approval?.approvedBy || 'Not specified'}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="approvalRole" className="text-sm font-medium text-gray-700">Approver Role</Label>
-                        <div className="p-3 bg-gray-50 rounded-lg border">
-                          <p className="text-sm text-gray-900">{site?.approval?.approverDetails?.role || 'Operations Director'}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="approvalAuthority" className="text-sm font-medium text-gray-700">Approval Authority</Label>
-                        <div className="p-3 bg-gray-50 rounded-lg border">
-                          <Badge className="bg-blue-100 text-blue-800">Final Decision</Badge>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="responseTime" className="text-sm font-medium text-gray-700">Response Time</Label>
+                        <Label className="text-sm font-medium text-gray-700">Response Time</Label>
                         <div className="p-3 bg-gray-50 rounded-lg border">
                           <Badge className="bg-green-100 text-green-800">Within 48h</Badge>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Assign Approver Section */}
-                    <div className="border-t pt-6">
-                      <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Assign Approver</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="approverName" className="text-sm font-medium text-gray-700">Approver Name</Label>
-                          <Input 
-                            id="approverName"
-                            placeholder="Enter approver name"
-                            value={site?.approval?.approverDetails?.name || 'Sarah Johnson'}
-                            className="bg-white"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="approverRole" className="text-sm font-medium text-gray-700">Approver Role</Label>
-                          <Input 
-                            id="approverRole"
-                            placeholder="Enter approver role"
-                            value={site?.approval?.approverDetails?.role || 'Operations Director'}
-                            className="bg-white"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="approverDepartment" className="text-sm font-medium text-gray-700">Department</Label>
-                          <Input 
-                            id="approverDepartment"
-                            placeholder="Enter department"
-                            value={site?.approval?.approverDetails?.department || 'Operations'}
-                            className="bg-white"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="reviewLevel" className="text-sm font-medium text-gray-700">Review Level</Label>
-                          <Select value="management">
-                            <SelectTrigger className="bg-white">
-                              <SelectValue placeholder="Select review level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="management">Management</SelectItem>
-                              <SelectItem value="senior">Senior Management</SelectItem>
-                              <SelectItem value="executive">Executive</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Next Action</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <p className="text-sm text-gray-900">
+                            {site?.approval?.status === 'approved' ? 'Proceed to Procurement' : 
+                             site?.approval?.status === 'changes_requested' ? 'Review Changes & Resubmit' :
+                             site?.approval?.status === 'rejected' ? 'Project On Hold' : 'Awaiting Decision'}
+                          </p>
                         </div>
                       </div>
-                      <div className="mt-4">
-                        <Button variant="outline" size="sm">
-                          <User className="h-4 w-4 mr-1" />
-                          Assign Approver
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -2097,15 +2059,15 @@ const SiteDetail = () => {
               </Card>
             </div>
 
-            {/* Approval Comments */}
+            {/* Approval Comments & Feedback */}
             <Card className="shadow-sm border border-gray-200">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MessageSquare className="mr-2 h-5 w-5 text-purple-600" />
-                  Approval Comments
+                  Approval Comments & Feedback
                 </CardTitle>
                 <CardDescription className="text-gray-600">
-                  Feedback and reasons for approval or rejection
+                  Detailed feedback from the Ops Manager
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -2116,58 +2078,105 @@ const SiteDetail = () => {
                         <MessageSquare className="h-4 w-4 text-purple-600" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-purple-900 mb-2">Review Comments</p>
-                        <div className="p-3 bg-white rounded-lg border">
-                          <p className="text-sm text-gray-800">
-                            {site?.approval?.comments || 'All requirements met. Budget approved. Proceed with procurement. Site infrastructure assessment completed successfully.'}
-                          </p>
-                        </div>
+                        <p className="text-sm font-medium text-purple-900 mb-2">Ops Manager Feedback</p>
+                        <p className="text-sm text-purple-800 leading-relaxed">
+                          {site?.approval?.comments || 'All requirements met. Budget approved. Proceed with procurement. Hardware specifications are suitable for the site requirements.'}
+                        </p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-800">Budget Approved</span>
+                  {/* Changes Requested Section - Only show if changes were requested */}
+                  {site?.approval?.status === 'changes_requested' && (
+                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-yellow-900 mb-2">Changes Required</p>
+                          <p className="text-sm text-yellow-800 leading-relaxed">
+                            {site?.approval?.comments || 'Please review hardware quantities for kiosks. Requesting 2 more units.'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-green-700">All financial requirements met</p>
                     </div>
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <CheckCircle className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">Technical Review</span>
+                  )}
+
+                  {/* Rejection Reason - Only show if rejected */}
+                  {site?.approval?.status === 'rejected' && (
+                    <div className="p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <X className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-red-900 mb-2">Rejection Reason</p>
+                          <p className="text-sm text-red-800 leading-relaxed">
+                            {site?.approval?.comments || 'Budget constraints. Project on hold until next quarter.'}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-blue-700">Infrastructure assessment passed</p>
                     </div>
-                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <CheckCircle className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm font-medium text-purple-800">Timeline Approved</span>
-                      </div>
-                      <p className="text-xs text-purple-700">Deployment schedule confirmed</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Approval Actions */}
-            <div className="flex justify-end space-x-3">
-              <Button variant="outline" className="border-gray-300 hover:border-gray-400">
-                <Download className="h-4 w-4 mr-2" />
-                Export Approval Report
-              </Button>
-              <Button variant="outline" className="border-blue-300 hover:border-blue-400">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Send Approval Notification
-              </Button>
-              <Button className="bg-green-600 hover:bg-green-700">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Approve Site
-              </Button>
-            </div>
+            {/* Approved Items Summary */}
+            {site?.approval?.status === 'approved' && (
+              <Card className="shadow-sm border border-gray-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5 text-green-600" />
+                    Approved Items Summary
+                  </CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Hardware and software approved for procurement
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium text-gray-900 border-b pb-2 mb-3">Hardware Items</h4>
+                        <div className="space-y-2">
+                          {site?.scoping?.selectedHardware?.map((item, index) => (
+                            <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                              <span className="text-sm text-gray-700">{item.id}</span>
+                              <Badge variant="outline" className="text-xs">Qty: {item.quantity}</Badge>
+                            </div>
+                          )) || (
+                            <p className="text-sm text-gray-500">No hardware items selected</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 border-b pb-2 mb-3">Software Modules</h4>
+                        <div className="space-y-2">
+                          {site?.scoping?.selectedSoftware?.map((softwareId, index) => (
+                            <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                              <span className="text-sm text-gray-700">{softwareId}</span>
+                              <Badge variant="outline" className="text-xs">Approved</Badge>
+                            </div>
+                          )) || (
+                            <p className="text-sm text-gray-500">No software modules selected</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-900">Total Approved Investment</span>
+                        <span className="text-lg font-bold text-green-600">
+                          £{site?.scoping?.costSummary?.totalInvestment?.toLocaleString() || '0'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         );
 
@@ -2853,7 +2862,7 @@ const SiteDetail = () => {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
             {site && (
               <Badge className={`${getStatusColor(site.status)}`}>
                 {getStatusDisplayName(site.status)}
