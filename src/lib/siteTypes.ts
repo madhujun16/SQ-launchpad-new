@@ -180,33 +180,41 @@ export const createStepperSteps = (currentStatus: UnifiedSiteStatus): StepperSte
 
 export const getStatusColor = (status: string) => {
   switch (status) {
+    // Green: Live
     case 'live':
-      return 'bg-green-500';
-    case 'deployed':
-      return 'bg-green-600';
-    case 'procurement_done':
-      return 'bg-blue-500';
-    case 'approved':
-      return 'bg-purple-500';
-    case 'scoping_done':
-      return 'bg-indigo-500';
-    case 'site_study_done':
-      return 'bg-yellow-500';
-    case 'site_created':
-      return 'bg-gray-500';
-    case 'archived':
-      return 'bg-gray-400';
-    // Legacy status mappings for backward compatibility
+      return 'bg-green-100 text-green-800';
+    
+    // Gray: Created, Pending
     case 'created':
-      return 'bg-gray-500';
+    case 'site_created':
+    case 'pending':
+      return 'bg-gray-100 text-gray-800';
+    
+    // Yellow: In Progress
+    case 'in_progress':
+    case 'site_study_done':
     case 'study_completed':
-      return 'bg-yellow-500';
-    case 'hardware_scoped':
-      return 'bg-indigo-500';
+      return 'bg-yellow-100 text-yellow-800';
+    
+    // Red: Blocked, On Hold, Rejected
+    case 'blocked':
+    case 'on_hold':
+    case 'rejected':
+      return 'bg-red-100 text-red-800';
+    
+    // Blue: Procurement Done, Deployed, Approved
+    case 'procurement_done':
     case 'procurement':
-      return 'bg-blue-500';
+    case 'deployed':
+    case 'approved':
+    case 'scoping_done':
+    case 'hardware_scoped':
+      return 'bg-blue-100 text-blue-800';
+    
+    // Default gray for unknown statuses
+    case 'archived':
     default:
-      return 'bg-gray-500';
+      return 'bg-gray-100 text-gray-800';
   }
 };
 

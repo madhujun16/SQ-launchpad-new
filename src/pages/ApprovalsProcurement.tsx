@@ -338,11 +338,24 @@ const Approvals = () => {
    // - low: Site opening > 2 months, low priority
    const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'changes_requested': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      // Green: Live
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      
+      // Gray: Created, Pending
+      case 'pending':
+        return 'bg-gray-100 text-gray-800';
+      
+      // Red: Blocked, On Hold, Rejected
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      
+      // Blue: Procurement Done, Deployed, Approved (changes_requested maps to blue)
+      case 'changes_requested':
+        return 'bg-blue-100 text-blue-800';
+      
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 

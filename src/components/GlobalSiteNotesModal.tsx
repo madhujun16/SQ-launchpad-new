@@ -50,13 +50,6 @@ export function GlobalSiteNotesModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load existing notes when modal opens
-  useEffect(() => {
-    if (isOpen && siteId) {
-      loadNotes();
-    }
-  }, [isOpen, siteId, loadNotes]);
-
   const loadNotes = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -97,6 +90,13 @@ export function GlobalSiteNotesModal({
       setIsLoading(false);
     }
   }, [siteId]);
+
+  // Load existing notes when modal opens
+  useEffect(() => {
+    if (isOpen && siteId) {
+      loadNotes();
+    }
+  }, [isOpen, siteId, loadNotes]);
 
   const handleAddNote = async () => {
     if (!newNote.trim()) {

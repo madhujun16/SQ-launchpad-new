@@ -347,15 +347,37 @@ const Forecast: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'live': return 'bg-green-100 text-green-800';
-      case 'archived': return 'bg-gray-100 text-gray-800';
-      case 'deployed': return 'bg-blue-100 text-blue-800';
-      case 'procurement_done': return 'bg-purple-100 text-purple-800';
-      case 'approved': return 'bg-orange-100 text-orange-800';
-      case 'scoping_done': return 'bg-yellow-100 text-yellow-800';
-      case 'site_study_done': return 'bg-indigo-100 text-indigo-800';
-      case 'Created': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      // Green: Live
+      case 'live': 
+        return 'bg-green-100 text-green-800';
+      
+      // Gray: Created, Pending
+      case 'Created':
+      case 'created':
+      case 'pending':
+      case 'archived': 
+        return 'bg-gray-100 text-gray-800';
+      
+      // Yellow: In Progress
+      case 'in_progress':
+      case 'site_study_done':
+        return 'bg-yellow-100 text-yellow-800';
+      
+      // Red: Blocked, On Hold, Rejected
+      case 'blocked':
+      case 'on_hold':
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      
+      // Blue: Procurement Done, Deployed, Approved
+      case 'procurement_done':
+      case 'deployed':
+      case 'approved':
+      case 'scoping_done':
+        return 'bg-blue-100 text-blue-800';
+      
+      default: 
+        return 'bg-gray-100 text-gray-800';
     }
   };
 

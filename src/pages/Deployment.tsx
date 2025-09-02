@@ -311,11 +311,28 @@ const Deployment = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-orange-100 text-orange-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      // Green: Live
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      
+      // Gray: Created, Pending
+      case 'scheduled':
+        return 'bg-gray-100 text-gray-800';
+      
+      // Yellow: In Progress
+      case 'in_progress':
+        return 'bg-yellow-100 text-yellow-800';
+      
+      // Red: Blocked, On Hold, Rejected
+      case 'on_hold':
+        return 'bg-red-100 text-red-800';
+      
+      // Blue: Procurement Done, Deployed, Approved
+      case 'deployed':
+        return 'bg-blue-100 text-blue-800';
+      
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 

@@ -45,11 +45,11 @@ const MOCK_METRICS = [
     color: 'text-green-600'
   },
   {
-    title: 'Platform Health Score',
-    value: '94%',
-    change: '+2% this week',
-    icon: BarChart3,
-    color: 'text-purple-600'
+    title: 'Approval Requests Pending',
+    value: '4',
+    change: '+2 today',
+    icon: AlertTriangle,
+    color: 'text-red-600'
   }
 ];
 
@@ -118,14 +118,22 @@ const Dashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      // Green: Live
       case 'approved':
         return 'bg-green-100 text-green-800';
+      
+      // Gray: Created, Pending
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-gray-100 text-gray-800';
+      
+      // Red: Blocked, On Hold, Rejected
       case 'rejected':
         return 'bg-red-100 text-red-800';
+      
+      // Blue: Procurement Done, Deployed, Approved
       case 'procurement':
         return 'bg-blue-100 text-blue-800';
+      
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -203,12 +211,6 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Success Rate</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_FINANCIAL_DATA.deploymentSuccessRate}%
-                  </p>
-                </div>
-                <div>
                   <p className="text-sm text-gray-600">Cost per Site</p>
                   <p className="text-2xl font-bold text-gray-900">
                     £{MOCK_FINANCIAL_DATA.costPerSite.toLocaleString()}
@@ -231,13 +233,7 @@ const Dashboard = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Approval Requests</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.approvalRequests}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Avg Response Time</p>
+                  <p className="text-sm text-gray-600">Average Response Time</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {MOCK_PLATFORM_DATA.avgResponseTime}
                   </p>
