@@ -96,7 +96,9 @@ const MOCK_FINANCIAL_DATA = {
   monthlyOPEX: 2558,
   deploymentSuccessRate: 87.5,
   costPerSite: 23212,
-  totalSites: 8
+  totalSites: 8,
+  budgetUtilization: 78.5,
+  resourceUtilization: 92.3
 };
 
 // Mock user role - in real app this would come from context
@@ -216,6 +218,12 @@ const Dashboard = () => {
                     £{MOCK_FINANCIAL_DATA.costPerSite.toLocaleString()}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm text-gray-600">Budget Utilization</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {MOCK_FINANCIAL_DATA.budgetUtilization}%
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -248,6 +256,12 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-600">Total Assets</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {MOCK_PLATFORM_DATA.totalAssets}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Resource Utilization</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {MOCK_FINANCIAL_DATA.resourceUtilization}%
                   </p>
                 </div>
               </div>

@@ -993,6 +993,8 @@ const SiteDetail = () => {
 
     return steps.map((step, index) => {
       let status: 'completed' | 'current' | 'pending' | 'blocked' = 'pending';
+      
+      // Determine step status based on current site status
       if (index < currentStepIndex) {
         status = 'completed';
       } else if (index === currentStepIndex) {
@@ -1002,7 +1004,68 @@ const SiteDetail = () => {
           status = 'current';
         }
       }
-      return { ...step, status };
+      
+      // Enhanced status determination based on actual data availability
+      const enhancedStep = { ...step, status };
+      
+      // Add specific status indicators based on site data
+      switch (index) {
+        case 0: // Create Site
+          if (site?.siteCreation) {
+            enhancedStep.status = 'completed';
+          }
+          break;
+        case 1: // Site Study
+          if (site?.siteStudy) {
+            enhancedStep.status = 'completed';
+          } else if (index === currentStepIndex) {
+            enhancedStep.status = 'current';
+          }
+          break;
+        case 2: // Scoping
+          if (site?.scoping) {
+            enhancedStep.status = 'completed';
+          } else if (index === currentStepIndex) {
+            enhancedStep.status = 'current';
+          }
+          break;
+        case 3: // Approval
+          if (site?.approval?.status === 'approved') {
+            enhancedStep.status = 'completed';
+          } else if (site?.approval?.status === 'rejected' || site?.approval?.status === 'changes_requested') {
+            enhancedStep.status = 'blocked';
+          } else if (index === currentStepIndex) {
+            enhancedStep.status = 'current';
+          }
+          break;
+        case 4: // Procurement
+          if (site?.procurement?.status === 'delivered') {
+            enhancedStep.status = 'completed';
+          } else if (site?.procurement?.status === 'ordered') {
+            enhancedStep.status = 'current';
+          } else if (index === currentStepIndex) {
+            enhancedStep.status = 'current';
+          }
+          break;
+        case 5: // Deployment
+          if (site?.deployment?.status === 'completed') {
+            enhancedStep.status = 'completed';
+          } else if (site?.deployment?.status === 'in_progress') {
+            enhancedStep.status = 'current';
+          } else if (index === currentStepIndex) {
+            enhancedStep.status = 'current';
+          }
+          break;
+        case 6: // Go Live
+          if (site?.goLive?.status === 'live') {
+            enhancedStep.status = 'completed';
+          } else if (index === currentStepIndex) {
+            enhancedStep.status = 'current';
+          }
+          break;
+      }
+      
+      return enhancedStep;
     });
   };
 
@@ -1025,6 +1088,64 @@ const SiteDetail = () => {
       case 5: return <Truck className="h-5 w-5" />; // Deployment
       case 6: return <CheckCircle className="h-5 w-5" />; // Go Live
       default: return <FileText className="h-5 w-5" />;
+    }
+  };
+
+  // Function to get detailed step status information
+  const getStepStatusInfo = (index: number): string => {
+    switch (index) {
+      case 0: // Create Site
+        if (site?.siteCreation) {
+          return `Site created on ${site.lastUpdated}. Contact: ${site.siteCreation.contactInfo.unitManagerName}`;
+        }
+        return 'Site creation pending';
+      case 1: // Site Study
+        if (site?.siteStudy) {
+          return `Study completed. ${site.siteStudy.staffCapacity.employeeStrength} employees, ${site.siteStudy.staffCapacity.seatingCapacity} seats`;
+        }
+        return 'Site study pending';
+      case 2: // Scoping
+        if (site?.scoping) {
+          const totalCost = site.scoping.costSummary?.totalInvestment || 0;
+          return `Scoping approved. Total investment: £${totalCost.toLocaleString()}`;
+        }
+        return 'Scoping pending';
+      case 3: // Approval
+        if (site?.approval) {
+          if (site.approval.status === 'approved') {
+            return `Approved by ${site.approval.approvedBy} on ${new Date(site.approval.approvedAt).toLocaleDateString()}`;
+          } else if (site.approval.status === 'rejected') {
+            return `Rejected: ${site.approval.comments}`;
+          } else if (site.approval.status === 'changes_requested') {
+            return `Changes requested: ${site.approval.comments}`;
+          }
+        }
+        return 'Approval pending';
+      case 4: // Procurement
+        if (site?.procurement) {
+          if (site.procurement.status === 'delivered') {
+            return `All items delivered. ${site.procurement.summary.completed} items completed`;
+          } else if (site.procurement.status === 'ordered') {
+            return `Items ordered. ${site.procurement.summary.inProgress} items in progress`;
+          }
+        }
+        return 'Procurement pending';
+      case 5: // Deployment
+        if (site?.deployment) {
+          if (site.deployment.status === 'completed') {
+            return `Deployment completed on ${site.deployment.endDate}`;
+          } else if (site.deployment.status === 'in_progress') {
+            return `Deployment ${site.deployment.progress.overallProgress}% complete`;
+          }
+        }
+        return 'Deployment pending';
+      case 6: // Go Live
+        if (site?.goLive) {
+          return `Site live since ${site.goLive.date}. All systems operational`;
+        }
+        return 'Go live pending';
+      default:
+        return 'Step information unavailable';
     }
   };
 
@@ -1221,33 +1342,31 @@ const SiteDetail = () => {
               <CardContent>
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Details</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input value={site.siteCreation?.locationInfo?.location || "ASDA Redditch, Redditch, Worcestershire"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="postcode">Postcode</Label>
-                        <Input value={site.siteCreation?.locationInfo?.postcode || "B98 8AA"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="region">Region</Label>
-                        <Input value={site.siteCreation?.locationInfo?.region || "West Midlands"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input value={site.siteCreation?.locationInfo?.country || "United Kingdom"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="latitude">Latitude</Label>
-                        <Input value={site.siteCreation?.locationInfo?.latitude?.toString() || "52.3067"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="longitude">Longitude</Label>
-                        <Input value={site.siteCreation?.locationInfo?.longitude?.toString() || "-1.9456"} readOnly className="bg-gray-50" />
-                      </div>
-                    </div>
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
+                    
+                    {/* Location Picker Component */}
+                    <LocationPicker
+                      onLocationSelect={(location) => {
+                        // Update site location data when location is selected
+                        if (site) {
+                          setSite({
+                            ...site,
+                            siteCreation: {
+                              ...site.siteCreation,
+                              locationInfo: {
+                                ...site.siteCreation?.locationInfo,
+                                location: location.address,
+                                latitude: location.lat,
+                                longitude: location.lng
+                              }
+                            }
+                          });
+                        }
+                      }}
+                      initialLocation={site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude ? 
+                        { lat: site.siteCreation.locationInfo.latitude, lng: site.siteCreation.locationInfo.longitude } : undefined
+                      }
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -2778,7 +2897,14 @@ const SiteDetail = () => {
       {/* Header with Status */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold text-gray-900">{site.name}</h1>
+            {site && (
+              <Badge className={`${getStatusColor(site.status)}`}>
+                {getStatusDisplayName(site.status)}
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center space-x-4 mt-2">
             <p className="text-gray-600">
               Sector - <span className="font-medium">{site.sector}</span> | 
@@ -2809,6 +2935,19 @@ const SiteDetail = () => {
 
       {/* Modern Enhanced Stepper Flow Widget */}
       <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mb-6">
+        {/* Progress Overview */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Site Progress</h3>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-slate-700">
+              {Math.round(((stepperSteps.filter(step => step.status === 'completed').length) / stepperSteps.length) * 100)}%
+            </div>
+            <div className="text-sm text-gray-600">Complete</div>
+          </div>
+        </div>
+        
         {/* Modern Stepper with Enhanced Visual Design */}
         <div className="relative">
           <div className="flex items-center justify-between space-x-4">
@@ -2823,12 +2962,12 @@ const SiteDetail = () => {
                 {/* Enhanced Step Icon with Modern Design */}
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 mb-3 relative
-                    ${step.status === 'completed' ? 'bg-gradient-to-br from-slate-600 to-slate-700 text-white shadow-lg shadow-slate-200 scale-105' : ''}
+                    ${step.status === 'completed' ? 'bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-lg shadow-emerald-200 scale-105' : ''}
                     ${step.status === 'current' ? 'bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-xl shadow-slate-300 scale-110 ring-2 ring-slate-200' : ''}
                     ${step.status === 'pending' ? 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-400 border border-gray-200 hover:scale-105 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-600 transition-all duration-200' : ''}
                     ${step.status === 'blocked' ? 'bg-gradient-to-br from-red-400 to-red-500 text-white shadow-lg shadow-red-200' : ''}
                   `}
-                  title={step.description}
+                  title={getStepStatusInfo(index)}
                 >
                   {/* Step Icon */}
                   <div className="relative">
@@ -2842,6 +2981,13 @@ const SiteDetail = () => {
                   {step.status === 'current' && (
                     <div className="absolute inset-0 rounded-full bg-slate-400 animate-ping opacity-10"></div>
                   )}
+                  
+                  {/* Status Indicator Badge */}
+                  {step.status === 'blocked' && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="h-2 w-2 text-white" />
+                    </div>
+                  )}
                 </div>
                 
                 {/* Enhanced Step Label */}
@@ -2851,6 +2997,13 @@ const SiteDetail = () => {
                   }`}>
                     {step.label}
                   </span>
+                  {/* Status Indicator */}
+                  {step.status === 'blocked' && (
+                    <span className="block text-xs text-red-600 mt-1">⚠ Blocked</span>
+                  )}
+                  {step.status === 'current' && (
+                    <span className="block text-xs text-slate-600 mt-1">● Active</span>
+                  )}
                 </div>
                 
                 {/* Progress Indicator Line */}
