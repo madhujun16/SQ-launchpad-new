@@ -84,13 +84,8 @@ const Sites = () => {
 
   // Fetch sites from backend only
   useEffect(() => {
-    // Only load if we have a current role (auth is ready)
-    if (!currentRole) {
-      console.log('Sites: Waiting for auth state...', { currentRole });
-      return;
-    }
-
-    console.log('Sites: Auth ready, loading sites...', { currentRole });
+    // Load sites even if currentRole is not set yet - this prevents the blank page issue
+    console.log('Sites: Loading sites...', { currentRole, loading });
 
     const fetchSites = async () => {
       try {
@@ -108,7 +103,7 @@ const Sites = () => {
     };
 
     fetchSites();
-  }, [currentRole]); // Add currentRole as dependency
+  }, []); // Remove currentRole dependency to prevent waiting
 
   // Filter and paginate sites
   const { filteredSites, totalPages, currentSites } = useMemo(() => {
@@ -310,7 +305,14 @@ const Sites = () => {
 
   // Loading state
   if (loading) {
-    return <PageLoader />;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <PageLoader />
+          <p className="text-gray-600 mt-4">Loading sites...</p>
+        </div>
+      </div>
+    );
   }
 
   // Error state

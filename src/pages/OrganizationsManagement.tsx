@@ -128,13 +128,8 @@ export default function OrganizationsManagement() {
 
   // Load organizations with caching (similar to Sites page)
   useEffect(() => {
-    // Only load if we have a current role (auth is ready)
-    if (!currentRole) {
-      console.log('OrganizationsManagement: Waiting for auth state...', { currentRole });
-      return;
-    }
-
-    console.log('OrganizationsManagement: Auth ready, loading organizations...', { currentRole });
+    // Load organizations even if currentRole is not set yet - this prevents the blank page issue
+    console.log('OrganizationsManagement: Loading organizations...', { currentRole });
 
     const loadWithRetry = async () => {
       try {
@@ -156,7 +151,7 @@ export default function OrganizationsManagement() {
     };
 
     loadWithRetry();
-  }, [currentRole]); // Add currentRole as dependency
+  }, []); // Remove currentRole dependency to prevent waiting
 
   const loadOrganizations = async () => {
     try {
@@ -761,7 +756,14 @@ export default function OrganizationsManagement() {
 
   // Show loading state
   if (loading) {
-    return <PageLoader />;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <PageLoader />
+          <p className="text-gray-600 mt-4">Loading organizations...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
