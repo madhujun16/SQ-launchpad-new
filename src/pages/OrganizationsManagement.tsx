@@ -172,6 +172,7 @@ export default function OrganizationsManagement() {
         console.error('Error loading organizations:', orgsError);
         // Don't show error to user, just set empty array
         setOrganizations([]);
+        setLoading(false);
         return;
       }
 
@@ -760,7 +761,6 @@ export default function OrganizationsManagement() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <PageLoader />
-          <p className="text-gray-600 mt-4">Loading organizations...</p>
         </div>
       </div>
     );

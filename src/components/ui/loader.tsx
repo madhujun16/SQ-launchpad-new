@@ -64,7 +64,7 @@ export const Loader: React.FC<LoaderProps> = ({ size = 'lg', className = '' }) =
 
 export const PageLoader: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white/90">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <Loader size="lg" />
       </div>
@@ -74,7 +74,7 @@ export const PageLoader: React.FC = () => {
 
 export const ContentLoader: React.FC = () => {
   return (
-    <div className="flex items-center justify-center h-64 bg-white/90">
+    <div className="flex items-center justify-center h-64 bg-gray-50">
       <div className="text-center">
         <Loader size="lg" />
       </div>

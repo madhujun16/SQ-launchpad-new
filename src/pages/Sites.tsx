@@ -90,6 +90,7 @@ const Sites = () => {
     const fetchSites = async () => {
       try {
         setLoading(true);
+        setError(null);
         // Remove cache clearing to prevent loading issues
         const sitesData = await SitesService.getAllSites();
         setSites(sitesData);
@@ -97,12 +98,25 @@ const Sites = () => {
         console.error('Error fetching sites:', error);
         setError('Failed to load sites');
         toast.error('Failed to load sites');
+        // Set empty array to prevent blank page
+        setSites([]);
       } finally {
         setLoading(false);
       }
     };
 
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('Sites: Loading timeout, setting empty array');
+        setSites([]);
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
     fetchSites();
+
+    return () => clearTimeout(timeoutId);
   }, []); // Remove currentRole dependency to prevent waiting
 
   // Filter and paginate sites
@@ -309,7 +323,6 @@ const Sites = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <PageLoader />
-          <p className="text-gray-600 mt-4">Loading sites...</p>
         </div>
       </div>
     );
