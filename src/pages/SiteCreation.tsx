@@ -151,6 +151,14 @@ const SiteCreation = () => {
 
   // Fetch organizations and users on component mount
   useEffect(() => {
+    // Only load if we have a current role (auth is ready)
+    if (!currentRole) {
+      console.log('SiteCreation: Waiting for auth state...', { currentRole });
+      return;
+    }
+
+    console.log('SiteCreation: Auth ready, loading data...', { currentRole });
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -181,7 +189,7 @@ const SiteCreation = () => {
     if (organizations.length === 0 && opsManagers.length === 0 && deploymentEngineers.length === 0) {
       fetchData();
     }
-  }, [organizations.length, opsManagers.length, deploymentEngineers.length]);
+  }, [currentRole, organizations.length, opsManagers.length, deploymentEngineers.length]); // Add currentRole as dependency
 
   const handleInputChange = (field: keyof SiteData, value: any) => {
     setFormData({ ...formData, [field]: value });

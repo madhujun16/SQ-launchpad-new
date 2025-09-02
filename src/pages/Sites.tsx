@@ -84,11 +84,18 @@ const Sites = () => {
 
   // Fetch sites from backend only
   useEffect(() => {
+    // Only load if we have a current role (auth is ready)
+    if (!currentRole) {
+      console.log('Sites: Waiting for auth state...', { currentRole });
+      return;
+    }
+
+    console.log('Sites: Auth ready, loading sites...', { currentRole });
+
     const fetchSites = async () => {
       try {
         setLoading(true);
-        // Clear cache to force fresh data fetch
-        SitesService.clearCache();
+        // Remove cache clearing to prevent loading issues
         const sitesData = await SitesService.getAllSites();
         setSites(sitesData);
       } catch (error) {
@@ -101,7 +108,7 @@ const Sites = () => {
     };
 
     fetchSites();
-  }, []);
+  }, [currentRole]); // Add currentRole as dependency
 
   // Filter and paginate sites
   const { filteredSites, totalPages, currentSites } = useMemo(() => {

@@ -19,9 +19,22 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
+  const [accessTimeout, setAccessTimeout] = useState(false);
 
   useEffect(() => {
-    if (!loading && currentRole && !hasCheckedAccess) {
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('RoleBasedRoute loading timeout - proceeding with fallback');
+        setAccessTimeout(true);
+      }
+    }, 15000); // Increased to 15 seconds for better UX
+
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+
+  useEffect(() => {
+    if ((!loading || accessTimeout) && currentRole && !hasCheckedAccess) {
       console.log('🔍 RoleBasedRoute access check:', {
         currentRole,
         pathname: location.pathname,
@@ -39,14 +52,16 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
       
       setHasCheckedAccess(true);
     }
-  }, [currentRole, loading, location.pathname, navigate, availableRoles, hasCheckedAccess]);
+  }, [currentRole, loading, location.pathname, navigate, availableRoles, hasCheckedAccess, accessTimeout]);
 
   // Reset access check when location changes
   useEffect(() => {
     setHasCheckedAccess(false);
+    setAccessTimeout(false);
   }, [location.pathname]);
 
-  if (loading) {
+  // Show loading state only if still loading and no timeout
+  if (loading && !accessTimeout) {
     return (
       <div className="min-h-screen flex items-center justify-center auth-loading-background">
         <Loader size="lg" />

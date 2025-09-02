@@ -82,8 +82,16 @@ export default function UserManagement() {
   }
 
   useEffect(() => {
+    // Only load if we have a current role (auth is ready)
+    if (!currentRole) {
+      console.log('UserManagement: Waiting for auth state...', { currentRole });
+      return;
+    }
+
+    console.log('UserManagement: Auth ready, loading users...', { currentRole });
+
     loadUsers();
-  }, []);
+  }, [currentRole]); // Add currentRole as dependency
 
   const loadUsers = async () => {
     try {

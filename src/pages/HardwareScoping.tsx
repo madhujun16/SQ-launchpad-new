@@ -186,6 +186,14 @@ const HardwareScoping = () => {
 
   // Fetch users from backend
   useEffect(() => {
+    // Only load if we have a current role (auth is ready)
+    if (!currentRole) {
+      console.log('HardwareScoping: Waiting for auth state...', { currentRole });
+      return;
+    }
+
+    console.log('HardwareScoping: Auth ready, loading users...', { currentRole });
+
     const fetchUsers = async () => {
       try {
         const [opsManagersData, deploymentEngineersData] = await Promise.all([
@@ -201,7 +209,7 @@ const HardwareScoping = () => {
     };
 
     fetchUsers();
-  }, []);
+  }, [currentRole]); // Add currentRole as dependency
 
   // Static mock data to avoid infinite loops
   const sites = [

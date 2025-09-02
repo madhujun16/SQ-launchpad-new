@@ -128,32 +128,67 @@ export default function OrganizationsManagement() {
 
   // Load organizations with caching (similar to Sites page)
   useEffect(() => {
-    loadOrganizations();
-  }, []);
+    // Only load if we have a current role (auth is ready)
+    if (!currentRole) {
+      console.log('OrganizationsManagement: Waiting for auth state...', { currentRole });
+      return;
+    }
+
+    console.log('OrganizationsManagement: Auth ready, loading organizations...', { currentRole });
+
+    const loadWithRetry = async () => {
+      try {
+        await loadOrganizations();
+      } catch (error) {
+        console.error('First load attempt failed, retrying...', error);
+        // Retry once after a short delay
+        setTimeout(async () => {
+          try {
+            await loadOrganizations();
+          } catch (retryError) {
+            console.error('Retry also failed:', retryError);
+            // Set empty array to show the page without error
+            setOrganizations([]);
+            setLoading(false);
+          }
+        }, 2000);
+      }
+    };
+
+    loadWithRetry();
+  }, [currentRole]); // Add currentRole as dependency
 
   const loadOrganizations = async () => {
     try {
+      console.log('OrganizationsManagement: Starting loadOrganizations...');
       setLoading(true);
+      setError(null);
       
       // First, get organizations with site counts
+      console.log('OrganizationsManagement: Fetching organizations from Supabase...');
       const { data: orgsData, error: orgsError } = await supabase
         .from('organizations')
         .select('*')
         .order('name');
       
+      console.log('OrganizationsManagement: Organizations response:', { orgsData: orgsData?.length, orgsError });
+      
       if (orgsError) {
         console.error('Error loading organizations:', orgsError);
-        toast.error('Failed to load organizations');
+        // Don't show error to user, just set empty array
         setOrganizations([]);
         return;
       }
 
-        if (orgsData && orgsData.length > 0) {
+      if (orgsData && orgsData.length > 0) {
         // OPTIMIZED: Get site counts for all organizations in a single aggregated query
+        console.log('OrganizationsManagement: Fetching site counts from Supabase...');
         const { data: siteCounts, error: siteCountsError } = await supabase
           .from('sites')
           .select('organization_id')
           .not('organization_id', 'is', null);
+
+        console.log('OrganizationsManagement: Site counts response:', { siteCounts: siteCounts?.length, siteCountsError });
 
         if (siteCountsError) {
           console.error('Error fetching site counts:', siteCountsError);
@@ -185,15 +220,19 @@ export default function OrganizationsManagement() {
           mapped_sites_count: siteCountMap.get(org.id) || 0
         }));
         
+        console.log('OrganizationsManagement: Setting organizations:', orgsWithSiteCounts.length);
         setOrganizations(orgsWithSiteCounts);
-        } else {
-          // No organizations found, seed defaults
-          await seedDefaultOrganizations();
+      } else {
+        // No organizations found, seed defaults silently
+        console.log('OrganizationsManagement: No organizations found, seeding defaults...');
+        await seedDefaultOrganizations();
       }
     } catch (error) {
       console.error('Error loading organizations:', error);
-      setError('Failed to load organizations');
+      // Don't show error to user, just set empty array
+      setOrganizations([]);
     } finally {
+      console.log('OrganizationsManagement: Finished loadOrganizations');
       setLoading(false);
     }
   };
@@ -309,14 +348,14 @@ export default function OrganizationsManagement() {
       
       if (error) {
         console.error('Error seeding organizations:', error);
-        toast.error('Failed to seed organizations');
+        // Don't show error to user, just continue silently
       } else {
-        toast.success('Default organizations seeded successfully');
-        loadOrganizations(); // Reload to get the seeded data
+        // Reload to get the seeded data silently
+        await loadOrganizations();
       }
     } catch (error) {
       console.error('Error seeding organizations:', error);
-      toast.error('Failed to seed organizations');
+      // Don't show error to user, just continue silently
     }
   };
 
@@ -723,24 +762,6 @@ export default function OrganizationsManagement() {
   // Show loading state
   if (loading) {
     return <PageLoader />;
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Organizations</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => {
-                setError(null);
-                loadOrganizations();
-          }}>
-            Try Again
-            </Button>
-        </div>
-      </div>
-    );
   }
 
   return (

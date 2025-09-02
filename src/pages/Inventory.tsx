@@ -62,8 +62,16 @@ const Inventory: React.FC = () => {
   } | null>(null);
 
   useEffect(() => {
+    // Only load if we have a current role (auth is ready)
+    if (!profile?.user_id) {
+      console.log('Inventory: Waiting for auth state...', { profile });
+      return;
+    }
+
+    console.log('Inventory: Auth ready, loading inventory data...', { profile });
+
     fetchInventoryData();
-  }, [filters]);
+  }, [filters, profile?.user_id]); // Add profile.user_id as dependency
 
   const fetchInventoryData = async () => {
     try {

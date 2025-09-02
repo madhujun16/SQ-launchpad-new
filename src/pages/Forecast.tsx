@@ -624,7 +624,7 @@ const Forecast: React.FC = () => {
        {viewMode === 'financial' && (
          <div className="space-y-6">
            {/* Financial Summary Card */}
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <Card>
                <CardContent className="p-4">
                  <div className="text-center">
@@ -640,24 +640,6 @@ const Forecast: React.FC = () => {
                    <p className="text-sm text-gray-600">Total Projects</p>
                    <p className="text-2xl font-bold text-gray-900">15</p>
                    <p className="text-xs text-gray-500">Across 3 months</p>
-                 </div>
-               </CardContent>
-             </Card>
-             <Card>
-               <CardContent className="p-4">
-                 <div className="text-center">
-                   <p className="text-sm text-gray-600">Avg Cost per Project</p>
-                   <p className="text-2xl font-bold text-gray-900">£11,000</p>
-                   <p className="text-xs text-gray-500">Hardware + Software</p>
-                 </div>
-               </CardContent>
-             </Card>
-             <Card>
-               <CardContent className="p-4">
-                 <div className="text-center">
-                   <p className="text-sm text-gray-600">Cost Trend</p>
-                   <p className="text-2xl font-bold text-green-600">↗ +15%</p>
-                   <p className="text-xs text-gray-500">Monthly increase</p>
                  </div>
                </CardContent>
              </Card>

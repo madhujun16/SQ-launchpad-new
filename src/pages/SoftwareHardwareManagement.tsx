@@ -114,8 +114,16 @@ export default function SoftwareHardwareManagement() {
   }
 
   useEffect(() => {
+    // Only load if we have a current role (auth is ready)
+    if (!currentRole) {
+      console.log('SoftwareHardwareManagement: Waiting for auth state...', { currentRole });
+      return;
+    }
+
+    console.log('SoftwareHardwareManagement: Auth ready, loading data...', { currentRole });
+
     loadData();
-  }, []);
+  }, [currentRole]); // Add currentRole as dependency
 
   const loadData = async () => {
     try {

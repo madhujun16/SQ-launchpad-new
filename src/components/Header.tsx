@@ -257,8 +257,8 @@ const MobileNavigation = React.memo(({
       {/* Sidebar */}
       <div className="fixed top-0 left-0 h-full w-[85vw] max-w-sm mobile-sidebar-background z-[9999] overflow-y-auto border-r border-green-600 transform transition-transform duration-300 ease-in-out">
         {/* Header */}
-        <div className="sticky top-0 mobile-sidebar-background border-b border-green-600 p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="sticky top-0 bg-[#0A4D2C] border-b border-green-600 p-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <span className="text-xl font-bold text-white">SmartQ Launchpad</span>
               <RocketIcon className="h-6 w-6 text-green-400" />
@@ -270,7 +270,6 @@ const MobileNavigation = React.memo(({
               <X className="h-5 w-5" />
             </button>
           </div>
-          <p className="text-sm text-white/80">Access your Launchpad features</p>
         </div>
         
         {/* Navigation Items */}
