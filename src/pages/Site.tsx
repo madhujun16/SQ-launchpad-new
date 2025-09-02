@@ -1974,8 +1974,8 @@ const SiteDetail = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Approval Status Overview */}
+            <div className="space-y-6">
+              {/* Approval Status Overview - Full Width */}
               <Card className="shadow-sm border border-gray-200">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -1987,7 +1987,7 @@ const SiteDetail = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                       <div className="flex items-center space-x-3">
                         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -2001,7 +2001,7 @@ const SiteDetail = () => {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="requestedDate" className="text-sm font-medium text-gray-700">Requested Date</Label>
                         <div className="p-3 bg-gray-50 rounded-lg border">
@@ -2026,51 +2026,70 @@ const SiteDetail = () => {
                           <p className="text-sm text-gray-900">{site?.approval?.approverDetails?.role || 'Operations Director'}</p>
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="approvalAuthority" className="text-sm font-medium text-gray-700">Approval Authority</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <Badge className="bg-blue-100 text-blue-800">Final Decision</Badge>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="responseTime" className="text-sm font-medium text-gray-700">Response Time</Label>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <Badge className="bg-green-100 text-green-800">Within 48h</Badge>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Approval Details */}
-              <Card className="shadow-sm border border-gray-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <User className="mr-2 h-5 w-5 text-blue-600" />
-                    Approver Details
-                  </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Information about the approval authority
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
+                    {/* Assign Approver Section */}
+                    <div className="border-t pt-6">
+                      <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Assign Approver</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="approverName" className="text-sm font-medium text-gray-700">Approver Name</Label>
+                          <Input 
+                            id="approverName"
+                            placeholder="Enter approver name"
+                            value={site?.approval?.approverDetails?.name || 'Sarah Johnson'}
+                            className="bg-white"
+                          />
                         </div>
-                        <div>
-                          <p className="font-semibold text-blue-900">{site?.approval?.approverDetails?.name || 'Sarah Johnson'}</p>
-                          <p className="text-sm text-blue-700">{site?.approval?.approverDetails?.role || 'Operations Director'}</p>
+                        <div className="space-y-2">
+                          <Label htmlFor="approverRole" className="text-sm font-medium text-gray-700">Approver Role</Label>
+                          <Input 
+                            id="approverRole"
+                            placeholder="Enter approver role"
+                            value={site?.approval?.approverDetails?.role || 'Operations Director'}
+                            className="bg-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="approverDepartment" className="text-sm font-medium text-gray-700">Department</Label>
+                          <Input 
+                            id="approverDepartment"
+                            placeholder="Enter department"
+                            value={site?.approval?.approverDetails?.department || 'Operations'}
+                            className="bg-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="reviewLevel" className="text-sm font-medium text-gray-700">Review Level</Label>
+                          <Select value="management">
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder="Select review level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="management">Management</SelectItem>
+                              <SelectItem value="senior">Senior Management</SelectItem>
+                              <SelectItem value="executive">Executive</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                      <div className="text-sm text-blue-800">
-                        <p><strong>Department:</strong> {site?.approval?.approverDetails?.department || 'Operations'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700">Approval Authority</span>
-                        <Badge className="bg-blue-100 text-blue-800">Final Decision</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700">Review Level</span>
-                        <Badge className="bg-purple-100 text-purple-800">Management</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700">Response Time</span>
-                        <Badge className="bg-green-100 text-green-800">Within 48h</Badge>
+                      <div className="mt-4">
+                        <Button variant="outline" size="sm">
+                          <User className="h-4 w-4 mr-1" />
+                          Assign Approver
+                        </Button>
                       </div>
                     </div>
                   </div>
