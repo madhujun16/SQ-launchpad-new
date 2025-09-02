@@ -329,9 +329,9 @@ const Assets = () => {
                 <AlertCircle className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Pending Renewal</p>
+                <p className="text-sm text-gray-600">Maintenance Due</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {assets.filter(a => a.status === 'pending_renewal').length}
+                  1
                 </p>
               </div>
             </div>
@@ -415,7 +415,6 @@ const Assets = () => {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="pending_renewal">Pending Renewal</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
               </SelectContent>
             </Select>
