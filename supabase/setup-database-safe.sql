@@ -1,5 +1,26 @@
 -- =====================================================
--- SmartQ Launchpad CG - Safe Database Setup Script
+-- SmartQ Launchpad CG - DEPRECATED SAFE DATABASE SETUP SCRIPT
+-- =====================================================
+-- 
+-- ⚠️  WARNING: This file is DEPRECATED and should NOT be used
+-- 
+-- Reason: This script contains outdated schema definitions that do not
+-- match the current database state. The database has been evolved through
+-- multiple migrations and this initial setup is no longer valid.
+-- 
+-- Current Status:
+-- - All tables already exist with proper structure and additional columns
+-- - RLS policies have been simplified and updated
+-- - Functions and triggers are properly implemented
+-- - Types and enums match current requirements
+-- - Security policies are in place and verified
+-- 
+-- For reference only - DO NOT EXECUTE
+-- =====================================================
+
+-- This file has been marked as deprecated.
+-- The database is already properly set up and configured.
+-- All necessary tables, functions, policies, and types are in place.
 -- Handles existing types and tables gracefully
 -- =====================================================
 

@@ -12,7 +12,7 @@ INSERT INTO public.organizations (id, name, sector, logo_url, created_at, update
 ON CONFLICT (id) DO NOTHING;
 
 -- Add 7 new sites with realistic data
-INSERT INTO public.sites (id, name, organization_id, food_court_unit, address, postcode, cafeteria_type, capacity, expected_footfall, description, status, sector, criticality, priority, risk_level, go_live_date, created_at, updated_at) VALUES
+INSERT INTO public.sites (id, name, organization_id, food_court_unit, address, postcode, cafeteria_type, capacity, expected_footfall, description, status, sector, criticality, priority, risk_level, target_live_date, created_at, updated_at) VALUES
 -- Chartswell Group Sites
 ('site-chartswell-001', 'Chartswell London HQ', 'org-chartswell', 'Main Cafeteria', '123 Canary Wharf, London', 'E14 5AB', 'mixed', 180, 400, 'Corporate headquarters cafeteria serving staff and visitors', 'site_created', 'Business & Industry', 'high', 'high', 'medium', '2024-03-15', NOW(), NOW()),
 ('site-chartswell-002', 'Chartswell Manchester', 'org-chartswell', 'Staff Canteen', '45 Deansgate, Manchester', 'M3 2FW', 'staff', 120, 250, 'Manchester office staff canteen', 'site_created', 'Business & Industry', 'medium', 'medium', 'low', '2024-04-20', NOW(), NOW()),
@@ -72,7 +72,7 @@ SELECT
     s.criticality,
     s.priority,
     s.risk_level,
-    s.go_live_date
+    s.target_live_date
 FROM public.sites s
 JOIN public.organizations o ON s.organization_id = o.id
 WHERE s.id IN (
