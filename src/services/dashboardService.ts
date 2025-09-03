@@ -345,24 +345,25 @@ export const dashboardService = {
       // Create tasks based on assigned sites
       assignedSites?.forEach((assignment) => {
         const site = assignment.site;
-        if (site) {
-          if (site.status === 'new') {
+        if (site && Array.isArray(site) && site.length > 0) {
+          const siteData = site[0]; // Get the first site from the array
+          if (siteData.status === 'new') {
             tasks.push({
-              id: `site-${site.id}`,
-              title: `Complete site study for ${site.name}`,
+              id: `site-${siteData.id}`,
+              title: `Complete site study for ${siteData.name}`,
               priority: 'high',
               status: 'pending',
               type: 'site_study',
-              siteId: site.id,
+              siteId: siteData.id,
             });
-          } else if (site.status === 'in-progress') {
+          } else if (siteData.status === 'in-progress') {
             tasks.push({
-              id: `deploy-${site.id}`,
-              title: `Deploy hardware for ${site.name}`,
+              id: `deploy-${siteData.id}`,
+              title: `Deploy hardware for ${siteData.name}`,
               priority: 'medium',
               status: 'in_progress',
               type: 'deployment',
-              siteId: site.id,
+              siteId: siteData.id,
             });
           }
         }

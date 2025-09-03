@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   user_roles?: Array<{
@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           invited_by: 'system',
           last_login_at: new Date().toISOString(),
           welcome_email_sent: false,
+          is_active: true,
           user_roles: [{ role: 'admin' as UserRole }]
         };
         setProfile(fallbackProfile);
@@ -96,6 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           invited_by: 'system',
           last_login_at: new Date().toISOString(),
           welcome_email_sent: false,
+          is_active: true,
           user_roles: [{ role: 'admin' as UserRole }]
         };
         setProfile(fallbackProfile);
@@ -159,6 +161,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         invited_by: 'system',
         last_login_at: new Date().toISOString(),
         welcome_email_sent: false,
+        is_active: true,
         user_roles: [{ role: 'admin' as UserRole }]
       };
       setProfile(fallbackProfile);

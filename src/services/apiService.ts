@@ -458,7 +458,7 @@ export class ApiService {
         });
       }
 
-      return stats;
+      return { data: stats, error: null };
     });
   }
 

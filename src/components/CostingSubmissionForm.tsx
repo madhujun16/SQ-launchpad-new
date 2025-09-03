@@ -154,10 +154,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await CostingService.createCostingApproval({
-        site_id: siteId,
-        ops_manager_id: selectedOpsManager,
-        costing_items: items.map(item => ({
+      await CostingService.createCostingApproval(siteId, selectedOpsManager, items.map(item => ({
           item_type: item.item_type,
           item_name: item.item_name,
           item_description: item.item_description,
@@ -170,8 +167,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
           category: item.category,
           manufacturer: item.manufacturer,
           model: item.model
-        }))
-      });
+        })));
 
       toast.success('Costing approval submitted successfully!');
       onSubmissionComplete();

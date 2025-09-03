@@ -228,7 +228,8 @@ export class WorkflowService {
         approved: 0,
         procurement_done: 0,
         deployed: 0,
-        live: 0
+        live: 0,
+        archived: 0
       };
 
       data?.forEach(site => {
