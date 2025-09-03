@@ -16,66 +16,32 @@ import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 
 // Lazy load heavy components with better chunking
-const Dashboard = lazy(() => import("./pages/Dashboard"), {
-  webpackChunkName: "dashboard"
-});
-const Sites = lazy(() => import("./pages/Sites"), {
-  webpackChunkName: "sites"
-});
-const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"), {
-  webpackChunkName: "approvals"
-});
-const Deployment = lazy(() => import("./pages/Deployment"), {
-  webpackChunkName: "deployment"
-});
-const Assets = lazy(() => import("./pages/Assets"), {
-  webpackChunkName: "assets"
-});
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Sites = lazy(() => import("./pages/Sites"));
+const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"));
+const Deployment = lazy(() => import("./pages/Deployment"));
+const Assets = lazy(() => import("./pages/Assets"));
 
 // Platform Configuration separate pages
-const OrganizationsManagement = lazy(() => import("./pages/OrganizationsManagement"), {
-  webpackChunkName: "platform-config"
-});
-const UserManagement = lazy(() => import("./pages/UserManagement"), {
-  webpackChunkName: "platform-config"
-});
-const SoftwareHardwareManagement = lazy(() => import("./pages/SoftwareHardwareManagement"), {
-  webpackChunkName: "platform-config"
-});
-const AuditLogs = lazy(() => import("./pages/AuditLogs"), {
-  webpackChunkName: "platform-config"
-});
+const OrganizationsManagement = lazy(() => import("./pages/OrganizationsManagement"));
+const UserManagement = lazy(() => import("./pages/UserManagement"));
+const SoftwareHardwareManagement = lazy(() => import("./pages/SoftwareHardwareManagement"));
+const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 
-const Forecast = lazy(() => import("./pages/Forecast"), {
-  webpackChunkName: "forecast"
-});
+const Forecast = lazy(() => import("./pages/Forecast"));
 
 // Sites-related pages
-const Site = lazy(() => import("./pages/Site"), {
-  webpackChunkName: "sites"
-});
-const SiteCreation = lazy(() => import("./pages/SiteCreation"), {
-  webpackChunkName: "sites"
-});
+const Site = lazy(() => import("./pages/Site"));
+const SiteCreation = lazy(() => import("./pages/SiteCreation"));
 
 // Approvals & Procurement related pages
-const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"), {
-  webpackChunkName: "approvals"
-});
-const HardwareScoping = lazy(() => import("./pages/HardwareScoping"), {
-  webpackChunkName: "approvals"
-});
-const HardwareMaster = lazy(() => import("./pages/HardwareMaster"), {
-  webpackChunkName: "assets"
-});
+const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"));
+const HardwareScoping = lazy(() => import("./pages/HardwareScoping"));
+const HardwareMaster = lazy(() => import("./pages/HardwareMaster"));
 
 // Assets-related pages
-const Inventory = lazy(() => import("./pages/Inventory"), {
-  webpackChunkName: "assets"
-});
-const LicenseManagement = lazy(() => import("./pages/LicenseManagement"), {
-  webpackChunkName: "assets"
-});
+const Inventory = lazy(() => import("./pages/Inventory"));
+const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
 
 // Create a client with optimized settings
 const queryClient = new QueryClient({
