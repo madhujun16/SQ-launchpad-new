@@ -64,8 +64,9 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <BrowserRouter>
           <div className="min-h-screen">
             <Routes>
               {/* Public routes - no providers needed */}
@@ -423,7 +424,8 @@ function App() {
           <Toaster />
           <Sonner />
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

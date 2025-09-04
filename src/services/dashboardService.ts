@@ -56,7 +56,10 @@ export const dashboardService = {
 
       if (sitesError) throw sitesError;
       const totalSites = sitesData?.length || 0;
-      const activeSites = sitesData?.filter(site => site.status === 'active').length || 0;
+      // Align with finalized status enums from migrations/types
+      const activeSites = sitesData?.filter(site => 
+        ['scoping_done', 'approved', 'procurement_done', 'deployed', 'live'].includes((site as any).status)
+      ).length || 0;
 
       // Mock data for inventory_items and licenses (tables not in schema)
       const totalInventory = 0;
@@ -93,8 +96,10 @@ export const dashboardService = {
 
       if (sitesError) throw sitesError;
       const totalSites = sitesData?.length || 0;
-      const activeDeployments = sitesData?.filter(site => site.status === 'in-progress').length || 0;
-      const completedDeployments = sitesData?.filter(site => site.status === 'completed').length || 0;
+      const activeDeployments = sitesData?.filter(site => 
+        ['deployment', 'deployed', 'procurement_done'].includes((site as any).status)
+      ).length || 0;
+      const completedDeployments = sitesData?.filter(site => ['live'].includes((site as any).status)).length || 0;
 
       // Get real pending approvals from hardware_requests
       const { data: approvalsData, error: approvalsError } = await supabase
@@ -215,8 +220,10 @@ export const dashboardService = {
 
       if (sitesError) throw sitesError;
       const totalSites = sitesData?.length || 0;
-      const activeDeployments = sitesData?.filter(site => site.status === 'in-progress').length || 0;
-      const completedDeployments = sitesData?.filter(site => site.status === 'completed').length || 0;
+      const activeDeployments = sitesData?.filter(site => 
+        ['deployment', 'deployed', 'procurement_done'].includes((site as any).status)
+      ).length || 0;
+      const completedDeployments = sitesData?.filter(site => ['live'].includes((site as any).status)).length || 0;
 
       // Get real pending approvals for the current user
       const { data: approvalsData, error: approvalsError } = await supabase

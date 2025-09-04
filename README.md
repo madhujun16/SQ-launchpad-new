@@ -209,6 +209,57 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ---
 
+## 🧑‍💻 macOS Quickstart (Cursor)
+
+### Prerequisites
+
+- Homebrew (optional but recommended)
+- nvm (Node Version Manager)
+- Node.js 20 LTS (auto-selected via `.nvmrc`)
+
+### One-time setup
+
+```bash
+# Install nvm (if you don't already have it)
+brew install nvm
+
+# Load nvm in the current shell (zsh)
+export NVM_DIR="$HOME/.nvm"
+source "$(brew --prefix nvm)/nvm.sh"
+```
+
+### Run the app
+
+```bash
+# From the project root
+nvm install    # uses .nvmrc (Node 20)
+nvm use
+
+npm install
+
+# Optional but recommended: create your env
+cp env.secure.example .env
+# Then edit .env and set your Supabase URL and anon key
+
+npm run dev
+```
+
+App runs at: `http://localhost:8080`
+
+Note: The project has safe defaults in `src/integrations/supabase/client.ts`, so it can boot without a `.env`. To connect to your own Supabase, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env`.
+
+### Troubleshooting (macOS)
+
+- Port 8080 in use:
+  ```bash
+  lsof -i :8080
+  kill -9 <PID>
+  ```
+- Node version errors: run `nvm use` (ensure Node 20 is active)
+- Supabase Auth redirects: add `http://localhost:8080` to your project's allowed URLs in Supabase Auth settings
+
+---
+
 ## 📄 License
 
 This project is proprietary to SmartQ.

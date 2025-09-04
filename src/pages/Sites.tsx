@@ -144,6 +144,14 @@ const Sites = () => {
     return { filteredSites: filtered, totalPages, currentSites };
   }, [sites, searchTerm, statusFilter, currentPage, itemsPerPage]);
 
+  // Ensure current page is valid if data size shrinks or filters change
+  useEffect(() => {
+    const pages = Math.max(1, totalPages || 1);
+    if (currentPage > pages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
   // Action handlers
   const handleViewSite = (site: Site) => {
     navigate(`/sites/${site.id}?mode=view`);
@@ -216,7 +224,9 @@ const Sites = () => {
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    const maxPage = Math.max(1, totalPages || 1);
+    const clamped = Math.min(Math.max(page, 1), maxPage);
+    setCurrentPage(clamped);
   };
 
   // Get action buttons based on site status
