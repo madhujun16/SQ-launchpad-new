@@ -46,7 +46,17 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Site Study",
     description: "Assessment & notes",
     mandatoryFields: ["map", "counters"],
-    values: { map: "https://maps.example.com/demo", counters: 4, latitude: 52.3067, longitude: -1.9456 },
+    values: {
+      address: "25 ER Restaurant, Redditch",
+      map: "https://maps.example.com/demo",
+      counters: 4,
+      latitude: 52.3067,
+      longitude: -1.9456,
+      photos: [
+        "/placeholder.svg",
+        "/smartq-launchpad-logo.svg"
+      ]
+    },
     status: "not_started"
   },
   {
@@ -64,7 +74,7 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Approval",
     description: "Stakeholder sign-off",
     mandatoryFields: ["signedBy"],
-    values: { signedBy: "Ops Manager" },
+    values: { signedBy: "Ops Manager", approvedDate: "2025-10-05" },
     status: "not_started"
   },
   {
@@ -73,7 +83,7 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Procurement",
     description: "Source hardware",
     mandatoryFields: ["poNumber"],
-    values: { poNumber: "PO-12345" },
+    values: { poNumber: "PO-12345", vendor: "Melford" },
     status: "not_started"
   },
   {
@@ -82,7 +92,7 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Deployment",
     description: "On-site installation",
     mandatoryFields: ["installDate"],
-    values: { installDate: "2025-10-10" },
+    values: { installDate: "2025-10-10", installer: "SmartQ Team" },
     status: "not_started"
   },
   {
@@ -91,7 +101,7 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Go Live",
     description: "Activate site",
     mandatoryFields: ["handoverDoc"],
-    values: { handoverDoc: "https://docs.example.com/handover.pdf" },
+    values: { handoverDoc: "https://docs.example.com/handover.pdf", goLiveDate: "2025-10-15" },
     status: "not_started"
   }
 ].map(s => ({ ...s, updatedAt: new Date().toISOString() }));

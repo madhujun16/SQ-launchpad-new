@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MultiStepForm } from '@/components/ui/enhanced-stepper';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { getSiteFlow, getEnhancedSteps } from '@/services/siteFlowMockService';
 import { useAuth } from '@/hooks/useAuth';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { format, parseISO, isValid } from 'date-fns';
 
 const SiteFlowHub: React.FC = () => {
   const { id: siteId = 'demo-site' } = useParams();
@@ -16,8 +18,57 @@ const SiteFlowHub: React.FC = () => {
   const steps = useMemo(() => getEnhancedSteps(flow), [flow]);
   const completed = flow.steps.filter(s => s.status === 'completed').length;
   const progress = Math.round((completed / flow.steps.length) * 100);
+  const [selectedIdx, setSelectedIdx] = useState(() => Math.min(steps.findIndex(s => s.status !== 'completed'), steps.length - 1));
 
-  const canEdit = currentRole === 'admin' || currentRole === 'deployment_engineer';
+  const selectedStep = flow.steps[selectedIdx];
+
+  const formatDate = (value?: string) => {
+    if (!value) return '';
+    // Accept yyyy-mm-dd or ISO; fallback to raw
+    const d = parseISO(value);
+    return isValid(d) ? format(d, 'dd MMM yyyy') : String(value);
+  };
+
+  const buildRows = () => {
+    const rows: { label: string; value: React.ReactNode }[] = [];
+    const v: Record<string, any> = selectedStep?.values || {};
+    switch (selectedStep?.key) {
+      case 'create_site':
+        if (v.name) rows.push({ label: 'Site Name', value: v.name });
+        if (v.goLiveDate) rows.push({ label: 'Go Live Date', value: formatDate(v.goLiveDate) });
+        if (v.address) rows.push({ label: 'Address', value: v.address });
+        break;
+      case 'site_study': {
+        if (v.address) rows.push({ label: 'Address', value: v.address });
+        const lat = v.latitude ?? v.lat;
+        const lng = v.longitude ?? v.lng;
+        if (lat !== undefined && lng !== undefined) rows.push({ label: 'Coordinates', value: `${lat}, ${lng}` });
+        if (v.counters !== undefined) rows.push({ label: 'Counter Count', value: String(v.counters) });
+        if (v.map) rows.push({ label: 'Map', value: <a className="text-green-700 underline" href={String(v.map)} target="_blank" rel="noreferrer">Open map</a> });
+        break;
+      }
+      case 'scoping':
+        if (v.hardwareList) rows.push({ label: 'Hardware List', value: v.hardwareList });
+        break;
+      case 'approval':
+        if (v.signedBy) rows.push({ label: 'Signed By', value: v.signedBy });
+        break;
+      case 'procurement':
+        if (v.poNumber) rows.push({ label: 'PO Number', value: v.poNumber });
+        break;
+      case 'deployment':
+        if (v.installDate) rows.push({ label: 'Install Date', value: formatDate(v.installDate) });
+        break;
+      case 'go_live':
+        if (v.handoverDoc) rows.push({ label: 'Handover Document', value: <a className="text-green-700 underline" href={String(v.handoverDoc)} target="_blank" rel="noreferrer">View</a> });
+        break;
+      default:
+        Object.entries(v).forEach(([k, val]) => rows.push({ label: k.replace(/([A-Z])/g, ' $1'), value: String(val) }));
+    }
+    return rows;
+  };
+
+  const rows = buildRows();
 
   return (
     <div className="space-y-6">
@@ -36,86 +87,74 @@ const SiteFlowHub: React.FC = () => {
 
       <MultiStepForm
         steps={steps}
-        currentStep={Math.min(steps.findIndex(s => s.status !== 'completed'), steps.length - 1)}
-        onStepChange={(idx) => {
-          const step = flow.steps[idx];
-          if (!step) return;
-          if (canEdit) {
-            navigate(`/sites/${siteId}/flow/${step.key}`);
-          }
-        }}
+        currentStep={selectedIdx}
+        onStepChange={(idx) => setSelectedIdx(idx)}
         showNavigation={false}
       >
-        <div className="space-y-4">
-          {flow.steps.map((s) => {
-            // Build a document-like readout per step (no interactive fields)
-            const rows: { label: string; value: string }[] = [];
-            const v: Record<string, any> = s.values || {};
+        {selectedStep && (
+          <Card>
+            <CardContent className="p-5">
+              <div className="space-y-4">
+                <div>
+                  <div className="text-base font-semibold">{selectedStep.title}</div>
+                  <div className="text-sm text-gray-600">{selectedStep.description}</div>
+                </div>
 
-            switch (s.key) {
-              case 'create_site':
-                if (v.name) rows.push({ label: 'Site Name', value: String(v.name) });
-                if (v.goLiveDate) rows.push({ label: 'Go Live Date', value: String(v.goLiveDate) });
-                if (v.address) rows.push({ label: 'Address', value: String(v.address) });
-                break;
-              case 'site_study': {
-                if (v.address) rows.push({ label: 'Address', value: String(v.address) });
-                const lat = v.latitude ?? v.lat;
-                const lng = v.longitude ?? v.lng;
-                if (lat !== undefined && lng !== undefined) {
-                  rows.push({ label: 'Coordinates', value: `${lat}, ${lng}` });
-                }
-                if (v.counters !== undefined) rows.push({ label: 'Counter Count', value: String(v.counters) });
-                if (v.map) rows.push({ label: 'Map', value: String(v.map) });
-                break;
-              }
-              case 'scoping':
-                if (v.hardwareList) rows.push({ label: 'Hardware List', value: String(v.hardwareList) });
-                break;
-              case 'approval':
-                if (v.signedBy) rows.push({ label: 'Signed By', value: String(v.signedBy) });
-                break;
-              case 'procurement':
-                if (v.poNumber) rows.push({ label: 'PO Number', value: String(v.poNumber) });
-                break;
-              case 'deployment':
-                if (v.installDate) rows.push({ label: 'Install Date', value: String(v.installDate) });
-                break;
-              case 'go_live':
-                if (v.handoverDoc) rows.push({ label: 'Handover Document', value: String(v.handoverDoc) });
-                break;
-              default: {
-                // Fallback to showing whatever fields exist
-                Object.entries(v).forEach(([k, val]) =>
-                  rows.push({ label: k.replace(/([A-Z])/g, ' $1'), value: String(val) })
-                );
-              }
-            }
-
-            return (
-              <Card key={s.id}>
-                <CardContent className="p-5">
-                  <div className="space-y-2">
-                    <div className="text-base font-semibold">{s.title}</div>
-                    <div className="text-sm text-gray-600">{s.description}</div>
-                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                      {rows.length === 0 && (
-                        <div className="text-sm text-gray-500">No data captured yet.</div>
-                      )}
-                      {rows.map((row) => (
-                        <div key={row.label} className="text-sm">
-                          <span className="text-gray-500">{row.label}</span>
-                          <span className="mx-2 text-gray-400">:</span>
-                          <span className="text-gray-900">{row.value}</span>
-                        </div>
-                      ))}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left column: key-value details like a document */}
+                  <div className="lg:col-span-2">
+                    <div className="rounded-xl border bg-white p-4">
+                      <div className="divide-y">
+                        {rows.length === 0 && (
+                          <div className="text-sm text-gray-500 py-2">No data captured yet.</div>
+                        )}
+                        {rows.map((row) => (
+                          <div key={String(row.label)} className="grid grid-cols-12 items-start py-3">
+                            <div className="col-span-5 text-sm text-gray-500">{row.label}</div>
+                            <div className="col-span-7 text-sm text-gray-900">{row.value}</div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+
+                  {/* Right column: previews (maps/photos/docs) */}
+                  <div className="lg:col-span-1 space-y-4">
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="previews">
+                        <AccordionTrigger>Previews</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-3">
+                            {/* Site Study photos preview */}
+                            {selectedStep.key === 'site_study' && Array.isArray((selectedStep as any).values?.photos) && (
+                              <div className="grid grid-cols-2 gap-2">
+                                {(selectedStep as any).values.photos.map((src: string, i: number) => (
+                                  <div key={i} className="aspect-video rounded-lg overflow-hidden border bg-white/50">
+                                    <img src={src} alt={`photo-${i}`} className="w-full h-full object-cover" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Map preview link */}
+                            {selectedStep.key === 'site_study' && (selectedStep as any).values?.map && (
+                              <a className="text-sm text-green-700 underline" href={(selectedStep as any).values.map} target="_blank" rel="noreferrer">Open map</a>
+                            )}
+
+                            {/* Handover doc preview */}
+                            {selectedStep.key === 'go_live' && (selectedStep as any).values?.handoverDoc && (
+                              <a className="text-sm text-green-700 underline" href={(selectedStep as any).values.handoverDoc} target="_blank" rel="noreferrer">View handover document</a>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </MultiStepForm>
     </div>
   );
