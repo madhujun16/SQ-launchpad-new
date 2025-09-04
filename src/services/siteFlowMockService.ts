@@ -164,7 +164,7 @@ export function getEnhancedSteps(flow: SiteFlowSummary): EnhancedStepperStep[] {
   return flow.steps.map((s, idx) => ({
     id: s.id,
     title: s.title,
-    description: s.description,
+    description: undefined,
     status: s.status === "completed" ? "completed" : idx === firstIncompleteIndex(flow.steps) ? "current" : "upcoming",
     readOnly: true,
     icon: iconByKey[s.key]

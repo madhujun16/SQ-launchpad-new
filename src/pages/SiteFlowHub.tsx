@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { format, parseISO, isValid } from 'date-fns';
 import { FileText, ClipboardList, CheckSquare, ShoppingCart, Truck, CheckCircle, MapPin } from 'lucide-react';
 import { useSiteContext } from '@/contexts/SiteContext';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 const SiteFlowHub: React.FC = () => {
   const { id: siteId = 'demo-site' } = useParams();
@@ -110,22 +111,49 @@ const SiteFlowHub: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Site title and meta */}
-      <Card>
-        <CardContent className="p-6 flex items-center justify-between">
-          <div className="space-y-2">
-            <div className="text-xl font-semibold">{siteMeta?.name || 'Site Flow'}</div>
-            <div className="text-sm text-gray-600">
-              {siteMeta?.organization ? `${siteMeta.organization} • Target Date: ${formatDate(siteMeta.goLiveDate)}` : 'Workflow status and navigation'}
-            </div>
-            <div className="flex items-center gap-3">
-              <Progress value={progress} className="w-48" />
+      {/* Breadcrumb */}
+      <Breadcrumb className="mb-2">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/sites">Sites</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/sites/${siteId}`}>{siteMeta?.name || 'Site'}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Flow</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      {/* Site title, status and progress */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold">{siteMeta?.name || 'Site Flow'}</h1>
+            {siteMeta?.status && (
+              <span className="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">{siteMeta.status}</span>
+            )}
+          </div>
+          <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
+            <span>{siteMeta?.organization}</span>
+            {siteMeta?.goLiveDate && <span>• Target Date: {formatDate(siteMeta.goLiveDate)}</span>}
+            <span>• Progress</span>
+            <div className="flex items-center gap-2">
+              <Progress value={progress} className="w-40" />
               <span className="text-sm text-gray-600">{progress}%</span>
             </div>
           </div>
-          <Button disabled={progress < 100}>Submit All</Button>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex items-center gap-2">
+          {canEdit && selectedStep?.status !== 'completed' && (
+            <Button size="sm" onClick={() => navigate(`/sites/${siteId}/flow/${selectedStep?.key}`)}>Edit</Button>
+          )}
+          <Button size="sm" variant="outline" onClick={downloadReport}>Download Report</Button>
+        </div>
+      </div>
 
       <MultiStepForm
         steps={steps}
@@ -138,19 +166,10 @@ const SiteFlowHub: React.FC = () => {
             <CardContent className="p-5">
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-base font-semibold">{selectedStep.title}</div>
-                    <div className="flex items-center gap-2">
-                      {canEdit && selectedStep.status !== 'completed' && (
-                        <Button size="sm" onClick={() => navigate(`/sites/${siteId}/flow/${selectedStep.key}`)}>Edit</Button>
-                      )}
-                      <Button size="sm" variant="outline" onClick={downloadReport}>Download Report</Button>
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600">{selectedStep.description}</div>
+                  <div className="text-base font-semibold">{selectedStep.key === 'create_site' ? 'Site Creation' : selectedStep.title}</div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   {/* Left column: key-value details like a document */}
                   <div className="lg:col-span-2">
                     <div className="rounded-xl border bg-white p-4">
@@ -166,39 +185,6 @@ const SiteFlowHub: React.FC = () => {
                         ))}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Right column: previews (maps/photos/docs) */}
-                  <div className="lg:col-span-1 space-y-4">
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="previews">
-                        <AccordionTrigger>Previews</AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-3">
-                            {/* Site Study photos preview */}
-                            {selectedStep.key === 'site_study' && Array.isArray((selectedStep as any).values?.photos) && (
-                              <div className="grid grid-cols-2 gap-2">
-                                {(selectedStep as any).values.photos.map((src: string, i: number) => (
-                                  <div key={i} className="aspect-video rounded-lg overflow-hidden border bg-white/50">
-                                    <img src={src} alt={`photo-${i}`} className="w-full h-full object-cover" />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Map preview link */}
-                            {selectedStep.key === 'site_study' && (selectedStep as any).values?.map && (
-                              <a className="text-sm text-green-700 underline" href={(selectedStep as any).values.map} target="_blank" rel="noreferrer">Open map</a>
-                            )}
-
-                            {/* Handover doc preview */}
-                            {selectedStep.key === 'go_live' && (selectedStep as any).values?.handoverDoc && (
-                              <a className="text-sm text-green-700 underline" href={(selectedStep as any).values.handoverDoc} target="_blank" rel="noreferrer">View handover document</a>
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
                   </div>
                 </div>
               </div>
