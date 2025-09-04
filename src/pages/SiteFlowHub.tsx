@@ -21,6 +21,7 @@ const SiteFlowHub: React.FC = () => {
   const [selectedIdx, setSelectedIdx] = useState(() => Math.min(steps.findIndex(s => s.status !== 'completed'), steps.length - 1));
 
   const selectedStep = flow.steps[selectedIdx];
+  const canEdit = currentRole === 'admin' || currentRole === 'deployment_engineer';
 
   const formatDate = (value?: string) => {
     if (!value) return '';
@@ -70,6 +71,23 @@ const SiteFlowHub: React.FC = () => {
 
   const rows = buildRows();
 
+  const downloadReport = () => {
+    const payload = {
+      siteId,
+      step: selectedStep?.key,
+      title: selectedStep?.title,
+      generatedAt: new Date().toISOString(),
+      data: selectedStep?.values || {}
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${siteId}-${selectedStep?.key}-report.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -96,7 +114,15 @@ const SiteFlowHub: React.FC = () => {
             <CardContent className="p-5">
               <div className="space-y-4">
                 <div>
-                  <div className="text-base font-semibold">{selectedStep.title}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-base font-semibold">{selectedStep.title}</div>
+                    <div className="flex items-center gap-2">
+                      {canEdit && selectedStep.status !== 'completed' && (
+                        <Button size="sm" onClick={() => navigate(`/sites/${siteId}/flow/${selectedStep.key}`)}>Edit</Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={downloadReport}>Download Report</Button>
+                    </div>
+                  </div>
                   <div className="text-sm text-gray-600">{selectedStep.description}</div>
                 </div>
 
