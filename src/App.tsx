@@ -33,6 +33,8 @@ const Forecast = lazy(() => import("./pages/Forecast"));
 // Sites-related pages
 const Site = lazy(() => import("./pages/Site"));
 const SiteCreation = lazy(() => import("./pages/SiteCreation"));
+const SiteFlowHub = lazy(() => import("./pages/SiteFlowHub"));
+const SiteStepEdit = lazy(() => import("./pages/SiteStepEdit"));
 
 // Approvals & Procurement related pages
 const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"));
@@ -79,6 +81,42 @@ function App() {
               
               {/* Protected routes - wrapped with providers */}
               <Route
+                path="/sites/:id/flow"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <SiteFlowHub />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/sites/:id/flow/:stepKey"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <SiteStepEdit />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
                 path="/dashboard"
                 element={
                   <AuthProvider>
