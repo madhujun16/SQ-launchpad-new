@@ -31,13 +31,69 @@ export interface SiteFlowSummary {
 const store: Record<string, SiteFlowSummary> = {};
 
 const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
-  { id: "create_site", key: "create_site", title: "Create Site", description: "Basic site details", mandatoryFields: ["name", "goLiveDate"], values: {}, status: "completed" },
-  { id: "site_study", key: "site_study", title: "Site Study", description: "Assessment & notes", mandatoryFields: ["map", "counters"], values: {}, status: "not_started" },
-  { id: "scoping", key: "scoping", title: "Define Scope", description: "Hardware & software", mandatoryFields: ["hardwareList"], values: {}, status: "not_started" },
-  { id: "approval", key: "approval", title: "Approval", description: "Stakeholder sign-off", mandatoryFields: ["signedBy"], values: {}, status: "not_started" },
-  { id: "procurement", key: "procurement", title: "Procurement", description: "Source hardware", mandatoryFields: ["poNumber"], values: {}, status: "not_started" },
-  { id: "deployment", key: "deployment", title: "Deployment", description: "On-site installation", mandatoryFields: ["installDate"], values: {}, status: "not_started" },
-  { id: "go_live", key: "go_live", title: "Go Live", description: "Activate site", mandatoryFields: ["handoverDoc"], values: {}, status: "not_started" }
+  {
+    id: "create_site",
+    key: "create_site",
+    title: "Create Site",
+    description: "Basic site details",
+    mandatoryFields: ["name", "goLiveDate"],
+    values: { name: "Demo Site", goLiveDate: "2025-10-01", address: "25 ER Restaurant, London" },
+    status: "completed"
+  },
+  {
+    id: "site_study",
+    key: "site_study",
+    title: "Site Study",
+    description: "Assessment & notes",
+    mandatoryFields: ["map", "counters"],
+    values: { map: "https://maps.example.com/demo", counters: 4, latitude: 52.3067, longitude: -1.9456 },
+    status: "not_started"
+  },
+  {
+    id: "scoping",
+    key: "scoping",
+    title: "Define Scope",
+    description: "Hardware & software",
+    mandatoryFields: ["hardwareList"],
+    values: { hardwareList: "POS x1, PED x2, Printer x1" },
+    status: "not_started"
+  },
+  {
+    id: "approval",
+    key: "approval",
+    title: "Approval",
+    description: "Stakeholder sign-off",
+    mandatoryFields: ["signedBy"],
+    values: { signedBy: "Ops Manager" },
+    status: "not_started"
+  },
+  {
+    id: "procurement",
+    key: "procurement",
+    title: "Procurement",
+    description: "Source hardware",
+    mandatoryFields: ["poNumber"],
+    values: { poNumber: "PO-12345" },
+    status: "not_started"
+  },
+  {
+    id: "deployment",
+    key: "deployment",
+    title: "Deployment",
+    description: "On-site installation",
+    mandatoryFields: ["installDate"],
+    values: { installDate: "2025-10-10" },
+    status: "not_started"
+  },
+  {
+    id: "go_live",
+    key: "go_live",
+    title: "Go Live",
+    description: "Activate site",
+    mandatoryFields: ["handoverDoc"],
+    values: { handoverDoc: "https://docs.example.com/handover.pdf" },
+    status: "not_started"
+  }
 ].map(s => ({ ...s, updatedAt: new Date().toISOString() }));
 
 export function initSiteFlow(siteId: string): SiteFlowSummary {
