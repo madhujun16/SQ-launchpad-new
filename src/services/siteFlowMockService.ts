@@ -1,5 +1,6 @@
 import { EnhancedStepperStep } from "@/components/ui/enhanced-stepper";
 import { UnifiedSiteStatus } from "@/lib/siteTypes";
+import { MapPin, FileText, ClipboardList, CheckSquare, ShoppingCart, Truck, CheckCircle } from 'lucide-react';
 
 export type SiteFlowStepKey =
   | "create_site"
@@ -65,7 +66,16 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Define Scope",
     description: "Hardware & software",
     mandatoryFields: ["hardwareList"],
-    values: { hardwareList: "POS x1, PED x2, Printer x1" },
+    values: {
+      hardwareList: "POS x2, PED x2, Printer x1, Cash Drawer x1",
+      breakdown: [
+        { item: "ELO POS Terminal", qty: 2, unit: 1250, total: 2500 },
+        { item: "PED Verifone", qty: 2, unit: 400, total: 800 },
+        { item: "Thermal Printer", qty: 1, unit: 300, total: 300 },
+        { item: "Cash Drawer", qty: 1, unit: 150, total: 150 }
+      ],
+      totalCapex: 3750
+    },
     status: "not_started"
   },
   {
@@ -141,12 +151,23 @@ export function updateStepValues(siteId: string, stepKey: SiteFlowStepKey, value
 }
 
 export function getEnhancedSteps(flow: SiteFlowSummary): EnhancedStepperStep[] {
+  const iconByKey: Record<string, any> = {
+    create_site: MapPin,
+    site_study: FileText,
+    scoping: ClipboardList,
+    approval: CheckSquare,
+    procurement: ShoppingCart,
+    deployment: Truck,
+    go_live: CheckCircle,
+  };
+
   return flow.steps.map((s, idx) => ({
     id: s.id,
     title: s.title,
     description: s.description,
     status: s.status === "completed" ? "completed" : idx === firstIncompleteIndex(flow.steps) ? "current" : "upcoming",
-    readOnly: true
+    readOnly: true,
+    icon: iconByKey[s.key]
   }));
 }
 

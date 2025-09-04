@@ -8,11 +8,15 @@ import { getSiteFlow, getEnhancedSteps } from '@/services/siteFlowMockService';
 import { useAuth } from '@/hooks/useAuth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { format, parseISO, isValid } from 'date-fns';
+import { FileText, ClipboardList, CheckSquare, ShoppingCart, Truck, CheckCircle, MapPin } from 'lucide-react';
+import { useSiteContext } from '@/contexts/SiteContext';
 
 const SiteFlowHub: React.FC = () => {
   const { id: siteId = 'demo-site' } = useParams();
   const navigate = useNavigate();
   const { currentRole } = useAuth();
+  const { getSiteById } = useSiteContext();
+  const siteMeta = getSiteById(siteId);
 
   const flow = getSiteFlow(siteId);
   const steps = useMemo(() => getEnhancedSteps(flow), [flow]);
@@ -50,6 +54,22 @@ const SiteFlowHub: React.FC = () => {
       }
       case 'scoping':
         if (v.hardwareList) rows.push({ label: 'Hardware List', value: v.hardwareList });
+        if (Array.isArray(v.breakdown)) {
+          rows.push({ label: 'CAPEX Breakdown', value: (
+            <div className="mt-1 space-y-1">
+              {v.breakdown.map((b: any, i: number) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span>{b.item} × {b.qty}</span>
+                  <span>£{b.total}</span>
+                </div>
+              ))}
+              <div className="border-t pt-1 mt-1 flex justify-between text-sm font-medium">
+                <span>Total</span>
+                <span>£{v.totalCapex}</span>
+              </div>
+            </div>
+          ) });
+        }
         break;
       case 'approval':
         if (v.signedBy) rows.push({ label: 'Signed By', value: v.signedBy });
@@ -90,10 +110,14 @@ const SiteFlowHub: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Site title and meta */}
       <Card>
         <CardContent className="p-6 flex items-center justify-between">
           <div className="space-y-2">
-            <div className="text-lg font-semibold">Site Workflow Progress</div>
+            <div className="text-xl font-semibold">{siteMeta?.name || 'Site Flow'}</div>
+            <div className="text-sm text-gray-600">
+              {siteMeta?.organization ? `${siteMeta.organization} • Target Date: ${formatDate(siteMeta.goLiveDate)}` : 'Workflow status and navigation'}
+            </div>
             <div className="flex items-center gap-3">
               <Progress value={progress} className="w-48" />
               <span className="text-sm text-gray-600">{progress}%</span>
@@ -182,6 +206,17 @@ const SiteFlowHub: React.FC = () => {
           </Card>
         )}
       </MultiStepForm>
+
+      {/* Icon legend below stepper to reflect each stage */}
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs text-gray-600">
+        <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Create Site</div>
+        <div className="flex items-center gap-2"><FileText className="h-4 w-4" /> Site Study</div>
+        <div className="flex items-center gap-2"><ClipboardList className="h-4 w-4" /> Define Scope</div>
+        <div className="flex items-center gap-2"><CheckSquare className="h-4 w-4" /> Approval</div>
+        <div className="flex items-center gap-2"><ShoppingCart className="h-4 w-4" /> Procurement</div>
+        <div className="flex items-center gap-2"><Truck className="h-4 w-4" /> Deployment</div>
+        <div className="flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Go Live</div>
+      </div>
     </div>
   );
 };
