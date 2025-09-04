@@ -154,11 +154,11 @@ const Sites = () => {
 
   // Action handlers
   const handleViewSite = (site: Site) => {
-    navigate(`/sites/${site.id}?mode=view`);
+    navigate(`/sites/${site.id}/flow`);
   };
 
   const handleEditSite = (site: Site) => {
-    navigate(`/sites/${site.id}?mode=edit`);
+    navigate(`/sites/${site.id}/flow`);
   };
 
   const handleDeleteSite = (site: Site) => {

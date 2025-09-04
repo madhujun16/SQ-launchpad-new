@@ -38,7 +38,13 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
     title: "Create Site",
     description: "Basic site details",
     mandatoryFields: ["name", "goLiveDate"],
-    values: { name: "Demo Site", goLiveDate: "2025-10-01", address: "25 ER Restaurant, London" },
+    values: {
+      name: "ASDA Redditch",
+      goLiveDate: "2025-11-15",
+      address: "25 ER Restaurant, Redditch",
+      opsManager: "Sarah Johnson",
+      deploymentEngineer: "Mike Wilson"
+    },
     status: "completed"
   },
   {

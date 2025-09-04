@@ -41,8 +41,10 @@ const SiteFlowHub: React.FC = () => {
     switch (selectedStep?.key) {
       case 'create_site':
         if (v.name) rows.push({ label: 'Site Name', value: v.name });
-        if (v.goLiveDate) rows.push({ label: 'Go Live Date', value: formatDate(v.goLiveDate) });
+        if (v.goLiveDate) rows.push({ label: 'Target Go Live', value: formatDate(v.goLiveDate) });
         if (v.address) rows.push({ label: 'Address', value: v.address });
+        if (v.opsManager) rows.push({ label: 'Ops Manager', value: v.opsManager });
+        if (v.deploymentEngineer) rows.push({ label: 'Deployment Engineer', value: v.deploymentEngineer });
         break;
       case 'site_study': {
         if (v.address) rows.push({ label: 'Address', value: v.address });
