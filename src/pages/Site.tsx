@@ -1276,57 +1276,6 @@ const SiteDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Contact Information Section */}
-            <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-5 w-5 text-green-600" />
-                  Contact Information
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Primary and additional contact details
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Primary Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="unit-manager-name">Unit Manager Name</Label>
-                        <Input value={site.siteCreation?.contactInfo?.unitManagerName || "Sarah Johnson"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="job-title">Job Title</Label>
-                        <Input value={site.siteCreation?.contactInfo?.jobTitle || "Operations Manager"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="unit-manager-email">Email</Label>
-                        <Input value={site.siteCreation?.contactInfo?.unitManagerEmail || "sarah.johnson@company.com"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="unit-manager-mobile">Mobile</Label>
-                        <Input value={site.siteCreation?.contactInfo?.unitManagerMobile || "+44 7700 900123"} readOnly className="bg-gray-50" />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Additional Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="additional-contact-name">Additional Contact Name</Label>
-                        <Input value={site.siteCreation?.contactInfo?.additionalContactName || "Mike Wilson"} readOnly className="bg-gray-50" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="additional-contact-email">Additional Contact Email</Label>
-                        <Input value={site.siteCreation?.contactInfo?.additionalContactEmail || "mike.wilson@company.com"} readOnly className="bg-gray-50" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Location Information Section */}
             <Card className="shadow-sm border border-gray-200">
@@ -1372,40 +1321,6 @@ const SiteDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Site Notes Section */}
-            <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-5 w-5 text-purple-600" />
-                  Site Notes
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Additional site details and notes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="site-notes">Site Notes</Label>
-                    <Textarea 
-                      value={site.notes || site.siteCreation?.additionalNotes || "Full POS and Kiosk implementation for ASDA Redditch location. Site has good network infrastructure and power availability."}
-                      readOnly 
-                      className="bg-gray-50" 
-                      rows={4}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="additional-details">Additional Site Details</Label>
-                    <Textarea 
-                      value={site.siteCreation?.additionalNotes || "Kitchen area needs additional power outlets for POS terminals. Storage area available for hardware installation. Site is ready for deployment."}
-                      readOnly 
-                      className="bg-gray-50" 
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         );
 
@@ -1434,57 +1349,6 @@ const SiteDetail = () => {
             </div>
             
             <div className="space-y-6">
-              {/* Contact Information */}
-              <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                    <Users className="mr-2 h-5 w-5 text-blue-600" />
-                    Contact Information
-                </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Primary and additional contact details
-                  </CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Primary Contact</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="primary-name">Name</Label>
-                          <Input id="primary-name" value={site?.siteStudy?.contactInfo?.primaryContact?.name || "Sarah Johnson"} readOnly className="bg-gray-50" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="primary-job-title">Job Title</Label>
-                          <Input id="primary-job-title" value={site?.siteStudy?.contactInfo?.primaryContact?.jobTitle || "Operations Manager"} readOnly className="bg-gray-50" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="primary-email">Email</Label>
-                          <Input id="primary-email" value={site?.siteStudy?.contactInfo?.primaryContact?.email || "sarah.johnson@company.com"} readOnly className="bg-gray-50" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="primary-mobile">Mobile</Label>
-                          <Input id="primary-mobile" value={site?.siteStudy?.contactInfo?.primaryContact?.mobile || "+44 7700 900123"} readOnly className="bg-gray-50" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Additional Contact</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="additional-contact-name">Additional Contact Name</Label>
-                          <Input id="additional-contact-name" value={site?.siteStudy?.contactInfo?.additionalContact?.name || "John Smith"} readOnly className="bg-gray-50" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="additional-contact-email">Additional Contact Email</Label>
-                          <Input id="additional-contact-email" value={site?.siteStudy?.contactInfo?.additionalContact?.email || "john.smith@company.com"} readOnly className="bg-gray-50" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-              </CardContent>
-            </Card>
 
               {/* Location & Delivery Information */}
               <Card className="shadow-sm border border-gray-200">

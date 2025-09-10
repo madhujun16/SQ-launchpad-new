@@ -11,9 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { 
   Building, 
-  Users, 
   MapPin, 
-  FileText,
   Plus,
   Trash2,
   Save,
@@ -67,15 +65,6 @@ interface SiteData {
   country: string;
   latitude: number | null;
   longitude: number | null;
-  siteNotes: string;
-  additionalSiteDetails: string;
-  // Contact fields
-  unitManagerName: string;
-  jobTitle: string;
-  unitManagerEmail: string;
-  unitManagerMobile: string;
-  additionalContactName: string;
-  additionalContactEmail: string;
 }
 
 // Predefined sector options (same as OrganizationsManagement)
@@ -106,16 +95,7 @@ const SiteCreation = () => {
     region: '',
     country: 'United Kingdom',
     latitude: null,
-    longitude: null,
-    siteNotes: '',
-    additionalSiteDetails: '',
-    // Contact fields
-    unitManagerName: '',
-    jobTitle: '',
-    unitManagerEmail: '',
-    unitManagerMobile: '',
-    additionalContactName: '',
-    additionalContactEmail: ''
+    longitude: null
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -125,9 +105,7 @@ const SiteCreation = () => {
   const [submitting, setSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     general: true,
-    contact: false,
-    locationPicker: false,
-    notes: false
+    locationPicker: false
   });
 
   // Add Organization modal state
@@ -510,7 +488,7 @@ const SiteCreation = () => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                  <Building className="h-5 w-5 text-blue-600" />
                   <CardTitle className="text-lg">General Information</CardTitle>
                 </div>
                 {expandedSections.general ? (
@@ -669,101 +647,6 @@ const SiteCreation = () => {
             )}
           </Card>
 
-          {/* Contact Information Section */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('contact')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600" />
-                  <CardTitle className="text-lg">Contact Information</CardTitle>
-                </div>
-                {expandedSections.contact ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-              <CardDescription className="text-gray-600">
-                Primary and additional contact details
-              </CardDescription>
-            </CardHeader>
-            {expandedSections.contact && (
-              <CardContent className="pt-0">
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Primary Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="unit-manager-name">Unit Manager Name</Label>
-                        <Input
-                          id="unit-manager-name"
-                          placeholder="e.g., Sarah Johnson"
-                          value={formData.unitManagerName}
-                          onChange={(e) => handleInputChange('unitManagerName', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="job-title">Job Title</Label>
-                        <Input
-                          id="job-title"
-                          placeholder="e.g., Operations Manager"
-                          value={formData.jobTitle}
-                          onChange={(e) => handleInputChange('jobTitle', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="unit-manager-email">Email</Label>
-                        <Input
-                          id="unit-manager-email"
-                          type="email"
-                          placeholder="e.g., sarah.johnson@company.com"
-                          value={formData.unitManagerEmail}
-                          onChange={(e) => handleInputChange('unitManagerEmail', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="unit-manager-mobile">Mobile</Label>
-                        <Input
-                          id="unit-manager-mobile"
-                          placeholder="e.g., +44 20 7123 4567"
-                          value={formData.unitManagerMobile}
-                          onChange={(e) => handleInputChange('unitManagerMobile', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Additional Contact</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="additional-contact-name">Additional Contact Name</Label>
-                        <Input
-                          id="additional-contact-name"
-                          placeholder="e.g., John Smith"
-                          value={formData.additionalContactName}
-                          onChange={(e) => handleInputChange('additionalContactName', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="additional-contact-email">Additional Contact Email</Label>
-                        <Input
-                          id="additional-contact-email"
-                          type="email"
-                          placeholder="e.g., john.smith@company.com"
-                          value={formData.additionalContactEmail}
-                          onChange={(e) => handleInputChange('additionalContactEmail', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
 
           {/* Location Picker Section */}
           <Card className="shadow-sm border border-gray-200">
@@ -877,44 +760,6 @@ const SiteCreation = () => {
             )}
           </Card>
 
-          {/* Site Notes Section */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('notes')}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-indigo-600" />
-                  <CardTitle className="text-lg">Site Notes</CardTitle>
-                </div>
-                {expandedSections.notes ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
-                )}
-              </div>
-              <CardDescription className="text-gray-600">
-                Additional notes and site details
-              </CardDescription>
-            </CardHeader>
-            {expandedSections.notes && (
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="site-notes">Site Notes</Label>
-                    <Textarea
-                      id="site-notes"
-                      placeholder="Enter site notes and additional information..."
-                      value={formData.siteNotes}
-                      onChange={(e) => handleInputChange('siteNotes', e.target.value)}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
         </div>
 
         {/* Bottom Create Site Button */}
