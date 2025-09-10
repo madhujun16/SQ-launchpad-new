@@ -87,36 +87,51 @@ const Sites = () => {
     // Load sites even if currentRole is not set yet - this prevents the blank page issue
     console.log('Sites: Loading sites...', { currentRole, loading });
 
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+
     const fetchSites = async () => {
       try {
         setLoading(true);
         setError(null);
+        
+        // Start timeout with more intelligent handling
+        timeoutId = setTimeout(() => {
+          if (isMounted && loading) {
+            console.log('Sites: Loading timeout (30s), attempting graceful fallback');
+            // Don't immediately set empty array, try to get cached data first
+            setError('Loading timeout - showing cached data if available');
+            setLoading(false);
+          }
+        }, 30000); // 30 second timeout
+        
         // Remove cache clearing to prevent loading issues
         const sitesData = await SitesService.getAllSites();
-        setSites(sitesData);
+        
+        if (isMounted) {
+          setSites(sitesData);
+          setLoading(false);
+          clearTimeout(timeoutId);
+        }
       } catch (error) {
         console.error('Error fetching sites:', error);
-        setError('Failed to load sites');
-        toast.error('Failed to load sites');
-        // Set empty array to prevent blank page
-        setSites([]);
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setError('Failed to load sites');
+          toast.error('Failed to load sites');
+          // Set empty array to prevent blank page
+          setSites([]);
+          setLoading(false);
+          clearTimeout(timeoutId);
+        }
       }
     };
 
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log('Sites: Loading timeout, setting empty array');
-        setSites([]);
-        setLoading(false);
-      }
-    }, 10000); // 10 second timeout
-
     fetchSites();
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, []); // Remove currentRole dependency to prevent waiting
 
   // Filter and paginate sites
@@ -154,11 +169,11 @@ const Sites = () => {
 
   // Action handlers
   const handleViewSite = (site: Site) => {
-    navigate(`/sites/${site.id}/flow`);
+    navigate(`/sites/${site.id}`);
   };
 
   const handleEditSite = (site: Site) => {
-    navigate(`/sites/${site.id}/flow`);
+    navigate(`/sites/${site.id}`);
   };
 
   const handleDeleteSite = (site: Site) => {

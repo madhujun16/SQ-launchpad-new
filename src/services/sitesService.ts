@@ -84,23 +84,96 @@ export class SitesService {
 
       console.log('🔍 Fetching sites from database...');
       
-      // Check if we have an active session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // Check if we have an active session with retry logic
+      let session = null;
+      let sessionError = null;
+      
+      try {
+        // Try to get session with a reasonable timeout
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session check timeout')), 15000) // Increased to 15 seconds
+          )
+        ]);
+        
+        if (sessionResult && typeof sessionResult === 'object' && 'data' in sessionResult) {
+          session = (sessionResult as any).data.session;
+          sessionError = (sessionResult as any).error;
+        }
+      } catch (error) {
+        console.warn('⚠️ Session check failed, attempting refresh:', error);
+        
+        // Wait a bit before attempting refresh to avoid lock conflicts
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Try to refresh the session with better error handling
+        try {
+          const refreshResult = await Promise.race([
+            supabase.auth.refreshSession(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session refresh timeout')), 25000) // Increased to 25 seconds
+            )
+          ]);
+          
+          if (refreshResult && typeof refreshResult === 'object' && 'data' in refreshResult) {
+            session = (refreshResult as any).data.session;
+            sessionError = (refreshResult as any).error;
+            console.log('✅ Session refreshed successfully');
+          }
+        } catch (refreshError) {
+          console.error('❌ Session refresh failed:', refreshError);
+          
+          // If we have cached data, return it instead of empty array
+          if (this.sitesCache) {
+            console.log('🔍 Returning stale cache due to session issues');
+            return this.sitesCache.data;
+          }
+          
+          // If no cache, try one more time with a simple session check
+          try {
+            console.log('🔄 Attempting final session check...');
+            const finalSessionResult = await supabase.auth.getSession();
+            if (finalSessionResult.data.session) {
+              session = finalSessionResult.data.session;
+              sessionError = finalSessionResult.error;
+              console.log('✅ Final session check succeeded');
+            } else {
+              console.log('❌ No session available, returning empty array');
+              return [];
+            }
+          } catch (finalError) {
+            console.error('❌ Final session check failed:', finalError);
+            return [];
+          }
+        }
+      }
       
       if (sessionError) {
         console.error('❌ Session error:', sessionError);
+        // Return cached data if available, otherwise empty array
+        if (this.sitesCache) {
+          console.log('🔍 Returning stale cache due to session error');
+          return this.sitesCache.data;
+        }
         return [];
       }
       
       if (!session) {
         console.error('❌ No active session');
+        // Return cached data if available, otherwise empty array
+        if (this.sitesCache) {
+          console.log('🔍 Returning stale cache due to no session');
+          return this.sitesCache.data;
+        }
         return [];
       }
       
       console.log('🔍 Making Supabase query with organization join...');
       
       // Query to get sites with organization data - only non-archived sites
-      const { data, error } = await supabase
+      // Add timeout to the query itself
+      const queryPromise = supabase
         .from('sites')
         .select(`
           *,
@@ -108,6 +181,13 @@ export class SitesService {
         `)
         .eq('is_archived', false)
         .order('name');
+
+      const { data, error } = await Promise.race([
+        queryPromise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database query timeout')), 25000)
+        )
+      ]) as any;
 
       if (error) {
         console.error('❌ Error fetching sites:', error);
@@ -117,6 +197,12 @@ export class SitesService {
           details: error.details,
           hint: error.hint
         });
+        
+        // Return cached data if available, otherwise empty array
+        if (this.sitesCache) {
+          console.log('🔍 Returning stale cache due to query error');
+          return this.sitesCache.data;
+        }
         return [];
       }
 
@@ -182,6 +268,12 @@ export class SitesService {
       return transformedSites;
     } catch (error) {
       console.error('❌ Error in getAllSites:', error);
+      
+      // Return cached data if available, otherwise empty array
+      if (this.sitesCache) {
+        console.log('🔍 Returning stale cache due to general error');
+        return this.sitesCache.data;
+      }
       return [];
     }
   }

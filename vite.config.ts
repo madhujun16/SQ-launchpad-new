@@ -97,11 +97,14 @@ export default defineConfig(({ mode }) => ({
     force: false
   },
   server: {
-    host: "::",
+    host: "localhost",
     port: 8080,
     // Optimize dev server performance
     hmr: {
       overlay: false
+    },
+    watch: {
+      usePolling: true
     }
   },
   preview: {

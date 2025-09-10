@@ -16,7 +16,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     storageKey: 'smartq-launchpad-auth',
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // Improved refresh configuration for better reliability
+    refreshTokenRetryAttempts: 3, // Reduced back to 3 to avoid lock conflicts
+    refreshTokenRetryDelay: 2000, // Increased back to 2000ms for stability
+    // Add session timeout handling
+    sessionTimeout: 30 * 24 * 60 * 60 * 1000, // 30 days
+    // Enable debug mode in development
+    debug: import.meta.env.DEV,
+    // Add lock timeout to prevent hanging
+    lockTimeout: 10000 // 10 seconds lock timeout
   },
   db: {
     schema: 'public'
@@ -37,8 +46,37 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Add error handling and performance monitoring
 supabase.auth.onAuthStateChange((event, session) => {
+  console.log('🔍 Auth state change:', event, session ? 'Session exists' : 'No session');
+  
   if (event === 'SIGNED_OUT') {
     // Clear any cached data on sign out
     localStorage.removeItem('smartq-launchpad-auth');
+    console.log('🧹 Cleared auth data on sign out');
+  } else if (event === 'TOKEN_REFRESHED') {
+    console.log('✅ Token refreshed successfully');
+  } else if (event === 'SIGNED_IN') {
+    console.log('✅ User signed in successfully');
   }
 });
+
+// Add periodic session health check to prevent expiration
+if (typeof window !== 'undefined') {
+  setInterval(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const now = Date.now();
+        const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+        const timeUntilExpiry = expiresAt - now;
+        
+        // If session expires in less than 5 minutes, try to refresh
+        if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
+          console.log('⚠️ Session expires soon, attempting refresh...');
+          await supabase.auth.refreshSession();
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Periodic session check failed:', error);
+    }
+  }, 60000); // Check every minute
+}

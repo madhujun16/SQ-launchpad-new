@@ -117,6 +117,8 @@ function App() {
                   </AuthProvider>
                 }
               />
+
+              <Route
                 path="/dashboard"
                 element={
                   <AuthProvider>
