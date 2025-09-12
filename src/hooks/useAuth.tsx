@@ -259,6 +259,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await fetchProfile(initialSession.user.id);
         } else {
           console.log('ℹ️ No initial session - user needs to authenticate');
+          // Don't set loading to false immediately for new devices
+          // Let AuthGuard handle the redirect
         }
         
         setLoading(false);

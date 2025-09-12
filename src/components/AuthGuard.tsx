@@ -24,10 +24,21 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [loading]);
 
   useEffect(() => {
+    // If we're not loading and there's no user, redirect to auth page
     if (!loading && !user && location.pathname !== '/auth') {
+      console.log('🔄 No user found, redirecting to auth page');
       navigate('/auth');
     }
   }, [user, loading, navigate, location.pathname]);
+
+  // If we're not loading and there's no user, don't show loading screen
+  // This prevents the infinite loading issue on new devices
+  if (!loading && !user && location.pathname !== '/auth') {
+    console.log('🔄 No session - redirecting to auth');
+    // Immediately redirect without showing any UI
+    navigate('/auth', { replace: true });
+    return null;
+  }
 
   // Show loading state while auth is initializing (but with timeout)
   if (loading && !authTimeout) {

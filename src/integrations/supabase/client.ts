@@ -114,6 +114,7 @@ export const initializeSession = async () => {
     }
     
     console.log('ℹ️ No existing session found - user needs to authenticate');
+    console.log('🔄 This is normal for new devices or after clearing browser data');
     return { session: null, error: null };
     
   } catch (error) {
