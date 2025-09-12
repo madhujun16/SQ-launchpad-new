@@ -7,6 +7,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authTimeout, setAuthTimeout] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
   
   // Call useAuth hook at the top level (Rules of Hooks requirement)
   const { user, loading, currentRole } = useAuth();
@@ -23,20 +24,24 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => clearTimeout(timeoutId);
   }, [loading]);
 
+  // Handle redirect to auth page when no user is found
   useEffect(() => {
-    // If we're not loading and there's no user, redirect to auth page
-    if (!loading && !user && location.pathname !== '/auth') {
+    if (!loading && !user && location.pathname !== '/auth' && !hasRedirected) {
       console.log('🔄 No user found, redirecting to auth page');
-      navigate('/auth');
+      setHasRedirected(true);
+      navigate('/auth', { replace: true });
     }
-  }, [user, loading, navigate, location.pathname]);
+  }, [user, loading, navigate, location.pathname, hasRedirected]);
 
-  // If we're not loading and there's no user, don't show loading screen
-  // This prevents the infinite loading issue on new devices
+  // Reset redirect flag when user changes
+  useEffect(() => {
+    if (user) {
+      setHasRedirected(false);
+    }
+  }, [user]);
+
+  // If we're not loading and there's no user, show nothing while redirecting
   if (!loading && !user && location.pathname !== '/auth') {
-    console.log('🔄 No session - redirecting to auth');
-    // Immediately redirect without showing any UI
-    navigate('/auth', { replace: true });
     return null;
   }
 
