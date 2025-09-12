@@ -30,13 +30,36 @@ import { PageLoader } from '@/components/ui/loader';
 
 // Hardware category enum values
 const HARDWARE_CATEGORIES = [
-  { value: 'KIOSKS', label: 'KIOSKS' },
-  { value: 'KDS_SCREENS', label: 'KDS (SCREENS)' },
-  { value: 'POS_TILLS', label: 'POS (TILLS)' },
-  { value: 'TDS_SCREENS', label: 'TDS (SCREENS)' },
-  { value: 'TABLETS_DBFB', label: 'TABLETS (DBFB)' }
+  { value: 'Kiosk', label: 'Kiosk' },
+  { value: 'Kitchen Display System (KDS)', label: 'Kitchen Display System (KDS)' },
+  { value: 'Customer Display Screen (TDS)', label: 'Customer Display Screen (TDS)' },
+  { value: 'POS Terminal', label: 'POS Terminal' },
+  { value: 'ORT Tablet', label: 'ORT Tablet' },
+  { value: 'Accessories', label: 'Accessories' },
+  { value: 'Support & Sundries', label: 'Support & Sundries' },
+  { value: 'Connectivity', label: 'Connectivity' },
+  { value: 'Deployment', label: 'Deployment' },
+  { value: 'License Fees', label: 'License Fees' }
+] as const;
+
+const HARDWARE_SUBCATEGORIES = [
+  { value: 'Wall Mounted', label: 'Wall Mounted' },
+  { value: 'Floor Mounted', label: 'Floor Mounted' },
+  { value: 'Desk Mounted', label: 'Desk Mounted' },
+  { value: 'Free Standing', label: 'Free Standing' },
+  { value: 'Fixed', label: 'Fixed' },
+  { value: 'Remote Support', label: 'Remote Support' },
+  { value: 'On-site Support', label: 'On-site Support' },
+  { value: 'Other', label: 'Other' }
+] as const;
+
+const SUPPORT_TYPES = [
+  { value: 'None', label: 'None' },
+  { value: 'On-site', label: 'On-site' },
+  { value: 'Remote', label: 'Remote' }
 ] as const;
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 // Interfaces
 interface SoftwareModule {
@@ -54,15 +77,17 @@ interface SoftwareModule {
 
 interface HardwareItem {
   id: string;
-  name: string;
-  description: string | null;
+  hardware_name: string;
   category: string;
-  model: string | null;
-  manufacturer: string | null;
-  unit_cost: number | null;
-  installation_cost: number | null;
-  maintenance_cost: number | null;
-  is_active: boolean;
+  subcategory?: string | null;
+  manufacturer?: string | null;
+  configuration_notes?: string | null;
+  unit_cost?: number | null;
+  quantity?: number | null;
+  total_cost?: number | null;
+  support_type?: string | null;
+  support_cost?: number | null;
+  is_active?: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -285,14 +310,16 @@ export default function SoftwareHardwareManagement() {
   const addHardwareItem = () => {
     const newHardware: HardwareItem = {
       id: 'new',
-      name: '',
-      description: '',
+      hardware_name: '',
       category: '',
-      model: '',
+      subcategory: '',
       manufacturer: '',
+      configuration_notes: '',
       unit_cost: 0,
-      installation_cost: 0,
-      maintenance_cost: 0,
+      quantity: 1,
+      total_cost: 0,
+      support_type: 'None',
+      support_cost: 0,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -311,14 +338,16 @@ export default function SoftwareHardwareManagement() {
     try {
       if (editingHardwareItem.id && editingHardwareItem.id !== 'new') {
         const { error } = await supabase.from('hardware_items').update({
-          name: editingHardwareItem.name,
-          description: editingHardwareItem.description,
+          hardware_name: editingHardwareItem.hardware_name,
           category: editingHardwareItem.category,
-          model: editingHardwareItem.model,
+          subcategory: editingHardwareItem.subcategory,
           manufacturer: editingHardwareItem.manufacturer,
+          configuration_notes: editingHardwareItem.configuration_notes,
           unit_cost: editingHardwareItem.unit_cost,
-          installation_cost: editingHardwareItem.installation_cost,
-          maintenance_cost: editingHardwareItem.maintenance_cost,
+          quantity: editingHardwareItem.quantity,
+          total_cost: editingHardwareItem.total_cost,
+          support_type: editingHardwareItem.support_type,
+          support_cost: editingHardwareItem.support_cost,
           is_active: editingHardwareItem.is_active,
           updated_at: new Date().toISOString(),
         }).eq('id', editingHardwareItem.id);
@@ -328,14 +357,16 @@ export default function SoftwareHardwareManagement() {
         toast.success('Hardware item updated successfully');
       } else {
         const { data, error } = await supabase.from('hardware_items').insert([{
-          name: editingHardwareItem.name,
-          description: editingHardwareItem.description,
+          hardware_name: editingHardwareItem.hardware_name,
           category: editingHardwareItem.category,
-          model: editingHardwareItem.model,
+          subcategory: editingHardwareItem.subcategory,
           manufacturer: editingHardwareItem.manufacturer,
+          configuration_notes: editingHardwareItem.configuration_notes,
           unit_cost: editingHardwareItem.unit_cost,
-          installation_cost: editingHardwareItem.installation_cost,
-          maintenance_cost: editingHardwareItem.maintenance_cost,
+          quantity: editingHardwareItem.quantity,
+          total_cost: editingHardwareItem.total_cost,
+          support_type: editingHardwareItem.support_type,
+          support_cost: editingHardwareItem.support_cost,
           is_active: editingHardwareItem.is_active,
         }]).select('*').single();
         
@@ -1073,19 +1104,20 @@ export default function SoftwareHardwareManagement() {
             </h3>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="hardName">Name</Label>
+                <Label htmlFor="hardwareName">Hardware Name</Label>
                 <Input 
-                  id="hardName" 
-                  value={editingHardwareItem.name} 
-                  onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, name: e.target.value})} 
+                  id="hardwareName" 
+                  value={editingHardwareItem.hardware_name} 
+                  onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, hardware_name: e.target.value})} 
                 />
               </div>
               <div>
-                <Label htmlFor="hardDesc">Description</Label>
-                <Input 
-                  id="hardDesc" 
-                  value={editingHardwareItem.description || ''} 
-                  onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, description: e.target.value})} 
+                <Label htmlFor="configurationNotes">Configuration Notes</Label>
+                <Textarea 
+                  id="configurationNotes" 
+                  value={editingHardwareItem.configuration_notes || ''} 
+                  onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, configuration_notes: e.target.value})}
+                  rows={3}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1108,12 +1140,22 @@ export default function SoftwareHardwareManagement() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="hardModel">Model</Label>
-                  <Input 
-                    id="hardModel" 
-                    value={editingHardwareItem.model || ''} 
-                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, model: e.target.value})} 
-                  />
+                  <Label htmlFor="subcategory">Subcategory</Label>
+                  <Select 
+                    value={editingHardwareItem.subcategory || ''} 
+                    onValueChange={(value) => setEditingHardwareItem({...editingHardwareItem!, subcategory: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subcategory" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HARDWARE_SUBCATEGORIES.map((subcategory) => (
+                        <SelectItem key={subcategory.value} value={subcategory.value}>
+                          {subcategory.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div>
@@ -1126,33 +1168,67 @@ export default function SoftwareHardwareManagement() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <Label htmlFor="hardUnit">Unit Cost (£)</Label>
+                  <Label htmlFor="unitCost">Unit Cost (£)</Label>
                   <Input 
-                    id="hardUnit" 
-                    type="number" 
-                    value={editingHardwareItem.unit_cost ?? 0} 
-                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, unit_cost: Number(e.target.value)})} 
+                    id="unitCost" 
+                    type="number"
+                    step="0.01"
+                    value={editingHardwareItem.unit_cost || ''} 
+                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, unit_cost: parseFloat(e.target.value) || 0})} 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="hardInst">Installation (£)</Label>
+                  <Label htmlFor="quantity">Quantity</Label>
                   <Input 
-                    id="hardInst" 
-                    type="number" 
-                    value={editingHardwareItem.installation_cost ?? 0} 
-                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, installation_cost: Number(e.target.value)})} 
+                    id="quantity" 
+                    type="number"
+                    value={editingHardwareItem.quantity || ''} 
+                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, quantity: parseInt(e.target.value) || 1})} 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="hardMaint">Maintenance (£/month)</Label>
+                  <Label htmlFor="totalCost">Total Cost (£)</Label>
                   <Input 
-                    id="hardMaint" 
-                    type="number" 
-                    value={editingHardwareItem.maintenance_cost ?? 0} 
-                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, maintenance_cost: Number(e.target.value)})} 
+                    id="totalCost" 
+                    type="number"
+                    step="0.01"
+                    value={editingHardwareItem.total_cost || ''} 
+                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, total_cost: parseFloat(e.target.value) || 0})} 
                   />
                 </div>
               </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="supportType">Support Type</Label>
+                  <Select 
+                    value={editingHardwareItem.support_type || 'None'} 
+                    onValueChange={(value) => setEditingHardwareItem({...editingHardwareItem!, support_type: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select support type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORT_TYPES.map((supportType) => (
+                        <SelectItem key={supportType.value} value={supportType.value}>
+                          {supportType.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="supportCost">Support Cost (£)</Label>
+                  <Input 
+                    id="supportCost" 
+                    type="number"
+                    step="0.01"
+                    value={editingHardwareItem.support_cost || ''} 
+                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, support_cost: parseFloat(e.target.value) || 0})} 
+                  />
+                </div>
+              </div>
+              
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="hardActive" 
