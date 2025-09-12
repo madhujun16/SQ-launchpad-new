@@ -363,7 +363,7 @@ All colors MUST be HSL.
 @layer components {
   /* Optimized gradients - simplified for better performance */
   .page-green-black {
-    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 20%, #000000 100%);
+    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 15%, #000000 50%, #000000 100%);
     background-color: #000000; /* Fallback */
   }
 
@@ -375,20 +375,20 @@ All colors MUST be HSL.
 
   /* Login page background - same as landing page */
   .auth-page-background {
-    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 20%, #000000 100%);
+    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 15%, #000000 50%, #000000 100%);
     background-color: #000000; /* Fallback */
     min-height: 100vh;
   }
 
   /* Mobile sidebar background - same as landing page */
   .mobile-sidebar-background {
-    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 20%, #000000 100%);
+    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 15%, #000000 50%, #000000 100%);
     background-color: #000000; /* Fallback */
   }
 
   /* Authentication loading screen background - same as landing page */
   .auth-loading-background {
-    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 20%, #000000 100%);
+    background: linear-gradient(180deg, #0A4D2C 0%, #0A4D2C 15%, #000000 50%, #000000 100%);
     background-color: #000000; /* Fallback */
   }
 
