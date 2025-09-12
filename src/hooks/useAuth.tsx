@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', userId as any)
         .maybeSingle();
 
       if (profileError) {
@@ -109,14 +109,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId);
+        .eq('user_id', userId as any);
 
       if (rolesError) {
         console.error('Roles fetch error:', rolesError);
         // Use fallback roles to prevent hanging
         const fallbackRoles: UserRole[] = ['admin'];
         const profileWithRoles: Profile = { 
-          ...profileData, 
+          ...(profileData as any || {}), 
           user_roles: fallbackRoles.map(role => ({ role }))
         };
         
@@ -126,9 +126,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const roles = (rolesData?.map(r => r.role) || ['admin']) as UserRole[];
+      const roles = (rolesData?.map((r: any) => r.role) || ['admin']) as UserRole[];
       const profileWithRoles: Profile = { 
-        ...profileData, 
+        ...(profileData as any || {}), 
         user_roles: roles.map(role => ({ role }))
       };
       
