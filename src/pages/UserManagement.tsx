@@ -28,6 +28,7 @@ import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 import { formatDate } from '@/lib/dateUtils';
 import { PageLoader } from '@/components/ui/loader';
 
@@ -202,9 +203,10 @@ export default function UserManagement() {
             user_id: newUserId,
             email: editingUser.email,
             full_name: editingUser.full_name,
+            is_active: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          })
+          } as any)
           .select()
           .single();
         
@@ -214,7 +216,7 @@ export default function UserManagement() {
           return;
         }
         
-        profileId = newProfile.id;
+        profileId = (newProfile as any)?.id || '';
         editingUser.id = profileId;
         editingUser.user_id = newUserId;
       } else {
@@ -224,8 +226,8 @@ export default function UserManagement() {
           .update({
             full_name: editingUser.full_name,
             updated_at: new Date().toISOString()
-          })
-          .eq('id', editingUser.id);
+          } as any)
+          .eq('id', editingUser.id as any);
         
         if (profileError) {
           console.error('Error updating profile:', profileError);
@@ -240,18 +242,20 @@ export default function UserManagement() {
         await supabase
           .from('user_roles')
           .delete()
-          .eq('user_id', editingUser.user_id);
+          .eq('user_id', editingUser.user_id as any);
         
         // Then insert new roles
         const rolesToInsert = editingUser.user_roles.map(role => ({
           user_id: editingUser.user_id,
-          role: role.role,
-          assigned_by: editingUser.user_id // Self-assigned for now
+          role: role.role as Database["public"]["Enums"]["app_role"],
+          assigned_by: editingUser.user_id,
+          assigned_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
         }));
         
         const { error: rolesError } = await supabase
           .from('user_roles')
-          .insert(rolesToInsert);
+          .insert(rolesToInsert as any);
         
         if (rolesError) {
           console.error('Error updating roles:', rolesError);
@@ -292,7 +296,7 @@ export default function UserManagement() {
       const { error: rolesError } = await supabase
         .from('user_roles')
         .delete()
-        .eq('user_id', userId);
+        .eq('user_id', userId as any);
       
       if (rolesError) {
         console.error('Error deleting user roles:', rolesError);
@@ -302,7 +306,7 @@ export default function UserManagement() {
       const { error } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', userId);
+        .eq('id', userId as any);
       
       if (error) {
         console.error('Error deleting user:', error);
