@@ -15,10 +15,10 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // Set a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       if (loading) {
-        console.warn('Auth loading timeout - proceeding with fallback');
+        console.warn('⚠️ Auth loading timeout - proceeding with fallback');
         setAuthTimeout(true);
       }
-    }, 10000); // 10 second timeout
+    }, 15000); // Increased to 15 seconds for better cross-device handling
 
     return () => clearTimeout(timeoutId);
   }, [loading]);
@@ -56,19 +56,31 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <li>• Network connectivity issues</li>
               <li>• Database connection problems</li>
               <li>• Authentication service delays</li>
+              <li>• First-time access from this device</li>
+              <li>• Browser cache or session issues</li>
             </ul>
             <div className="space-y-3">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  // Clear any cached auth data and reload
+                  localStorage.removeItem('smartq-launchpad-auth');
+                  window.location.reload();
+                }}
                 className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                Retry Authentication
+                Clear Cache & Retry
               </button>
               <button
                 onClick={() => navigate('/auth')}
-                className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Go to Login
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Simple Retry
               </button>
             </div>
           </div>

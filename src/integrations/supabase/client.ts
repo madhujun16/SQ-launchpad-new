@@ -25,7 +25,12 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     // Enable debug mode in development
     debug: import.meta.env.DEV,
     // Add lock timeout to prevent hanging
-    lockTimeout: 10000 // 10 seconds lock timeout
+    lockTimeout: 10000, // 10 seconds lock timeout
+    // Add better error handling for cross-device access
+    skipBrowserSessionCheck: false, // Ensure browser session is checked
+    // Add retry configuration for initial session
+    retryDelay: 1000, // 1 second delay between retries
+    maxRetries: 3 // Maximum retries for session operations
   },
   db: {
     schema: 'public'
@@ -80,3 +85,39 @@ if (typeof window !== 'undefined') {
     }
   }, 60000); // Check every minute
 }
+
+// Session initialization helper for better cross-device handling
+export const initializeSession = async () => {
+  try {
+    console.log('🔄 Initializing session...');
+    
+    // First, try to get existing session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.warn('⚠️ Session check error:', error.message);
+      
+      // If there's an error, try to clear any corrupted session data
+      try {
+        await supabase.auth.signOut();
+        console.log('🧹 Cleared corrupted session data');
+      } catch (clearError) {
+        console.warn('⚠️ Failed to clear session:', clearError);
+      }
+      
+      return { session: null, error: null };
+    }
+    
+    if (session) {
+      console.log('✅ Found existing session');
+      return { session, error: null };
+    }
+    
+    console.log('ℹ️ No existing session found - user needs to authenticate');
+    return { session: null, error: null };
+    
+  } catch (error) {
+    console.error('❌ Session initialization failed:', error);
+    return { session: null, error: error as Error };
+  }
+};

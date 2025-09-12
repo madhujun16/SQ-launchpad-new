@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, initializeSession } from '@/integrations/supabase/client';
 import type { Database } from '@/types/database';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
@@ -240,25 +240,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log('🔄 Starting auth initialization...');
+        
+        // Use the improved session initialization helper
+        const { session: initialSession, error } = await initializeSession();
+        
+        if (error) {
+          console.error('❌ Session initialization failed:', error);
+          setLoading(false);
+          return;
+        }
         
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         
         if (initialSession?.user) {
+          console.log('👤 Fetching profile for user:', initialSession.user.email);
           await fetchProfile(initialSession.user.id);
+        } else {
+          console.log('ℹ️ No initial session - user needs to authenticate');
         }
         
         setLoading(false);
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
+            console.log('🔍 Auth state change:', event, session ? 'Session exists' : 'No session');
+            
             setSession(session);
             setUser(session?.user ?? null);
 
             if (session?.user) {
+              console.log('👤 User authenticated, fetching profile...');
               await fetchProfile(session.user.id);
             } else {
+              console.log('👋 User signed out, clearing data...');
               setProfile(null);
               setCurrentRole(null);
               setAvailableRoles([]);
@@ -271,7 +287,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         return () => subscription.unsubscribe();
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error('❌ Auth initialization error:', error);
         setLoading(false);
       }
     };
