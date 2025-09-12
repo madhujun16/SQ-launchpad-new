@@ -27,6 +27,15 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLoader } from '@/components/ui/loader';
+
+// Hardware category enum values
+const HARDWARE_CATEGORIES = [
+  { value: 'KIOSKS', label: 'KIOSKS' },
+  { value: 'KDS_SCREENS', label: 'KDS (SCREENS)' },
+  { value: 'POS_TILLS', label: 'POS (TILLS)' },
+  { value: 'TDS_SCREENS', label: 'TDS (SCREENS)' },
+  { value: 'TABLETS_DBFB', label: 'TABLETS (DBFB)' }
+] as const;
 import { Checkbox } from '@/components/ui/checkbox';
 
 // Interfaces
@@ -1082,11 +1091,21 @@ export default function SoftwareHardwareManagement() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="hardCat">Category</Label>
-                  <Input 
-                    id="hardCat" 
+                  <Select 
                     value={editingHardwareItem.category} 
-                    onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, category: e.target.value})} 
-                  />
+                    onValueChange={(value) => setEditingHardwareItem({...editingHardwareItem!, category: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HARDWARE_CATEGORIES.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="hardModel">Model</Label>

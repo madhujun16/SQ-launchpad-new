@@ -752,11 +752,11 @@ const HardwareScoping = () => {
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pos">POS</SelectItem>
-                                <SelectItem value="kiosk">KIOSK</SelectItem>
-                                <SelectItem value="kms">KMS</SelectItem>
-                                <SelectItem value="printer">PRINTER</SelectItem>
-                                <SelectItem value="tds">TDS</SelectItem>
+                                <SelectItem value="KIOSKS">KIOSKS</SelectItem>
+                                <SelectItem value="KDS_SCREENS">KDS (SCREENS)</SelectItem>
+                                <SelectItem value="POS_TILLS">POS (TILLS)</SelectItem>
+                                <SelectItem value="TDS_SCREENS">TDS (SCREENS)</SelectItem>
+                                <SelectItem value="TABLETS_DBFB">TABLETS (DBFB)</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
