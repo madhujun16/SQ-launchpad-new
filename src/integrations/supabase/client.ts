@@ -90,6 +90,18 @@ if (typeof window !== 'undefined') {
 export const initializeSession = async () => {
   try {
     console.log('🔄 Initializing session...');
+    console.log('🌐 Browser:', navigator.userAgent);
+    console.log('🔧 LocalStorage available:', typeof Storage !== 'undefined');
+    
+    // Check if localStorage is accessible
+    try {
+      localStorage.setItem('test', 'test');
+      localStorage.removeItem('test');
+      console.log('✅ LocalStorage is accessible');
+    } catch (storageError) {
+      console.error('❌ LocalStorage error:', storageError);
+      return { session: null, error: storageError as Error };
+    }
     
     // First, try to get existing session
     const { data: { session }, error } = await supabase.auth.getSession();

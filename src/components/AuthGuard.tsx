@@ -8,9 +8,42 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const [authTimeout, setAuthTimeout] = useState(false);
   const [hasRedirected, setHasRedirected] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState<string>('');
   
   // Call useAuth hook at the top level (Rules of Hooks requirement)
   const { user, loading, currentRole } = useAuth();
+
+  // Detect browser and log info
+  useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const isChrome = userAgent.includes('Chrome') && !userAgent.includes('Edge');
+    const isEdge = userAgent.includes('Edge');
+    const browserType = isChrome ? 'Chrome' : isEdge ? 'Edge' : 'Other';
+    
+    setBrowserInfo(browserType);
+    console.log('🌐 Browser detected:', browserType);
+    console.log('🔧 User Agent:', userAgent);
+    
+    // Check for common Chrome issues
+    if (isChrome) {
+      console.log('⚠️ Chrome detected - checking for potential issues...');
+      
+      // Check if extensions might be interfering
+      if (window.chrome && window.chrome.runtime) {
+        console.log('🔌 Chrome extensions detected');
+      }
+      
+      // Check localStorage quota
+      try {
+        const testData = 'x'.repeat(1024 * 1024); // 1MB test
+        localStorage.setItem('chrome-test', testData);
+        localStorage.removeItem('chrome-test');
+        console.log('✅ Chrome localStorage quota OK');
+      } catch (quotaError) {
+        console.error('❌ Chrome localStorage quota error:', quotaError);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Set a timeout to prevent infinite loading
@@ -74,6 +107,13 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <li>• Authentication service delays</li>
               <li>• First-time access from this device</li>
               <li>• Browser cache or session issues</li>
+              {browserInfo === 'Chrome' && (
+                <>
+                  <li>• Chrome extension interference</li>
+                  <li>• Chrome security policy restrictions</li>
+                  <li>• Chrome localStorage quota issues</li>
+                </>
+              )}
             </ul>
             <div className="space-y-3">
               <button
@@ -98,6 +138,36 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               >
                 Simple Retry
               </button>
+              {browserInfo === 'Chrome' && (
+                <button
+                  onClick={() => {
+                    // Chrome-specific troubleshooting
+                    console.log('🔧 Chrome troubleshooting initiated');
+                    
+                    // Clear all localStorage
+                    try {
+                      localStorage.clear();
+                      console.log('🧹 Cleared all localStorage');
+                    } catch (e) {
+                      console.error('❌ Failed to clear localStorage:', e);
+                    }
+                    
+                    // Clear sessionStorage
+                    try {
+                      sessionStorage.clear();
+                      console.log('🧹 Cleared all sessionStorage');
+                    } catch (e) {
+                      console.error('❌ Failed to clear sessionStorage:', e);
+                    }
+                    
+                    // Reload with cache bypass
+                    window.location.reload();
+                  }}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Chrome Troubleshooting
+                </button>
+              )}
             </div>
           </div>
         </div>
