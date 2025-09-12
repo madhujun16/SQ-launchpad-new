@@ -169,7 +169,7 @@ export default function UserManagement() {
   const addUser = () => {
     const newUser: User = {
       id: 'new',
-      user_id: '',
+      user_id: 'new',
       email: '',
       full_name: '',
       created_at: new Date().toISOString(),
@@ -188,19 +188,50 @@ export default function UserManagement() {
     
     setSaving(true);
     try {
-      // Update user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: editingUser.full_name,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingUser.id);
+      let profileId = editingUser.id;
       
-      if (profileError) {
-        console.error('Error updating profile:', profileError);
-        toast.error('Failed to update user profile');
-        return;
+      // Check if this is a new user (id === 'new')
+      if (editingUser.id === 'new') {
+        // Generate a new UUID for the user_id
+        const newUserId = crypto.randomUUID();
+        
+        // Create new user profile
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: newUserId,
+            email: editingUser.email,
+            full_name: editingUser.full_name,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          toast.error('Failed to create user profile');
+          return;
+        }
+        
+        profileId = newProfile.id;
+        editingUser.id = profileId;
+        editingUser.user_id = newUserId;
+      } else {
+        // Update existing user profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: editingUser.full_name,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingUser.id);
+        
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+          toast.error('Failed to update user profile');
+          return;
+        }
       }
       
       // Update user roles
@@ -230,15 +261,22 @@ export default function UserManagement() {
       }
       
       // Update local state
-      setUsers(prev => prev.map(u => u.id === editingUser.id ? editingUser : u));
+      if (editingUser.id === 'new') {
+        // Add new user to the list
+        setUsers(prev => [...prev, editingUser]);
+      } else {
+        // Update existing user
+        setUsers(prev => prev.map(u => u.id === editingUser.id ? editingUser : u));
+      }
+      
       setEditingUser(null);
-      toast.success('User updated successfully');
+      toast.success(editingUser.id === 'new' ? 'User created successfully' : 'User updated successfully');
       
       // Reload users to get fresh data
       await loadUsers();
     } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error('Failed to update user');
+      console.error('Error saving user:', error);
+      toast.error('Failed to save user');
     } finally {
       setSaving(false);
     }
