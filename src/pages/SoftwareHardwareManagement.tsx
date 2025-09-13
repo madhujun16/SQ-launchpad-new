@@ -472,27 +472,42 @@ export default function SoftwareHardwareManagement() {
         </Card>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6">
-        <div className="flex space-x-1 bg-white p-1 rounded-lg border">
-          <Button
-            variant={activeTab === 'software' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('software')}
-            className="flex-1"
-          >
-            <Database className="h-4 w-4 mr-2" />
-            Software Modules ({softwareModules.length})
-          </Button>
-          <Button
-            variant={activeTab === 'hardware' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('hardware')}
-            className="flex-1"
-          >
-            <Package className="h-4 w-4 mr-2" />
-            Hardware Items ({hardwareItems.length})
-          </Button>
-        </div>
-      </div>
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search software modules and hardware items..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {allCategories.length > 0 ? allCategories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                )) : (
+                  <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            
+            <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+              Clear Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Content based on active tab */}
       {activeTab === 'software' && (
