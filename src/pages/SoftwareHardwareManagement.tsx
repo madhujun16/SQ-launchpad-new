@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Database,
   Package,
@@ -32,7 +33,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLoader } from '@/components/ui/loader';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Service types for hardware
@@ -544,9 +544,8 @@ export default function SoftwareHardwareManagement() {
           </div>
         </div>
 
-        {/* Software Modules Table */}
-        {activeTab === 'software' && (
-          <Card className="mt-2">
+      {/* Hardware Tab Content */}
+      {activeTab === 'hardware' && (
             <CardContent className="p-0">
               <div className="flex items-center justify-between p-4 border-b">
                 <div className="flex items-center gap-2">
@@ -645,38 +644,50 @@ export default function SoftwareHardwareManagement() {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Hardware Items Table */}
-        {activeTab === 'hardware' && (
-          <Card className="mt-2">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between p-4 border-b">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-green-600" />
-                  <h3 className="text-lg font-semibold">Hardware Items</h3>
+      {/* Hardware Tab Content */}
+      {activeTab === 'hardware' && (
+        <div className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search hardware items..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-                <Button 
-                  onClick={() => setEditingHardwareItem({
-                    id: '',
-                    name: '',
-                    description: '',
-                    category: '',
-                    manufacturer: '',
-                    unit_cost: 0,
-                    is_active: true,
-                    created_at: '',
-                    updated_at: ''
-                  })}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Hardware Item
+                
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full lg:w-48">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {allCategories.length > 0 ? allCategories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                
+                <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+                  Clear Filters
                 </Button>
               </div>
-              <div className="overflow-hidden">
+            </CardContent>
+          </Card>
+
+          {/* Hardware Items Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -733,10 +744,10 @@ export default function SoftwareHardwareManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setEditingHardwareItem(item)}
-                                className="h-8 w-8 p-0 hover:bg-green-50"
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
                                 title="Edit Hardware Item"
                               >
-                                <Edit className="h-4 w-4 text-green-600" />
+                                <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -757,51 +768,52 @@ export default function SoftwareHardwareManagement() {
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Summary and Pagination */}
-        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-gray-500">
-            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, activeTab === 'software' ? filteredSoftwareModules.length : filteredHardwareItems.length)} of {activeTab === 'software' ? filteredSoftwareModules.length : filteredHardwareItems.length} {activeTab === 'software' ? 'software modules' : 'hardware items'}
-          </div>
-          
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handlePageChange(page)}
-                    className="w-8 h-8 p-0"
-                  >
-                    {page}
-                  </Button>
-                ))}
-              </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          )}
         </div>
+      )}
+
+      {/* Summary and Pagination */}
+      <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="text-sm text-gray-500">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, activeTab === 'software' ? filteredSoftwareModules.length : filteredHardwareItems.length)} of {activeTab === 'software' ? filteredSoftwareModules.length : filteredHardwareItems.length} {activeTab === 'software' ? 'software modules' : 'hardware items'}
+        </div>
+        
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </div>
+
       {/* Software Module Edit Modal */}
       {editingSoftwareModule && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
