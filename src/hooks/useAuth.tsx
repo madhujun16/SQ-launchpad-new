@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, initializeSession } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/types/database';
 
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
@@ -54,11 +54,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      const { data: profileData, error: profileError } = await supabase
+      console.log('🔍 Fetching profile for user:', userId);
+      
+      // Add timeout to profile fetch
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId as any)
         .maybeSingle();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+      );
+      
+      const { data: profileData, error: profileError } = await Promise.race([
+        profilePromise,
+        timeoutPromise
+      ]) as any;
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
@@ -106,10 +118,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const { data: rolesData, error: rolesError } = await supabase
+      // Fetch roles with timeout
+      const rolesPromise = supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId as any);
+      
+      const rolesTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Roles fetch timeout')), 5000)
+      );
+      
+      const { data: rolesData, error: rolesError } = await Promise.race([
+        rolesPromise,
+        rolesTimeoutPromise
+      ]) as any;
 
       if (rolesError) {
         console.error('Roles fetch error:', rolesError);
@@ -242,10 +264,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🔄 Starting auth initialization...');
         
-        // Simplified session initialization with timeout
+        // Check localStorage availability first
+        try {
+          localStorage.setItem('auth-test', 'test');
+          localStorage.removeItem('auth-test');
+          console.log('✅ LocalStorage is accessible');
+        } catch (storageError) {
+          console.error('❌ LocalStorage error:', storageError);
+          setLoading(false);
+          return;
+        }
+        
+        // Simplified session initialization with longer timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session timeout')), 5000)
+          setTimeout(() => reject(new Error('Session timeout')), 15000) // Increased to 15 seconds
         );
         
         const { session: initialSession, error } = await Promise.race([
@@ -255,8 +288,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (error) {
           console.error('❌ Session initialization failed:', error);
-          setLoading(false);
-          return;
+          // Don't fail completely, just log and continue
+          console.warn('⚠️ Continuing without initial session');
         }
         
         setSession(initialSession);
