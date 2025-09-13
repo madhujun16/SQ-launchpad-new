@@ -375,41 +375,38 @@ export default function SoftwareHardwareManagement() {
             Manage software modules and hardware items for your organization
           </p>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button 
-            onClick={() => setEditingSoftwareModule({
-              id: '',
-              name: '',
-              description: '',
-              category: '',
-              license_fee: 0,
-              is_active: true,
-              created_at: '',
-              updated_at: ''
-            })}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Software
-          </Button>
-          <Button 
-            onClick={() => setEditingHardwareItem({
-              id: '',
-              name: '',
-              description: '',
-              category: '',
-              manufacturer: '',
-              unit_cost: 0,
-              is_active: true,
-              created_at: '',
-              updated_at: ''
-            })}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Hardware
-          </Button>
-        </div>
+        <Button 
+          onClick={() => {
+            if (activeTab === 'software') {
+              setEditingSoftwareModule({
+                id: '',
+                name: '',
+                description: '',
+                category: '',
+                license_fee: 0,
+                is_active: true,
+                created_at: '',
+                updated_at: ''
+              });
+            } else {
+              setEditingHardwareItem({
+                id: '',
+                name: '',
+                description: '',
+                category: '',
+                manufacturer: '',
+                unit_cost: 0,
+                is_active: true,
+                created_at: '',
+                updated_at: ''
+              });
+            }
+          }}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {activeTab === 'software' ? 'Add Software' : 'Add Hardware'}
+        </Button>
       </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -472,24 +469,44 @@ export default function SoftwareHardwareManagement() {
         </Card>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="mb-6">
+        <div className="flex space-x-1 bg-white p-1 rounded-lg border">
+          <Button
+            variant={activeTab === 'software' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('software')}
+            className="flex-1"
+          >
+            <Database className="h-4 w-4 mr-2" />
+            Software Modules ({softwareModules.length})
+          </Button>
+          <Button
+            variant={activeTab === 'hardware' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('hardware')}
+            className="flex-1"
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Hardware Items ({hardwareItems.length})
+          </Button>
+        </div>
+      </div>
+
       {/* Filters */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search software modules and hardware items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder={`Search ${activeTab === 'software' ? 'software modules' : 'hardware items'}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
             
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full lg:w-48">
+              <SelectTrigger>
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
@@ -502,7 +519,7 @@ export default function SoftwareHardwareManagement() {
               </SelectContent>
             </Select>
             
-            <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+            <Button variant="outline" onClick={clearFilters}>
               Clear Filters
             </Button>
           </div>
