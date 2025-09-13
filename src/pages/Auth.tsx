@@ -25,6 +25,8 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   const [verifying, setVerifying] = useState(false);
+  const [lastOtpRequest, setLastOtpRequest] = useState<number>(0);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -57,21 +59,50 @@ const Auth = () => {
       return;
     }
 
+    // Check rate limiting - prevent requests within 30 seconds
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastOtpRequest;
+    const minInterval = 30000; // 30 seconds
+
+    if (timeSinceLastRequest < minInterval) {
+      const remainingTime = Math.ceil((minInterval - timeSinceLastRequest) / 1000);
+      setError(`Please wait ${remainingTime} seconds before requesting another OTP`);
+      toast.error(`Rate limited - wait ${remainingTime}s`);
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setRetryCount(0);
     secureLog('info', 'Initiating OTP send', { email });
 
-    const { error } = await signInWithOtp(email);
+    try {
+      const { error } = await signInWithOtp(email);
 
-    if (error) {
-      secureLog('error', 'OTP Error', { error });
-      setError(error || 'Failed to send OTP');
+      if (error) {
+        secureLog('error', 'OTP Error', { error });
+        
+        if (error.includes('429') || error.includes('Too Many Requests')) {
+          setError('Too many requests. Please wait 2 minutes before trying again.');
+          toast.error('Rate limited - please wait 2 minutes');
+          setLastOtpRequest(now);
+          setResendTimer(120); // 2 minutes
+        } else {
+          setError(error || 'Failed to send OTP');
+          toast.error('Failed to send OTP');
+        }
+      } else {
+        setOtpSent(true);
+        setLastOtpRequest(now);
+        startResendTimer();
+        toast.success('OTP sent to your email');
+      }
+    } catch (err) {
+      console.error('OTP send error:', err);
+      setError('An unexpected error occurred');
       toast.error('Failed to send OTP');
-    } else {
-      setOtpSent(true);
-      startResendTimer();
-      toast.success('OTP sent to your email');
     }
+    
     setLoading(false);
   };
 
@@ -92,26 +123,41 @@ const Auth = () => {
     setError('');
 
     try {
-      // Add aggressive timeout to prevent hanging
+      // Add exponential backoff for retries
+      const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 8000);
+      if (retryCount > 0) {
+        console.log(`Retrying OTP verification with ${backoffDelay}ms delay (attempt ${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+
+      // Add timeout to prevent hanging
       const verificationPromise = verifyOtp(email, otp);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Verification timeout')), 8000)
+        setTimeout(() => reject(new Error('Verification timeout')), 10000)
       );
       
       const { error } = await Promise.race([verificationPromise, timeoutPromise]) as any;
 
       if (error) {
-        if (error.includes('timeout') || error.includes('timeout')) {
+        if (error.includes('429') || error.includes('Too Many Requests')) {
+          setError('Too many verification attempts. Please wait 2 minutes.');
+          toast.error('Rate limited - wait 2 minutes');
+          setRetryCount(0);
+        } else if (error.includes('timeout') || error.includes('timeout')) {
           setError('Verification timeout. Please try again.');
+          setRetryCount(prev => prev + 1);
         } else if (error.includes('Invalid') || error.includes('invalid')) {
           setError('Incorrect code. Please check and try again.');
+          setRetryCount(0);
         } else {
           setError('Verification failed. Please try again.');
+          setRetryCount(prev => prev + 1);
         }
         setVerifying(false);
         toast.error('OTP verification failed');
       } else {
         toast.success('Login successful');
+        setRetryCount(0);
         // Don't navigate here - let the useEffect handle it
         // The user state change will trigger navigation
       }
@@ -119,8 +165,10 @@ const Auth = () => {
       console.error('OTP verification error:', err);
       if (err instanceof Error && err.message.includes('timeout')) {
         setError('Verification timeout. Please try again.');
+        setRetryCount(prev => prev + 1);
       } else {
         setError('An unexpected error occurred. Please try again.');
+        setRetryCount(prev => prev + 1);
       }
       setVerifying(false);
       toast.error('Verification failed - please try again');
@@ -152,15 +200,44 @@ const Auth = () => {
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
     
+    // Check rate limiting for resend
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastOtpRequest;
+    const minInterval = 30000; // 30 seconds
+
+    if (timeSinceLastRequest < minInterval) {
+      const remainingTime = Math.ceil((minInterval - timeSinceLastRequest) / 1000);
+      setError(`Please wait ${remainingTime} seconds before requesting another OTP`);
+      toast.error(`Rate limited - wait ${remainingTime}s`);
+      return;
+    }
+    
     setError('');
     setOtp('');
-    const { error } = await signInWithOtp(email);
+    setRetryCount(0);
     
-    if (error) {
+    try {
+      const { error } = await signInWithOtp(email);
+      
+      if (error) {
+        if (error.includes('429') || error.includes('Too Many Requests')) {
+          setError('Too many requests. Please wait 2 minutes before trying again.');
+          toast.error('Rate limited - please wait 2 minutes');
+          setLastOtpRequest(now);
+          setResendTimer(120); // 2 minutes
+        } else {
+          setError('Failed to resend OTP');
+          toast.error('Failed to resend OTP');
+        }
+      } else {
+        setLastOtpRequest(now);
+        startResendTimer();
+        toast.success('OTP resent to your email');
+      }
+    } catch (err) {
+      console.error('Resend OTP error:', err);
       setError('Failed to resend OTP');
-    } else {
-      startResendTimer();
-      toast.success('OTP resent to your email');
+      toast.error('Failed to resend OTP');
     }
   };
 
@@ -170,7 +247,20 @@ const Auth = () => {
     setError('');
     setResendTimer(0);
     setVerifying(false);
+    setRetryCount(0);
   };
+
+  // Clear any stuck authentication state on component mount
+  useEffect(() => {
+    // Clear any stuck verification state
+    if (verifying) {
+      const timeoutId = setTimeout(() => {
+        setVerifying(false);
+        setError('Session cleared. Please try again.');
+      }, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, []);
 
 
 
