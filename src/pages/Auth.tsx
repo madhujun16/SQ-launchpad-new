@@ -92,11 +92,18 @@ const Auth = () => {
     setError('');
 
     try {
-      // Temporarily remove timeout to see if that's causing the issue
-      const { error } = await verifyOtp(email, otp);
+      // Add aggressive timeout to prevent hanging
+      const verificationPromise = verifyOtp(email, otp);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Verification timeout')), 8000)
+      );
+      
+      const { error } = await Promise.race([verificationPromise, timeoutPromise]) as any;
 
       if (error) {
-        if (error.includes('Invalid') || error.includes('invalid')) {
+        if (error.includes('timeout') || error.includes('timeout')) {
+          setError('Verification timeout. Please try again.');
+        } else if (error.includes('Invalid') || error.includes('invalid')) {
           setError('Incorrect code. Please check and try again.');
         } else {
           setError('Verification failed. Please try again.');
@@ -110,7 +117,11 @@ const Auth = () => {
       }
     } catch (err) {
       console.error('OTP verification error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      if (err instanceof Error && err.message.includes('timeout')) {
+        setError('Verification timeout. Please try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       setVerifying(false);
       toast.error('Verification failed - please try again');
     }
@@ -132,7 +143,7 @@ const Auth = () => {
         setVerifying(false);
         setError('Verification is taking longer than expected. Please try again.');
         toast.error('Verification timeout - please try again');
-      }, 45000); // Increased back to 45 seconds to give more time
+      }, 12000); // Reduced to 12 seconds to match the Promise.race timeout
 
       return () => clearTimeout(timeoutId);
     }

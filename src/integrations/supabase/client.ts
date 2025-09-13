@@ -17,29 +17,29 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storageKey: 'smartq-launchpad-auth',
     detectSessionInUrl: true,
     flowType: 'pkce',
-    // Simplified configuration for better reliability
-    refreshTokenRetryAttempts: 2,
-    refreshTokenRetryDelay: 1000,
-    // Reduced session timeout to prevent hanging
-    sessionTimeout: 7 * 24 * 60 * 60 * 1000, // 7 days instead of 30
+    // Minimal configuration to prevent hanging
+    refreshTokenRetryAttempts: 1,
+    refreshTokenRetryDelay: 500,
+    // Shorter session timeout
+    sessionTimeout: 24 * 60 * 60 * 1000, // 1 day
     // Enable debug mode in development
     debug: import.meta.env.DEV,
-    // Reduced lock timeout
-    lockTimeout: 5000, // 5 seconds instead of 10
-    // Simplified retry configuration
-    retryDelay: 500, // Reduced delay
-    maxRetries: 2 // Reduced retries
+    // Very short lock timeout to prevent hanging
+    lockTimeout: 2000, // 2 seconds
+    // Minimal retry configuration
+    retryDelay: 200, // Very short delay
+    maxRetries: 1 // Minimal retries
   },
   db: {
     schema: 'public'
   },
-  // Simplified realtime configuration
+  // Minimal realtime configuration
   realtime: {
     params: {
-      eventsPerSecond: 2 // Further reduced
+      eventsPerSecond: 1 // Minimal
     }
   },
-  // Simplified global configuration
+  // Minimal global configuration
   global: {
     headers: {
       'X-Client-Info': 'smartq-launchpad-web'
