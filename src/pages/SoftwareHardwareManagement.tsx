@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Database,
   Package,
@@ -365,102 +366,145 @@ export default function SoftwareHardwareManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-          <Link to="/dashboard" className="flex items-center space-x-1 hover:text-gray-900">
-            <Home className="h-4 w-4" />
-            <span>Dashboard</span>
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-gray-900 font-medium">Software & Hardware Management</span>
-        </nav>
-
-        {/* Header with Add Button */}
-        <div className="mb-6 flex justify-between items-end">
+    <div className="container mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Software & Hardware Management</h1>
-            <p className="text-gray-600">
-              Manage platform-level software modules and hardware items for dynamic scoping
+            <h1 className="text-3xl font-bold text-gray-900">Software Hardware Management</h1>
+            <p className="text-gray-600 mt-2">
+              Manage software modules and hardware items for your organization
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button 
-              onClick={() => setActiveTab('software')}
-              variant={activeTab === 'software' ? 'default' : 'outline'}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              Software Modules
-            </Button>
-            <Button 
-              onClick={() => setActiveTab('hardware')}
-              variant={activeTab === 'hardware' ? 'default' : 'outline'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              Hardware Items
-            </Button>
+            <Badge variant="outline" className="text-sm">
+              Platform Config
+            </Badge>
           </div>
         </div>
+      </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Database className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Software Modules</p>
+                <p className="text-2xl font-bold text-gray-900">{softwareModules.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {error && (
-          <Alert className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Package className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Hardware Items</p>
+                <p className="text-2xl font-bold text-gray-900">{hardwareItems.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="card-surface">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Database className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold">{softwareModules.length}</p>
-                  <p className="text-sm text-gray-600">Software Modules</p>
-                </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Settings className="h-6 w-6 text-purple-600" />
               </div>
-            </CardContent>
-          </Card>
-          <Card className="card-surface">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Package className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-2xl font-bold">{hardwareItems.length}</p>
-                  <p className="text-sm text-gray-600">Hardware Items</p>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Categories</p>
+                <p className="text-2xl font-bold text-gray-900">{allCategories.length}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="card-surface">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Settings className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-2xl font-bold">{allCategories.length}</p>
-                  <p className="text-sm text-gray-600">Categories</p>
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Activity className="h-6 w-6 text-orange-600" />
               </div>
-            </CardContent>
-          </Card>
-          <Card className="card-surface">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Activity className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {(softwareModules.filter(s => s.is_active).length + hardwareItems.filter(h => h.is_active).length)}
-                  </p>
-                  <p className="text-sm text-gray-600">Active Items</p>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Active Items</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {softwareModules.filter(sm => sm.is_active).length + hardwareItems.filter(hi => hi.is_active).length}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-6">
+        <div className="flex space-x-1 bg-white p-1 rounded-lg border">
+          <Button
+            variant={activeTab === 'software' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('software')}
+            className="flex-1"
+          >
+            <Database className="h-4 w-4 mr-2" />
+            Software Modules ({softwareModules.length})
+          </Button>
+          <Button
+            variant={activeTab === 'hardware' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('hardware')}
+            className="flex-1"
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Hardware Items ({hardwareItems.length})
+          </Button>
         </div>
+      </div>
+
+      {/* Content based on active tab */}
+      {activeTab === 'software' && (
+        <div className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search software modules..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full lg:w-48">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {allCategories.length > 0 ? allCategories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                
+                <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+                  Clear Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
         {/* Search and Filters */}
         <div className="mb-4">
