@@ -16,9 +16,8 @@ import {
   Edit,
   Trash2,
   Search,
-  Crown,
+  Shield,
   Wrench,
-  Truck,
   User,
   Mail,
   Calendar
@@ -470,7 +469,7 @@ export default function UserManagement() {
           <Card className="card-surface">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Crown className="h-5 w-5 text-green-600" />
+                <Shield className="h-5 w-5 text-red-600" />
                 <div>
                   <p className="text-2xl font-bold">{userStats.admin_count}</p>
                   <p className="text-sm text-gray-600">Admins</p>
@@ -481,7 +480,7 @@ export default function UserManagement() {
           <Card className="card-surface">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Wrench className="h-5 w-5 text-orange-600" />
+                <Users className="h-5 w-5 text-blue-600" />
                 <div>
                   <p className="text-2xl font-bold">{userStats.ops_manager_count}</p>
                   <p className="text-sm text-gray-600">Ops Managers</p>
@@ -492,7 +491,7 @@ export default function UserManagement() {
           <Card className="card-surface">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Truck className="h-5 w-5 text-purple-600" />
+                <Wrench className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold">{userStats.deployment_engineer_count}</p>
                   <p className="text-sm text-gray-600">Deployment Engineers</p>
@@ -587,11 +586,16 @@ export default function UserManagement() {
                             ) : (
                               user.user_roles.map((role, index) => {
                                 const roleConfig = getRoleConfig(role.role);
+                                const badgeColors = {
+                                  admin: 'bg-red-100 text-red-800 border-red-200',
+                                  ops_manager: 'bg-blue-100 text-blue-800 border-blue-200',
+                                  deployment_engineer: 'bg-green-100 text-green-800 border-green-200'
+                                };
                                 return (
                                   <Badge 
                                     key={index} 
                                     variant="outline"
-                                    className={`${roleConfig.color} border-current`}
+                                    className={badgeColors[role.role] || 'bg-gray-100 text-gray-800 border-gray-200'}
                                   >
                                     {roleConfig.displayName}
                                   </Badge>
