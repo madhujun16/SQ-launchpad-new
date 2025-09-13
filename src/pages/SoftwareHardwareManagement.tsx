@@ -17,49 +17,39 @@ import {
   Edit,
   Trash2,
   Search,
-  Link,
-  Unlink,
-  Settings
+  Settings,
+  Monitor,
+  CreditCard,
+  Activity,
+  Wrench,
+  Truck
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLoader } from '@/components/ui/loader';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Hardware category enum values
-const HARDWARE_CATEGORIES = [
-  { value: 'Kiosk', label: 'Kiosk' },
-  { value: 'Kitchen Display System (KDS)', label: 'Kitchen Display System (KDS)' },
-  { value: 'Customer Display Screen (TDS)', label: 'Customer Display Screen (TDS)' },
-  { value: 'POS Terminal', label: 'POS Terminal' },
-  { value: 'ORT Tablet', label: 'ORT Tablet' },
-  { value: 'Accessories', label: 'Accessories' },
-  { value: 'Support & Sundries', label: 'Support & Sundries' },
-  { value: 'Connectivity', label: 'Connectivity' },
-  { value: 'Deployment', label: 'Deployment' },
-  { value: 'License Fees', label: 'License Fees' }
+// Service types for hardware
+const SERVICE_TYPES = [
+  { value: 'On-site Support', label: 'On-site Support' },
+  { value: 'Remote Support', label: 'Remote Support' },
+  { value: 'Delivery', label: 'Delivery' }
 ] as const;
 
-const HARDWARE_SUBCATEGORIES = [
+// Mounting types for hardware
+const MOUNTING_TYPES = [
   { value: 'Wall Mounted', label: 'Wall Mounted' },
   { value: 'Floor Mounted', label: 'Floor Mounted' },
   { value: 'Desk Mounted', label: 'Desk Mounted' },
   { value: 'Free Standing', label: 'Free Standing' },
   { value: 'Fixed', label: 'Fixed' },
-  { value: 'Remote Support', label: 'Remote Support' },
-  { value: 'On-site Support', label: 'On-site Support' },
   { value: 'Other', label: 'Other' }
 ] as const;
-
-const SUPPORT_TYPES = [
-  { value: 'None', label: 'None' },
-  { value: 'On-site', label: 'On-site' },
-  { value: 'Remote', label: 'Remote' }
-] as const;
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 
 // Interfaces
 interface SoftwareModule {
@@ -67,46 +57,22 @@ interface SoftwareModule {
   name: string;
   description: string | null;
   category: string;
-  is_active: boolean;
-  monthly_fee: number | null;
-  setup_fee: number | null;
   license_fee: number | null;
-  created_at: string;
-  updated_at: string;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface HardwareItem {
   id: string;
-  hardware_name: string;
+  name: string;
+  description: string | null;
   category: string;
-  subcategory?: string | null;
-  manufacturer?: string | null;
-  configuration_notes?: string | null;
-  unit_cost?: number | null;
-  quantity?: number | null;
-  total_cost?: number | null;
-  support_type?: string | null;
-  support_cost?: number | null;
-  is_active?: boolean | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface SoftwareHardwareMapping {
-  id: string;
-  software_module_id: string;
-  hardware_item_id: string;
-  is_required: boolean;
-  quantity: number;
-  created_at: string;
-  software_module?: SoftwareModule;
-  hardware_item?: HardwareItem;
-}
-
-interface MappingItem {
-  hardware_item_id: string;
-  quantity: number;
-  is_required: boolean;
+  manufacturer: string | null;
+  unit_cost: number | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export default function SoftwareHardwareManagement() {
@@ -116,18 +82,14 @@ export default function SoftwareHardwareManagement() {
   const [error, setError] = useState<string | null>(null);
   const [softwareModules, setSoftwareModules] = useState<SoftwareModule[]>([]);
   const [hardwareItems, setHardwareItems] = useState<HardwareItem[]>([]);
-  const [mappings, setMappings] = useState<SoftwareHardwareMapping[]>([]);
   const [editingSoftwareModule, setEditingSoftwareModule] = useState<SoftwareModule | null>(null);
   const [editingHardwareItem, setEditingHardwareItem] = useState<HardwareItem | null>(null);
-  const [editingMapping, setEditingMapping] = useState<SoftwareHardwareMapping | null>(null);
-  const [editingMappingItems, setEditingMappingItems] = useState<MappingItem[]>([]);
-  const [selectedSoftwareModule, setSelectedSoftwareModule] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'software' | 'hardware'>('software');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
-  const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'software' | 'hardware' | 'mapping'>('software');
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -136,28 +98,21 @@ export default function SoftwareHardwareManagement() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            You do not have permission to access Software & Hardware Management. Please contact an administrator.
-          </AlertDescription>
-        </Alert>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You do not have permission to access Software & Hardware Management. Please contact an administrator.
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     );
   }
 
   useEffect(() => {
-    // Only load if we have a current role (auth is ready)
-    if (!currentRole) {
-      console.log('SoftwareHardwareManagement: Waiting for auth state...', { currentRole });
-      return;
-    }
-
-    console.log('SoftwareHardwareManagement: Auth ready, loading data...', { currentRole });
-
+    if (!currentRole) return;
     loadData();
-  }, [currentRole]); // Add currentRole as dependency
+  }, [currentRole]);
 
   const loadData = async () => {
     try {
@@ -191,89 +146,54 @@ export default function SoftwareHardwareManagement() {
         setHardwareItems((hardwareData || []) as any);
       }
 
-      // Load mappings with joined data
-      const { data: mappingData, error: mappingError } = await supabase
-        .from('software_hardware_mapping')
-        .select(`
-          *,
-          software_module:software_modules(*),
-          hardware_item:hardware_items(*)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (mappingError) {
-        console.error('Error loading mappings:', mappingError);
-        toast.error('Failed to load software-hardware mappings');
-        setMappings([]);
-      } else {
-        setMappings((mappingData || []) as any);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
+    } catch (err) {
+      console.error('Error loading data:', err);
       setError('Failed to load data');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
-  const addSoftwareModule = () => {
-    const newSoftware: SoftwareModule = {
-      id: 'new',
-      name: '',
-      description: '',
-      category: '',
-      is_active: true,
-      monthly_fee: 0,
-      setup_fee: 0,
-      license_fee: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setEditingSoftwareModule(newSoftware);
-  };
-
-  const editSoftwareModule = (software: SoftwareModule) => {
-    setEditingSoftwareModule(software);
-  };
-
-  const saveSoftwareModule = async () => {
+  const handleSaveSoftwareModule = async () => {
     if (!editingSoftwareModule) return;
-    
-    setSaving(true);
+
     try {
-      if (editingSoftwareModule.id && editingSoftwareModule.id !== 'new') {
-        const { error } = await supabase.from('software_modules').update({
-          name: editingSoftwareModule.name,
-          description: editingSoftwareModule.description,
-          category: editingSoftwareModule.category,
-          is_active: editingSoftwareModule.is_active,
-          monthly_fee: editingSoftwareModule.monthly_fee,
-          setup_fee: editingSoftwareModule.setup_fee,
-          license_fee: editingSoftwareModule.license_fee,
-          updated_at: new Date().toISOString(),
-        } as any).eq('id', editingSoftwareModule.id as any);
-        
+      setSaving(true);
+      
+      if (editingSoftwareModule.id) {
+        // Update existing
+        const { error } = await supabase
+          .from('software_modules')
+          .update({
+            name: editingSoftwareModule.name,
+            description: editingSoftwareModule.description,
+            category: editingSoftwareModule.category,
+            license_fee: editingSoftwareModule.license_fee,
+            is_active: editingSoftwareModule.is_active
+          } as any)
+          .eq('id', editingSoftwareModule.id as any);
+
         if (error) throw error;
-        setSoftwareModules(prev => prev.map(s => s.id === editingSoftwareModule.id ? editingSoftwareModule : s));
         toast.success('Software module updated successfully');
       } else {
-        const { data, error } = await supabase.from('software_modules').insert([{
-          name: editingSoftwareModule.name,
-          description: editingSoftwareModule.description,
-          category: editingSoftwareModule.category,
-          is_active: editingSoftwareModule.is_active,
-          monthly_fee: editingSoftwareModule.monthly_fee,
-          setup_fee: editingSoftwareModule.setup_fee,
-          license_fee: editingSoftwareModule.license_fee,
-        }] as any).select('*').single();
-        
+        // Create new
+        const { error } = await supabase
+          .from('software_modules')
+          .insert({
+            name: editingSoftwareModule.name,
+            description: editingSoftwareModule.description,
+            category: editingSoftwareModule.category,
+            license_fee: editingSoftwareModule.license_fee,
+            is_active: editingSoftwareModule.is_active
+          } as any);
+
         if (error) throw error;
-        setSoftwareModules(prev => [...prev, data as any]);
         toast.success('Software module created successfully');
       }
-      
+
       setEditingSoftwareModule(null);
-      await loadData(); // Reload to get fresh data
+      loadData();
     } catch (error) {
       console.error('Error saving software module:', error);
       toast.error('Failed to save software module');
@@ -282,101 +202,47 @@ export default function SoftwareHardwareManagement() {
     }
   };
 
-  const deleteSoftwareModule = async (softwareId: string) => {
-    if (!confirm('Are you sure you want to delete this software module? This will also remove all associated mappings.')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('software_modules')
-        .delete()
-        .eq('id', softwareId as any);
-      
-      if (error) {
-        console.error('Error deleting software module:', error);
-        toast.error('Failed to delete software module');
-      } else {
-        setSoftwareModules(prev => prev.filter(s => s.id !== softwareId));
-        toast.success('Software module deleted successfully');
-        await loadData(); // Reload to update mappings
-      }
-    } catch (error) {
-      console.error('Error deleting software module:', error);
-      toast.error('Failed to delete software module');
-    }
-  };
-
-  const addHardwareItem = () => {
-    const newHardware: HardwareItem = {
-      id: 'new',
-      hardware_name: '',
-      category: '',
-      subcategory: '',
-      manufacturer: '',
-      configuration_notes: '',
-      unit_cost: 0,
-      quantity: 1,
-      total_cost: 0,
-      support_type: 'None',
-      support_cost: 0,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setEditingHardwareItem(newHardware);
-  };
-
-  const editHardwareItem = (hardware: HardwareItem) => {
-    setEditingHardwareItem(hardware);
-  };
-
-  const saveHardwareItem = async () => {
+  const handleSaveHardwareItem = async () => {
     if (!editingHardwareItem) return;
-    
-    setSaving(true);
+
     try {
-      if (editingHardwareItem.id && editingHardwareItem.id !== 'new') {
-        const { error } = await supabase.from('hardware_items').update({
-          hardware_name: editingHardwareItem.hardware_name,
-          category: editingHardwareItem.category,
-          subcategory: editingHardwareItem.subcategory,
-          manufacturer: editingHardwareItem.manufacturer,
-          configuration_notes: editingHardwareItem.configuration_notes,
-          unit_cost: editingHardwareItem.unit_cost,
-          quantity: editingHardwareItem.quantity,
-          total_cost: editingHardwareItem.total_cost,
-          support_type: editingHardwareItem.support_type,
-          support_cost: editingHardwareItem.support_cost,
-          is_active: editingHardwareItem.is_active,
-          updated_at: new Date().toISOString(),
-        } as any).eq('id', editingHardwareItem.id as any);
-        
+      setSaving(true);
+      
+      if (editingHardwareItem.id) {
+        // Update existing
+        const { error } = await supabase
+          .from('hardware_items')
+          .update({
+            name: editingHardwareItem.name,
+            description: editingHardwareItem.description,
+            category: editingHardwareItem.category,
+            manufacturer: editingHardwareItem.manufacturer,
+            unit_cost: editingHardwareItem.unit_cost,
+            is_active: editingHardwareItem.is_active
+          } as any)
+          .eq('id', editingHardwareItem.id as any);
+
         if (error) throw error;
-        setHardwareItems(prev => prev.map(h => h.id === editingHardwareItem.id ? editingHardwareItem : h));
         toast.success('Hardware item updated successfully');
       } else {
-        const { data, error } = await supabase.from('hardware_items').insert([{
-          hardware_name: editingHardwareItem.hardware_name,
-          category: editingHardwareItem.category,
-          subcategory: editingHardwareItem.subcategory,
-          manufacturer: editingHardwareItem.manufacturer,
-          configuration_notes: editingHardwareItem.configuration_notes,
-          unit_cost: editingHardwareItem.unit_cost,
-          quantity: editingHardwareItem.quantity,
-          total_cost: editingHardwareItem.total_cost,
-          support_type: editingHardwareItem.support_type,
-          support_cost: editingHardwareItem.support_cost,
-          is_active: editingHardwareItem.is_active,
-        }] as any).select('*').single();
-        
+        // Create new
+        const { error } = await supabase
+          .from('hardware_items')
+          .insert({
+            name: editingHardwareItem.name,
+            description: editingHardwareItem.description,
+            category: editingHardwareItem.category,
+            manufacturer: editingHardwareItem.manufacturer,
+            unit_cost: editingHardwareItem.unit_cost,
+            is_active: editingHardwareItem.is_active
+          } as any);
+
         if (error) throw error;
-        setHardwareItems(prev => [...prev, data as any]);
         toast.success('Hardware item created successfully');
       }
-      
+
       setEditingHardwareItem(null);
-      await loadData(); // Reload to get fresh data
+      loadData();
     } catch (error) {
       console.error('Error saving hardware item:', error);
       toast.error('Failed to save hardware item');
@@ -385,204 +251,104 @@ export default function SoftwareHardwareManagement() {
     }
   };
 
-  const deleteHardwareItem = async (hardwareId: string) => {
-    if (!confirm('Are you sure you want to delete this hardware item? This will also remove all associated mappings.')) {
-      return;
+  const handleDeleteSoftwareModule = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this software module?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('software_modules')
+        .delete()
+        .eq('id', id as any);
+
+      if (error) throw error;
+      toast.success('Software module deleted successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting software module:', error);
+      toast.error('Failed to delete software module');
     }
+  };
+
+  const handleDeleteHardwareItem = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this hardware item?')) return;
 
     try {
       const { error } = await supabase
         .from('hardware_items')
         .delete()
-        .eq('id', hardwareId as any);
-      
-      if (error) {
-        console.error('Error deleting hardware item:', error);
-        toast.error('Failed to delete hardware item');
-      } else {
-        setHardwareItems(prev => prev.filter(h => h.id !== hardwareId));
-        toast.success('Hardware item deleted successfully');
-        await loadData(); // Reload to update mappings
-      }
+        .eq('id', id as any);
+
+      if (error) throw error;
+      toast.success('Hardware item deleted successfully');
+      loadData();
     } catch (error) {
       console.error('Error deleting hardware item:', error);
       toast.error('Failed to delete hardware item');
     }
   };
 
-  const addMapping = () => {
-    setSelectedSoftwareModule('');
-    setEditingMappingItems([]);
-    setEditingMapping({} as SoftwareHardwareMapping); // Just to trigger modal
-  };
-
-  const editMapping = (mapping: SoftwareHardwareMapping) => {
-    setEditingMapping(mapping);
-  };
-
-  const saveMapping = async () => {
-    if (!selectedSoftwareModule || editingMappingItems.length === 0) {
-      toast.error('Please select a software module and at least one hardware item');
-      return;
-    }
-    
-    setSaving(true);
-    try {
-      // Check for existing mappings to avoid duplicates
-      const existingMappings = mappings.filter(m => m.software_module_id === selectedSoftwareModule);
-      const existingHardwareIds = new Set(existingMappings.map(m => m.hardware_item_id));
-      
-      // Filter out hardware items that already have mappings and placeholder values
-      const newMappingsToInsert = editingMappingItems.filter(item => 
-        item.hardware_item_id && 
-        item.hardware_item_id !== 'placeholder' &&
-        !existingHardwareIds.has(item.hardware_item_id)
-      );
-      
-      const duplicateItems = editingMappingItems.filter(item => 
-        existingHardwareIds.has(item.hardware_item_id)
-      );
-      
-      if (newMappingsToInsert.length === 0) {
-        toast.error('All selected hardware items already have mappings for this software module');
-        return;
-      }
-      
-      if (duplicateItems.length > 0) {
-        const duplicateNames = duplicateItems.map(item => {
-          const hardware = hardwareItems.find(h => h.id === item.hardware_item_id);
-          return hardware?.hardware_name || 'Unknown Hardware';
-        }).join(', ');
-        
-        toast.warning(`Skipped ${duplicateItems.length} duplicate mapping(s): ${duplicateNames}`);
-      }
-
-      // Create mappings for new hardware items only
-      const mappingsToInsert = newMappingsToInsert.map(item => ({
-        software_module_id: selectedSoftwareModule,
-        hardware_item_id: item.hardware_item_id,
-        is_required: item.is_required,
-        quantity: item.quantity,
-      }));
-
-      const { data, error } = await supabase
-        .from('software_hardware_mapping')
-        .insert(mappingsToInsert as any)
-        .select('*');
-      
-      if (error) throw error;
-      
-      const successMessage = `Created ${newMappingsToInsert.length} mapping(s) successfully`;
-      if (duplicateItems.length > 0) {
-        toast.success(`${successMessage} (${duplicateItems.length} skipped as duplicates)`);
-      } else {
-        toast.success(successMessage);
-      }
-      
-      setEditingMapping(null);
-      setSelectedSoftwareModule('');
-      setEditingMappingItems([]);
-      await loadData(); // Reload to get fresh data with joined info
-    } catch (error) {
-      console.error('Error saving mappings:', error);
-      toast.error('Failed to save mappings');
-    } finally {
-      setSaving(false);
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Kitchen Display System (KDS)': return <Monitor className="h-4 w-4" />;
+      case 'Support & Sundries': return <Activity className="h-4 w-4" />;
+      case 'Kiosk': return <Monitor className="h-4 w-4" />;
+      case 'POS Terminal': return <CreditCard className="h-4 w-4" />;
+      case 'Customer Display Screen (TDS)': return <Monitor className="h-4 w-4" />;
+      default: return <Package className="h-4 w-4" />;
     }
   };
 
-  const deleteMapping = async (mappingId: string) => {
-    if (!confirm('Are you sure you want to delete this mapping?')) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('software_hardware_mapping')
-        .delete()
-        .eq('id', mappingId as any);
-      
-      if (error) {
-        console.error('Error deleting mapping:', error);
-        toast.error('Failed to delete mapping');
-      } else {
-        setMappings(prev => prev.filter(m => m.id !== mappingId));
-        toast.success('Mapping deleted successfully');
-      }
-    } catch (error) {
-      console.error('Error deleting mapping:', error);
-      toast.error('Failed to delete mapping');
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Kitchen Display System (KDS)': return 'bg-blue-100 text-blue-800';
+      case 'Support & Sundries': return 'bg-orange-100 text-orange-800';
+      case 'Kiosk': return 'bg-purple-100 text-purple-800';
+      case 'POS Terminal': return 'bg-indigo-100 text-indigo-800';
+      case 'Customer Display Screen (TDS)': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Helper functions for managing mapping items
-  const addMappingItem = () => {
-    setEditingMappingItems(prev => [...prev, {
-      hardware_item_id: 'placeholder', // Use a placeholder value instead of empty string
-      quantity: 1,
-      is_required: false
-    }]);
-  };
+  // Get unique categories from both software modules and hardware items
+  const allCategories = Array.from(new Set([
+    ...softwareModules.map(sm => sm.category),
+    ...hardwareItems.map(hi => hi.category)
+  ]));
 
-  const updateMappingItem = (index: number, field: keyof MappingItem, value: any) => {
-    setEditingMappingItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, [field]: value } : item
-    ));
-  };
+  // Filter and paginate data (similar to other platform config pages)
+  const { filteredSoftwareModules, filteredHardwareItems, totalPages, currentSoftwareModules, currentHardwareItems } = useMemo(() => {
+    let filteredSoftware = softwareModules.filter(module => {
+      const matchesSearch = module.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           module.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           module.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || module.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
 
-  const removeMappingItem = (index: number) => {
-    setEditingMappingItems(prev => prev.filter((_, i) => i !== index));
-  };
+    let filteredHardware = hardwareItems.filter(item => {
+      const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
 
-  // Filter and paginate data based on active tab
-  const { filteredData, totalPages, currentData } = useMemo(() => {
-    let filtered: any[] = [];
-    
-    if (activeTab === 'software') {
-      filtered = softwareModules;
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        filtered = filtered.filter(item =>
-          item.name.toLowerCase().includes(searchLower) ||
-          item.description?.toLowerCase().includes(searchLower) ||
-          item.category.toLowerCase().includes(searchLower)
-        );
-      }
-      if (categoryFilter !== 'all') {
-        filtered = filtered.filter(item => item.category === categoryFilter);
-      }
-    } else if (activeTab === 'hardware') {
-      filtered = hardwareItems;
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        filtered = filtered.filter(item =>
-          item.name.toLowerCase().includes(searchLower) ||
-          item.description?.toLowerCase().includes(searchLower) ||
-          item.category.toLowerCase().includes(searchLower) ||
-          item.manufacturer?.toLowerCase().includes(searchLower)
-        );
-      }
-      if (categoryFilter !== 'all') {
-        filtered = filtered.filter(item => item.category === categoryFilter);
-      }
-    } else if (activeTab === 'mapping') {
-      filtered = mappings;
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        filtered = filtered.filter(item =>
-          item.software_module?.name.toLowerCase().includes(searchLower) ||
-          item.hardware_item?.hardware_name.toLowerCase().includes(searchLower)
-        );
-      }
-    }
-
-    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const totalPages = Math.ceil((activeTab === 'software' ? filteredSoftware.length : filteredHardware.length) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const currentData = filtered.slice(startIndex, endIndex);
+    
+    const currentSoftwareModules = filteredSoftware.slice(startIndex, endIndex);
+    const currentHardwareItems = filteredHardware.slice(startIndex, endIndex);
 
-    return { filteredData: filtered, totalPages, currentData };
-  }, [softwareModules, hardwareItems, mappings, searchTerm, categoryFilter, currentPage, itemsPerPage, activeTab]);
+    return { 
+      filteredSoftwareModules: filteredSoftware, 
+      filteredHardwareItems: filteredHardware, 
+      totalPages, 
+      currentSoftwareModules, 
+      currentHardwareItems 
+    };
+  }, [softwareModules, hardwareItems, searchTerm, categoryFilter, currentPage, itemsPerPage, activeTab]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -594,132 +360,107 @@ export default function SoftwareHardwareManagement() {
     setCurrentPage(page);
   };
 
-  // Get unique categories for filter
-  const categories = useMemo(() => {
-    const allCategories = new Set<string>();
-    if (activeTab === 'software') {
-      softwareModules.forEach(item => allCategories.add(item.category));
-    } else if (activeTab === 'hardware') {
-      hardwareItems.forEach(item => allCategories.add(item.category));
-    }
-    return Array.from(allCategories).sort();
-  }, [softwareModules, hardwareItems, activeTab]);
-
-  // Get existing mappings for the selected software module
-  const existingMappingsForSelectedSoftware = useMemo(() => {
-    if (!selectedSoftwareModule) return [];
-    return mappings.filter(m => m.software_module_id === selectedSoftwareModule);
-  }, [mappings, selectedSoftwareModule]);
-
-  // Get hardware items that are already mapped to the selected software
-  const alreadyMappedHardwareIds = useMemo(() => {
-    return new Set(existingMappingsForSelectedSoftware.map(m => m.hardware_item_id));
-  }, [existingMappingsForSelectedSoftware]);
-
-  // Show loading state
   if (loading) {
     return <PageLoader />;
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Data</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => {
-                setError(null);
-                loadData();
-          }}>
-            Try Again
-            </Button>
-        </div>
-      </div>
-    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-      {/* Breadcrumb Navigation */}
+        {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-          <RouterLink to="/dashboard" className="flex items-center space-x-1 hover:text-gray-900">
-          <Home className="h-4 w-4" />
-          <span>Dashboard</span>
-          </RouterLink>
-        <ChevronRight className="h-4 w-4" />
-        <span className="text-gray-900 font-medium">Software & Hardware</span>
-      </nav>
+          <Link to="/dashboard" className="flex items-center space-x-1 hover:text-gray-900">
+            <Home className="h-4 w-4" />
+            <span>Dashboard</span>
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-gray-900 font-medium">Software & Hardware Management</span>
+        </nav>
 
-        {/* Header with Action Buttons */}
+        {/* Header with Add Button */}
         <div className="mb-6 flex justify-between items-end">
-        <div>
+          <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Software & Hardware Management</h1>
             <p className="text-gray-600">
-              Unified management of software modules, hardware items, and their relationships.
-          </p>
-        </div>
+              Manage platform-level software modules and hardware items for dynamic scoping
+            </p>
+          </div>
           <div className="flex items-center space-x-3">
-            {activeTab === 'software' && (
-              <Button 
-                onClick={addSoftwareModule} 
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
-              >
-                <Plus className="h-5 w-5 mr-3" />
-                Add Software
-              </Button>
-            )}
-            {activeTab === 'hardware' && (
-              <Button 
-                onClick={addHardwareItem} 
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
-              >
-                <Plus className="h-5 w-5 mr-3" />
-                Add Hardware
-              </Button>
-            )}
-            {activeTab === 'mapping' && (
-              <Button 
-                onClick={addMapping} 
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-semibold shadow-lg text-lg"
-              >
-                <Link className="h-5 w-5 mr-3" />
-                Add Mapping
-              </Button>
-            )}
-        </div>
-      </div>
-
-        {/* Tab Navigation */}
-        <div className="mb-6">
-          <div className="flex space-x-1 bg-white p-1 rounded-lg border">
-            <Button
-              variant={activeTab === 'software' ? 'default' : 'ghost'}
+            <Button 
               onClick={() => setActiveTab('software')}
-              className="flex-1"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              Software Modules ({softwareModules.length})
-        </Button>
-            <Button
-              variant={activeTab === 'hardware' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('hardware')}
-              className="flex-1"
+              variant={activeTab === 'software' ? 'default' : 'outline'}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               <Database className="h-4 w-4 mr-2" />
-              Hardware Items ({hardwareItems.length})
+              Software Modules
             </Button>
-            <Button
-              variant={activeTab === 'mapping' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('mapping')}
-              className="flex-1"
+            <Button 
+              onClick={() => setActiveTab('hardware')}
+              variant={activeTab === 'hardware' ? 'default' : 'outline'}
+              className="bg-green-600 hover:bg-green-700"
             >
-              <Link className="h-4 w-4 mr-2" />
-              Mappings ({mappings.length})
-        </Button>
+              <Package className="h-4 w-4 mr-2" />
+              Hardware Items
+            </Button>
           </div>
-      </div>
+        </div>
+
+        {error && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="card-surface">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Database className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-2xl font-bold">{softwareModules.length}</p>
+                  <p className="text-sm text-gray-600">Software Modules</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-surface">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Package className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-2xl font-bold">{hardwareItems.length}</p>
+                  <p className="text-sm text-gray-600">Hardware Items</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-surface">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Settings className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="text-2xl font-bold">{allCategories.length}</p>
+                  <p className="text-sm text-gray-600">Categories</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-surface">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Activity className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-2xl font-bold">
+                    {(softwareModules.filter(s => s.is_active).length + hardwareItems.filter(h => h.is_active).length)}
+                  </p>
+                  <p className="text-sm text-gray-600">Active Items</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Search and Filters */}
         <div className="mb-4">
@@ -729,7 +470,7 @@ export default function SoftwareHardwareManagement() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder={`Search ${activeTab === 'software' ? 'software' : activeTab === 'hardware' ? 'hardware' : 'mappings'}...`}
+                  placeholder={`Search ${activeTab === 'software' ? 'software modules' : 'hardware items'}...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-full"
@@ -737,243 +478,245 @@ export default function SoftwareHardwareManagement() {
               </div>
             </div>
             
-            {/* Category Filter (only for software and hardware) */}
-            {activeTab !== 'mapping' && (
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full lg:w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.filter(category => category && category.trim() !== '').map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            {/* Category Filter */}
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {allCategories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             {/* Clear Filters Button */}
             <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
               Clear Filters
             </Button>
-                    </div>
-                    </div>
-
-        {/* Data Table */}
-        <Card className="mt-2">
-          <CardContent className="p-0">
-            <div className="overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {activeTab === 'software' && (
-                      <>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Monthly Fee</TableHead>
-                        <TableHead>Setup Fee</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </>
-                    )}
-                    {activeTab === 'hardware' && (
-                      <>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Manufacturer</TableHead>
-                        <TableHead>Unit Cost</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </>
-                    )}
-                    {activeTab === 'mapping' && (
-                      <>
-                        <TableHead>Software</TableHead>
-                        <TableHead>Hardware</TableHead>
-                        <TableHead>Required</TableHead>
-                        <TableHead>Quantity</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currentData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={activeTab === 'mapping' ? 5 : 6} className="text-center py-12">
-                        {activeTab === 'software' && <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />}
-                        {activeTab === 'hardware' && <Database className="h-12 w-12 mx-auto mb-3 text-gray-300" />}
-                        {activeTab === 'mapping' && <Link className="h-12 w-12 mx-auto mb-3 text-gray-300" />}
-                        <p className="text-sm text-gray-500">No {activeTab === 'software' ? 'software modules' : activeTab === 'hardware' ? 'hardware items' : 'mappings'} found</p>
-                        <p className="text-xs text-gray-400">Create your first {activeTab === 'software' ? 'software module' : activeTab === 'hardware' ? 'hardware item' : 'mapping'} to get started</p>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    currentData.map((item: any) => (
-                      <TableRow key={item.id} className="hover:bg-gray-50">
-                        {activeTab === 'software' && (
-                          <>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center space-x-3">
-                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                  <Package className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div>
-                                  <div className="font-medium">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-sm text-gray-500">{item.description}</div>
-                                  )}
-                    </div>
-                  </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{item.category}</Badge>
-                            </TableCell>
-                            <TableCell>£{item.monthly_fee || 0}/month</TableCell>
-                            <TableCell>£{item.setup_fee || 0}</TableCell>
-                            <TableCell>
-                              <Badge variant={item.is_active ? "default" : "secondary"}>
-                                {item.is_active ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => editSoftwareModule(item)}
-                                  className="h-8 w-8 p-0 hover:bg-green-50"
-                                  title="Edit Software"
-                                >
-                                  <Edit className="h-4 w-4 text-green-600" />
-                    </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteSoftwareModule(item.id)}
-                                  className="h-8 w-8 p-0 hover:bg-red-50"
-                                  title="Delete Software"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                            </TableCell>
-                          </>
-                        )}
-                        {activeTab === 'hardware' && (
-                          <>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center space-x-3">
-                                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                                  <Database className="h-4 w-4 text-purple-600" />
-                </div>
-                                <div>
-                                  <div className="font-medium">{item.name}</div>
-                                  {item.description && (
-                                    <div className="text-sm text-gray-500">{item.description}</div>
-                                  )}
-            </div>
           </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{item.category}</Badge>
-                            </TableCell>
-                            <TableCell>{item.manufacturer || 'N/A'}</TableCell>
-                            <TableCell>£{item.unit_cost || 0}</TableCell>
-                            <TableCell>
-                              <Badge variant={item.is_active ? "default" : "secondary"}>
-                                {item.is_active ? 'Available' : 'Discontinued'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => editHardwareItem(item)}
-                                  className="h-8 w-8 p-0 hover:bg-green-50"
-                                  title="Edit Hardware"
-                                >
-                                  <Edit className="h-4 w-4 text-green-600" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteHardwareItem(item.id)}
-                                  className="h-8 w-8 p-0 hover:bg-red-50"
-                                  title="Delete Hardware"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-              </Button>
-            </div>
-                            </TableCell>
-                          </>
-                        )}
-                        {activeTab === 'mapping' && (
-                          <>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center space-x-3">
-                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                  <Package className="h-4 w-4 text-blue-600" />
-                    </div>
-                                <span>{item.software_module?.name || 'Unknown Software'}</span>
-                    </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                                  <Database className="h-4 w-4 text-purple-600" />
-                    </div>
-                                <span>{item.hardware_item?.hardware_name || 'Unknown Hardware'}</span>
-                    </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={item.is_required ? "default" : "outline"}>
-                                {item.is_required ? 'Required' : 'Optional'}
-                      </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-medium">{item.quantity}</span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => editMapping(item)}
-                                  className="h-8 w-8 p-0 hover:bg-green-50"
-                                  title="Edit Mapping"
-                                >
-                                  <Edit className="h-4 w-4 text-green-600" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteMapping(item.id)}
-                                  className="h-8 w-8 p-0 hover:bg-red-50"
-                                  title="Delete Mapping"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
-                    </div>
-                            </TableCell>
-                          </>
-                        )}
+        </div>
+
+        {/* Software Modules Table */}
+        {activeTab === 'software' && (
+          <Card className="mt-2">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold">Software Modules</h3>
+                </div>
+                <Button 
+                  onClick={() => setEditingSoftwareModule({
+                    id: '',
+                    name: '',
+                    description: '',
+                    category: '',
+                    license_fee: 0,
+                    is_active: true,
+                    created_at: '',
+                    updated_at: ''
+                  })}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Software Module
+                </Button>
+              </div>
+              <div className="overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>License Fee</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentSoftwareModules.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12">
+                          <Database className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm text-gray-500">No software modules found</p>
+                          <p className="text-xs text-gray-400">Create your first software module to get started</p>
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-                  </div>
-          </CardContent>
-        </Card>
+                    ) : (
+                      currentSoftwareModules.map((module) => (
+                        <TableRow key={module.id} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">
+                            <div>
+                              <div className="font-semibold">{module.name}</div>
+                              {module.description && (
+                                <div className="text-sm text-gray-500">{module.description}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getCategoryIcon(module.category)}
+                              <Badge className={getCategoryColor(module.category)}>
+                                {module.category}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            £{(module.license_fee || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={module.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {module.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingSoftwareModule(module)}
+                                className="h-8 w-8 p-0 hover:bg-green-50"
+                                title="Edit Software Module"
+                              >
+                                <Edit className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteSoftwareModule(module.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                                title="Delete Software Module"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hardware Items Table */}
+        {activeTab === 'hardware' && (
+          <Card className="mt-2">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-green-600" />
+                  <h3 className="text-lg font-semibold">Hardware Items</h3>
+                </div>
+                <Button 
+                  onClick={() => setEditingHardwareItem({
+                    id: '',
+                    name: '',
+                    description: '',
+                    category: '',
+                    manufacturer: '',
+                    unit_cost: 0,
+                    is_active: true,
+                    created_at: '',
+                    updated_at: ''
+                  })}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Hardware Item
+                </Button>
+              </div>
+              <div className="overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Manufacturer</TableHead>
+                      <TableHead>Unit Cost</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentHardwareItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-12">
+                          <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm text-gray-500">No hardware items found</p>
+                          <p className="text-xs text-gray-400">Create your first hardware item to get started</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      currentHardwareItems.map((item) => (
+                        <TableRow key={item.id} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">
+                            <div>
+                              <div className="font-semibold">{item.name}</div>
+                              {item.description && (
+                                <div className="text-sm text-gray-500">{item.description}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getCategoryIcon(item.category)}
+                              <Badge className={getCategoryColor(item.category)}>
+                                {item.category}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            {item.manufacturer || 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            £{(item.unit_cost || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {item.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingHardwareItem(item)}
+                                className="h-8 w-8 p-0 hover:bg-green-50"
+                                title="Edit Hardware Item"
+                              >
+                                <Edit className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteHardwareItem(item.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                                title="Delete Hardware Item"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary and Pagination */}
         <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-sm text-gray-500">
-            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} {activeTab === 'software' ? 'software modules' : activeTab === 'hardware' ? 'hardware items' : 'mappings'}
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, activeTab === 'software' ? filteredSoftwareModules.length : filteredHardwareItems.length)} of {activeTab === 'software' ? filteredSoftwareModules.length : filteredHardwareItems.length} {activeTab === 'software' ? 'software modules' : 'hardware items'}
           </div>
           
           {totalPages > 1 && (
@@ -985,7 +728,7 @@ export default function SoftwareHardwareManagement() {
                 disabled={currentPage === 1}
               >
                 Previous
-                    </Button>
+              </Button>
               
               <div className="flex items-center gap-1">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -997,9 +740,9 @@ export default function SoftwareHardwareManagement() {
                     className="w-8 h-8 p-0"
                   >
                     {page}
-                    </Button>
+                  </Button>
                 ))}
-                  </div>
+              </div>
               
               <Button
                 variant="outline"
@@ -1009,553 +752,202 @@ export default function SoftwareHardwareManagement() {
               >
                 Next
               </Button>
-                </div>
-          )}
             </div>
-          </div>
-
-      {/* Edit Software Module Dialog */}
+          )}
+        </div>
+      </div>
+      {/* Software Module Edit Modal */}
       {editingSoftwareModule && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-medium mb-4">
-              {editingSoftwareModule.id === 'new' ? 'Add Software Module' : 'Edit Software Module'}
+              {editingSoftwareModule.id ? 'Edit Software Module' : 'Add Software Module'}
             </h3>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="softName">Name</Label>
-                <Input 
-                  id="softName" 
-                  value={editingSoftwareModule.name} 
-                  onChange={(e) => setEditingSoftwareModule({...editingSoftwareModule!, name: e.target.value})} 
+                <Label htmlFor="software_name">Software Name</Label>
+                <Input
+                  id="software_name"
+                  value={editingSoftwareModule.name}
+                  onChange={(e) => setEditingSoftwareModule({
+                    ...editingSoftwareModule,
+                    name: e.target.value
+                  })}
+                  placeholder="Enter software name"
                 />
               </div>
               <div>
-                <Label htmlFor="softDesc">Description</Label>
-                <Input 
-                  id="softDesc" 
-                  value={editingSoftwareModule.description || ''} 
-                  onChange={(e) => setEditingSoftwareModule({...editingSoftwareModule!, description: e.target.value})} 
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editingSoftwareModule.description || ''}
+                  onChange={(e) => setEditingSoftwareModule({
+                    ...editingSoftwareModule,
+                    description: e.target.value
+                  })}
+                  placeholder="Enter description"
                 />
               </div>
               <div>
-                <Label htmlFor="softCat">Category</Label>
-                <Input 
-                  id="softCat" 
-                  value={editingSoftwareModule.category} 
-                  onChange={(e) => setEditingSoftwareModule({...editingSoftwareModule!, category: e.target.value})} 
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={editingSoftwareModule.category}
+                  onChange={(e) => setEditingSoftwareModule({
+                    ...editingSoftwareModule,
+                    category: e.target.value
+                  })}
+                  placeholder="Enter category"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="softMonthly">Monthly Fee (£)</Label>
-                  <Input 
-                    id="softMonthly" 
-                    type="number" 
-                    value={editingSoftwareModule.monthly_fee ?? 0} 
-                    onChange={(e) => setEditingSoftwareModule({...editingSoftwareModule!, monthly_fee: Number(e.target.value)})} 
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="softSetup">Setup Fee (£)</Label>
-                  <Input 
-                    id="softSetup" 
-                    type="number" 
-                    value={editingSoftwareModule.setup_fee ?? 0} 
-                    onChange={(e) => setEditingSoftwareModule({...editingSoftwareModule!, setup_fee: Number(e.target.value)})} 
-                  />
-                </div>
+              <div>
+                <Label htmlFor="license_fee">License Fee</Label>
+                <Input
+                  id="license_fee"
+                  type="number"
+                  step="0.01"
+                  value={editingSoftwareModule.license_fee || 0}
+                  onChange={(e) => setEditingSoftwareModule({
+                    ...editingSoftwareModule,
+                    license_fee: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="Enter license fee"
+                />
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="softActive" 
-                  checked={editingSoftwareModule.is_active} 
-                  onCheckedChange={(v) => setEditingSoftwareModule({...editingSoftwareModule!, is_active: Boolean(v)})} 
+                <Checkbox
+                  id="is_active"
+                  checked={editingSoftwareModule.is_active || false}
+                  onCheckedChange={(checked) => setEditingSoftwareModule({
+                    ...editingSoftwareModule,
+                    is_active: checked as boolean
+                  })}
                 />
-                <Label htmlFor="softActive" className="text-sm">Active</Label>
+                <Label htmlFor="is_active">Active</Label>
               </div>
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setEditingSoftwareModule(null)}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveSoftwareModule}
                   disabled={saving}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={saveSoftwareModule}
-                  disabled={saving}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   {saving ? 'Saving...' : 'Save'}
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingSoftwareModule(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Hardware Item Dialog */}
+      {/* Hardware Item Edit Modal */}
       {editingHardwareItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {editingHardwareItem.id === 'new' ? 'Add Hardware Item' : 'Edit Hardware Item'}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {editingHardwareItem.id === 'new' ? 'Create a new hardware item with detailed specifications' : 'Update hardware item information'}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingHardwareItem(null)}
-                  className="text-gray-400 hover:text-gray-600"
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4">
+              {editingHardwareItem.id ? 'Edit Hardware Item' : 'Add Hardware Item'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="hardware_name">Hardware Name</Label>
+                <Input
+                  id="hardware_name"
+                  value={editingHardwareItem.name}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    name: e.target.value
+                  })}
+                  placeholder="Enter hardware name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editingHardwareItem.description || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    description: e.target.value
+                  })}
+                  placeholder="Enter description"
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={editingHardwareItem.category}
+                  onValueChange={(value) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    category: value
+                  })}
                 >
-                  ✕
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allCategories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="manufacturer">Manufacturer</Label>
+                <Input
+                  id="manufacturer"
+                  value={editingHardwareItem.manufacturer || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    manufacturer: e.target.value
+                  })}
+                  placeholder="Enter manufacturer"
+                />
+              </div>
+              <div>
+                <Label htmlFor="unit_cost">Unit Cost</Label>
+                <Input
+                  id="unit_cost"
+                  type="number"
+                  step="0.01"
+                  value={editingHardwareItem.unit_cost || 0}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    unit_cost: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="Enter unit cost"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_active"
+                  checked={editingHardwareItem.is_active || false}
+                  onCheckedChange={(checked) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    is_active: checked as boolean
+                  })}
+                />
+                <Label htmlFor="is_active">Active</Label>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveHardwareItem}
+                  disabled={saving}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  {saving ? 'Saving...' : 'Save'}
                 </Button>
-              </div>
-            </div>
-
-            {/* Form Content */}
-            <div className="p-6">
-              <div className="space-y-8">
-                
-                {/* Basic Information Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
-                    <h4 className="text-lg font-medium text-gray-900">Basic Information</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="hardwareName" className="text-sm font-medium text-gray-700">
-                        Hardware Name *
-                      </Label>
-                      <Input 
-                        id="hardwareName" 
-                        value={editingHardwareItem.hardware_name} 
-                        onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, hardware_name: e.target.value})}
-                        placeholder="Enter hardware name"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="manufacturer" className="text-sm font-medium text-gray-700">
-                        Manufacturer
-                      </Label>
-                      <Input 
-                        id="manufacturer" 
-                        value={editingHardwareItem.manufacturer || ''} 
-                        onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, manufacturer: e.target.value})}
-                        placeholder="Enter manufacturer name"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="configurationNotes" className="text-sm font-medium text-gray-700">
-                      Configuration Notes
-                    </Label>
-                    <Textarea 
-                      id="configurationNotes" 
-                      value={editingHardwareItem.configuration_notes || ''} 
-                      onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, configuration_notes: e.target.value})}
-                      rows={3}
-                      placeholder="Enter configuration details, setup instructions, or special requirements"
-                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Category & Classification Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                    <h4 className="text-lg font-medium text-gray-900">Category & Classification</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="category" className="text-sm font-medium text-gray-700">
-                        Category *
-                      </Label>
-                      <Select 
-                        value={editingHardwareItem.category} 
-                        onValueChange={(value) => setEditingHardwareItem({...editingHardwareItem!, category: value})}
-                      >
-                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {HARDWARE_CATEGORIES.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="subcategory" className="text-sm font-medium text-gray-700">
-                        Subcategory
-                      </Label>
-                      <Select 
-                        value={editingHardwareItem.subcategory || ''} 
-                        onValueChange={(value) => setEditingHardwareItem({...editingHardwareItem!, subcategory: value})}
-                      >
-                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                          <SelectValue placeholder="Select subcategory" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {HARDWARE_SUBCATEGORIES.map((subcategory) => (
-                            <SelectItem key={subcategory.value} value={subcategory.value}>
-                              {subcategory.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cost Information Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
-                    <h4 className="text-lg font-medium text-gray-900">Cost Information</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="unitCost" className="text-sm font-medium text-gray-700">
-                        Unit Cost (£)
-                      </Label>
-                      <Input 
-                        id="unitCost" 
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={editingHardwareItem.unit_cost || ''} 
-                        onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, unit_cost: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">
-                        Quantity
-                      </Label>
-                      <Input 
-                        id="quantity" 
-                        type="number"
-                        min="1"
-                        value={editingHardwareItem.quantity || ''} 
-                        onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, quantity: parseInt(e.target.value) || 1})}
-                        placeholder="1"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="totalCost" className="text-sm font-medium text-gray-700">
-                        Total Cost (£)
-                      </Label>
-                      <Input 
-                        id="totalCost" 
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={editingHardwareItem.total_cost || ''} 
-                        onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, total_cost: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Support Information Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
-                    <h4 className="text-lg font-medium text-gray-900">Support Information</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="supportType" className="text-sm font-medium text-gray-700">
-                        Support Type
-                      </Label>
-                      <Select 
-                        value={editingHardwareItem.support_type || 'None'} 
-                        onValueChange={(value) => setEditingHardwareItem({...editingHardwareItem!, support_type: value})}
-                      >
-                        <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                          <SelectValue placeholder="Select support type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SUPPORT_TYPES.map((supportType) => (
-                            <SelectItem key={supportType.value} value={supportType.value}>
-                              {supportType.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="supportCost" className="text-sm font-medium text-gray-700">
-                        Support Cost (£)
-                      </Label>
-                      <Input 
-                        id="supportCost" 
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={editingHardwareItem.support_cost || ''} 
-                        onChange={(e) => setEditingHardwareItem({...editingHardwareItem!, support_cost: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-6 bg-gray-500 rounded-full"></div>
-                    <h4 className="text-lg font-medium text-gray-900">Status</h4>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Checkbox 
-                      id="isActive" 
-                      checked={editingHardwareItem.is_active || false}
-                      onCheckedChange={(checked) => setEditingHardwareItem({...editingHardwareItem!, is_active: !!checked})}
-                      className="border-gray-300 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                    />
-                    <div>
-                      <Label htmlFor="isActive" className="text-sm font-medium text-gray-700 cursor-pointer">
-                        Active Hardware Item
-                      </Label>
-                      <p className="text-xs text-gray-500">Uncheck to disable this hardware item</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-xl">
-              <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
                   onClick={() => setEditingHardwareItem(null)}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="flex-1"
                 >
                   Cancel
-                </Button>
-                <Button
-                  onClick={saveHardwareItem}
-                  disabled={saving || !editingHardwareItem.hardware_name || !editingHardwareItem.category}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6"
-                >
-                  {saving ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Saving...</span>
-                    </div>
-                  ) : (
-                    editingHardwareItem.id === 'new' ? 'Add Hardware Item' : 'Update Hardware Item'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Mapping Dialog */}
-      {editingMapping && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium mb-4">Add Software-Hardware Mappings</h3>
-            <div className="space-y-4">
-                             <div>
-                 <Label htmlFor="mappingSoftware">Software Module</Label>
-                 <Select 
-                   value={selectedSoftwareModule} 
-                   onValueChange={setSelectedSoftwareModule}
-                 >
-                   <SelectTrigger>
-                     <SelectValue placeholder="Select software module" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     {softwareModules.filter(software => software.id && software.name).map(software => (
-                       <SelectItem key={software.id} value={software.id}>
-                         {software.name}
-                       </SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
-               </div>
-
-               {/* Show existing mappings for selected software */}
-               {selectedSoftwareModule && existingMappingsForSelectedSoftware.length > 0 && (
-                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                   <h4 className="text-sm font-medium text-blue-900 mb-2">
-                     Existing Mappings for {softwareModules.find(s => s.id === selectedSoftwareModule)?.name}:
-                   </h4>
-                   <div className="space-y-1">
-                     {existingMappingsForSelectedSoftware.map((mapping, index) => {
-                       const hardware = hardwareItems.find(h => h.id === mapping.hardware_item_id);
-                       return (
-                         <div key={index} className="flex items-center justify-between text-sm">
-                           <span className="text-blue-800">
-                             {hardware?.hardware_name || 'Unknown Hardware'}
-                           </span>
-                           <div className="flex items-center space-x-2">
-                             <Badge variant="outline" className="text-xs">
-                               Qty: {mapping.quantity}
-                             </Badge>
-                             <Badge variant={mapping.is_required ? "default" : "outline"} className="text-xs">
-                               {mapping.is_required ? 'Required' : 'Optional'}
-                             </Badge>
-                           </div>
-                         </div>
-                       );
-                     })}
-                   </div>
-                 </div>
-               )}
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Label>Hardware Items</Label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={addMappingItem}
-                    className="h-8"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Hardware Item
-                  </Button>
-                </div>
-                
-                {editingMappingItems.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Database className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p>No hardware items added yet</p>
-                    <p className="text-sm">Click "Add Hardware Item" to get started</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {editingMappingItems.map((item, index) => (
-                      <div key={index} className="border rounded-lg p-4 bg-gray-50">
-                        <div className="flex justify-between items-start mb-3">
-                          <h4 className="font-medium">Hardware Item {index + 1}</h4>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => removeMappingItem(index)}
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div>
-                            <Label className="text-sm">Hardware Item</Label>
-                            <Select 
-                              value={item.hardware_item_id} 
-                              onValueChange={(value) => updateMappingItem(index, 'hardware_item_id', value)}
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Select hardware" />
-                              </SelectTrigger>
-                                                             <SelectContent>
-                                 {hardwareItems.filter(hardware => hardware.id && hardware.hardware_name).map(hardware => {
-                                   const isAlreadyMapped = alreadyMappedHardwareIds.has(hardware.id);
-                                   return (
-                                     <SelectItem 
-                                       key={hardware.id} 
-                                       value={hardware.id}
-                                       disabled={isAlreadyMapped}
-                                       className={isAlreadyMapped ? 'opacity-50' : ''}
-                                     >
-                                       <div className="flex items-center justify-between w-full">
-                                         <span>{hardware.hardware_name}</span>
-                                         {isAlreadyMapped && (
-                                           <Badge variant="outline" className="ml-2 text-xs">
-                                             Already Mapped
-                                           </Badge>
-                                         )}
-                                       </div>
-                                     </SelectItem>
-                                   );
-                                 })}
-                               </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div>
-                            <Label className="text-sm">Quantity</Label>
-                            <Input 
-                              type="number" 
-                              min="1"
-                              value={item.quantity} 
-                              onChange={(e) => updateMappingItem(index, 'quantity', Number(e.target.value))}
-                              className="h-9"
-                            />
-                          </div>
-                          
-                          <div className="flex items-center space-x-2 pt-6">
-                            <Checkbox 
-                              checked={item.is_required} 
-                              onCheckedChange={(v) => updateMappingItem(index, 'is_required', Boolean(v))} 
-                            />
-                            <Label className="text-sm">Required</Label>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setEditingMapping(null);
-                    setSelectedSoftwareModule('');
-                    setEditingMappingItems([]);
-                  }}
-                  disabled={saving}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={saveMapping}
-                  disabled={saving || !selectedSoftwareModule || editingMappingItems.length === 0}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {saving ? 'Saving...' : 'Save Mappings'}
                 </Button>
               </div>
             </div>

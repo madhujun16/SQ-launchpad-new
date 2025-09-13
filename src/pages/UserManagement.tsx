@@ -46,7 +46,7 @@ interface User {
 }
 
 export default function UserManagement() {
-  const { currentRole } = useAuth();
+  const { currentRole, createUserAsAdmin } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -193,8 +193,42 @@ export default function UserManagement() {
       
       // Check if this is a new user (id === 'new')
       if (editingUser.id === 'new') {
-        // Generate a new UUID for the user_id
-        const newUserId = crypto.randomUUID();
+        // Use custom password if provided, otherwise generate a temporary password
+        const tempPassword = (editingUser as any).tempPassword || crypto.randomUUID().replace(/-/g, '') + '!';
+        
+        // Get the primary role for auth user creation
+        const primaryRole = editingUser.user_roles[0]?.role || 'admin';
+        
+        // Create authentication user first
+        const { error: authError } = await createUserAsAdmin(
+          editingUser.email,
+          tempPassword,
+          primaryRole
+        );
+        
+        if (authError) {
+          console.error('Error creating auth user:', authError);
+          toast.error(`Failed to create authentication user: ${authError}`);
+          return;
+        }
+        
+        // Get the created auth user ID
+        const { data: authUser, error: authUserError } = await supabase.auth.admin.listUsers();
+        
+        if (authUserError) {
+          console.error('Error fetching auth user:', authUserError);
+          toast.error('Failed to fetch created user');
+          return;
+        }
+        
+        const createdUser = authUser.users.find((u: any) => u.email === editingUser.email);
+        if (!createdUser) {
+          console.error('Created user not found');
+          toast.error('Failed to find created user');
+          return;
+        }
+        
+        const newUserId = createdUser.id;
         
         // Create new user profile
         const { data: newProfile, error: profileError } = await supabase
@@ -219,6 +253,13 @@ export default function UserManagement() {
         profileId = (newProfile as any)?.id || '';
         editingUser.id = profileId;
         editingUser.user_id = newUserId;
+        
+        // Show success message with password info
+        if (!(editingUser as any).tempPassword) {
+          toast.success(`User created successfully! Password: ${tempPassword}`);
+        } else {
+          toast.success('User created successfully!');
+        }
       } else {
         // Update existing user profile
         const { error: profileError } = await supabase
@@ -274,7 +315,9 @@ export default function UserManagement() {
       }
       
       setEditingUser(null);
-      toast.success(editingUser.id === 'new' ? 'User created successfully' : 'User updated successfully');
+      if (editingUser.id !== 'new') {
+        toast.success('User updated successfully');
+      }
       
       // Reload users to get fresh data
       await loadUsers();
@@ -665,6 +708,23 @@ export default function UserManagement() {
                   disabled={editingUser.id !== 'new'} // Disable email editing for existing users
                 />
               </div>
+              {editingUser.id === 'new' && (
+                <div>
+                  <Label htmlFor="userPassword">Password (Optional)</Label>
+                  <Input
+                    id="userPassword"
+                    type="password"
+                    placeholder="Leave empty for auto-generated password"
+                    onChange={(e) => {
+                      // Store password in a temporary field
+                      (editingUser as any).tempPassword = e.target.value;
+                    }}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    If left empty, a secure password will be auto-generated
+                  </p>
+                </div>
+              )}
               <div>
                 <Label htmlFor="userRoles">Roles</Label>
                 <div className="space-y-2">

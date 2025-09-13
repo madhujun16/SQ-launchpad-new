@@ -58,22 +58,16 @@ import {
 
 interface HardwareItem {
   id: string;
-  name: string;
+  hardware_name: string;
   category: string;
-  model: string;
+  mounting_types: string[];
   manufacturer: string;
-  serialNumber: string;
-  status: 'deployed' | 'available' | 'maintenance' | 'retired';
-  siteId: string;
-  siteName: string;
-  deploymentDate: string;
-  warrantyExpiry: string;
-  lastMaintenance: string;
-  nextMaintenance: string;
-  cost: number;
-  specifications: string;
-  location: string;
-  assignedTo: string;
+  unit_cost: number;
+  service_types: string[];
+  service_costs: Record<string, number>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface SiteHardwareSummary {
@@ -114,155 +108,76 @@ const HardwareMaster = () => {
   const hardwareInventory: HardwareItem[] = [
     {
       id: '1',
-      name: 'SmartQ POS Terminal',
-      category: 'POS Systems',
-      model: 'SQ-POS-2024',
-      manufacturer: 'SmartQ Technologies',
-      serialNumber: 'SQ001-2024-001',
-      status: 'deployed',
-      siteId: '1',
-      siteName: 'ASDA Redditch',
-      deploymentDate: '2024-12-15',
-      warrantyExpiry: '2027-12-15',
-      lastMaintenance: '2024-11-15',
-      nextMaintenance: '2025-02-15',
-      cost: 2500,
-      specifications: 'Touch screen, card reader, receipt printer, 4GB RAM, 128GB SSD',
-      location: 'Main Counter',
-      assignedTo: 'John Smith'
+      hardware_name: '15.6" Kitchen Screen',
+      category: 'Kitchen Display System (KDS)',
+      mounting_types: ['Fixed'],
+      manufacturer: 'ELO',
+      unit_cost: 839.00,
+      service_types: ['On-site Support', 'Remote Support', 'Delivery'],
+      service_costs: {
+        'onSiteSupport': 199.00,
+        'remoteSupport': 259.00,
+        'delivery': 80.00
+      },
+      is_active: true,
+      created_at: '2024-12-01T10:00:00Z',
+      updated_at: '2024-12-01T10:00:00Z'
     },
     {
       id: '2',
-      name: 'Self-Service Kiosk',
-      category: 'Kiosks',
-      model: 'SQ-KIOSK-2024',
-      manufacturer: 'SmartQ Technologies',
-      serialNumber: 'SQ002-2024-001',
-      status: 'deployed',
-      siteId: '1',
-      siteName: 'ASDA Redditch',
-      deploymentDate: '2024-12-15',
-      warrantyExpiry: '2027-12-15',
-      lastMaintenance: '2024-11-15',
-      nextMaintenance: '2025-02-15',
-      cost: 3500,
-      specifications: 'Large touch screen, payment terminal, thermal printer, 8GB RAM, 256GB SSD',
-      location: 'Entrance Area',
-      assignedTo: 'Emma Wilson'
+      hardware_name: 'Printer with Cable',
+      category: 'Kitchen Display System (KDS)',
+      mounting_types: ['Other'],
+      manufacturer: '',
+      unit_cost: 199.00,
+      service_types: [],
+      service_costs: {},
+      is_active: true,
+      created_at: '2024-12-01T10:00:00Z',
+      updated_at: '2024-12-01T10:00:00Z'
     },
     {
       id: '3',
-      name: 'Network Switch',
-      category: 'Networking',
-      model: 'Cisco-C2960',
-      manufacturer: 'Cisco',
-      serialNumber: 'CIS001-2024-001',
-      status: 'deployed',
-      siteId: '1',
-      siteName: 'ASDA Redditch',
-      deploymentDate: '2024-12-15',
-      warrantyExpiry: '2026-12-15',
-      lastMaintenance: '2024-11-15',
-      nextMaintenance: '2025-02-15',
-      cost: 5500,
-      specifications: '24-port PoE switch, managed, Layer 2',
-      location: 'Server Room',
-      assignedTo: 'David Brown'
+      hardware_name: 'Wall Mounting Kit (Fixed)',
+      category: 'Kitchen Display System (KDS)',
+      mounting_types: ['Wall Mounted'],
+      manufacturer: '',
+      unit_cost: 136.00,
+      service_types: [],
+      service_costs: {},
+      is_active: true,
+      created_at: '2024-12-01T10:00:00Z',
+      updated_at: '2024-12-01T10:00:00Z'
     },
     {
       id: '4',
-      name: 'Thermal Printer',
-      category: 'Printers',
-      model: 'TP-80',
-      manufacturer: 'Epson',
-      serialNumber: 'EPS001-2024-001',
-      status: 'deployed',
-      siteId: '1',
-      siteName: 'ASDA Redditch',
-      deploymentDate: '2024-12-15',
-      warrantyExpiry: '2026-12-15',
-      lastMaintenance: '2024-11-15',
-      nextMaintenance: '2025-02-15',
-      cost: 300,
-      specifications: '80mm thermal printer, USB connection',
-      location: 'Main Counter',
-      assignedTo: 'John Smith'
+      hardware_name: 'ELO Remote Support',
+      category: 'Support & Sundries',
+      mounting_types: ['Other'],
+      manufacturer: 'ELO',
+      unit_cost: 259.00,
+      service_types: ['Remote Support'],
+      service_costs: {
+        'remoteSupport': 259.00
+      },
+      is_active: true,
+      created_at: '2024-12-01T10:00:00Z',
+      updated_at: '2024-12-01T10:00:00Z'
     },
     {
       id: '5',
-      name: 'Vendor POS System',
-      category: 'POS Systems',
-      model: 'VPOS-2024',
-      manufacturer: 'VendorTech',
-      serialNumber: 'VT001-2024-001',
-      status: 'deployed',
-      siteId: '2',
-      siteName: 'HSBC Canary Wharf',
-      deploymentDate: '2024-12-20',
-      warrantyExpiry: '2027-12-20',
-      lastMaintenance: '2024-11-20',
-      nextMaintenance: '2025-02-20',
-      cost: 1800,
-      specifications: 'Basic POS with card reader, 2GB RAM, 64GB SSD',
-      location: 'Vendor Counter 1',
-      assignedTo: 'Mike Thompson'
-    },
-    {
-      id: '6',
-      name: 'Kitchen Display System',
-      category: 'Kiosks',
-      model: 'KDS-2024',
-      manufacturer: 'KitchenTech',
-      serialNumber: 'KT001-2024-001',
-      status: 'deployed',
-      siteId: '2',
-      siteName: 'HSBC Canary Wharf',
-      deploymentDate: '2024-12-20',
-      warrantyExpiry: '2027-12-20',
-      lastMaintenance: '2024-11-20',
-      nextMaintenance: '2025-02-20',
-      cost: 1200,
-      specifications: 'Digital order display for kitchen, 4GB RAM, 128GB SSD',
-      location: 'Kitchen Area',
-      assignedTo: 'Sarah Johnson'
-    },
-    {
-      id: '7',
-      name: 'POS Terminal Replacement',
-      category: 'POS Systems',
-      model: 'SQ-POS-2024',
-      manufacturer: 'SmartQ Technologies',
-      serialNumber: 'SQ003-2024-001',
-      status: 'maintenance',
-      siteId: '3',
-      siteName: 'Manchester Central',
-      deploymentDate: '2024-11-10',
-      warrantyExpiry: '2027-11-10',
-      lastMaintenance: '2024-10-10',
-      nextMaintenance: '2025-01-10',
-      cost: 2500,
-      specifications: 'Touch screen, card reader, receipt printer, 4GB RAM, 128GB SSD',
-      location: 'Counter 3',
-      assignedTo: 'David Brown'
-    },
-    {
-      id: '8',
-      name: 'Advanced POS System',
-      category: 'POS Systems',
-      model: 'SQ-POS-PRO-2024',
-      manufacturer: 'SmartQ Technologies',
-      serialNumber: 'SQ004-2024-001',
-      status: 'available',
-      siteId: '',
-      siteName: 'Warehouse',
-      deploymentDate: '',
-      warrantyExpiry: '2027-08-01',
-      lastMaintenance: '',
-      nextMaintenance: '',
-      cost: 3500,
-      specifications: 'Advanced features, analytics dashboard, 8GB RAM, 256GB SSD',
-      location: 'Warehouse',
-      assignedTo: 'Unassigned'
+      hardware_name: 'Installation Engineer - Weekday',
+      category: 'Support & Sundries',
+      mounting_types: ['Other'],
+      manufacturer: '',
+      unit_cost: 500.00,
+      service_types: ['On-site Support'],
+      service_costs: {
+        'onSiteSupport': 500.00
+      },
+      is_active: true,
+      created_at: '2024-12-01T10:00:00Z',
+      updated_at: '2024-12-01T10:00:00Z'
     }
   ];
 
@@ -324,22 +239,22 @@ const HardwareMaster = () => {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'POS Systems': return <CreditCardIcon className="h-4 w-4" />;
-      case 'Kiosks': return <MonitorIcon className="h-4 w-4" />;
-      case 'Printers': return <PrinterIcon className="h-4 w-4" />;
-      case 'Networking': return <RouterIcon className="h-4 w-4" />;
-      case 'Servers': return <ServerIcon className="h-4 w-4" />;
+      case 'Kitchen Display System (KDS)': return <MonitorIcon className="h-4 w-4" />;
+      case 'Support & Sundries': return <Activity className="h-4 w-4" />;
+      case 'Kiosk': return <MonitorIcon className="h-4 w-4" />;
+      case 'POS Terminal': return <CreditCardIcon className="h-4 w-4" />;
+      case 'Customer Display Screen (TDS)': return <MonitorIcon className="h-4 w-4" />;
       default: return <Package className="h-4 w-4" />;
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'POS Systems': return 'bg-indigo-100 text-indigo-800';
-      case 'Kiosks': return 'bg-purple-100 text-purple-800';
-      case 'Printers': return 'bg-orange-100 text-orange-800';
-      case 'Networking': return 'bg-blue-100 text-blue-800';
-      case 'Servers': return 'bg-green-100 text-green-800';
+      case 'Kitchen Display System (KDS)': return 'bg-blue-100 text-blue-800';
+      case 'Support & Sundries': return 'bg-orange-100 text-orange-800';
+      case 'Kiosk': return 'bg-purple-100 text-purple-800';
+      case 'POS Terminal': return 'bg-indigo-100 text-indigo-800';
+      case 'Customer Display Screen (TDS)': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -358,14 +273,12 @@ const HardwareMaster = () => {
   };
 
   const filteredHardware = hardwareInventory.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = item.hardware_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.siteName.toLowerCase().includes(searchTerm.toLowerCase());
+                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    const matchesSite = filterSite === 'all' || item.siteId === filterSite;
-    return matchesSearch && matchesCategory && matchesStatus && matchesSite;
+    const matchesStatus = filterStatus === 'all' || (item.is_active ? 'active' : 'inactive') === filterStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const sortedHardware = [...filteredHardware].sort((a, b) => {
@@ -385,11 +298,10 @@ const HardwareMaster = () => {
   });
 
   const totalHardware = hardwareInventory.length;
-  const deployedHardware = hardwareInventory.filter(h => h.status === 'deployed').length;
-  const availableHardware = hardwareInventory.filter(h => h.status === 'available').length;
-  const maintenanceHardware = hardwareInventory.filter(h => h.status === 'maintenance').length;
+  const activeHardware = hardwareInventory.filter(h => h.is_active).length;
+  const inactiveHardware = hardwareInventory.filter(h => !h.is_active).length;
 
-  const totalValue = hardwareInventory.reduce((sum, item) => sum + item.cost, 0);
+  const totalValue = hardwareInventory.reduce((sum, item) => sum + item.unit_cost, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -419,8 +331,8 @@ const HardwareMaster = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Deployed</p>
-                  <p className="text-2xl font-bold text-green-600">{deployedHardware}</p>
+                  <p className="text-sm font-medium text-gray-600">Active</p>
+                  <p className="text-2xl font-bold text-green-600">{activeHardware}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
@@ -431,10 +343,10 @@ const HardwareMaster = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Available</p>
-                  <p className="text-2xl font-bold text-blue-600">{availableHardware}</p>
+                  <p className="text-sm font-medium text-gray-600">Inactive</p>
+                  <p className="text-2xl font-bold text-red-600">{inactiveHardware}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-600" />
+                <Package className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
@@ -482,11 +394,11 @@ const HardwareMaster = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Categories</SelectItem>
-                          <SelectItem value="POS Systems">POS Systems</SelectItem>
-                          <SelectItem value="Kiosks">Kiosks</SelectItem>
-                          <SelectItem value="Printers">Printers</SelectItem>
-                          <SelectItem value="Networking">Networking</SelectItem>
-                          <SelectItem value="Servers">Servers</SelectItem>
+                          <SelectItem value="Kitchen Display System (KDS)">Kitchen Display System (KDS)</SelectItem>
+                          <SelectItem value="Support & Sundries">Support & Sundries</SelectItem>
+                          <SelectItem value="Kiosk">Kiosk</SelectItem>
+                          <SelectItem value="POS Terminal">POS Terminal</SelectItem>
+                          <SelectItem value="Customer Display Screen (TDS)">Customer Display Screen (TDS)</SelectItem>
                         </SelectContent>
                       </Select>
                       <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -495,10 +407,8 @@ const HardwareMaster = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="deployed">Deployed</SelectItem>
-                          <SelectItem value="available">Available</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                          <SelectItem value="retired">Retired</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -519,16 +429,17 @@ const HardwareMaster = () => {
                     <TableHeader>
                       <TableRow className="bg-gray-50">
                         <TableHead className="font-semibold text-gray-700">
-                          <Button variant="ghost" onClick={() => handleSort('name')} className="h-auto p-0 font-semibold">
+                          <Button variant="ghost" onClick={() => handleSort('hardware_name')} className="h-auto p-0 font-semibold">
                             Hardware Name
                             <ArrowUpDown className="ml-1 h-4 w-4" />
                           </Button>
                         </TableHead>
                         <TableHead className="font-semibold text-gray-700">Category</TableHead>
-                        <TableHead className="font-semibold text-gray-700">Site</TableHead>
+                        <TableHead className="font-semibold text-gray-700">Mounting Types</TableHead>
+                        <TableHead className="font-semibold text-gray-700">Manufacturer</TableHead>
+                        <TableHead className="font-semibold text-gray-700">Unit Cost</TableHead>
+                        <TableHead className="font-semibold text-gray-700">Service Types</TableHead>
                         <TableHead className="font-semibold text-gray-700">Status</TableHead>
-                        <TableHead className="font-semibold text-gray-700">Deployment Date</TableHead>
-                        <TableHead className="font-semibold text-gray-700">Cost</TableHead>
                         <TableHead className="font-semibold text-gray-700">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -537,8 +448,8 @@ const HardwareMaster = () => {
                         <TableRow key={item.id} className="hover:bg-gray-50 transition-colors">
                           <TableCell className="font-medium text-gray-900">
                             <div>
-                              <div className="font-semibold">{item.name}</div>
-                              <div className="text-sm text-gray-500">{item.model}</div>
+                              <div className="font-semibold">{item.hardware_name}</div>
+                              <div className="text-sm text-gray-500">{item.manufacturer}</div>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -550,21 +461,36 @@ const HardwareMaster = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">
-                              <div className="font-medium">{item.siteName}</div>
-                              <div className="text-gray-500">{item.location}</div>
+                            <div className="flex flex-wrap gap-1">
+                              {item.mounting_types.map((type, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {type}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            {item.manufacturer || 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            £{item.unit_cost.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {item.service_types.map((type, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {type}
+                                </Badge>
+                              ))}
+                              {item.service_types.length === 0 && (
+                                <span className="text-gray-400 text-sm">None</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge className={getStatusColor(item.status)}>
-                              {item.status}
+                            <Badge className={item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {item.is_active ? 'Active' : 'Inactive'}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="text-gray-700">
-                            {item.deploymentDate || 'Not deployed'}
-                          </TableCell>
-                          <TableCell className="text-gray-700">
-                            £{item.cost.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
