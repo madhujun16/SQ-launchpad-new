@@ -311,9 +311,9 @@ export default function SoftwareHardwareManagement() {
 
   // Get unique categories from both software modules and hardware items
   const allCategories = Array.from(new Set([
-    ...softwareModules.map(sm => sm.category),
-    ...hardwareItems.map(hi => hi.category)
-  ]));
+    ...softwareModules.map(sm => sm.category).filter(Boolean),
+    ...hardwareItems.map(hi => hi.category).filter(Boolean)
+  ])).filter(category => category && category.trim() !== '');
 
   // Filter and paginate data (similar to other platform config pages)
   const { filteredSoftwareModules, filteredHardwareItems, totalPages, currentSoftwareModules, currentHardwareItems } = useMemo(() => {
@@ -485,9 +485,11 @@ export default function SoftwareHardwareManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {allCategories.map(category => (
+                {allCategories.length > 0 ? allCategories.map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
+                )) : (
+                  <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                )}
               </SelectContent>
             </Select>
             
@@ -891,9 +893,11 @@ export default function SoftwareHardwareManagement() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allCategories.map(category => (
+                    {allCategories.length > 0 ? allCategories.map(category => (
                       <SelectItem key={category} value={category}>{category}</SelectItem>
-                    ))}
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
