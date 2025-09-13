@@ -544,32 +544,124 @@ export default function SoftwareHardwareManagement() {
           </div>
         </div>
 
+        {/* Software Modules Table */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>License Fee</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentSoftwareModules.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12">
+                        <Database className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm text-gray-500">No software modules found</p>
+                        <p className="text-xs text-gray-400">Create your first software module to get started</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentSoftwareModules.map((module) => (
+                      <TableRow key={module.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">
+                          <div>
+                            <div className="font-semibold">{module.name}</div>
+                            {module.description && (
+                              <div className="text-sm text-gray-500">{module.description}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getCategoryIcon(module.category)}
+                            <Badge className={getCategoryColor(module.category)}>
+                              {module.category}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          £{(module.license_fee || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={module.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {module.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingSoftwareModule(module)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              title="Edit Software Module"
+                            >
+                              <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      )}
+
       {/* Hardware Tab Content */}
       {activeTab === 'hardware' && (
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between p-4 border-b">
-                <div className="flex items-center gap-2">
-                  <Database className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold">Software Modules</h3>
+        <div className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search hardware items..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
-                <Button 
-                  onClick={() => setEditingSoftwareModule({
-                    id: '',
-                    name: '',
-                    description: '',
-                    category: '',
-                    license_fee: 0,
-                    is_active: true,
-                    created_at: '',
-                    updated_at: ''
-                  })}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Software Module
+                
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-full lg:w-48">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {allCategories.length > 0 ? allCategories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                
+                <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
+                  Clear Filters
                 </Button>
               </div>
-              <div className="overflow-hidden">
+            </CardContent>
+          </Card>
+
+          {/* Hardware Items Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -644,6 +736,11 @@ export default function SoftwareHardwareManagement() {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Hardware Tab Content */}
       {activeTab === 'hardware' && (
         <div className="space-y-6">
