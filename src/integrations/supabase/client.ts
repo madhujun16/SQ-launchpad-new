@@ -17,31 +17,29 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storageKey: 'smartq-launchpad-auth',
     detectSessionInUrl: true,
     flowType: 'pkce',
-    // Improved refresh configuration for better reliability
-    refreshTokenRetryAttempts: 3, // Reduced back to 3 to avoid lock conflicts
-    refreshTokenRetryDelay: 2000, // Increased back to 2000ms for stability
-    // Add session timeout handling
-    sessionTimeout: 30 * 24 * 60 * 60 * 1000, // 30 days
+    // Simplified configuration for better reliability
+    refreshTokenRetryAttempts: 2,
+    refreshTokenRetryDelay: 1000,
+    // Reduced session timeout to prevent hanging
+    sessionTimeout: 7 * 24 * 60 * 60 * 1000, // 7 days instead of 30
     // Enable debug mode in development
     debug: import.meta.env.DEV,
-    // Add lock timeout to prevent hanging
-    lockTimeout: 10000, // 10 seconds lock timeout
-    // Add better error handling for cross-device access
-    skipBrowserSessionCheck: false, // Ensure browser session is checked
-    // Add retry configuration for initial session
-    retryDelay: 1000, // 1 second delay between retries
-    maxRetries: 3 // Maximum retries for session operations
+    // Reduced lock timeout
+    lockTimeout: 5000, // 5 seconds instead of 10
+    // Simplified retry configuration
+    retryDelay: 500, // Reduced delay
+    maxRetries: 2 // Reduced retries
   },
   db: {
     schema: 'public'
   },
-  // Optimized realtime configuration - reduced for better performance
+  // Simplified realtime configuration
   realtime: {
     params: {
-      eventsPerSecond: 5 // Reduced from 10 to 5
+      eventsPerSecond: 2 // Further reduced
     }
   },
-  // Add global configuration for better performance
+  // Simplified global configuration
   global: {
     headers: {
       'X-Client-Info': 'smartq-launchpad-web'
@@ -64,27 +62,7 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-// Add periodic session health check to prevent expiration
-if (typeof window !== 'undefined') {
-  setInterval(async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const now = Date.now();
-        const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-        const timeUntilExpiry = expiresAt - now;
-        
-        // If session expires in less than 5 minutes, try to refresh
-        if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
-          console.log('⚠️ Session expires soon, attempting refresh...');
-          await supabase.auth.refreshSession();
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Periodic session check failed:', error);
-    }
-  }, 60000); // Check every minute
-}
+// Simplified session monitoring - removed periodic checks to prevent hanging
 
 // Session initialization helper for better cross-device handling
 export const initializeSession = async () => {

@@ -242,8 +242,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log('🔄 Starting auth initialization...');
         
-        // Use the improved session initialization helper
-        const { session: initialSession, error } = await initializeSession();
+        // Simplified session initialization with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 5000)
+        );
+        
+        const { session: initialSession, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.error('❌ Session initialization failed:', error);
@@ -256,7 +264,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (initialSession?.user) {
           console.log('👤 Fetching profile for user:', initialSession.user.email);
-          await fetchProfile(initialSession.user.id);
+          // Don't await profile fetch to prevent blocking
+          fetchProfile(initialSession.user.id).catch(err => 
+            console.warn('Profile fetch failed:', err)
+          );
         } else {
           console.log('ℹ️ No initial session - user needs to authenticate');
         }
@@ -272,7 +283,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (session?.user) {
               console.log('👤 User authenticated, fetching profile...');
-              await fetchProfile(session.user.id);
+              // Don't await profile fetch to prevent blocking
+              fetchProfile(session.user.id).catch(err => 
+                console.warn('Profile fetch failed:', err)
+              );
             } else {
               console.log('👋 User signed out, clearing data...');
               setProfile(null);

@@ -52,7 +52,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         console.warn('⚠️ Auth loading timeout - proceeding with fallback');
         setAuthTimeout(true);
       }
-    }, 15000); // Increased to 15 seconds for better cross-device handling
+    }, 8000); // Reduced to 8 seconds for faster response
 
     return () => clearTimeout(timeoutId);
   }, [loading]);
