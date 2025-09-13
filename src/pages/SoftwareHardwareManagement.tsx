@@ -366,25 +366,53 @@ export default function SoftwareHardwareManagement() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Software Hardware Management</h1>
-            <p className="text-gray-600 mt-2">
-              Manage software modules and hardware items for your organization
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Badge variant="outline" className="text-sm">
-              Platform Config
-            </Badge>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Software Hardware Management</h1>
+          <p className="text-gray-600 mt-1">
+            Manage software modules and hardware items for your organization
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Button 
+            onClick={() => setEditingSoftwareModule({
+              id: '',
+              name: '',
+              description: '',
+              category: '',
+              license_fee: 0,
+              is_active: true,
+              created_at: '',
+              updated_at: ''
+            })}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Software
+          </Button>
+          <Button 
+            onClick={() => setEditingHardwareItem({
+              id: '',
+              name: '',
+              description: '',
+              category: '',
+              manufacturer: '',
+              unit_cost: 0,
+              is_active: true,
+              created_at: '',
+              updated_at: ''
+            })}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Hardware
+          </Button>
         </div>
       </div>
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
@@ -594,19 +622,28 @@ export default function SoftwareHardwareManagement() {
                             {module.is_active ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingSoftwareModule(module)}
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
-                              title="Edit Software Module"
-                            >
-                              <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingSoftwareModule(module)}
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
+                                title="Edit Software Module"
+                              >
+                                <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteSoftwareModule(module.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                title="Delete Software Module"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                              </Button>
+                            </div>
+                          </TableCell>
                       </TableRow>
                     ))
                   )}
