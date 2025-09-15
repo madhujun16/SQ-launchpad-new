@@ -494,34 +494,34 @@ export default function SoftwareHardwareManagement() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder={`Search ${activeTab === 'software' ? 'software modules' : 'hardware items'}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-full"
               />
             </div>
-            
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {allCategories.length > 0 ? allCategories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                )) : (
-                  <SelectItem value="no-categories" disabled>No categories available</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline" onClick={clearFilters}>
-              Clear Filters
-            </Button>
+            <div className="flex gap-3 md:w-auto">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="md:w-56">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {allCategories.length > 0 ? allCategories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  )) : (
+                    <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={clearFilters} className="whitespace-nowrap">
+                Clear Filters
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
