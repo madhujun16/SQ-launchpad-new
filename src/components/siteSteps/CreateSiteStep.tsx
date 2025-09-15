@@ -119,11 +119,20 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
               <MapPin className="mr-2 h-5 w-5 text-green-600" />
               Location Information
             </div>
-            {isLocationEditable && (site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude) && !showLocationEditor && (
-              <Button variant="outline" size="sm" onClick={() => setShowLocationEditor(true)} className="flex items-center gap-2">
-                <EditIcon className="h-4 w-4" />
-                Edit location
-              </Button>
+            {isLocationEditable && (
+              !showLocationEditor
+                ? (
+                  (site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude) && (
+                    <Button variant="outline" size="sm" onClick={() => setShowLocationEditor(true)} className="flex items-center gap-2">
+                      <EditIcon className="h-4 w-4" />
+                      Edit location
+                    </Button>
+                  )
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => setShowLocationEditor(false)}>
+                    Cancel
+                  </Button>
+                )
             )}
           </CardTitle>
           <CardDescription className="text-gray-600">
@@ -135,12 +144,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
             <div>
               {(isLocationEditable && (!site?.siteCreation?.locationInfo?.latitude || !site?.siteCreation?.locationInfo?.longitude || showLocationEditor)) ? (
                 <>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
-                    {showLocationEditor && (
-                      <Button variant="outline" size="sm" onClick={() => setShowLocationEditor(false)}>Cancel</Button>
-                    )}
-                  </div>
+                  <div className="flex items-center justify-between" />
                   {/* Force the picker to open in expanded search mode by not passing initialLocation when editing */}
                   <LocationPicker
                     onLocationSelect={handleLocationSelect}
@@ -154,6 +158,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                               }
                             : undefined)
                     }
+                    className="border-0 shadow-none"
                   />
                 </>
               ) : !isLocationEditable ? (
@@ -164,6 +169,16 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                   </div>
                 </div>
               ) : null}
+
+              {/* Compact summary when location exists and not editing */}
+              {!showLocationEditor && site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude && (
+                <div className="mt-4 text-sm text-gray-700 space-y-1">
+                  <div><span className="font-medium">Address:</span> {site.siteCreation.locationInfo.location || '—'}</div>
+                  <div>
+                    <span className="font-medium">Coordinates:</span> {site.siteCreation.locationInfo.latitude}, {site.siteCreation.locationInfo.longitude}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
