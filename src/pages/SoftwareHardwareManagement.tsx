@@ -621,42 +621,7 @@ export default function SoftwareHardwareManagement() {
       {/* Hardware Tab Content */}
       {activeTab === 'hardware' && (
         <div className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search hardware items..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full lg:w-48">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {allCategories.length > 0 ? allCategories.map(category => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
-                    )) : (
-                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                
-                <Button variant="outline" onClick={clearFilters} className="w-full lg:w-auto">
-                  Clear Filters
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Filters removed; using global filter bar above */}
 
           {/* Hardware Items Table */}
           <Card>
