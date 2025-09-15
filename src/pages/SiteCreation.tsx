@@ -673,87 +673,26 @@ const SiteCreation = () => {
               <CardContent className="pt-0">
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
-                    
-                    {/* Location Picker Component */}
+                    {/* Location Picker Component (borderless, no subtitle, expanded) */}
                     <LocationPicker
                       onLocationSelect={(location) => {
                         handleInputChange('latitude', location.lat);
                         handleInputChange('longitude', location.lng);
                         handleInputChange('location', location.address);
                       }}
-                      initialLocation={formData.latitude && formData.longitude ? 
-                        { lat: formData.latitude, lng: formData.longitude } : undefined
-                      }
+                      initialLocation={undefined}
+                      className="border-0 shadow-none"
                     />
 
-                    {/* Manual Override Fields */}
-                    <div className="mt-6">
-                      <h5 className="font-medium text-gray-900 mb-3">Manual Override (Optional)</h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="address">Site Address</Label>
-                          <Input
-                            id="address"
-                            placeholder="Enter site address"
-                            value={formData.location}
-                            onChange={(e) => handleInputChange('location', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="postcode">Postcode</Label>
-                          <Input
-                            id="postcode"
-                            placeholder="e.g., CV3 4LF"
-                            value={formData.postcode}
-                            onChange={(e) => handleInputChange('postcode', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="region">Region</Label>
-                          <Input
-                            id="region"
-                            placeholder="e.g., West Midlands"
-                            value={formData.region}
-                            onChange={(e) => handleInputChange('region', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="country">Country</Label>
-                          <Input
-                            id="country"
-                            placeholder="e.g., United Kingdom"
-                            value={formData.country}
-                            onChange={(e) => handleInputChange('country', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="latitude">Latitude</Label>
-                          <Input
-                            id="latitude"
-                            type="number"
-                            step="any"
-                            placeholder="e.g., 52.4862"
-                            value={formData.latitude || ''}
-                            onChange={(e) => handleInputChange('latitude', e.target.value ? parseFloat(e.target.value) : null)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="longitude">Longitude</Label>
-                          <Input
-                            id="longitude"
-                            type="number"
-                            step="any"
-                            placeholder="e.g., -1.8904"
-                            value={formData.longitude || ''}
-                            onChange={(e) => handleInputChange('longitude', e.target.value ? parseFloat(e.target.value) : null)}
-                          />
+                    {/* Compact summary after selection */}
+                    {(formData.latitude !== null && formData.longitude !== null) && (
+                      <div className="mt-4 text-sm text-gray-700 space-y-1">
+                        <div><span className="font-medium">Address:</span> {formData.location || '—'}</div>
+                        <div>
+                          <span className="font-medium">Coordinates:</span> {formData.latitude}, {formData.longitude}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Use these fields to manually adjust location details if needed
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
