@@ -88,7 +88,8 @@ const MOCK_PLATFORM_DATA = {
   approvalRequests: 4,
   avgResponseTime: '2.3 days',
   softwareLicenses: 156,
-  totalAssets: 89
+  totalAssets: 89,
+  avgGoLiveDays: 34.2
 };
 
 const MOCK_FINANCIAL_DATA = {
@@ -259,9 +260,9 @@ const Dashboard = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Resource Utilization</p>
+                  <p className="text-sm text-gray-600">Avg Go-Live Time (days)</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_FINANCIAL_DATA.resourceUtilization}%
+                    {MOCK_PLATFORM_DATA.avgGoLiveDays}
                   </p>
                 </div>
               </div>
