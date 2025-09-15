@@ -29,7 +29,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       console.log('⚠️ Chrome detected - checking for potential issues...');
       
       // Check if extensions might be interfering
-      if (window.chrome && window.chrome.runtime) {
+      if (isChrome && (window as any).chrome?.runtime) {
         console.log('🔌 Chrome extensions detected');
       }
       

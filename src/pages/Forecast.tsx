@@ -26,6 +26,7 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
+import { TimelineGanttView } from '@/components/forecast/TimelineGanttView';
 
 interface ForecastData {
   id: string;
@@ -609,86 +610,10 @@ const Forecast: React.FC = () => {
         </div>
       </div>
 
-      {/* Timeline View (Consolidated by Status) */}
+      {/* Timeline View - Gantt Chart by Organization */}
       {viewMode === 'timeline' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Sites Going Live (Next 3 Months)</span>
-              </CardTitle>
-              <CardDescription>
-                Consolidated status-wise insights for upcoming go-lives
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {orderedStatuses.map((statusKey) => {
-                  const data = statusAggregation[statusKey] || { count: 0, totalProgress: 0, totalEstimatedCost: 0, totalDays: 0, highRiskCount: 0 };
-                  const count = data.count;
-                  if (count === 0) return null;
-                  const avgProgress = Math.max(0, Math.min(100, count > 0 ? Math.round(data.totalProgress / count) : 0));
-                  const avgDaysRaw = count > 0 ? Math.round(data.totalDays / count) : 0;
-                  return (
-                    <div key={statusKey} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <Badge className={`${getStatusColor(statusKey)} text-base font-semibold px-3 py-1`}>
-                            {getStatusDisplayName(statusKey)}
-                          </Badge>
-                          <span className="text-sm text-gray-600">{count} projects</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="text-sm text-gray-600">Avg progress: {avgProgress}%</div>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm">View sites</Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-80">
-                              <div className="text-sm font-medium mb-2">Sites in {getStatusDisplayName(statusKey)}</div>
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
-                                {nextThreeMonthsData.filter(s => s.status === statusKey).map(site => {
-                                  const dateLabel = 'Target';
-                                  const dateValue = site.targetDate;
-                                  return (
-                                    <div key={site.id} className="flex items-center justify-between p-2 border rounded">
-                                      <div className="mr-3">
-                                        <div className="font-medium text-gray-900 text-sm">{site.siteName}</div>
-                                        <div className="text-xs text-gray-600">{dateLabel}: {formatDate(dateValue)}</div>
-                                      </div>
-                                      <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-700">
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-gray-600">Total est. budget</span>
-                          <span className="font-medium">£{data.totalEstimatedCost.toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-gray-600">Avg days to target</span>
-                          <span className="font-medium">{Math.abs(avgDaysRaw)}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-gray-600">High risk</span>
-                          <span className="font-medium">{data.highRiskCount}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {nextThreeMonthsData.length === 0 && (
-                  <div className="text-sm text-gray-500">No data available</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <TimelineGanttView forecastData={forecastData} />
         </div>
       )}
 

@@ -18,17 +18,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
     flowType: 'pkce',
     // Minimal configuration to prevent hanging
-    refreshTokenRetryAttempts: 1,
-    refreshTokenRetryDelay: 500,
-    // Shorter session timeout
-    sessionTimeout: 24 * 60 * 60 * 1000, // 1 day
     // Enable debug mode in development
-    debug: import.meta.env.DEV,
-    // Very short lock timeout to prevent hanging
-    lockTimeout: 2000, // 2 seconds
-    // Minimal retry configuration
-    retryDelay: 200, // Very short delay
-    maxRetries: 1 // Minimal retries
+    debug: import.meta.env.DEV
   },
   db: {
     schema: 'public'

@@ -34,7 +34,7 @@ const store: Record<string, SiteFlowSummary> = {};
 const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
   {
     id: "create_site",
-    key: "create_site",
+    key: "create_site" as SiteFlowStepKey,
     title: "Create Site",
     description: "Basic site details",
     mandatoryFields: ["name", "goLiveDate"],
@@ -45,11 +45,11 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
       opsManager: "Sarah Johnson",
       deploymentEngineer: "Mike Wilson"
     },
-    status: "completed"
+    status: "completed" as const
   },
   {
     id: "site_study",
-    key: "site_study",
+    key: "site_study" as SiteFlowStepKey,
     title: "Site Study",
     description: "Assessment & notes",
     mandatoryFields: ["map", "counters"],
@@ -64,11 +64,11 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
         "/smartq-launchpad-logo.svg"
       ]
     },
-    status: "not_started"
+    status: "not_started" as const
   },
   {
     id: "scoping",
-    key: "scoping",
+    key: "scoping" as SiteFlowStepKey,
     title: "Define Scope",
     description: "Hardware & software",
     mandatoryFields: ["hardwareList"],
@@ -82,52 +82,56 @@ const defaultSteps: Omit<SiteFlowStepData, "updatedAt">[] = [
       ],
       totalCapex: 3750
     },
-    status: "not_started"
+    status: "not_started" as const
   },
   {
     id: "approval",
-    key: "approval",
+    key: "approval" as SiteFlowStepKey,
     title: "Approval",
     description: "Stakeholder sign-off",
     mandatoryFields: ["signedBy"],
     values: { signedBy: "Ops Manager", approvedDate: "2025-10-05" },
-    status: "not_started"
+    status: "not_started" as const
   },
   {
     id: "procurement",
-    key: "procurement",
+    key: "procurement" as SiteFlowStepKey,
     title: "Procurement",
     description: "Source hardware",
     mandatoryFields: ["poNumber"],
     values: { poNumber: "PO-12345", vendor: "Melford" },
-    status: "not_started"
+    status: "not_started" as const
   },
   {
     id: "deployment",
-    key: "deployment",
+    key: "deployment" as SiteFlowStepKey,
     title: "Deployment",
     description: "On-site installation",
     mandatoryFields: ["installDate"],
     values: { installDate: "2025-10-10", installer: "SmartQ Team" },
-    status: "not_started"
+    status: "not_started" as const
   },
   {
     id: "go_live",
-    key: "go_live",
+    key: "go_live" as SiteFlowStepKey,
     title: "Go Live",
     description: "Activate site",
     mandatoryFields: ["handoverDoc"],
     values: { handoverDoc: "https://docs.example.com/handover.pdf", goLiveDate: "2025-10-15" },
-    status: "not_started"
+    status: "not_started" as const
   }
-].map(s => ({ ...s, updatedAt: new Date().toISOString() }));
+] as const;
 
 export function initSiteFlow(siteId: string): SiteFlowSummary {
   if (!store[siteId]) {
+    const steps = JSON.parse(JSON.stringify(defaultSteps)).map((step: any) => ({
+      ...step,
+      updatedAt: new Date().toISOString()
+    }));
     store[siteId] = {
       siteId,
       overallStatus: "Created",
-      steps: JSON.parse(JSON.stringify(defaultSteps))
+      steps
     };
   }
   return store[siteId];
@@ -149,6 +153,12 @@ export function updateStepValues(siteId: string, stepKey: SiteFlowStepKey, value
   step.values = { ...step.values, ...values };
   step.status = markCompleted ? "completed" : "in_progress";
   step.updatedAt = new Date().toISOString();
+  // Add updatedAt to all steps that might be missing it
+  flow.steps.forEach(s => {
+    if (!s.updatedAt) {
+      s.updatedAt = new Date().toISOString();
+    }
+  });
   // Update overall status loosely based on progression
   const lastCompletedIndex = Math.max(-1, ...flow.steps.map((s, i) => (s.status === "completed" ? i : -1)));
   const statusOrder: UnifiedSiteStatus[] = ["Created", "site_study_done", "scoping_done", "approved", "procurement_done", "deployed", "live"];
