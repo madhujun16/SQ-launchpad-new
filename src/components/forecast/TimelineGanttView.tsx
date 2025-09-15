@@ -66,10 +66,18 @@ const getStatusDisplayName = (status: string) => {
 };
 
 export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastData }) => {
-  // Generate timeline from current date (Sept 20, 2025) to 90 days ahead
-  const timelineStart = new Date('2025-09-20');
-  const timelineEnd = new Date(timelineStart);
-  timelineEnd.setDate(timelineStart.getDate() + 90);
+  // Generate timeline from current month start to furthest target date
+  const today = new Date('2025-09-20');
+  const timelineStart = new Date('2025-09-01'); // Start of current month
+  
+  // Find the furthest target date among all sites
+  const furthestDate = forecastData.reduce((latest, site) => {
+    const siteTarget = new Date(site.targetDate);
+    return siteTarget > latest ? siteTarget : latest;
+  }, today);
+  
+  const timelineEnd = new Date(furthestDate);
+  timelineEnd.setDate(timelineEnd.getDate() + 7); // Add a week buffer
 
   // Generate weeks array
   const weeks = useMemo(() => {
@@ -110,16 +118,23 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
 
   // Calculate position and width for each site on timeline
   const getSitePosition = (site: ForecastData) => {
-    const currentDate = new Date('2025-09-20'); // Current date
+    const today = new Date('2025-09-20');
     const targetDate = new Date(site.targetDate);
+    const totalTimelineMs = timelineEnd.getTime() - timelineStart.getTime();
     
-    // For ongoing sites, show from current date to target date
-    const startPos = 0; // Start from current week
-    const totalWeeks = weeks.length;
-    const siteWeeks = Math.max(1, Math.ceil((targetDate.getTime() - currentDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
-    const width = Math.min(95, Math.max(8, (siteWeeks / totalWeeks) * 100));
+    // Calculate progress period (from timeline start to today)
+    const progressMs = today.getTime() - timelineStart.getTime();
+    const progressWidth = Math.max(0, (progressMs / totalTimelineMs) * 100);
     
-    return { left: startPos, width };
+    // Calculate total period (from timeline start to target date)
+    const totalPeriodMs = targetDate.getTime() - timelineStart.getTime();
+    const totalWidth = Math.min(100, Math.max(8, (totalPeriodMs / totalTimelineMs) * 100));
+    
+    return { 
+      progressWidth, // Width showing actual progress/status
+      totalWidth,    // Total width to target date
+      futureWidth: Math.max(0, totalWidth - progressWidth) // Remaining width in light grey
+    };
   };
 
   return (
@@ -130,7 +145,7 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
           <span>Timeline Gantt View - By Organization</span>
         </CardTitle>
         <CardDescription>
-          Sites grouped by organization showing ongoing progress from Sept 20, 2025 to next 90 days
+          Sites grouped by organization showing status transitions from Sept 1st to today, with remaining timeline to target dates
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -172,30 +187,41 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
                         {site.siteName}
                       </div>
                       
-                      {/* Timeline Bar */}
-                      <div className="flex-1 relative h-8 bg-gray-100 rounded mx-2">
-                        <div
-                          className={`absolute top-1 h-6 rounded ${getStatusColor(site.status)} flex items-center justify-center text-white text-xs font-medium shadow-sm`}
-                          style={{
-                            left: `${position.left}%`,
-                            width: `${position.width}%`,
-                            minWidth: '80px'
-                          }}
-                        >
-                          {getStatusDisplayName(site.status)}
-                        </div>
-                        
-                        {/* Progress indicator overlay */}
-                        {site.progress < 100 && (
-                          <div
-                            className="absolute top-1 h-6 bg-black/20 rounded-r"
-                            style={{
-                              left: `${position.left + (position.width * (site.progress / 100))}%`,
-                              width: `${position.width * (1 - site.progress / 100)}%`
-                            }}
-                          />
-                        )}
-                      </div>
+                       {/* Timeline Bar */}
+                       <div className="flex-1 relative h-8 bg-gray-100 rounded mx-2">
+                         {/* Progress period (past - showing status) */}
+                         {position.progressWidth > 0 && (
+                           <div
+                             className={`absolute top-1 h-6 rounded-l ${getStatusColor(site.status)} flex items-center justify-center text-white text-xs font-medium shadow-sm`}
+                             style={{
+                               left: '0%',
+                               width: `${position.progressWidth}%`,
+                               minWidth: position.progressWidth > 8 ? '60px' : 'auto'
+                             }}
+                           >
+                             {position.progressWidth > 8 && getStatusDisplayName(site.status)}
+                           </div>
+                         )}
+                         
+                         {/* Future period (light grey until target date) */}
+                         {position.futureWidth > 0 && (
+                           <div
+                             className="absolute top-1 h-6 bg-gray-300/50 rounded-r border border-gray-300"
+                             style={{
+                               left: `${position.progressWidth}%`,
+                               width: `${position.futureWidth}%`
+                             }}
+                           />
+                         )}
+                         
+                         {/* Today indicator line */}
+                         <div
+                           className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                           style={{
+                             left: `${position.progressWidth}%`
+                           }}
+                         />
+                       </div>
                       
                       {/* Status and Progress */}
                       <div className="w-32 text-right text-xs text-gray-600 pl-4">
