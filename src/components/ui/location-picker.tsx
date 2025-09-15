@@ -345,38 +345,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     );
   }
 
-  // Expanded Location Picker
+  // Expanded Location Picker (without header title)
   return (
     <Card className={className}>
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <MapPin className="mr-2 h-5 w-5" />
-            {isEditing ? 'Edit Location' : 'Location Picker'}
-          </div>
-          {isEditing && (
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancelEdit}
-                className="flex items-center gap-2"
-              >
-                <X className="h-4 w-4" />
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveEdit}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-              >
-                <Check className="h-4 w-4" />
-                Save
-              </Button>
-            </div>
-          )}
-        </CardTitle>
-      </CardHeader>
       <CardContent className="space-y-4">
         {/* Error Display */}
         {error && (

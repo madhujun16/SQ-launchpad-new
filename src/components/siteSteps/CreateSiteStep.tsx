@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, MapPin } from 'lucide-react';
-import { UKCitySelect as LocationPicker } from '@/components/UKCitySelect';
+import { FileText, MapPin, Lock, Edit as EditIcon } from 'lucide-react';
+import { LocationPicker } from '@/components/ui/location-picker';
+import { Button } from '@/components/ui/button';
 import { Site } from '@/types/siteTypes';
 
 interface CreateSiteStepProps {
@@ -12,6 +13,8 @@ interface CreateSiteStepProps {
 }
 
 const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) => {
+  const [showLocationEditor, setShowLocationEditor] = useState(false);
+
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
     onSiteUpdate({
       ...site,
@@ -25,7 +28,19 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
         }
       }
     });
+    setShowLocationEditor(false);
   };
+
+  // Allow edits until site study is completed
+  const isLocationEditable = !(
+    site.status === 'site_study_done' ||
+    site.status === 'scoping_done' ||
+    site.status === 'approved' ||
+    site.status === 'procurement_done' ||
+    site.status === 'deployed' ||
+    site.status === 'live' ||
+    site.status === 'archived'
+  );
 
   return (
     <div className="space-y-6">
@@ -99,9 +114,17 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       {/* Location Information Section */}
       <Card className="shadow-sm border border-gray-200">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <MapPin className="mr-2 h-5 w-5 text-green-600" />
-            Location Information
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <MapPin className="mr-2 h-5 w-5 text-green-600" />
+              Location Information
+            </div>
+            {isLocationEditable && (site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude) && !showLocationEditor && (
+              <Button variant="outline" size="sm" onClick={() => setShowLocationEditor(true)} className="flex items-center gap-2">
+                <EditIcon className="h-4 w-4" />
+                Edit location
+              </Button>
+            )}
           </CardTitle>
           <CardDescription className="text-gray-600">
             Site location and address details
@@ -110,25 +133,37 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
         <CardContent>
           <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
-              
-              {/* Location Picker Component */}
-              <LocationPicker
-                value={site?.siteCreation?.locationInfo?.location || ''}
-                onValueChange={(value) => {
-                  onSiteUpdate({
-                    ...site,
-                    siteCreation: {
-                      ...site.siteCreation,
-                      locationInfo: {
-                        ...site.siteCreation?.locationInfo,
-                        location: value
-                      }
+              {(isLocationEditable && (!site?.siteCreation?.locationInfo?.latitude || !site?.siteCreation?.locationInfo?.longitude || showLocationEditor)) ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Location Selection</h4>
+                    {showLocationEditor && (
+                      <Button variant="outline" size="sm" onClick={() => setShowLocationEditor(false)}>Cancel</Button>
+                    )}
+                  </div>
+                  {/* Force the picker to open in expanded search mode by not passing initialLocation when editing */}
+                  <LocationPicker
+                    onLocationSelect={handleLocationSelect}
+                    initialLocation={
+                      showLocationEditor
+                        ? undefined
+                        : (site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude
+                            ? {
+                                lat: site.siteCreation.locationInfo.latitude,
+                                lng: site.siteCreation.locationInfo.longitude
+                              }
+                            : undefined)
                     }
-                  });
-                }}
-                placeholder="Select a UK city"
-              />
+                  />
+                </>
+              ) : !isLocationEditable ? (
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Lock className="h-4 w-4 mr-2" />
+                    Location is locked after Site Study completion
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </CardContent>
