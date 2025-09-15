@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Calendar, 
   TrendingUp, 
@@ -441,6 +442,49 @@ const Forecast: React.FC = () => {
     };
   }, [forecastData]);
 
+  // Filter to sites going live in the next 3 months (based on targetDate; for live, use completionDate if present)
+  const nextThreeMonthsData = useMemo(() => {
+    const now = new Date();
+    const threeMonthsLater = new Date(now.getTime());
+    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+    return forecastData.filter((item) => {
+      if (item.status === 'live') return false; // exclude already live sites from upcoming go-lives
+      const target = new Date(item.targetDate);
+      return target >= now && target <= threeMonthsLater;
+    });
+  }, [forecastData]);
+
+  // Aggregate status-wise metrics for Timeline consolidated view (filtered to next 3 months)
+  const statusAggregation = useMemo(() => {
+    const aggregation: Record<string, { count: number; totalProgress: number; totalEstimatedCost: number; totalDays: number; highRiskCount: number }> = {};
+    const now = new Date();
+    for (const item of nextThreeMonthsData) {
+      const key = item.status;
+      if (!aggregation[key]) {
+        aggregation[key] = { count: 0, totalProgress: 0, totalEstimatedCost: 0, totalDays: 0, highRiskCount: 0 };
+      }
+      aggregation[key].count += 1;
+      aggregation[key].totalProgress += item.progress || 0;
+      aggregation[key].totalEstimatedCost += item.estimatedCost || 0;
+      // Days to target (or since live)
+      const referenceDate = new Date(item.targetDate);
+      const diffMs = Math.max(0, referenceDate.getTime() - now.getTime());
+      const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      aggregation[key].totalDays += days;
+      if (item.riskLevel === 'high') aggregation[key].highRiskCount += 1;
+    }
+    return aggregation;
+  }, [nextThreeMonthsData]);
+
+  const orderedStatuses: string[] = [
+    'deployed',
+    'procurement_done',
+    'approved',
+    'scoping_done',
+    'site_study_done',
+    'Created'
+  ];
+
   if (loading) {
     return <ContentLoader />;
   }
@@ -565,77 +609,83 @@ const Forecast: React.FC = () => {
         </div>
       </div>
 
-      {/* Timeline View */}
+      {/* Timeline View (Consolidated by Status) */}
       {viewMode === 'timeline' && (
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5" />
-                <span>Project Timeline (Next 3 Months)</span>
+                <span>Sites Going Live (Next 3 Months)</span>
               </CardTitle>
               <CardDescription>
-                Gantt chart view of all projects and their progress
+                Consolidated status-wise insights for upcoming go-lives
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {forecastData.map((project) => (
-                  <div key={project.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <h3 className="font-medium">{project.siteName}</h3>
-                        <Badge className={`${getStatusColor(project.status)} text-base font-semibold px-3 py-1`}>
-                          {getStatusDisplayName(project.status)}
-                        </Badge>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getPriorityColor(project.priority)}>
-                            {project.priority}
+                {orderedStatuses.map((statusKey) => {
+                  const data = statusAggregation[statusKey] || { count: 0, totalProgress: 0, totalEstimatedCost: 0, totalDays: 0, highRiskCount: 0 };
+                  const count = data.count;
+                  if (count === 0) return null;
+                  const avgProgress = Math.max(0, Math.min(100, count > 0 ? Math.round(data.totalProgress / count) : 0));
+                  const avgDaysRaw = count > 0 ? Math.round(data.totalDays / count) : 0;
+                  return (
+                    <div key={statusKey} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <Badge className={`${getStatusColor(statusKey)} text-base font-semibold px-3 py-1`}>
+                            {getStatusDisplayName(statusKey)}
                           </Badge>
-                          <Badge className={getRiskColor(project.riskLevel)}>
-                            {project.riskLevel} risk
-                          </Badge>
+                          <span className="text-sm text-gray-600">{count} projects</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="text-sm text-gray-600">Avg progress: {avgProgress}%</div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm">View sites</Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-80">
+                              <div className="text-sm font-medium mb-2">Sites in {getStatusDisplayName(statusKey)}</div>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {nextThreeMonthsData.filter(s => s.status === statusKey).map(site => {
+                                  const dateLabel = 'Target';
+                                  const dateValue = site.targetDate;
+                                  return (
+                                    <div key={site.id} className="flex items-center justify-between p-2 border rounded">
+                                      <div className="mr-3">
+                                        <div className="font-medium text-gray-900 text-sm">{site.siteName}</div>
+                                        <div className="text-xs text-gray-600">{dateLabel}: {formatDate(dateValue)}</div>
+                                      </div>
+                                      <Badge className={getPriorityColor(site.priority)}>{site.priority}</Badge>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {project.progress}% Complete
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-700">
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-gray-600">Total est. budget</span>
+                          <span className="font-medium">£{data.totalEstimatedCost.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-gray-600">Avg days to target</span>
+                          <span className="font-medium">{Math.abs(avgDaysRaw)}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span className="text-gray-600">High risk</span>
+                          <span className="font-medium">{data.highRiskCount}</span>
+                        </div>
                       </div>
                     </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Start:</span>
-                        <span className="ml-2 font-medium">{formatDate(project.startDate)}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Target:</span>
-                        <span className="ml-2 font-medium">{formatDate(project.targetDate)}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Team:</span>
-                        <span className="ml-2 font-medium">{project.assignedTeam}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Budget:</span>
-                        <span className="ml-2 font-medium">£{project.estimatedCost.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    
-                    {project.notes && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-sm text-gray-600">{project.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
+                {nextThreeMonthsData.length === 0 && (
+                  <div className="text-sm text-gray-500">No data available</div>
+                )}
               </div>
             </CardContent>
           </Card>
