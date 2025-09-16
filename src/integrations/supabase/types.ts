@@ -625,7 +625,7 @@ export type Database = {
       }
       hardware_items: {
         Row: {
-          category: string
+          category: Database["public"]["Enums"]["hardware_category"]
           created_at: string | null
           description: string | null
           estimated_cost: number | null
@@ -636,11 +636,15 @@ export type Database = {
           manufacturer: string | null
           model: string | null
           name: string
+          quantity: number | null
+          support_cost: number | null
+          support_type: Database["public"]["Enums"]["support_type"] | null
+          total_cost: number | null
           unit_cost: number | null
           updated_at: string | null
         }
         Insert: {
-          category: string
+          category: Database["public"]["Enums"]["hardware_category"]
           created_at?: string | null
           description?: string | null
           estimated_cost?: number | null
@@ -651,11 +655,15 @@ export type Database = {
           manufacturer?: string | null
           model?: string | null
           name: string
+          quantity?: number | null
+          support_cost?: number | null
+          support_type?: Database["public"]["Enums"]["support_type"] | null
+          total_cost?: number | null
           unit_cost?: number | null
           updated_at?: string | null
         }
         Update: {
-          category?: string
+          category?: Database["public"]["Enums"]["hardware_category"]
           created_at?: string | null
           description?: string | null
           estimated_cost?: number | null
@@ -666,6 +674,10 @@ export type Database = {
           manufacturer?: string | null
           model?: string | null
           name?: string
+          quantity?: number | null
+          support_cost?: number | null
+          support_type?: Database["public"]["Enums"]["support_type"] | null
+          total_cost?: number | null
           unit_cost?: number | null
           updated_at?: string | null
         }
@@ -1833,48 +1845,6 @@ export type Database = {
           },
         ]
       }
-      software_hardware_mapping: {
-        Row: {
-          created_at: string | null
-          hardware_item_id: string | null
-          id: string
-          is_required: boolean | null
-          quantity: number | null
-          software_module_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          hardware_item_id?: string | null
-          id?: string
-          is_required?: boolean | null
-          quantity?: number | null
-          software_module_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          hardware_item_id?: string | null
-          id?: string
-          is_required?: boolean | null
-          quantity?: number | null
-          software_module_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "software_hardware_mapping_hardware_item_id_fkey"
-            columns: ["hardware_item_id"]
-            isOneToOne: false
-            referencedRelation: "hardware_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "software_hardware_mapping_software_module_id_fkey"
-            columns: ["software_module_id"]
-            isOneToOne: false
-            referencedRelation: "software_modules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       software_modules: {
         Row: {
           category: string
@@ -2360,6 +2330,15 @@ export type Database = {
         | "rejected"
         | "resubmitted"
       group_type: "hardware" | "software" | "network" | "accessories"
+      hardware_category:
+        | "KIOSKS"
+        | "KDS_SCREENS"
+        | "POS_TILLS"
+        | "TDS_SCREENS"
+        | "TABLETS_DBFB"
+        | "Kitchen Display System (KDS)"
+        | "Support & Sundries"
+        | "License Fees"
       inventory_status: "available" | "deployed" | "maintenance" | "retired"
       inventory_type: "counter" | "tablet" | "router" | "cable" | "other"
       procurement_status:
@@ -2385,6 +2364,7 @@ export type Database = {
         | "procurement"
         | "deployment"
         | "activated"
+      support_type: "None" | "On-site" | "Remote"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2522,6 +2502,16 @@ export const Constants = {
         "resubmitted",
       ],
       group_type: ["hardware", "software", "network", "accessories"],
+      hardware_category: [
+        "KIOSKS",
+        "KDS_SCREENS",
+        "POS_TILLS",
+        "TDS_SCREENS",
+        "TABLETS_DBFB",
+        "Kitchen Display System (KDS)",
+        "Support & Sundries",
+        "License Fees",
+      ],
       inventory_status: ["available", "deployed", "maintenance", "retired"],
       inventory_type: ["counter", "tablet", "router", "cable", "other"],
       procurement_status: [
@@ -2549,6 +2539,7 @@ export const Constants = {
         "deployment",
         "activated",
       ],
+      support_type: ["None", "On-site", "Remote"],
     },
   },
 } as const
