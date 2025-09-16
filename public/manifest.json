@@ -1,0 +1,55 @@
+{
+  "name": "SmartQ Launchpad",
+  "short_name": "Launchpad",
+  "description": "Streamline site deployment and management with SmartQ Launchpad",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#43A047",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/smartq-launchpad-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/smartq-launchpad-logo.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View dashboard and analytics",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/smartq-launchpad-logo.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Sites",
+      "short_name": "Sites",
+      "description": "Manage sites and studies",
+      "url": "/sites",
+      "icons": [
+        {
+          "src": "/smartq-launchpad-logo.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

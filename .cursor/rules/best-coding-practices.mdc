@@ -1,0 +1,68 @@
+1. Small, Function-Specific Components
+description: Break UI into small, single-responsibility components to ensure maintainability and optimize rendering performance.
+globs:
+src/components/**/*.{js,jsx,ts,tsx}
+alwaysApply: true
+
+2. Remove Redundant and Duplicate Code
+description:
+Centralize shared logic in hooks, utilities, or shared modules to avoid code duplication, simplify maintenance, and reduce bloat.
+globs:
+src/hooks//*.{js,ts}, src/utils//*.{js,ts}
+alwaysApply: true
+
+3. Functional Components and Hooks
+description:
+Use React functional components and hooks for state and lifecycle management, favoring concise and declarative code, and preferring hooks over classes.
+globs:
+src/components/**/*.{js,jsx,ts,tsx}
+alwaysApply: true
+
+4. Maintain Clean Dependency List
+description:
+Regularly audit and remove unused npm/yarn dependencies using tooling, keeping the build and bundle size optimized for performance.
+globs:
+package.json, yarn.lock, pnpm-lock.yaml
+alwaysApply: true
+
+5. Performance Optimization
+description:
+Optimize data fetching using TanStack React Query or equivalent, batch requests, use lazy loading, utilize memoization and code splitting, and apply Supabase indexing and query optimization.
+globs:
+src/services/supabase//*.{js,ts}, src/components//*.{js,jsx,ts,tsx}
+alwaysApply: true
+
+6. Clear Naming and Structured Folder Hierarchy
+description:
+Use descriptive variable and file names, employ consistent directory structures, and favor kebab-case for components and folders.
+globs:
+src/**/*
+alwaysApply: true
+
+7. Regular Refactoring
+description:
+Continuously refactor legacy code and remove unused variables, functions, components, and files to keep the codebase lean and maintainable.
+globs:
+src/**/*, package.json
+alwaysApply: true
+
+8. Error Handling and Guard Clauses
+description:
+Use early returns and guard clauses for error and edge case handling, minimize nesting, and implement logging and user-friendly error states.
+globs:
+src/components//*.{js,jsx,ts,tsx}, src/services/supabase//*.{js,ts}
+alwaysApply: true
+
+9. Supabase Query and Subscription Efficiency
+description:
+Subscribe only to necessary real-time changes and tune all Supabase queries for performance and minimal data transfer.
+globs:
+src/services/supabase/**/*.{js,ts}
+alwaysApply: true
+
+10. Testing and Documentation
+description:
+Write unit and integration tests for key features, document public APIs and major functions, and ensure code coverage metrics are met.
+globs:
+src/tests//*.{js,ts}, src/components//*.{js,jsx,ts,tsx}, README.md
+alwaysApply: true
