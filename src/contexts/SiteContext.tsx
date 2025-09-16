@@ -174,4 +174,4 @@ export const SiteProvider: React.FC<SiteProviderProps> = ({ children }) => {
       {children}
     </SiteContext.Provider>
   );
-}; 
+};
