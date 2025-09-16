@@ -245,14 +245,14 @@ const Sites = () => {
   };
 
   // Get action buttons based on site status
-  // Archive/Delete is only allowed for: Created, In Progress, Planning, and Live sites
-  // Deployed sites can only be edited (no archive/delete)
-  // All other statuses can only be edited and viewed (no archive/delete)
+  // View icon only for deployed/live sites
+  // Edit icon for all other statuses (except deployed/live)
+  // Archive/Delete only for Created and intermediate statuses
   const getActionButtons = (site: Site) => {
     const isLive = site.status === 'live';
     const isDeployed = site.status === 'deployed';
-    const isCreated = site.status === 'Created';
-    const isInProgress = site.status === 'In Progress' || site.status === 'Planning';
+    const isCreated = site.status === 'Created' || site.status === 'site_created';
+    const isIntermediateStatus = ['site_study_done', 'scoping_done', 'approved', 'procurement_done'].includes(site.status);
     
     if (isLive) {
       // Live sites: View + Archive (2 buttons)
@@ -279,20 +279,20 @@ const Sites = () => {
         </>
       );
     } else if (isDeployed) {
-      // Deployed sites: Edit only (1 button)
+      // Deployed sites: View only (1 button)
       return (
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleEditSite(site)}
-          className="h-8 w-8 p-0 hover:bg-green-50"
-          title="Edit Site"
+          onClick={() => handleViewSite(site)}
+          className="h-8 w-8 p-0 hover:bg-blue-50"
+          title="View Site"
         >
-          <Edit className="h-4 w-4 text-green-600" />
+          <Eye className="h-4 w-4 text-blue-600" />
         </Button>
       );
-    } else if (isCreated || isInProgress) {
-      // Created or In Progress sites: Edit + Archive (2 buttons)
+    } else if (isCreated || isIntermediateStatus) {
+      // Created or intermediate statuses: Edit + Archive (2 buttons)
       return (
         <>
           <Button
@@ -316,28 +316,17 @@ const Sites = () => {
         </>
       );
     } else {
-      // All other statuses: Edit + View (2 buttons) - no delete/archive
+      // All other statuses: Edit only (1 button) - no view, no delete/archive
       return (
-        <>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEditSite(site)}
-            className="h-8 w-8 p-0 hover:bg-green-50"
-            title="Edit Site"
-          >
-            <Edit className="h-4 w-4 text-green-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewSite(site)}
-            className="h-8 w-8 p-0 hover:bg-blue-50"
-            title="View Site"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-        </>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleEditSite(site)}
+          className="h-8 w-8 p-0 hover:bg-green-50"
+          title="Edit Site"
+        >
+          <Edit className="h-4 w-4 text-green-600" />
+        </Button>
       );
     }
   };
@@ -411,7 +400,7 @@ const Sites = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-                              <SelectItem value="site_created">Created</SelectItem>
+              <SelectItem value="Created">Created</SelectItem>
               <SelectItem value="site_study_done">Site Study Done</SelectItem>
               <SelectItem value="scoping_done">Scoping Done</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>

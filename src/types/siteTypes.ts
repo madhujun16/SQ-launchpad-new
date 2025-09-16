@@ -51,52 +51,129 @@ export interface Site {
   
   // Site Study data
   siteStudy?: {
-    contactInfo: {
-      primaryContact: {
-        name: string;
-        jobTitle: string;
-        email: string;
-        mobile: string;
-      };
-      additionalContact: {
-        name: string;
-        email: string;
-      };
-    };
-    infrastructure: {
+    // Site Details - Identity
+    siteDetails: {
+      clientName: string;
       siteAddress: string;
-      postcode: string;
-      region: string;
-      country: string;
-      numberOfCounters: number;
-      floorPlanAvailable: boolean;
-      mealSessions: string[];
-      floor: string;
-      liftAccess: string;
-      securityRestrictions: string;
-      deliveryWindow: string;
+      siteContact: {
+        name: string;
+        role: string;
+        email: string;
+        phone: string;
+      }[];
     };
-    staffCapacity: {
-      employeeStrength: number;
-      operatingHours: string;
-      expectedFootfall: number;
-      peakHours: string;
-      seatingCapacity: number;
-      kitchenStaff: number;
-      operatingDays: string;
-      serviceStaff: number;
-      management: number;
+    
+    // Schedule
+    schedule: {
+      targetGoLiveDate: string;
+      operatingHours: {
+        day: string;
+        open: string;
+        close: string;
+      }[];
     };
-    itInfrastructure: {
-      lanPoints: number;
-      upsPowerPos: string;
-      wifiAvailable: string;
-      upsPowerCeiling: string;
-      bandwidth: string;
-      staticIp: string;
+    
+    // Environment
+    environment: {
+      spaceType: 'Front-of-house' | 'Back-of-house' | 'Reception' | 'Cafeteria' | 'Grab & Go' | 'Other';
+      isListedBuilding: boolean;
+      permitRequired: boolean;
     };
-    softwareScoping: {
-      selectedSolutions: string[];
+    
+    // Infrastructure - Power
+    powerInfrastructure: {
+      availablePower: ('UK 13A socket' | 'Spur' | 'PoE' | 'UPS' | 'Other')[];
+      distanceFromPower: number;
+    };
+    
+    // Infrastructure - Data
+    dataInfrastructure: {
+      networkConnectivity: 'Ethernet' | 'Dual-band Wi‑Fi' | '4G/5G SIM' | 'Not available';
+      ethernetPorts: number;
+      wifiSSIDs: string;
+      vlanIPPlan: string;
+      proxyWebFiltering: boolean;
+      firewallEgress: boolean;
+      mobileSignal: 'Excellent' | 'Good' | 'Poor' | 'No signal';
+    };
+    
+    // Physical - Mounting
+    mounting: {
+      mountType: 'Wall' | 'Desk/Counter' | 'Floor-standing' | 'Free-standing' | 'Table' | 'To be confirmed';
+      surfaceMaterial: 'Drywall' | 'Brick' | 'Concrete' | 'Steel' | 'Wood' | 'Composite' | 'Unknown';
+      drillingRestrictions: boolean;
+    };
+    
+    // Physical - Layout
+    layout: {
+      clearanceAvailable: string;
+      distanceToTill: number;
+      accessibilityCompliance: boolean;
+    };
+    
+    // Devices
+    devices: {
+      kiosk: {
+        numberOfKiosks: number;
+        screenSize: '15"' | '22"' | 'Other';
+        cardPaymentDevice: 'Verifone' | 'Ingenico' | 'PAX' | 'Adyen' | 'Other' | 'Not required';
+        receiptPrinter: boolean;
+        grabGoShelf: boolean;
+      };
+      pos: {
+        numberOfTerminals: number;
+        cashDrawer: boolean;
+      };
+      kitchen: {
+        numberOfKDSScreens: number;
+        kitchenPrinter: boolean;
+      };
+      other: {
+        scanners: boolean;
+        nfc: boolean;
+        customerDisplay: boolean;
+      };
+    };
+    
+    // Software - Modules
+    softwareModules: {
+      modulesRequired: ('POS' | 'Kiosk' | 'Kitchen Display (KDS)' | 'Inventory' | 'Subscriptions' | 'Loyalty')[];
+      userRoles: {
+        role: string;
+        count: number;
+        notes: string;
+      }[];
+    };
+    
+    // Compliance
+    compliance: {
+      pciResponsibilities: string;
+      brandAssetsAvailable: boolean;
+    };
+    
+    // Payments
+    payments: {
+      gateway: {
+        paymentProvider: string;
+        p2peRequired: 'Required' | 'Preferred' | 'Not required';
+        settlementCurrency: string;
+      };
+      ped: {
+        commsMethod: 'Ethernet' | 'Wi‑Fi' | 'Bluetooth' | 'Serial' | 'USB';
+        mountingType: 'Integrated' | 'Stanchion' | 'Counter cradle' | 'Wall bracket' | 'None';
+      };
+    };
+    
+    // Security & HSE
+    securityHSE: {
+      device: {
+        mdmRequired: 'SOTI' | 'Intune' | 'Nubis' | 'Other' | 'No';
+        assetTagging: boolean;
+      };
+      hse: {
+        ramsApproval: boolean;
+        workingConstraints: string;
+      };
     };
   };
   

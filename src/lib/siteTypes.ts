@@ -185,6 +185,7 @@ export const getStatusColor = (status: string) => {
       return 'bg-green-100 text-green-800';
     
     // Gray: Created, Pending
+    case 'Created':
     case 'created':
     case 'site_created':
     case 'pending':
@@ -222,6 +223,7 @@ export const getStatusDisplayName = (status: string) => {
   switch (status) {
     // New finalized statuses - aligned with Sites page
     case 'Created':
+    case 'site_created':
       return 'Created';
     case 'site_study_done':
       return 'Site Study Done';
@@ -239,7 +241,7 @@ export const getStatusDisplayName = (status: string) => {
       return 'Archived';
     // Legacy status mappings for backward compatibility
     case 'created':
-      return 'Site Created';
+      return 'Created';
     case 'study_in_progress':
       return 'Site Study Done';
     case 'study_completed':
