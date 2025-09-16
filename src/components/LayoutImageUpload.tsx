@@ -104,16 +104,16 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
       const { error } = await supabase
         .from('sites')
         .update({
-          layout_images: JSON.stringify(images.map(img => img.url)),
+          layout_images: JSON.stringify(images.map(img => img.url)) as any,
           layout_images_metadata: JSON.stringify(images.map(img => ({
             id: img.id,
             name: img.name,
             size: img.size,
             type: img.type,
             uploaded_at: img.uploaded_at
-          })))
+          }))) as any
         })
-        .eq('id', siteId);
+        .eq('id', siteId as any);
 
       if (error) {
         console.error('Error updating site layout image:', error);

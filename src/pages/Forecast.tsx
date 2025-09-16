@@ -26,6 +26,7 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
 import { ContentLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
+import { TimelineGanttView } from '@/components/forecast/TimelineGanttView';
 
 interface ForecastData {
   id: string;
@@ -485,66 +486,6 @@ const Forecast: React.FC = () => {
     'Created'
   ];
 
-  // ---------- Timeline (Gantt) helpers ----------
-  const ganttStart = useMemo(() => new Date('2025-09-20'), []);
-  const weeks = useMemo(() => {
-    // 13 weeks from ganttStart (inclusive)
-    const out: { start: Date; label: string }[] = [];
-    for (let i = 0; i < 13; i++) {
-      const d = new Date(ganttStart.getTime());
-      d.setDate(d.getDate() + i * 7);
-      const label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      out.push({ start: d, label });
-    }
-    return out;
-  }, [ganttStart]);
-
-  const toWeekIndex = (isoDate: string) => {
-    const d = new Date(isoDate);
-    const diffDays = Math.floor((d.getTime() - ganttStart.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, Math.min(weeks.length - 1, Math.floor(diffDays / 7)));
-  };
-
-  const groupedByOrg = useMemo(() => {
-    // Derive organization from site name heuristically for mock data
-    const getOrg = (siteName: string) => {
-      if (siteName.includes('Morgan Stanley')) return 'Morgan Stanley';
-      if (siteName.includes('HSBC')) return 'HSBC';
-      if (siteName.includes('Levy')) return 'Levy';
-      if (siteName.includes('B&I')) return 'B&I Corporate';
-      if (siteName.includes('RA Restaurants')) return 'RA Restaurants';
-      if (siteName.includes('NEXT Retail')) return 'NEXT Retail';
-      if (siteName.includes('Compass One')) return 'Compass One';
-      if (siteName.includes('Peabody')) return 'Peabody';
-      if (siteName.includes('Ford')) return 'Ford';
-      if (siteName.includes('Chartswell')) return 'Chartswell Group';
-      if (siteName.includes('Marjon')) return 'Marjon University';
-      return siteName.split(' ')[0];
-    };
-    const map: Record<string, ForecastData[]> = {};
-    for (const s of forecastData) {
-      const org = getOrg(s.siteName);
-      if (!map[org]) map[org] = [];
-      map[org].push(s);
-    }
-    // Ensure at least 2 and up to 6 sites shown per org for demo density
-    for (const org of Object.keys(map)) {
-      const arr = map[org];
-      if (arr.length < 2) {
-        // duplicate with slight tweaks
-        const clones = Array.from({ length: 2 - arr.length }).map((_, i) => ({
-          ...arr[0],
-          id: `${arr[0].id}-dup-${i+1}`,
-          siteName: `${arr[0].siteName} • ${i+2}`
-        }));
-        map[org] = [...arr, ...clones];
-      }
-      if (map[org].length > 6) {
-        map[org] = map[org].slice(0, 6);
-      }
-    }
-    return map;
-  }, [forecastData, weeks.length]);
 
   if (loading) {
     return <ContentLoader />;
@@ -670,94 +611,10 @@ const Forecast: React.FC = () => {
         </div>
       </div>
 
-      {/* Timeline View (Weekly Gantt + Org grouping) */}
+      {/* Timeline View - Gantt Chart by Organization */}
       {viewMode === 'timeline' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Timeline (Next 3 Months)</span>
-              </CardTitle>
-              <CardDescription>
-                Weekly view starting 20 Sep 2025. Today highlighted; first week note: Mon closed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Weekly header */}
-                <div className="overflow-x-auto">
-                  <div className="min-w-[800px]">
-                    <div className="grid" style={{ gridTemplateColumns: `200px repeat(${weeks.length}, minmax(70px, 1fr))` }}>
-                      <div className="text-xs text-gray-500 px-2 py-1">Organisation / Site</div>
-                      {weeks.map((w, idx) => (
-                        <div key={idx} className={`text-xs text-gray-600 px-2 py-1 border-l ${idx === 0 ? 'bg-gray-50' : ''}`}>
-                          W{idx + 1} • {w.label}
-                          {idx === 0 && <span className="ml-1 text-[10px] text-gray-400">(Mon closed)</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Org groups */}
-                <div className="space-y-4">
-                  {Object.entries(groupedByOrg).map(([org, sites]) => (
-                    <div key={org} className="border rounded-lg">
-                      <div className="px-3 py-2 bg-gray-50 border-b text-sm font-medium text-gray-700">{org}</div>
-                      <div className="overflow-x-auto">
-                        <div className="min-w-[800px]">
-                          {sites.map((s) => {
-                            const startIdx = toWeekIndex(s.startDate);
-                            const endIdx = Math.max(startIdx, toWeekIndex(s.targetDate));
-                            return (
-                              <div key={s.id} className="grid items-center" style={{ gridTemplateColumns: `200px repeat(${weeks.length}, minmax(70px, 1fr))` }}>
-                                <div className="px-2 py-2 text-sm text-gray-800 border-b">
-                                  <div className="font-medium">{s.siteName}</div>
-                                  <div className="text-xs text-gray-500">
-                                    {getStatusDisplayName(s.status)} •
-                                    {s.status === 'approved' ? (
-                                      <> Actuals £{(s.actualCost || s.estimatedCost).toLocaleString()}</>
-                                    ) : s.status === 'scoping_done' ? (
-                                      <> Est. £{s.estimatedCost.toLocaleString()}</>
-                                    ) : (
-                                      <> Budget £{s.estimatedCost.toLocaleString()}</>
-                                    )}
-                                  </div>
-                                </div>
-                                {weeks.map((_, idx) => (
-                                  <div key={idx} className="relative h-8 border-b border-l">
-                                    {idx === startIdx && (
-                                      <div
-                                        className={`absolute left-1 right-1 top-1 bottom-1 rounded-md ${getStatusColor(s.status).replace('text-','border-')} bg-green-600/10`}
-                                        style={{ gridColumn: 'auto', width: `calc(((${endIdx - startIdx + 1}) * 100%) + (((${endIdx - startIdx}) * 0px)))` }}
-                                      >
-                                      </div>
-                                    )}
-                                    {/* Progress overlay */}
-                                    {idx === startIdx && (
-                                      <div className="absolute left-1 top-1 bottom-1 rounded-md bg-green-600/30" style={{ width: `${Math.min(100, Math.max(0, s.progress))}%`, maxWidth: `calc(${(endIdx - startIdx + 1)} * 100%)` }} />
-                                    )}
-                                    {/* Create and Target markers */}
-                                    {idx === startIdx && (
-                                      <div className="absolute -top-1 left-1 h-2 w-2 rounded-full bg-blue-600" title={`Created: ${formatDate(s.startDate)}`}></div>
-                                    )}
-                                    {idx === endIdx && (
-                                      <div className="absolute -bottom-1 right-1 h-2 w-2 rounded-full bg-emerald-600" title={`Target: ${formatDate(s.targetDate)}`}></div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <TimelineGanttView forecastData={forecastData} />
         </div>
       )}
 
