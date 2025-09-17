@@ -62,6 +62,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/platform-configuration/organizations',
       '/platform-configuration/users',
       '/platform-configuration/software-hardware',
+      '/platform-configuration/general',
       '/platform-configuration/audit-logs',
   
       // Note: Integrations and Forecast routes removed - not integrated into main navigation

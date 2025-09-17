@@ -340,6 +340,18 @@ const MobileNavigation = React.memo(({
                 <span className="font-semibold ml-4">Software & Hardware</span>
               </button>
 
+              {/* General Settings */}
+              <button
+                onClick={() => handleNavigationClick('/platform-configuration/general')}
+                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                   currentPath === '/platform-configuration/general'
+                     ? 'bg-white/5 text-white border-2 border-green-400'
+                     : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                 }`}
+              >
+                <span className="font-semibold ml-4">General</span>
+              </button>
+
               {/* Audit & Logs */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/audit-logs')}
@@ -664,6 +676,11 @@ const Header = () => {
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/software-hardware" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
                                 <span className="text-sm text-gray-700 ml-4">Software & Hardware</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/platform-configuration/general" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
+                                <span className="text-sm text-gray-700 ml-4">General</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>

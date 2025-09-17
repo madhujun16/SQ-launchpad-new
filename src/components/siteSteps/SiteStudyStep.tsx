@@ -9,6 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { 
+  DateField,
+  TextField,
+  EmailField,
+  PhoneField,
+  TextareaField,
+  SelectField,
+  NumberField,
+  CurrencyField
+} from '@/components/ui/widgets';
+import { 
   Edit, 
   Download, 
   CheckCircle, 
@@ -230,60 +240,51 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           <CardContent>
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client-name">Client / Organization Name *</Label>
-                  <Input 
-                    id="client-name" 
-                    value={getValue('siteDetails.clientName')} 
-                    onChange={(e) => handleInputChange('siteDetails.clientName', e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="Enter client or organization name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="target-go-live">Target Go-Live Date *</Label>
-                  <Input 
-                    id="target-go-live" 
-                    type="date"
-                    value={getValue('schedule.targetGoLiveDate')} 
-                    onChange={(e) => handleInputChange('schedule.targetGoLiveDate', e.target.value)}
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="site-address">Site Address & Postcode *</Label>
-                <Textarea 
-                  id="site-address" 
-                  value={getValue('siteDetails.siteAddress')} 
-                  onChange={(e) => handleInputChange('siteDetails.siteAddress', e.target.value)}
+                <TextField
+                  label="Client / Organization Name"
+                  value={getValue('siteDetails.clientName')}
+                  onChange={(value) => handleInputChange('siteDetails.clientName', value)}
+                  placeholder="Enter client or organization name"
+                  required
                   disabled={!isEditing}
-                  placeholder="Enter full address including postcode"
-                  rows={3}
+                />
+                <DateField
+                  label="Target Go-Live Date"
+                  value={getValue('schedule.targetGoLiveDate')}
+                  onChange={(date) => handleInputChange('schedule.targetGoLiveDate', date?.toISOString().split('T')[0] || '')}
+                  placeholder="Select target go-live date"
+                  required
+                  disabled={!isEditing}
+                  allowPastDates={false}
                 />
               </div>
+              
+              <TextareaField
+                label="Site Address & Postcode"
+                value={getValue('siteDetails.siteAddress')}
+                onChange={(value) => handleInputChange('siteDetails.siteAddress', value)}
+                placeholder="Enter full address including postcode"
+                required
+                disabled={!isEditing}
+                rows={3}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="space-type">Space Type *</Label>
-                <Select 
-                  value={getValue('environment.spaceType')} 
-                  onValueChange={(value) => handleInputChange('environment.spaceType', value)}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select space type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Front-of-house">Front-of-house</SelectItem>
-                    <SelectItem value="Back-of-house">Back-of-house</SelectItem>
-                    <SelectItem value="Reception">Reception</SelectItem>
-                    <SelectItem value="Cafeteria">Cafeteria</SelectItem>
-                    <SelectItem value="Grab & Go">Grab & Go</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <SelectField
+                label="Space Type"
+                value={getValue('environment.spaceType')}
+                onChange={(value) => handleInputChange('environment.spaceType', value)}
+                options={[
+                  { value: 'Front-of-house', label: 'Front-of-house' },
+                  { value: 'Back-of-house', label: 'Back-of-house' },
+                  { value: 'Reception', label: 'Reception' },
+                  { value: 'Cafeteria', label: 'Cafeteria' },
+                  { value: 'Grab & Go', label: 'Grab & Go' },
+                  { value: 'Other', label: 'Other' }
+                ]}
+                placeholder="Select space type"
+                required
+                disabled={!isEditing}
+              />
 
               {/* Site Contacts */}
               <div>
@@ -303,37 +304,45 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 <div className="space-y-3">
                   {(getValue('siteDetails.siteContact') || []).map((contact: any, index: number) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded-lg">
-                      <Input 
-                        placeholder="Name"
-                        value={contact.name || ''} 
-                        onChange={(e) => handleArrayChange('siteDetails.siteContact', index, 'name', e.target.value)}
+                      <TextField
+                        label="Name"
+                        value={contact.name || ''}
+                        onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'name', value)}
+                        placeholder="Contact name"
                         disabled={!isEditing}
+                        className="md:col-span-1"
                       />
-                      <Input 
-                        placeholder="Role"
-                        value={contact.role || ''} 
-                        onChange={(e) => handleArrayChange('siteDetails.siteContact', index, 'role', e.target.value)}
+                      <TextField
+                        label="Role"
+                        value={contact.role || ''}
+                        onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'role', value)}
+                        placeholder="Contact role"
                         disabled={!isEditing}
+                        className="md:col-span-1"
                       />
-                      <Input 
-                        placeholder="Email"
-                        type="email"
-                        value={contact.email || ''} 
-                        onChange={(e) => handleArrayChange('siteDetails.siteContact', index, 'email', e.target.value)}
+                      <EmailField
+                        label="Email"
+                        value={contact.email || ''}
+                        onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'email', value)}
+                        placeholder="Contact email"
                         disabled={!isEditing}
+                        className="md:col-span-1"
                       />
-                      <div className="flex gap-2">
-                        <Input 
-                          placeholder="Phone"
-                          value={contact.phone || ''} 
-                          onChange={(e) => handleArrayChange('siteDetails.siteContact', index, 'phone', e.target.value)}
+                      <div className="flex gap-2 md:col-span-1">
+                        <PhoneField
+                          label="Phone"
+                          value={contact.phone || ''}
+                          onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'phone', value)}
+                          placeholder="Contact phone"
                           disabled={!isEditing}
+                          className="flex-1"
                         />
                         {isEditing && (
                           <Button 
                             size="sm" 
                             variant="destructive"
                             onClick={() => removeArrayItem('siteDetails.siteContact', index)}
+                            className="mt-6"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

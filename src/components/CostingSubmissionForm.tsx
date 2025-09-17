@@ -8,6 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
+  TextField,
+  NumberField,
+  CurrencyField,
+  SelectField,
+  TextareaField
+} from '@/components/ui/widgets';
+import { 
   Building, 
   Package, 
   DollarSign, 
@@ -232,69 +239,53 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
                 {items.map((item, index) => (
                   <Card key={item.id} className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div>
-                        <Label htmlFor={`type-${item.id}`}>Type</Label>
-                        <Select 
-                          value={item.item_type} 
-                          onValueChange={(value: 'hardware' | 'software' | 'license') => 
-                            updateItem(item.id, 'item_type', value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="hardware">Hardware</SelectItem>
-                            <SelectItem value="software">Software</SelectItem>
-                            <SelectItem value="license">License</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <SelectField
+                        label="Type"
+                        value={item.item_type}
+                        onChange={(value: 'hardware' | 'software' | 'license') => 
+                          updateItem(item.id, 'item_type', value)
+                        }
+                        options={[
+                          { value: 'hardware', label: 'Hardware' },
+                          { value: 'software', label: 'Software' },
+                          { value: 'license', label: 'License' }
+                        ]}
+                        placeholder="Select type"
+                      />
 
-                      <div>
-                        <Label htmlFor={`name-${item.id}`}>Item Name *</Label>
-                        <Input
-                          id={`name-${item.id}`}
-                          value={item.item_name}
-                          onChange={(e) => updateItem(item.id, 'item_name', e.target.value)}
-                          placeholder="e.g., POS Terminal"
-                        />
-                      </div>
+                      <TextField
+                        label="Item Name"
+                        value={item.item_name}
+                        onChange={(value) => updateItem(item.id, 'item_name', value)}
+                        placeholder="e.g., POS Terminal"
+                        required
+                      />
 
-                      <div>
-                        <Label htmlFor={`qty-${item.id}`}>Quantity</Label>
-                        <Input
-                          id={`qty-${item.id}`}
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                        />
-                      </div>
+                      <NumberField
+                        label="Quantity"
+                        value={item.quantity}
+                        onChange={(value) => updateItem(item.id, 'quantity', value)}
+                        min={1}
+                        placeholder="Enter quantity"
+                      />
 
-                      <div>
-                        <Label htmlFor={`cost-${item.id}`}>Unit Cost (£)</Label>
-                        <Input
-                          id={`cost-${item.id}`}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.unit_cost}
-                          onChange={(e) => updateItem(item.id, 'unit_cost', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
+                      <CurrencyField
+                        label="Unit Cost"
+                        value={item.unit_cost}
+                        onChange={(value) => updateItem(item.id, 'unit_cost', value)}
+                        min={0}
+                        step={0.01}
+                        placeholder="Enter unit cost"
+                      />
 
-                      <div>
-                        <Label htmlFor={`monthly-${item.id}`}>Monthly Fee (£)</Label>
-                        <Input
-                          id={`monthly-${item.id}`}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={item.monthly_fee}
-                          onChange={(e) => updateItem(item.id, 'monthly_fee', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
+                      <CurrencyField
+                        label="Monthly Fee"
+                        value={item.monthly_fee}
+                        onChange={(value) => updateItem(item.id, 'monthly_fee', value)}
+                        min={0}
+                        step={0.01}
+                        placeholder="Enter monthly fee"
+                      />
 
                       <div>
                         <Label htmlFor={`category-${item.id}`}>Category</Label>

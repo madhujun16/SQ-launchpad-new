@@ -26,6 +26,7 @@ const Assets = lazy(() => import("./pages/Assets"));
 const OrganizationsManagement = lazy(() => import("./pages/OrganizationsManagement"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const SoftwareHardwareManagement = lazy(() => import("./pages/SoftwareHardwareManagement"));
+const GeneralSettings = lazy(() => import("./pages/GeneralSettings"));
 const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 
 const Forecast = lazy(() => import("./pages/Forecast"));
@@ -401,6 +402,25 @@ function App() {
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
                               <SoftwareHardwareManagement />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              <Route
+                path="/platform-configuration/general"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <GeneralSettings />
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>
