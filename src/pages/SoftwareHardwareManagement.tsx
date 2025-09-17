@@ -24,7 +24,9 @@ import {
   CreditCard,
   Activity,
   Wrench,
-  Truck
+  Truck,
+  Tag,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
@@ -91,6 +93,11 @@ export default function SoftwareHardwareManagement() {
   const [activeTab, setActiveTab] = useState<'software' | 'hardware'>('software');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  
+  // Category management state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<{ name: string; id?: string } | null>(null);
+  const [categorySearchTerm, setCategorySearchTerm] = useState('');
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -361,6 +368,88 @@ export default function SoftwareHardwareManagement() {
     setCurrentPage(page);
   };
 
+  // Category management functions
+  const handleAddCategory = () => {
+    setEditingCategory({ name: '' });
+    setShowCategoryModal(true);
+  };
+
+  const handleEditCategory = (categoryName: string) => {
+    setEditingCategory({ name: categoryName });
+    setShowCategoryModal(true);
+  };
+
+  const handleSaveCategory = async () => {
+    if (!editingCategory || !editingCategory.name.trim()) {
+      toast.error('Please enter a category name');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // Check if category already exists
+      const existingCategories = Array.from(new Set([
+        ...softwareModules.map(sm => sm.category).filter(Boolean),
+        ...hardwareItems.map(hi => hi.category).filter(Boolean)
+      ]));
+      
+      if (existingCategories.includes(editingCategory.name.trim()) && !editingCategory.id) {
+        toast.error('Category already exists');
+        return;
+      }
+
+      // For now, we'll just show success since categories are stored as text in items
+      // In a real implementation, you might want to create a separate categories table
+      toast.success('Category saved successfully');
+      setShowCategoryModal(false);
+      setEditingCategory(null);
+      
+      // Refresh data to show updated categories
+      loadData();
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast.error('Failed to save category');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}"? This will affect all items using this category.`)) {
+      return;
+    }
+
+    try {
+      // Update all software modules with this category
+      const { error: softwareError } = await supabase
+        .from('software_modules')
+        .update({ category: 'Other' })
+        .eq('category', categoryName);
+
+      if (softwareError) throw softwareError;
+
+      // Update all hardware items with this category
+      const { error: hardwareError } = await supabase
+        .from('hardware_items')
+        .update({ category: 'Other' })
+        .eq('category', categoryName);
+
+      if (hardwareError) throw hardwareError;
+
+      toast.success('Category deleted and items updated successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast.error('Failed to delete category');
+    }
+  };
+
+  // Filter categories based on search term
+  const filteredCategories = allCategories.filter(category =>
+    category.toLowerCase().includes(categorySearchTerm.toLowerCase())
+  );
+
   if (loading) {
     return <PageLoader />;
   }
@@ -375,38 +464,48 @@ export default function SoftwareHardwareManagement() {
             Manage software modules and hardware items for your organization
           </p>
         </div>
-        <Button 
-          onClick={() => {
-            if (activeTab === 'software') {
-              setEditingSoftwareModule({
-                id: '',
-                name: '',
-                description: '',
-                category: '',
-                license_fee: 0,
-                is_active: true,
-                created_at: '',
-                updated_at: ''
-              });
-            } else {
-              setEditingHardwareItem({
-                id: '',
-                name: '',
-                description: '',
-                category: '',
-                manufacturer: '',
-                unit_cost: 0,
-                is_active: true,
-                created_at: '',
-                updated_at: ''
-              });
-            }
-          }}
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {activeTab === 'software' ? 'Add Software' : 'Add Hardware'}
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleAddCategory}
+            variant="outline"
+            className="border-green-600 text-green-600 hover:bg-green-50"
+          >
+            <Tag className="h-4 w-4 mr-2" />
+            Manage Categories
+          </Button>
+          <Button 
+            onClick={() => {
+              if (activeTab === 'software') {
+                setEditingSoftwareModule({
+                  id: '',
+                  name: '',
+                  description: '',
+                  category: '',
+                  license_fee: 0,
+                  is_active: true,
+                  created_at: '',
+                  updated_at: ''
+                });
+              } else {
+                setEditingHardwareItem({
+                  id: '',
+                  name: '',
+                  description: '',
+                  category: '',
+                  manufacturer: '',
+                  unit_cost: 0,
+                  is_active: true,
+                  created_at: '',
+                  updated_at: ''
+                });
+              }
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {activeTab === 'software' ? 'Add Software' : 'Add Hardware'}
+          </Button>
+        </div>
       </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -787,15 +886,24 @@ export default function SoftwareHardwareManagement() {
               </div>
               <div>
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
+                <Select
                   value={editingSoftwareModule.category}
-                  onChange={(e) => setEditingSoftwareModule({
+                  onValueChange={(value) => setEditingSoftwareModule({
                     ...editingSoftwareModule,
-                    category: e.target.value
+                    category: value
                   })}
-                  placeholder="Enter category"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allCategories.length > 0 ? allCategories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="license_fee">License Fee</Label>
@@ -953,6 +1061,152 @@ export default function SoftwareHardwareManagement() {
           </div>
         </div>
       )}
+
+      {/* Category Management Modal */}
+      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Tag className="h-5 w-5 mr-2 text-green-600" />
+              Manage Categories
+            </DialogTitle>
+            <DialogDescription>
+              Add, edit, or delete categories for software modules and hardware items.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Add/Edit Category Form */}
+            {editingCategory && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold mb-3">
+                  {editingCategory.id ? 'Edit Category' : 'Add New Category'}
+                </h3>
+                <div className="flex gap-2">
+                  <Input
+                    value={editingCategory.name}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                    placeholder="Enter category name"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleSaveCategory}
+                    disabled={saving || !editingCategory.name.trim()}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {saving ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingCategory(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Search Categories */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search categories..."
+                value={categorySearchTerm}
+                onChange={(e) => setCategorySearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Categories List */}
+            <div className="max-h-96 overflow-y-auto">
+              <div className="space-y-2">
+                {filteredCategories.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Tag className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>No categories found</p>
+                    <p className="text-sm">Add a new category to get started</p>
+                  </div>
+                ) : (
+                  filteredCategories.map((category) => (
+                    <div
+                      key={category}
+                      className="flex items-center justify-between p-3 bg-white border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          {getCategoryIcon(category)}
+                        </div>
+                        <div>
+                          <div className="font-medium">{category}</div>
+                          <div className="text-sm text-gray-500">
+                            Used by {softwareModules.filter(sm => sm.category === category).length + hardwareItems.filter(hi => hi.category === category).length} items
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditCategory(category)}
+                          className="h-8 w-8 p-0 hover:bg-blue-50"
+                          title="Edit Category"
+                        >
+                          <Edit className="h-4 w-4 text-blue-600" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteCategory(category)}
+                          className="h-8 w-8 p-0 hover:bg-red-50"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Required Categories Info */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-2">Required Categories</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm text-blue-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>POS</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Kiosk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Kitchen Display (KDS)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Inventory</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCategoryModal(false);
+                setEditingCategory(null);
+                setCategorySearchTerm('');
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

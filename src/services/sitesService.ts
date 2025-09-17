@@ -177,7 +177,7 @@ export class SitesService {
         .from('sites')
         .select(`
           *,
-          organization:organizations(name, logo_url, sector, unit_code)
+          organization:organizations(id, name, logo_url, sector, unit_code)
         `)
         .eq('is_archived', false)
         .order('name');
@@ -226,7 +226,7 @@ export class SitesService {
           id: site.id,
           name: site.name || 'Unnamed Site',
           organization_id: site.organization_id || '',
-          organization_name: site.organization?.name || site.organization_name || 'Organization',
+          organization_name: site.organization?.name || site.organization_name || 'Unknown Organization',
           organization_logo: site.organization?.logo_url || site.organization_logo || null,
           location: site.address || site.location || 'Location not specified',
           status: site.status || 'Unknown',
@@ -234,8 +234,8 @@ export class SitesService {
           suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
           assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
           assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
-          sector: site.sector || '',
-          unit_code: site.unit_code || site.food_court_unit || '',
+          sector: site.organization?.sector || site.sector || 'Unknown Sector',
+          unit_code: site.organization?.unit_code || site.unit_code || site.food_court_unit || '',
           criticality_level: site.criticality_level || 'medium',
           team_assignment: site.team_assignment || '',
           stakeholders: site.stakeholders || [],

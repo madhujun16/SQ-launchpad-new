@@ -1429,6 +1429,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
             </div>
           </CardContent>
         </Card>
+        </Card>
       </div>
     </div>
   );
