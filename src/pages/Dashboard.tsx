@@ -459,20 +459,20 @@ const Dashboard = () => {
                 <span>Performance Indicators</span>
               </CardTitle>
               <CardDescription>
-                Success rates and utilization metrics
+                Performance metrics and utilization rates
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {MOCK_FINANCIAL_DATA.deploymentSuccessRate}%
+                    {MOCK_PLATFORM_DATA.avgGoLiveDays} days
                   </div>
-                  <p className="text-sm text-gray-600">Deployment Success Rate</p>
+                  <p className="text-sm text-gray-600">Average Go-Live Time</p>
                   <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                     <div 
                       className="bg-green-600 h-2 rounded-full" 
-                      style={{ width: `${MOCK_FINANCIAL_DATA.deploymentSuccessRate}%` }}
+                      style={{ width: `${Math.min(100, (MOCK_PLATFORM_DATA.avgGoLiveDays / 60) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
