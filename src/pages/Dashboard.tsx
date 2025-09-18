@@ -51,10 +51,10 @@ const SITE_PROGRESS_DATA = [
 ];
 
 const STATUS_DISTRIBUTION_DATA = [
-  { name: 'In Progress', value: 8, color: '#8b5cf6' },
-  { name: 'Awaiting Review', value: 3, color: '#f59e0b' },
-  { name: 'Deployed', value: 12, color: '#10b981' },
-  { name: 'Pending Approval', value: 4, color: '#ef4444' }
+  { name: 'In Progress', value: 8, color: '#3B82F6' }, // Blue
+  { name: 'Awaiting Review', value: 3, color: '#F59E0B' }, // Amber
+  { name: 'Deployed', value: 12, color: '#10B981' }, // Emerald
+  { name: 'Pending Approval', value: 4, color: '#EF4444' } // Red
 ];
 
 const FINANCIAL_TREND_DATA = [
@@ -66,20 +66,26 @@ const FINANCIAL_TREND_DATA = [
   { month: 'Jun', investment: 185700, opex: 2558, budget: 500000 }
 ];
 
-const WEEKLY_DEPLOYMENT_DATA = [
-  { week: 'Week 1', deployed: 2, inProgress: 3 },
-  { week: 'Week 2', deployed: 3, inProgress: 4 },
-  { week: 'Week 3', deployed: 5, inProgress: 2 },
-  { week: 'Week 4', deployed: 4, inProgress: 3 },
-  { week: 'Week 5', deployed: 6, inProgress: 1 },
-  { week: 'Week 6', deployed: 8, inProgress: 2 }
+const MONTHLY_DEPLOYMENT_DATA = [
+  { month: 'Oct 24', deployed: 3, inProgress: 2 },
+  { month: 'Nov 24', deployed: 5, inProgress: 3 },
+  { month: 'Dec 24', deployed: 4, inProgress: 4 },
+  { month: 'Jan 25', deployed: 6, inProgress: 2 },
+  { month: 'Feb 25', deployed: 7, inProgress: 3 },
+  { month: 'Mar 25', deployed: 8, inProgress: 1 },
+  { month: 'Apr 25', deployed: 6, inProgress: 4 },
+  { month: 'May 25', deployed: 9, inProgress: 2 },
+  { month: 'Jun 25', deployed: 7, inProgress: 3 },
+  { month: 'Jul 25', deployed: 8, inProgress: 2 },
+  { month: 'Aug 25', deployed: 10, inProgress: 1 },
+  { month: 'Sep 25', deployed: 9, inProgress: 2 }
 ];
 
 const OPERATIONS_DATA = [
-  { metric: 'Response Time', value: 2.3, unit: 'days', color: '#8b5cf6' },
-  { metric: 'Software Licenses', value: 156, unit: 'licenses', color: '#10b981' },
-  { metric: 'Total Assets', value: 89, unit: 'assets', color: '#f59e0b' },
-  { metric: 'Go-Live Time', value: 34.2, unit: 'days', color: '#ef4444' }
+  { metric: 'Response Time', value: 2.3, unit: 'days', color: '#3B82F6' }, // Blue
+  { metric: 'Software Licenses', value: 156, unit: 'licenses', color: '#10B981' }, // Emerald
+  { metric: 'Total Assets', value: 89, unit: 'assets', color: '#F59E0B' }, // Amber
+  { metric: 'Go-Live Time', value: 34.2, unit: 'days', color: '#EF4444' } // Red
 ];
 
 // Simple mock data - no heavy operations
@@ -89,21 +95,21 @@ const MOCK_METRICS = [
     value: '8',
     change: '+2 this week',
     icon: Building,
-    color: 'text-green-600'
+    color: 'text-blue-600'
   },
   {
     title: 'Awaiting review',
     value: '3',
     change: '+1 today',
     icon: Clock,
-    color: 'text-orange-600'
+    color: 'text-amber-600'
   },
   {
     title: 'Sites deployed successfully',
     value: '12',
     change: '+1 this week',
     icon: Truck,
-    color: 'text-green-600'
+    color: 'text-emerald-600'
   },
   {
     title: 'Approval Requests Pending',
@@ -156,7 +162,7 @@ const MOCK_PLATFORM_DATA = {
 const MOCK_FINANCIAL_DATA = {
   totalInvestment: 185700,
   monthlyOPEX: 2558,
-  deploymentSuccessRate: 87.5,
+  sitesOnTimeDeployment: 75.0,
   costPerSite: 23212,
   totalSites: 8,
   budgetUtilization: 78.5,
@@ -220,43 +226,43 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Welcome back, {profile?.full_name || user?.email?.split('@')[0] || 'User'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Here's what's happening with your deployment projects today.
           </p>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {MOCK_METRICS.map((metric, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
+            <Card key={index} className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-border/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {metric.title}
                 </CardTitle>
                 <metric.icon className={`h-4 w-4 ${metric.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
-                <p className="text-xs text-gray-600 mt-1">{metric.change}</p>
+                <div className="text-2xl font-bold text-foreground">{metric.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{metric.change}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Site Progress Trend */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+                <TrendingUp className="h-5 w-5 text-primary" />
                 <span>Site Progress Trend</span>
               </CardTitle>
               <CardDescription>
@@ -268,12 +274,12 @@ const Dashboard = () => {
                 <AreaChart data={SITE_PROGRESS_DATA}>
                   <defs>
                     <linearGradient id="colorSites" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
                     </linearGradient>
                     <linearGradient id="colorDeployed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="month" />
@@ -284,7 +290,7 @@ const Dashboard = () => {
                   <Area
                     type="monotone"
                     dataKey="sites"
-                    stroke="#8b5cf6"
+                    stroke="#3B82F6"
                     fillOpacity={1}
                     fill="url(#colorSites)"
                     name="Sites in Progress"
@@ -292,7 +298,7 @@ const Dashboard = () => {
                   <Area
                     type="monotone"
                     dataKey="deployed"
-                    stroke="#10b981"
+                    stroke="#10B981"
                     fillOpacity={1}
                     fill="url(#colorDeployed)"
                     name="Sites Deployed"
@@ -306,7 +312,7 @@ const Dashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <PieChart className="h-5 w-5 text-green-600" />
+                <PieChart className="h-5 w-5 text-primary" />
                 <span>Site Status Distribution</span>
               </CardTitle>
               <CardDescription>
@@ -338,12 +344,12 @@ const Dashboard = () => {
         </div>
 
         {/* Financial Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Financial Trend */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <DollarSign className="h-5 w-5 text-primary" />
                 <span>Financial Overview</span>
               </CardTitle>
               <CardDescription>
@@ -361,14 +367,14 @@ const Dashboard = () => {
                   <Line
                     type="monotone"
                     dataKey="investment"
-                    stroke="#8b5cf6"
+                    stroke="#3B82F6"
                     strokeWidth={3}
                     name="Investment"
                   />
                   <Line
                     type="monotone"
                     dataKey="budget"
-                    stroke="#10b981"
+                    stroke="#10B981"
                     strokeWidth={2}
                     strokeDasharray="5 5"
                     name="Total Budget"
@@ -376,15 +382,15 @@ const Dashboard = () => {
                 </LineChart>
               </ResponsiveContainer>
               <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <p className="text-gray-600">Total Investment</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-blue-700">Total Investment</p>
+                  <p className="text-xl font-bold text-blue-900">
                     £{MOCK_FINANCIAL_DATA.totalInvestment.toLocaleString()}
                   </p>
                 </div>
-                <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <p className="text-gray-600">Remaining Budget</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <p className="text-emerald-700">Remaining Budget</p>
+                  <p className="text-xl font-bold text-emerald-900">
                     £{MOCK_FINANCIAL_DATA.remainingBudget.toLocaleString()}
                   </p>
                 </div>
@@ -392,27 +398,27 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Weekly Deployments */}
+          {/* Monthly Deployments */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 text-green-600" />
-                <span>Weekly Deployments</span>
+                <BarChart3 className="h-5 w-5 text-primary" />
+                <span>Monthly Deployments</span>
               </CardTitle>
               <CardDescription>
-                Deployment progress by week
+                Deployment progress by month (Oct 24 - Sep 25)
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={WEEKLY_DEPLOYMENT_DATA}>
-                  <XAxis dataKey="week" />
+                <BarChart data={MONTHLY_DEPLOYMENT_DATA}>
+                  <XAxis dataKey="month" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="deployed" fill="#10b981" name="Deployed" />
-                  <Bar dataKey="inProgress" fill="#8b5cf6" name="In Progress" />
+                  <Bar dataKey="deployed" fill="#10B981" name="Deployed" />
+                  <Bar dataKey="inProgress" fill="#3B82F6" name="In Progress" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -420,11 +426,11 @@ const Dashboard = () => {
         </div>
 
         {/* Operations Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Activity className="h-5 w-5 text-green-600" />
+                <Activity className="h-5 w-5 text-primary" />
                 <span>Operations Metrics</span>
               </CardTitle>
               <CardDescription>
@@ -434,15 +440,15 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {OPERATIONS_DATA.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted/70 transition-colors">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{item.metric}</p>
-                      <p className="text-xs text-gray-600">{item.unit}</p>
+                      <p className="text-sm font-medium text-foreground">{item.metric}</p>
+                      <p className="text-xs text-muted-foreground">{item.unit}</p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="text-2xl font-bold text-gray-900">{item.value}</div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl font-bold text-foreground">{item.value}</div>
                       <div 
-                        className="w-3 h-3 rounded-full" 
+                        className="w-4 h-4 rounded-full shadow-sm" 
                         style={{ backgroundColor: item.color }}
                       ></div>
                     </div>
@@ -455,49 +461,49 @@ const Dashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5 text-green-600" />
+                <Target className="h-5 w-5 text-primary" />
                 <span>Performance Indicators</span>
               </CardTitle>
               <CardDescription>
-                Performance metrics and utilization rates
+                Success rates and utilization metrics
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {MOCK_PLATFORM_DATA.avgGoLiveDays} days
+                <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <div className="text-3xl font-bold text-emerald-900 mb-2">
+                    {MOCK_FINANCIAL_DATA.sitesOnTimeDeployment}%
                   </div>
-                  <p className="text-sm text-gray-600">Average Go-Live Time</p>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <p className="text-sm text-emerald-700 mb-3">Sites Deployed On/Before Target Date</p>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-green-600 h-2 rounded-full" 
-                      style={{ width: `${Math.min(100, (MOCK_PLATFORM_DATA.avgGoLiveDays / 60) * 100)}%` }}
+                      className="bg-emerald-500 h-3 rounded-full transition-all duration-500 ease-out" 
+                      style={{ width: `${MOCK_FINANCIAL_DATA.sitesOnTimeDeployment}%` }}
                     ></div>
                   </div>
                 </div>
                 
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-3xl font-bold text-blue-900 mb-2">
                     {MOCK_FINANCIAL_DATA.budgetUtilization}%
                   </div>
-                  <p className="text-sm text-gray-600">Budget Utilization</p>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <p className="text-sm text-blue-700 mb-3">Budget Utilization</p>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-blue-600 h-2 rounded-full" 
+                      className="bg-blue-500 h-3 rounded-full transition-all duration-500 ease-out" 
                       style={{ width: `${MOCK_FINANCIAL_DATA.budgetUtilization}%` }}
                     ></div>
                   </div>
                 </div>
 
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="text-3xl font-bold text-amber-900 mb-2">
                     {MOCK_FINANCIAL_DATA.resourceUtilization}%
                   </div>
-                  <p className="text-sm text-gray-600">Resource Utilization</p>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <p className="text-sm text-amber-700 mb-3">Resource Utilization</p>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
-                      className="bg-purple-600 h-2 rounded-full" 
+                      className="bg-amber-500 h-3 rounded-full transition-all duration-500 ease-out" 
                       style={{ width: `${MOCK_FINANCIAL_DATA.resourceUtilization}%` }}
                     ></div>
                   </div>
@@ -510,16 +516,16 @@ const Dashboard = () => {
 
 
         {/* Recent Requests */}
-        <Card className="mb-8">
+        <Card className="border-border/50">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Recent Requests</CardTitle>
+                <CardTitle className="text-foreground">Recent Requests</CardTitle>
                 <CardDescription>
                   Latest procurement and approval requests
                 </CardDescription>
               </div>
-              <Button onClick={() => handleViewAll('/approvals')} variant="outline">
+              <Button onClick={() => handleViewAll('/approvals')} variant="outline" className="border-border/50">
                 View All
                 <Eye className="ml-2 h-4 w-4" />
               </Button>
@@ -528,11 +534,11 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-4">
               {MOCK_REQUESTS.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={request.id} className="flex items-center justify-between p-4 border border-border/50 rounded-lg hover:bg-muted/30 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div>
-                      <p className="font-medium text-gray-900">{request.siteName}</p>
-                      <p className="text-sm text-gray-600">Request #{request.id}</p>
+                      <p className="font-medium text-foreground">{request.siteName}</p>
+                      <p className="text-sm text-muted-foreground">Request #{request.id}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -542,7 +548,7 @@ const Dashboard = () => {
                     <Badge className={getPriorityColor(request.priority)}>
                       {request.priority}
                     </Badge>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-foreground">
                       £{request.totalValue.toLocaleString()}
                     </p>
                   </div>
@@ -553,9 +559,9 @@ const Dashboard = () => {
         </Card>
 
         {/* Quick Actions */}
-        <Card>
+        <Card className="border-border/50">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="text-foreground">Quick Actions</CardTitle>
             <CardDescription>
               Common tasks and shortcuts
             </CardDescription>
@@ -564,27 +570,27 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button 
                 onClick={() => handleCreateNew('/sites/create')}
-                className="h-20 flex flex-col items-center justify-center space-y-2"
+                className="h-20 flex flex-col items-center justify-center space-y-2 border-border/50 hover:bg-primary/5 hover:border-primary/20 transition-all duration-200"
                 variant="outline"
               >
-                <Plus className="h-6 w-6" />
-                <span>Create New Site</span>
+                <Plus className="h-6 w-6 text-primary" />
+                <span className="text-foreground">Create New Site</span>
               </Button>
               <Button 
                 onClick={() => handleViewAll('/sites')}
-                className="h-20 flex flex-col items-center justify-center space-y-2"
+                className="h-20 flex flex-col items-center justify-center space-y-2 border-border/50 hover:bg-primary/5 hover:border-primary/20 transition-all duration-200"
                 variant="outline"
               >
-                <Building className="h-6 w-6" />
-                <span>View All Sites</span>
+                <Building className="h-6 w-6 text-primary" />
+                <span className="text-foreground">View All Sites</span>
               </Button>
               <Button 
                 onClick={() => handleViewAll('/approvals')}
-                className="h-20 flex flex-col items-center justify-center space-y-2"
+                className="h-20 flex flex-col items-center justify-center space-y-2 border-border/50 hover:bg-primary/5 hover:border-primary/20 transition-all duration-200"
                 variant="outline"
               >
-                <CheckCircle className="h-6 w-6" />
-                <span>Review Approvals</span>
+                <CheckCircle className="h-6 w-6 text-primary" />
+                <span className="text-foreground">Review Approvals</span>
               </Button>
             </div>
           </CardContent>
