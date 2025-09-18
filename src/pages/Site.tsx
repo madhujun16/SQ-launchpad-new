@@ -1109,7 +1109,9 @@ const SiteDetail = () => {
         return 'Site creation pending';
       case 1: // Site Study
         if (site?.siteStudy) {
-          return `Study completed. ${site.siteStudy.staffCapacity.employeeStrength} employees, ${site.siteStudy.staffCapacity.seatingCapacity} seats`;
+          const employeeStrength = site.siteStudy.staffCapacity?.employeeStrength || 'N/A';
+          const seatingCapacity = site.siteStudy.staffCapacity?.seatingCapacity || 'N/A';
+          return `Study completed. ${employeeStrength} employees, ${seatingCapacity} seats`;
         }
         return 'Site study pending';
       case 2: // Scoping

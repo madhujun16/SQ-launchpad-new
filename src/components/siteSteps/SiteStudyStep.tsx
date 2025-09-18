@@ -62,7 +62,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     softwareModules: { modulesRequired: [], userRoles: [] },
     compliance: { pciResponsibilities: '', brandAssetsAvailable: false },
     payments: { gateway: { paymentProvider: '', p2peRequired: 'Not required', settlementCurrency: '' }, ped: { commsMethod: 'Ethernet', mountingType: 'None' } },
-    securityHSE: { device: { mdmRequired: 'No', assetTagging: false }, hse: { ramsApproval: false, workingConstraints: '' } }
+    securityHSE: { device: { mdmRequired: 'No', assetTagging: false }, hse: { ramsApproval: false, workingConstraints: '' } },
+    staffCapacity: { employeeStrength: 0, seatingCapacity: 0 }
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState<string>('basic-info');
@@ -378,36 +379,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TextField
-                  label="Client / Organization Name"
-                  value={getValue('siteDetails.clientName')}
-                  onChange={(value) => handleInputChange('siteDetails.clientName', value)}
-                  placeholder="Enter client or organization name"
-                  required
-                  disabled={!isEditing}
-                />
-                <DateField
-                  label="Target Go-Live Date"
-                  value={getValue('schedule.targetGoLiveDate')}
-                  onChange={(date) => handleInputChange('schedule.targetGoLiveDate', date?.toISOString().split('T')[0] || '')}
-                  placeholder="Select target go-live date"
-                  required
-                  disabled={!isEditing}
-                  allowPastDates={false}
-                />
-              </div>
-              
-              <TextareaField
-                label="Site Address & Postcode"
-                value={getValue('siteDetails.siteAddress')}
-                onChange={(value) => handleInputChange('siteDetails.siteAddress', value)}
-                placeholder="Enter full address including postcode"
-                required
-                disabled={!isEditing}
-                rows={3}
-              />
-
               <SelectField
                 label="Space Type"
                 value={getValue('environment.spaceType')}
@@ -1612,7 +1583,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               </div>
             </div>
           </CardContent>
-        </Card>
         </Card>
       </div>
     </div>
