@@ -236,6 +236,33 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           created_at: string
@@ -625,7 +652,7 @@ export type Database = {
       }
       hardware_items: {
         Row: {
-          category: Database["public"]["Enums"]["hardware_category"]
+          category_id: string
           created_at: string | null
           description: string | null
           estimated_cost: number | null
@@ -645,7 +672,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          category: Database["public"]["Enums"]["hardware_category"]
+          category_id: string
           created_at?: string | null
           description?: string | null
           estimated_cost?: number | null
@@ -665,7 +692,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          category?: Database["public"]["Enums"]["hardware_category"]
+          category_id?: string
           created_at?: string | null
           description?: string | null
           estimated_cost?: number | null
@@ -684,7 +711,15 @@ export type Database = {
           unit_cost?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hardware_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hardware_request_items: {
         Row: {
@@ -1850,7 +1885,7 @@ export type Database = {
       }
       software_modules: {
         Row: {
-          category: string
+          category_id: string
           created_at: string | null
           description: string | null
           id: string
@@ -1862,7 +1897,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          category: string
+          category_id: string
           created_at?: string | null
           description?: string | null
           id?: string
@@ -1874,7 +1909,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          category?: string
+          category_id?: string
           created_at?: string | null
           description?: string | null
           id?: string
@@ -1885,7 +1920,15 @@ export type Database = {
           setup_fee?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "software_modules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -2342,16 +2385,6 @@ export type Database = {
         | "Kitchen Display System (KDS)"
         | "Support & Sundries"
         | "License Fees"
-        | "Kiosk"
-        | "Kitchen Display System (KDS)"
-        | "Customer Display Screen (TDS)"
-        | "POS Terminal"
-        | "ORT Tablet"
-        | "Accessories"
-        | "Support & Sundries"
-        | "Connectivity"
-        | "Deployment"
-        | "License Fees"
       hardware_support_type:
         | "Display Screen"
         | "Touch Screen"
@@ -2534,16 +2567,6 @@ export const Constants = {
         "TABLETS_DBFB",
         "Kitchen Display System (KDS)",
         "Support & Sundries",
-        "License Fees",
-        "Kiosk",
-        "Kitchen Display System (KDS)",
-        "Customer Display Screen (TDS)",
-        "POS Terminal",
-        "ORT Tablet",
-        "Accessories",
-        "Support & Sundries",
-        "Connectivity",
-        "Deployment",
         "License Fees",
       ],
       hardware_support_type: [
