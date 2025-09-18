@@ -369,12 +369,12 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         >
           <CardHeader>
             <SectionHeader
-              title="Basic Information"
+              title="Site Configuration"
               icon={<Building className="mr-2 h-5 w-5 text-blue-600" />}
               status={sectionStatus['basic-info'] || 'saved'}
             />
             <CardDescription className="text-gray-600">
-              Site details, contacts, and schedule
+              Space type and site contacts
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1292,6 +1292,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               </div>
             </div>
           </CardContent>
+        </Card>
+
         {/* Logistics */}
         <Card 
           className="shadow-sm border border-gray-200"
