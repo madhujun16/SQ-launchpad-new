@@ -4,6 +4,35 @@
 
 ---
 
+## 📁 Project Structure
+
+```
+SmartQ-LaunchPad/
+├── src/                    # React application source code
+│   ├── components/         # Reusable UI components
+│   ├── pages/             # Page components
+│   ├── hooks/             # Custom React hooks
+│   ├── services/          # API and business logic
+│   ├── types/             # TypeScript type definitions
+│   └── utils/             # Utility functions
+├── supabase/              # Supabase configuration and migrations
+│   ├── migrations/        # Database migration files
+│   └── functions/         # Edge functions
+├── database/              # Database scripts and utilities
+│   ├── scripts/           # Manual database scripts
+│   ├── migrations/        # Additional migration files
+│   └── backups/           # Database backups
+├── scripts/               # Development and deployment scripts
+├── docs/                  # Project documentation
+│   ├── database/          # Database documentation
+│   ├── deployment/        # Deployment guides
+│   └── development/       # Development guides
+├── public/                # Static assets
+└── package.json           # Dependencies and scripts
+```
+
+---
+
 ## 🧭 Purpose
 
 SmartQ LaunchPad is a workflow-driven platform built to simplify and standardize the onboarding of new client sites across the UK. It manages the entire process — from site creation and stakeholder mapping to hardware scoping, deployment tracking, inventory management, and system integration.
