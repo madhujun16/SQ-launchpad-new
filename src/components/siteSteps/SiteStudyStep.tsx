@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +38,7 @@ import {
   X
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
+import { CategoryService } from '@/services/categoryService';
 
 interface SiteStudyStepProps {
   site: Site;
@@ -47,6 +48,7 @@ interface SiteStudyStepProps {
 const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(site?.siteStudy || {});
+  const [categories, setCategories] = useState<any[]>([]);
 
   // Initialize form data with proper structure
   React.useEffect(() => {
@@ -54,6 +56,29 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       setFormData(site.siteStudy);
     }
   }, [site?.siteStudy]);
+
+  // Load categories from backend
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await CategoryService.getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        // Fallback to default categories
+        setCategories([
+          { id: 'pos', name: 'POS', description: 'Point of Sale systems' },
+          { id: 'kiosk', name: 'Kiosk', description: 'Self-service kiosks' },
+          { id: 'kds', name: 'Kitchen Display (KDS)', description: 'Kitchen display systems' },
+          { id: 'inventory', name: 'Inventory', description: 'Inventory management' },
+          { id: 'subscriptions', name: 'Subscriptions', description: 'Subscription management' },
+          { id: 'loyalty', name: 'Loyalty', description: 'Loyalty programs' }
+        ]);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const handleInputChange = (path: string, value: any) => {
     setFormData(prev => {
@@ -656,6 +681,157 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           </CardContent>
         </Card>
 
+        {/* Software */}
+        <Card className="shadow-sm border border-gray-200">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl">
+              <Monitor className="mr-2 h-6 w-6 text-blue-600" />
+              Software
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Software modules, accounts, compliance, and branding
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-8">
+              {/* Modules Subsection */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Software Categories</h3>
+                <div className="space-y-2">
+                  <Label>Software Categories required *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {categories.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`module-${category.id}`}
+                          checked={(getValue('softwareModules.modulesRequired') || []).includes(category.name)}
+                          onCheckedChange={(checked) => {
+                            const currentModules = getValue('softwareModules.modulesRequired') || [];
+                            const newModules = checked 
+                              ? [...currentModules, category.name]
+                              : currentModules.filter(m => m !== category.name);
+                            handleInputChange('softwareModules.modulesRequired', newModules);
+                          }}
+                          disabled={!isEditing}
+                        />
+                        <Label htmlFor={`module-${category.id}`} className="text-sm">{category.name}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Accounts Subsection */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Accounts</h3>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-sm font-medium">User roles & counts *</Label>
+                    {isEditing && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => addArrayItem('softwareModules', 'userRoles', { role: '', count: 0, notes: '' })}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Role
+                      </Button>
+                    )}
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Count</TableHead>
+                        <TableHead>Notes</TableHead>
+                        {isEditing && <TableHead>Actions</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(formData.softwareModules?.userRoles || []).map((userRole: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Input 
+                              value={userRole.role || ''} 
+                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { role: e.target.value })}
+                              disabled={!isEditing}
+                              className={!isEditing ? "bg-gray-50" : ""}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input 
+                              type="number"
+                              value={userRole.count || ''} 
+                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { count: Number(e.target.value) })}
+                              disabled={!isEditing}
+                              className={!isEditing ? "bg-gray-50" : ""}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input 
+                              value={userRole.notes || ''} 
+                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { notes: e.target.value })}
+                              disabled={!isEditing}
+                              className={!isEditing ? "bg-gray-50" : ""}
+                            />
+                          </TableCell>
+                          {isEditing && (
+                            <TableCell>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => removeArrayItem('softwareModules', 'userRoles', index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Compliance Subsection */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Compliance</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="pci-responsibilities">PCI responsibilities (SAQ type, network segmentation) *</Label>
+                  <Input 
+                    id="pci-responsibilities" 
+                    value={formData.compliance?.pciResponsibilities || ''} 
+                    onChange={(e) => handleInputChange('compliance', 'pciResponsibilities', e.target.value)}
+                    disabled={!isEditing}
+                    className={!isEditing ? "bg-gray-50" : ""}
+                  />
+                </div>
+              </div>
+
+              {/* Branding Subsection */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Branding</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="brand-assets">Brand assets available (logo, fonts, colour codes)?</Label>
+                  <Select 
+                    value={formData.compliance?.brandAssetsAvailable ? 'Yes' : 'No'} 
+                    onValueChange={(value) => handleInputChange('compliance', 'brandAssetsAvailable', value === 'Yes')}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Yes">Yes</SelectItem>
+                      <SelectItem value="No">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Device Requirements */}
         <Card className="shadow-sm border border-gray-200">
           <CardHeader>
@@ -806,157 +982,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Software */}
-        <Card className="shadow-sm border border-gray-200">
-          <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Monitor className="mr-2 h-6 w-6 text-blue-600" />
-              Software
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Software modules, accounts, compliance, and branding
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Modules Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Modules</h3>
-                <div className="space-y-2">
-                  <Label>Modules required *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {['POS', 'Kiosk', 'Kitchen Display (KDS)', 'Inventory', 'Subscriptions', 'Loyalty'].map((module) => (
-                      <div key={module} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`module-${module}`}
-                          checked={(getValue('softwareModules.modulesRequired') || []).includes(module)}
-                          onCheckedChange={(checked) => {
-                            const currentModules = getValue('softwareModules.modulesRequired') || [];
-                            const newModules = checked 
-                              ? [...currentModules, module]
-                              : currentModules.filter(m => m !== module);
-                            handleInputChange('softwareModules.modulesRequired', newModules);
-                          }}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor={`module-${module}`} className="text-sm">{module}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Accounts Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Accounts</h3>
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <Label className="text-sm font-medium">User roles & counts *</Label>
-                    {isEditing && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => addArrayItem('softwareModules', 'userRoles', { role: '', count: 0, notes: '' })}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Role
-                      </Button>
-                    )}
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Count</TableHead>
-                        <TableHead>Notes</TableHead>
-                        {isEditing && <TableHead>Actions</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(formData.softwareModules?.userRoles || []).map((userRole: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Input 
-                              value={userRole.role || ''} 
-                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { role: e.target.value })}
-                              disabled={!isEditing}
-                              className={!isEditing ? "bg-gray-50" : ""}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input 
-                              type="number"
-                              value={userRole.count || ''} 
-                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { count: Number(e.target.value) })}
-                              disabled={!isEditing}
-                              className={!isEditing ? "bg-gray-50" : ""}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input 
-                              value={userRole.notes || ''} 
-                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { notes: e.target.value })}
-                              disabled={!isEditing}
-                              className={!isEditing ? "bg-gray-50" : ""}
-                            />
-                          </TableCell>
-                          {isEditing && (
-                            <TableCell>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => removeArrayItem('softwareModules', 'userRoles', index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-
-              {/* Compliance Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Compliance</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="pci-responsibilities">PCI responsibilities (SAQ type, network segmentation) *</Label>
-                  <Input 
-                    id="pci-responsibilities" 
-                    value={formData.compliance?.pciResponsibilities || ''} 
-                    onChange={(e) => handleInputChange('compliance', 'pciResponsibilities', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-              </div>
-
-              {/* Branding Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Branding</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="brand-assets">Brand assets available (logo, fonts, colour codes)?</Label>
-                  <Select 
-                    value={formData.compliance?.brandAssetsAvailable ? 'Yes' : 'No'} 
-                    onValueChange={(value) => handleInputChange('compliance', 'brandAssetsAvailable', value === 'Yes')}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Yes">Yes</SelectItem>
-                      <SelectItem value="No">No</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </div>

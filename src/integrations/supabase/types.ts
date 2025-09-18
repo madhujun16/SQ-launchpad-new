@@ -640,6 +640,7 @@ export type Database = {
           support_cost: number | null
           support_type: Database["public"]["Enums"]["support_type"] | null
           total_cost: number | null
+          type: Database["public"]["Enums"]["hardware_support_type"] | null
           unit_cost: number | null
           updated_at: string | null
         }
@@ -659,6 +660,7 @@ export type Database = {
           support_cost?: number | null
           support_type?: Database["public"]["Enums"]["support_type"] | null
           total_cost?: number | null
+          type?: Database["public"]["Enums"]["hardware_support_type"] | null
           unit_cost?: number | null
           updated_at?: string | null
         }
@@ -678,6 +680,7 @@ export type Database = {
           support_cost?: number | null
           support_type?: Database["public"]["Enums"]["support_type"] | null
           total_cost?: number | null
+          type?: Database["public"]["Enums"]["hardware_support_type"] | null
           unit_cost?: number | null
           updated_at?: string | null
         }
@@ -2339,6 +2342,27 @@ export type Database = {
         | "Kitchen Display System (KDS)"
         | "Support & Sundries"
         | "License Fees"
+        | "Kiosk"
+        | "Kitchen Display System (KDS)"
+        | "Customer Display Screen (TDS)"
+        | "POS Terminal"
+        | "ORT Tablet"
+        | "Accessories"
+        | "Support & Sundries"
+        | "Connectivity"
+        | "Deployment"
+        | "License Fees"
+      hardware_support_type:
+        | "Display Screen"
+        | "Touch Screen"
+        | "Support"
+        | "POS Terminal"
+        | "Scanner"
+        | "Printer"
+        | "Tablet"
+        | "Accessories"
+        | "Connectivity"
+        | "Other"
       inventory_status: "available" | "deployed" | "maintenance" | "retired"
       inventory_type: "counter" | "tablet" | "router" | "cable" | "other"
       procurement_status:
@@ -2511,6 +2535,28 @@ export const Constants = {
         "Kitchen Display System (KDS)",
         "Support & Sundries",
         "License Fees",
+        "Kiosk",
+        "Kitchen Display System (KDS)",
+        "Customer Display Screen (TDS)",
+        "POS Terminal",
+        "ORT Tablet",
+        "Accessories",
+        "Support & Sundries",
+        "Connectivity",
+        "Deployment",
+        "License Fees",
+      ],
+      hardware_support_type: [
+        "Display Screen",
+        "Touch Screen",
+        "Support",
+        "POS Terminal",
+        "Scanner",
+        "Printer",
+        "Tablet",
+        "Accessories",
+        "Connectivity",
+        "Other",
       ],
       inventory_status: ["available", "deployed", "maintenance", "retired"],
       inventory_type: ["counter", "tablet", "router", "cable", "other"],

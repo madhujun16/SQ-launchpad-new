@@ -38,6 +38,33 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
+// Categories are now loaded dynamically from the database
+
+// Map category names from categories table to hardware_category enum values
+const mapCategoryToEnum = (categoryName: string): string => {
+  // Based on your existing data, these are the actual valid enum values in the database
+  const validEnumValues = [
+    'Kitchen Display System (KDS)',
+    'Support & Sundries'
+  ];
+  
+  if (validEnumValues.includes(categoryName)) {
+    return categoryName;
+  }
+  
+  // Map from categories table names to valid enum values
+  const mapping: Record<string, string> = {
+    'Kiosk': 'Support & Sundries',           // Map to existing valid value
+    'POS': 'Support & Sundries',            // Map to existing valid value  
+    'Kitchen Display (KDS)': 'Kitchen Display System (KDS)',
+    'Inventory': 'Support & Sundries',
+    'Food Ordering App': 'Support & Sundries',
+    // Add more mappings as needed
+  };
+  
+  return mapping[categoryName] || 'Support & Sundries'; // Default fallback
+};
+
 // Hardware types for the type dropdown
 const HARDWARE_TYPES = [
   { value: 'Display Screen', label: 'Display Screen' },
@@ -75,6 +102,8 @@ interface HardwareItem {
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;
+  quantity?: number | null;
+  total_cost?: number | null;
 }
 
 export default function SoftwareHardwareManagement() {
@@ -240,6 +269,9 @@ export default function SoftwareHardwareManagement() {
   const handleSaveHardwareItem = async () => {
     if (!editingHardwareItem) return;
 
+    console.log('Starting hardware item save process...');
+    console.log('Editing hardware item:', editingHardwareItem);
+
     // Validation
     if (!editingHardwareItem.name?.trim()) {
       toast.error('Please enter a hardware item name');
@@ -249,7 +281,11 @@ export default function SoftwareHardwareManagement() {
       toast.error('Please select a category');
       return;
     }
-    if (!editingHardwareItem.unit_cost || editingHardwareItem.unit_cost <= 0) {
+    const unitCost = typeof editingHardwareItem.unit_cost === 'string' 
+      ? parseFloat(editingHardwareItem.unit_cost) 
+      : editingHardwareItem.unit_cost;
+    
+    if (!unitCost || unitCost <= 0) {
       toast.error('Please enter a valid unit cost');
       return;
     }
@@ -264,11 +300,13 @@ export default function SoftwareHardwareManagement() {
         const updateData = {
           name: editingHardwareItem.name,
           description: editingHardwareItem.description,
-          category: editingHardwareItem.category,
+          category: mapCategoryToEnum(editingHardwareItem.category),
           manufacturer: editingHardwareItem.manufacturer,
-          unit_cost: editingHardwareItem.unit_cost,
-          type: editingHardwareItem.type,
-          is_active: editingHardwareItem.is_active
+          unit_cost: unitCost,
+          type: editingHardwareItem.type || 'Other',
+          is_active: editingHardwareItem.is_active,
+          quantity: editingHardwareItem.quantity || 1,
+          total_cost: unitCost * (editingHardwareItem.quantity || 1)
         };
         
         console.log('Updating hardware item with data:', updateData);
@@ -280,6 +318,14 @@ export default function SoftwareHardwareManagement() {
 
         if (error) {
           console.error('Supabase error:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          console.error('Data being sent:', updateData);
+          console.error('Full error object:', JSON.stringify(error, null, 2));
           throw error;
         }
         toast.success('Hardware item updated successfully');
@@ -288,11 +334,13 @@ export default function SoftwareHardwareManagement() {
         const insertData = {
           name: editingHardwareItem.name,
           description: editingHardwareItem.description,
-          category: editingHardwareItem.category,
+          category: mapCategoryToEnum(editingHardwareItem.category),
           manufacturer: editingHardwareItem.manufacturer,
-          unit_cost: editingHardwareItem.unit_cost,
-          type: editingHardwareItem.type,
-          is_active: editingHardwareItem.is_active
+          unit_cost: unitCost,
+          type: editingHardwareItem.type || 'Other',
+          is_active: editingHardwareItem.is_active,
+          quantity: editingHardwareItem.quantity || 1,
+          total_cost: unitCost * (editingHardwareItem.quantity || 1)
         };
         
         console.log('Creating hardware item with data:', insertData);
@@ -303,6 +351,14 @@ export default function SoftwareHardwareManagement() {
 
         if (error) {
           console.error('Supabase error:', error);
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          console.error('Data being sent:', insertData);
+          console.error('Full error object:', JSON.stringify(error, null, 2));
           throw error;
         }
         toast.success('Hardware item created successfully');
@@ -376,10 +432,11 @@ export default function SoftwareHardwareManagement() {
     }
   };
 
-  // Get unique categories from both software modules and hardware items
+  // Get unique categories from both software modules and hardware items, plus categories from database
   const allCategories = Array.from(new Set([
     ...softwareModules.map(sm => sm.category).filter(Boolean),
-    ...hardwareItems.map(hi => hi.category).filter(Boolean)
+    ...hardwareItems.map(hi => hi.category).filter(Boolean),
+    ...categories.map(cat => cat.name)
   ])).filter(category => category && category.trim() !== '');
 
   // Filter and paginate data (similar to other platform config pages)
@@ -433,23 +490,30 @@ export default function SoftwareHardwareManagement() {
     setShowCategoryModal(true);
   };
 
-  // Load categories from backend
+  // Load categories from backend (actual categories table)
   const loadCategories = async () => {
     try {
-      console.log('Loading categories...');
-      const categoriesData = await CategoryService.getCategories();
-      console.log('Loaded categories:', categoriesData);
-      setCategories(categoriesData);
+      console.log('Loading categories from database...');
+      
+      // Fetch categories from the actual categories table
+      const { data: categoriesData, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+
+      console.log('Loaded categories from database:', categoriesData);
+      setCategories(categoriesData || []);
     } catch (error) {
       console.error('Error loading categories:', error);
-      // Fallback to local categories if backend fails
-      const localCategories = Array.from(new Set([
-        ...softwareModules.map(sm => sm.category).filter(Boolean),
-        ...hardwareItems.map(hi => hi.category).filter(Boolean)
-      ]));
-      
-      console.log('Using fallback categories:', localCategories);
-      setCategories(localCategories.map(name => ({ id: name, name, is_active: true })));
+      // Fallback to empty array if database fails
+      console.log('Using empty categories list due to error');
+      setCategories([]);
     }
   };
 
@@ -494,7 +558,11 @@ export default function SoftwareHardwareManagement() {
 
       // Refresh categories list
       await loadCategories();
+      
+      // Close modal
+      setShowCategoryModal(false);
       setEditingCategory(null);
+      
     } catch (error) {
       console.error('Error saving category:', error);
       toast.error(`Failed to save category: ${error.message || 'Unknown error'}`);
@@ -944,11 +1012,11 @@ export default function SoftwareHardwareManagement() {
       {/* Software Module Edit Modal */}
       {editingSoftwareModule && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-medium mb-6">
               {editingSoftwareModule.id ? 'Edit Software Module' : 'Add Software Module'}
             </h3>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="software_name">Software Name</Label>
                 <Input
@@ -962,6 +1030,20 @@ export default function SoftwareHardwareManagement() {
                 />
               </div>
               <div>
+                <Label htmlFor="license_fee">License Fee</Label>
+                <Input
+                  id="license_fee"
+                  type="number"
+                  step="0.01"
+                  value={editingSoftwareModule.license_fee || 0}
+                  onChange={(e) => setEditingSoftwareModule({
+                    ...editingSoftwareModule,
+                    license_fee: parseFloat(e.target.value) || 0
+                  })}
+                  placeholder="Enter license fee"
+                />
+              </div>
+              <div className="md:col-span-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -971,6 +1053,7 @@ export default function SoftwareHardwareManagement() {
                     description: e.target.value
                   })}
                   placeholder="Enter description"
+                  rows={3}
                 />
               </div>
               <div>
@@ -994,20 +1077,6 @@ export default function SoftwareHardwareManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="license_fee">License Fee</Label>
-                <Input
-                  id="license_fee"
-                  type="number"
-                  step="0.01"
-                  value={editingSoftwareModule.license_fee || 0}
-                  onChange={(e) => setEditingSoftwareModule({
-                    ...editingSoftwareModule,
-                    license_fee: parseFloat(e.target.value) || 0
-                  })}
-                  placeholder="Enter license fee"
-                />
-              </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is_active"
@@ -1019,22 +1088,22 @@ export default function SoftwareHardwareManagement() {
                 />
                 <Label htmlFor="is_active">Active</Label>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSaveSoftwareModule}
-                  disabled={saving}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setEditingSoftwareModule(null)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
+            </div>
+            <div className="flex gap-3 mt-8 pt-6 border-t">
+              <Button
+                onClick={handleSaveSoftwareModule}
+                disabled={saving}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditingSoftwareModule(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>
@@ -1043,11 +1112,11 @@ export default function SoftwareHardwareManagement() {
       {/* Hardware Item Edit Modal */}
       {editingHardwareItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-medium mb-6">
               {editingHardwareItem.id ? 'Edit Hardware Item' : 'Add Hardware Item'}
             </h3>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="hardware_name">Hardware Name</Label>
                 <Input
@@ -1061,6 +1130,18 @@ export default function SoftwareHardwareManagement() {
                 />
               </div>
               <div>
+                <Label htmlFor="manufacturer">Manufacturer</Label>
+                <Input
+                  id="manufacturer"
+                  value={editingHardwareItem.manufacturer || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    manufacturer: e.target.value
+                  })}
+                  placeholder="Enter manufacturer"
+                />
+              </div>
+              <div className="md:col-span-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -1070,6 +1151,7 @@ export default function SoftwareHardwareManagement() {
                     description: e.target.value
                   })}
                   placeholder="Enter description"
+                  rows={3}
                 />
               </div>
               <div>
@@ -1113,18 +1195,6 @@ export default function SoftwareHardwareManagement() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="manufacturer">Manufacturer</Label>
-                <Input
-                  id="manufacturer"
-                  value={editingHardwareItem.manufacturer || ''}
-                  onChange={(e) => setEditingHardwareItem({
-                    ...editingHardwareItem,
-                    manufacturer: e.target.value
-                  })}
-                  placeholder="Enter manufacturer"
-                />
-              </div>
-              <div>
                 <Label htmlFor="unit_cost">Unit Cost</Label>
                 <Input
                   id="unit_cost"
@@ -1149,22 +1219,22 @@ export default function SoftwareHardwareManagement() {
                 />
                 <Label htmlFor="is_active">Active</Label>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSaveHardwareItem}
-                  disabled={saving}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setEditingHardwareItem(null)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
+            </div>
+            <div className="flex gap-3 mt-8 pt-6 border-t">
+              <Button
+                onClick={handleSaveHardwareItem}
+                disabled={saving}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditingHardwareItem(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </div>

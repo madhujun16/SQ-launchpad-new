@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,8 @@ interface CreateSiteStepProps {
 
 const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) => {
   const [showLocationEditor, setShowLocationEditor] = useState(false);
+
+
 
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
     onSiteUpdate({
@@ -110,6 +112,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
           </div>
         </CardContent>
       </Card>
+
 
       {/* Location Information Section */}
       <Card className="shadow-sm border border-gray-200">

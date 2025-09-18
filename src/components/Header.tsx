@@ -18,7 +18,12 @@ import {
   LogOut, 
   Menu,
   RefreshCw,
-  X
+  X,
+  Shield,
+  UserCheck,
+  Monitor,
+  FileCheck,
+  ClipboardList
 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
@@ -307,61 +312,96 @@ const MobileNavigation = React.memo(({
               {/* Organizations Management */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/organizations')}
-                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                 className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                    currentPath === '/platform-configuration/organizations'
                      ? 'bg-white/5 text-white border-2 border-green-400'
                      : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
                  }`}
               >
-                <span className="font-semibold ml-4">Organizations</span>
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/organizations' 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white/10 text-white/85'
+                }`}>
+                  <Building className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">Organizations</span>
               </button>
 
               {/* User Management */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/users')}
-                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                 className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                    currentPath === '/platform-configuration/users'
                      ? 'bg-white/5 text-white border-2 border-green-400'
                      : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
                  }`}
               >
-                <span className="font-semibold ml-4">User Management</span>
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/users' 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white/10 text-white/85'
+                }`}>
+                  <UserCheck className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">User Management</span>
               </button>
 
               {/* Software & Hardware */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/software-hardware')}
-                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                 className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                    currentPath === '/platform-configuration/software-hardware'
                      ? 'bg-white/5 text-white border-2 border-green-400'
                      : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
                  }`}
               >
-                <span className="font-semibold ml-4">Software & Hardware</span>
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/software-hardware' 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white/10 text-white/85'
+                }`}>
+                  <Monitor className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">Software & Hardware</span>
               </button>
 
               {/* General Settings */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/general')}
-                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                 className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                    currentPath === '/platform-configuration/general'
                      ? 'bg-white/5 text-white border-2 border-green-400'
                      : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
                  }`}
               >
-                <span className="font-semibold ml-4">General</span>
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/general' 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white/10 text-white/85'
+                }`}>
+                  <Settings className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">General</span>
               </button>
 
               {/* Audit & Logs */}
               <button
                 onClick={() => handleNavigationClick('/platform-configuration/audit-logs')}
-                                 className={`w-full text-left flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                                 className={`w-full text-left flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
                    currentPath === '/platform-configuration/audit-logs'
                      ? 'bg-white/5 text-white border-2 border-green-400'
                      : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
                  }`}
               >
-                <span className="font-semibold ml-4">Audit & Logs</span>
+                <div className={`p-2 rounded-lg ${
+                  currentPath === '/platform-configuration/audit-logs' 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white/10 text-white/85'
+                }`}>
+                  <ClipboardList className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">Audit & Logs</span>
               </button>
             </div>
           )}
@@ -665,27 +705,32 @@ const Header = () => {
                           <DropdownMenuContent align="start" className="ml-2">
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/organizations" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <span className="text-sm text-gray-700 ml-4">Organizations</span>
+                                <Building className="h-4 w-4 mr-2 text-gray-600" />
+                                <span className="text-sm text-gray-700">Organizations</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/users" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <span className="text-sm text-gray-700 ml-4">User Management</span>
+                                <UserCheck className="h-4 w-4 mr-2 text-gray-600" />
+                                <span className="text-sm text-gray-700">User Management</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/software-hardware" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <span className="text-sm text-gray-700 ml-4">Software & Hardware</span>
+                                <Monitor className="h-4 w-4 mr-2 text-gray-600" />
+                                <span className="text-sm text-gray-700">Software & Hardware</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/general" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <span className="text-sm text-gray-700 ml-4">General</span>
+                                <Settings className="h-4 w-4 mr-2 text-gray-600" />
+                                <span className="text-sm text-gray-700">General</span>
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/platform-configuration/audit-logs" className="flex items-center px-2 py-2 rounded-md hover:bg-gray-50 cursor-pointer">
-                                <span className="text-sm text-gray-700 ml-4">Audit & Logs</span>
+                                <ClipboardList className="h-4 w-4 mr-2 text-gray-600" />
+                                <span className="text-sm text-gray-700">Audit & Logs</span>
                               </Link>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
