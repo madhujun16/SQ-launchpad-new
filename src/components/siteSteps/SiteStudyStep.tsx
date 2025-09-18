@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,6 +39,9 @@ import {
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { CategoryService } from '@/services/categoryService';
+import { useSectionAutoSave } from '@/hooks/useSectionAutoSave';
+import { SectionHeader, AutoSaveSummary } from '@/components/ui/SaveStatusIndicator';
+import { toast } from 'sonner';
 
 interface SiteStudyStepProps {
   site: Site;
@@ -49,6 +52,56 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(site?.siteStudy || {});
   const [categories, setCategories] = useState<any[]>([]);
+  const [activeSection, setActiveSection] = useState<string>('basic-info');
+
+  // Define section mappings
+  const sectionMappings = {
+    'basic-info': ['siteDetails', 'schedule', 'contacts'],
+    'infrastructure': ['infrastructure'],
+    'physical-setup': ['physicalSetup'],
+    'software': ['software'],
+    'device-requirements': ['deviceRequirements'],
+    'payments': ['payments'],
+    'security-hse': ['security', 'hse'],
+    'logistics': ['logistics'],
+    'pre-install-checks': ['preInstallChecks'],
+    'acceptance': ['acceptance']
+  };
+
+  // Auto-save functionality
+  const handleSaveSection = useCallback(async (sectionName: string, data: any) => {
+    try {
+      const updatedSite = {
+        ...site,
+        siteStudy: {
+          ...site?.siteStudy,
+          ...data
+        }
+      };
+      
+      await onSiteUpdate(updatedSite);
+      toast.success(`${sectionName} section saved successfully`);
+    } catch (error) {
+      console.error(`Failed to save ${sectionName} section:`, error);
+      throw error;
+    }
+  }, [site, onSiteUpdate]);
+
+  const {
+    sectionStatus,
+    isSaving,
+    lastSaved,
+    handleSectionChange,
+    updateSectionData,
+    forceSaveAll,
+    getUnsavedCount,
+    hasUnsavedChanges
+  } = useSectionAutoSave({
+    onSave: handleSaveSection,
+    debounceMs: 1000, // 1 second delay
+    retryAttempts: 3,
+    retryDelay: 2000
+  });
 
   // Initialize form data with proper structure
   React.useEffect(() => {
@@ -94,8 +147,35 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       }
       
       current[keys[keys.length - 1]] = value;
+      
+      // Update auto-save for the current section
+      if (isEditing && activeSection) {
+        const sectionData = getSectionData(newData, activeSection);
+        updateSectionData(activeSection, sectionData);
+      }
+      
       return newData;
     });
+  };
+
+  // Helper function to get section-specific data
+  const getSectionData = (data: any, sectionName: string) => {
+    const fields = sectionMappings[sectionName as keyof typeof sectionMappings] || [];
+    const sectionData: any = {};
+    
+    fields.forEach(field => {
+      if (data[field]) {
+        sectionData[field] = data[field];
+      }
+    });
+    
+    return sectionData;
+  };
+
+  // Handle section focus/blur for auto-save
+  const handleSectionFocus = (sectionName: string) => {
+    setActiveSection(sectionName);
+    handleSectionChange(sectionName);
   };
 
   const handleNestedInputChange = (section: string, subsection: string, field: string, value: any) => {
@@ -173,13 +253,22 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     });
   };
 
-  const handleSave = () => {
-    const updatedSite = {
-      ...site,
-      siteStudy: formData
-    };
-    onSiteUpdate(updatedSite);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      // Force save all sections before final save
+      await forceSaveAll();
+      
+      const updatedSite = {
+        ...site,
+        siteStudy: formData
+      };
+      onSiteUpdate(updatedSite);
+      setIsEditing(false);
+      toast.success('Site study saved successfully');
+    } catch (error) {
+      console.error('Error saving site study:', error);
+      toast.error('Failed to save site study');
+    }
   };
 
   const handleCancel = () => {
@@ -206,10 +295,18 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Site Study</h2>
           <p className="text-gray-600 mt-1">Comprehensive site assessment and deployment readiness</p>
+          {isEditing && (
+            <AutoSaveSummary
+              unsavedCount={getUnsavedCount()}
+              isSaving={isSaving}
+              lastSaved={lastSaved}
+              className="mt-2"
+            />
+          )}
         </div>
         <div className="flex space-x-2">
           {!isEditing ? (
@@ -252,12 +349,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       {/* Simplified Form Sections */}
       <div className="space-y-6">
         {/* Basic Information */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('basic-info')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Building className="mr-2 h-5 w-5 text-blue-600" />
-              Basic Information
-            </CardTitle>
+            <SectionHeader
+              title="Basic Information"
+              icon={<Building className="mr-2 h-5 w-5 text-blue-600" />}
+              status={sectionStatus['basic-info'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Site details, contacts, and schedule
             </CardDescription>
@@ -382,12 +483,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Infrastructure */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('infrastructure')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Wifi className="mr-2 h-5 w-5 text-purple-600" />
-              Infrastructure
-            </CardTitle>
+            <SectionHeader
+              title="Infrastructure"
+              icon={<Wifi className="mr-2 h-5 w-5 text-purple-600" />}
+              status={sectionStatus['infrastructure'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Power, network, and connectivity requirements
             </CardDescription>
@@ -555,12 +660,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Physical Setup */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('physical-setup')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="mr-2 h-5 w-5 text-indigo-600" />
-              Physical Setup
-            </CardTitle>
+            <SectionHeader
+              title="Physical Setup"
+              icon={<Settings className="mr-2 h-5 w-5 text-indigo-600" />}
+              status={sectionStatus['physical-setup'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Mounting, layout, and accessibility requirements
             </CardDescription>
@@ -682,12 +791,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Software */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('software')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Monitor className="mr-2 h-6 w-6 text-blue-600" />
-              Software
-            </CardTitle>
+            <SectionHeader
+              title="Software"
+              icon={<Monitor className="mr-2 h-6 w-6 text-blue-600" />}
+              status={sectionStatus['software'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Software modules, accounts, compliance, and branding
             </CardDescription>
@@ -833,12 +946,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Device Requirements */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('device-requirements')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Monitor className="mr-2 h-5 w-5 text-cyan-600" />
-              Device Requirements
-            </CardTitle>
+            <SectionHeader
+              title="Device Requirements"
+              icon={<Monitor className="mr-2 h-5 w-5 text-cyan-600" />}
+              status={sectionStatus['device-requirements'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Hardware and device specifications needed
             </CardDescription>
@@ -989,12 +1106,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Payments */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('payments')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <CreditCard className="mr-2 h-6 w-6 text-green-600" />
-              Payments
-            </CardTitle>
+            <SectionHeader
+              title="Payments"
+              icon={<CreditCard className="mr-2 h-6 w-6 text-green-600" />}
+              status={sectionStatus['payments'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Payment gateway and PED configuration
             </CardDescription>
@@ -1094,12 +1215,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Security & HSE */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('security-hse')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Shield className="mr-2 h-6 w-6 text-purple-600" />
-              Security & HSE
-            </CardTitle>
+            <SectionHeader
+              title="Security & HSE"
+              icon={<Shield className="mr-2 h-6 w-6 text-purple-600" />}
+              status={sectionStatus['security-hse'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Device security and health & safety requirements
             </CardDescription>
@@ -1184,12 +1309,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
             </div>
           </CardContent>
         {/* Logistics */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('logistics')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <MapPin className="mr-2 h-6 w-6 text-orange-600" />
-              Logistics
-            </CardTitle>
+            <SectionHeader
+              title="Logistics"
+              icon={<MapPin className="mr-2 h-6 w-6 text-orange-600" />}
+              status={sectionStatus['logistics'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Access, staging, and on-site logistics
             </CardDescription>
@@ -1285,12 +1414,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Pre-Install Checks */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('pre-install-checks')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <CheckCircle className="mr-2 h-6 w-6 text-green-600" />
-              Pre-Install Checks
-            </CardTitle>
+            <SectionHeader
+              title="Pre-Install Checks"
+              icon={<CheckCircle className="mr-2 h-6 w-6 text-green-600" />}
+              status={sectionStatus['pre-install-checks'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Network, Wi-Fi, and power verification
             </CardDescription>
@@ -1398,12 +1531,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </Card>
 
         {/* Acceptance */}
-        <Card className="shadow-sm border border-gray-200">
+        <Card 
+          className="shadow-sm border border-gray-200"
+          onMouseEnter={() => handleSectionFocus('acceptance')}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center text-xl">
-              <Users className="mr-2 h-6 w-6 text-indigo-600" />
-              Acceptance
-            </CardTitle>
+            <SectionHeader
+              title="Acceptance"
+              icon={<Users className="mr-2 h-6 w-6 text-indigo-600" />}
+              status={sectionStatus['acceptance'] || 'saved'}
+            />
             <CardDescription className="text-gray-600">
               Pilot testing and support requirements
             </CardDescription>

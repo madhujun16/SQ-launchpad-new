@@ -26,7 +26,8 @@ import {
   Wrench,
   Truck,
   Tag,
-  X
+  X,
+  Printer
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
@@ -39,31 +40,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 // Categories are now loaded dynamically from the database
-
-// Map category names from categories table to hardware_category enum values
-const mapCategoryToEnum = (categoryName: string): string => {
-  // Based on your existing data, these are the actual valid enum values in the database
-  const validEnumValues = [
-    'Kitchen Display System (KDS)',
-    'Support & Sundries'
-  ];
-  
-  if (validEnumValues.includes(categoryName)) {
-    return categoryName;
-  }
-  
-  // Map from categories table names to valid enum values
-  const mapping: Record<string, string> = {
-    'Kiosk': 'Support & Sundries',           // Map to existing valid value
-    'POS': 'Support & Sundries',            // Map to existing valid value  
-    'Kitchen Display (KDS)': 'Kitchen Display System (KDS)',
-    'Inventory': 'Support & Sundries',
-    'Food Ordering App': 'Support & Sundries',
-    // Add more mappings as needed
-  };
-  
-  return mapping[categoryName] || 'Support & Sundries'; // Default fallback
-};
 
 // Hardware types for the type dropdown
 const HARDWARE_TYPES = [
@@ -84,18 +60,23 @@ interface SoftwareModule {
   id: string;
   name: string;
   description: string | null;
-  category: string;
+  category_id: string;
   license_fee: number | null;
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;
+  category?: {
+    id: string;
+    name: string;
+    description: string | null;
+  };
 }
 
 interface HardwareItem {
   id: string;
   name: string;
   description: string | null;
-  category: string;
+  category_id: string;
   manufacturer: string | null;
   unit_cost: number | null;
   type: string | null;
@@ -104,6 +85,11 @@ interface HardwareItem {
   updated_at: string | null;
   quantity?: number | null;
   total_cost?: number | null;
+  category?: {
+    id: string;
+    name: string;
+    description: string | null;
+  };
 }
 
 export default function SoftwareHardwareManagement() {
@@ -156,10 +142,13 @@ export default function SoftwareHardwareManagement() {
     try {
       setLoading(true);
       
-      // Load software modules
+      // Load software modules with category information
       const { data: softwareData, error: softwareError } = await supabase
         .from('software_modules')
-        .select('*')
+        .select(`
+          *,
+          category:categories(id, name, description)
+        `)
         .order('name');
       
       if (softwareError) {
@@ -170,10 +159,13 @@ export default function SoftwareHardwareManagement() {
         setSoftwareModules((softwareData || []) as any);
       }
 
-      // Load hardware items
+      // Load hardware items with category information
       const { data: hardwareData, error: hardwareError } = await supabase
         .from('hardware_items')
-        .select('*')
+        .select(`
+          *,
+          category:categories(id, name, description)
+        `)
         .order('name');
       
       if (hardwareError) {
@@ -201,7 +193,7 @@ export default function SoftwareHardwareManagement() {
       toast.error('Please enter a software module name');
       return;
     }
-    if (!editingSoftwareModule.category?.trim()) {
+    if (!editingSoftwareModule.category_id?.trim()) {
       toast.error('Please select a category');
       return;
     }
@@ -216,7 +208,7 @@ export default function SoftwareHardwareManagement() {
         const updateData = {
           name: editingSoftwareModule.name,
           description: editingSoftwareModule.description,
-          category: editingSoftwareModule.category,
+          category_id: editingSoftwareModule.category_id,
           license_fee: editingSoftwareModule.license_fee,
           is_active: editingSoftwareModule.is_active
         };
@@ -238,7 +230,7 @@ export default function SoftwareHardwareManagement() {
         const insertData = {
           name: editingSoftwareModule.name,
           description: editingSoftwareModule.description,
-          category: editingSoftwareModule.category,
+          category_id: editingSoftwareModule.category_id,
           license_fee: editingSoftwareModule.license_fee,
           is_active: editingSoftwareModule.is_active
         };
@@ -277,7 +269,7 @@ export default function SoftwareHardwareManagement() {
       toast.error('Please enter a hardware item name');
       return;
     }
-    if (!editingHardwareItem.category?.trim()) {
+    if (!editingHardwareItem.category_id?.trim()) {
       toast.error('Please select a category');
       return;
     }
@@ -300,7 +292,7 @@ export default function SoftwareHardwareManagement() {
         const updateData = {
           name: editingHardwareItem.name,
           description: editingHardwareItem.description,
-          category: mapCategoryToEnum(editingHardwareItem.category),
+          category_id: editingHardwareItem.category_id,
           manufacturer: editingHardwareItem.manufacturer,
           unit_cost: unitCost,
           type: editingHardwareItem.type || 'Other',
@@ -334,7 +326,7 @@ export default function SoftwareHardwareManagement() {
         const insertData = {
           name: editingHardwareItem.name,
           description: editingHardwareItem.description,
-          category: mapCategoryToEnum(editingHardwareItem.category),
+          category_id: editingHardwareItem.category_id,
           manufacturer: editingHardwareItem.manufacturer,
           unit_cost: unitCost,
           type: editingHardwareItem.type || 'Other',
@@ -410,32 +402,88 @@ export default function SoftwareHardwareManagement() {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Kitchen Display System (KDS)': return <Monitor className="h-4 w-4" />;
-      case 'Support & Sundries': return <Activity className="h-4 w-4" />;
-      case 'Kiosk': return <Monitor className="h-4 w-4" />;
-      case 'POS Terminal': return <CreditCard className="h-4 w-4" />;
-      case 'Customer Display Screen (TDS)': return <Monitor className="h-4 w-4" />;
-      default: return <Package className="h-4 w-4" />;
+  const getCategoryIcon = (categoryName: string) => {
+    // Dynamic icon assignment based on category name patterns
+    const categoryLower = categoryName.toLowerCase();
+    
+    if (categoryLower.includes('kitchen') || categoryLower.includes('kds')) {
+      return <Monitor className="h-4 w-4" />;
     }
+    if (categoryLower.includes('support') || categoryLower.includes('sundries')) {
+      return <Activity className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('kiosk')) {
+      return <Monitor className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('pos') || categoryLower.includes('terminal')) {
+      return <CreditCard className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('customer') || categoryLower.includes('tds')) {
+      return <Monitor className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('tablet')) {
+      return <Monitor className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('printer')) {
+      return <Printer className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('scanner')) {
+      return <Package className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('accessories')) {
+      return <Package className="h-4 w-4" />;
+    }
+    if (categoryLower.includes('connectivity')) {
+      return <Activity className="h-4 w-4" />;
+    }
+    
+    // Default fallback
+    return <Package className="h-4 w-4" />;
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'Kitchen Display System (KDS)': return 'bg-blue-100 text-blue-800';
-      case 'Support & Sundries': return 'bg-orange-100 text-orange-800';
-      case 'Kiosk': return 'bg-purple-100 text-purple-800';
-      case 'POS Terminal': return 'bg-indigo-100 text-indigo-800';
-      case 'Customer Display Screen (TDS)': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getCategoryColor = (categoryName: string) => {
+    // Dynamic color assignment based on category name patterns
+    const categoryLower = categoryName.toLowerCase();
+    
+    if (categoryLower.includes('kitchen') || categoryLower.includes('kds')) {
+      return 'bg-blue-100 text-blue-800';
     }
+    if (categoryLower.includes('support') || categoryLower.includes('sundries')) {
+      return 'bg-orange-100 text-orange-800';
+    }
+    if (categoryLower.includes('kiosk')) {
+      return 'bg-purple-100 text-purple-800';
+    }
+    if (categoryLower.includes('pos') || categoryLower.includes('terminal')) {
+      return 'bg-indigo-100 text-indigo-800';
+    }
+    if (categoryLower.includes('customer') || categoryLower.includes('tds')) {
+      return 'bg-green-100 text-green-800';
+    }
+    if (categoryLower.includes('tablet')) {
+      return 'bg-cyan-100 text-cyan-800';
+    }
+    if (categoryLower.includes('printer')) {
+      return 'bg-red-100 text-red-800';
+    }
+    if (categoryLower.includes('scanner')) {
+      return 'bg-yellow-100 text-yellow-800';
+    }
+    if (categoryLower.includes('accessories')) {
+      return 'bg-pink-100 text-pink-800';
+    }
+    if (categoryLower.includes('connectivity')) {
+      return 'bg-teal-100 text-teal-800';
+    }
+    
+    // Default fallback
+    return 'bg-gray-100 text-gray-800';
   };
 
   // Get unique categories from both software modules and hardware items, plus categories from database
   const allCategories = Array.from(new Set([
-    ...softwareModules.map(sm => sm.category).filter(Boolean),
-    ...hardwareItems.map(hi => hi.category).filter(Boolean),
+    ...softwareModules.map(sm => sm.category?.name).filter(Boolean),
+    ...hardwareItems.map(hi => hi.category?.name).filter(Boolean),
     ...categories.map(cat => cat.name)
   ])).filter(category => category && category.trim() !== '');
 
@@ -443,18 +491,18 @@ export default function SoftwareHardwareManagement() {
   const { filteredSoftwareModules, filteredHardwareItems, totalPages, currentSoftwareModules, currentHardwareItems } = useMemo(() => {
     let filteredSoftware = softwareModules.filter(module => {
       const matchesSearch = module.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           module.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           module.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            module.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = categoryFilter === 'all' || module.category === categoryFilter;
+      const matchesCategory = categoryFilter === 'all' || module.category?.name === categoryFilter;
       return matchesSearch && matchesCategory;
     });
 
     let filteredHardware = hardwareItems.filter(item => {
       const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           item.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+      const matchesCategory = categoryFilter === 'all' || item.category?.name === categoryFilter;
       return matchesSearch && matchesCategory;
     });
 
@@ -630,7 +678,7 @@ export default function SoftwareHardwareManagement() {
                   id: '',
                   name: '',
                   description: '',
-                  category: '',
+                  category_id: '',
                   license_fee: 0,
                   is_active: true,
                   created_at: '',
@@ -641,7 +689,7 @@ export default function SoftwareHardwareManagement() {
                   id: '',
                   name: '',
                   description: '',
-                  category: '',
+                  category_id: '',
                   manufacturer: '',
                   unit_cost: 0,
                   type: 'Other',
@@ -654,7 +702,7 @@ export default function SoftwareHardwareManagement() {
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
-            {activeTab === 'software' ? 'Add Software' : 'Add Hardware'}
+            {activeTab === 'software' ? 'Add Software Module' : 'Add Hardware & Support Item'}
           </Button>
         </div>
       </div>
@@ -818,12 +866,12 @@ export default function SoftwareHardwareManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getCategoryIcon(module.category)}
-                            <Badge className={getCategoryColor(module.category)}>
-                              {module.category}
-                            </Badge>
-                          </div>
+                            <div className="flex items-center gap-2">
+                              {getCategoryIcon(module.category?.name || '')}
+                              <Badge className={getCategoryColor(module.category?.name || '')}>
+                                {module.category?.name || 'No Category'}
+                              </Badge>
+                            </div>
                         </TableCell>
                         <TableCell className="text-gray-700">
                           £{(module.license_fee || 0).toLocaleString()}
@@ -916,9 +964,9 @@ export default function SoftwareHardwareManagement() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              {getCategoryIcon(item.category)}
-                              <Badge className={getCategoryColor(item.category)}>
-                                {item.category}
+                              {getCategoryIcon(item.category?.name || '')}
+                              <Badge className={getCategoryColor(item.category?.name || '')}>
+                                {item.category?.name || 'No Category'}
                               </Badge>
                             </div>
                           </TableCell>
@@ -940,7 +988,7 @@ export default function SoftwareHardwareManagement() {
                                 size="sm"
                                 onClick={() => setEditingHardwareItem(item)}
                                 className="h-8 w-8 p-0 hover:bg-gray-100"
-                                title="Edit Hardware Item"
+                                title="Edit Hardware & Support Item"
                               >
                                 <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                               </Button>
@@ -949,7 +997,7 @@ export default function SoftwareHardwareManagement() {
                                 size="sm"
                                 onClick={() => handleDeleteHardwareItem(item.id)}
                                 className="h-8 w-8 p-0 hover:bg-red-50"
-                                title="Delete Hardware Item"
+                                title="Delete Hardware & Support Item"
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>
@@ -1059,10 +1107,10 @@ export default function SoftwareHardwareManagement() {
               <div>
                 <Label htmlFor="category">Category</Label>
                 <Select
-                  value={editingSoftwareModule.category}
+                  value={editingSoftwareModule.category_id}
                   onValueChange={(value) => setEditingSoftwareModule({
                     ...editingSoftwareModule,
-                    category: value
+                    category_id: value
                   })}
                 >
                   <SelectTrigger>
@@ -1070,7 +1118,7 @@ export default function SoftwareHardwareManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     {categories.length > 0 ? categories.map(category => (
-                      <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                     )) : (
                       <SelectItem value="no-categories" disabled>No categories available</SelectItem>
                     )}
@@ -1109,16 +1157,16 @@ export default function SoftwareHardwareManagement() {
         </div>
       )}
 
-      {/* Hardware Item Edit Modal */}
+      {/* Hardware & Support Item Edit Modal */}
       {editingHardwareItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-medium mb-6">
-              {editingHardwareItem.id ? 'Edit Hardware Item' : 'Add Hardware Item'}
+              {editingHardwareItem.id ? 'Edit Hardware & Support Item' : 'Add Hardware & Support Item'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="hardware_name">Hardware Name</Label>
+                <Label htmlFor="hardware_name">Item Name</Label>
                 <Input
                   id="hardware_name"
                   value={editingHardwareItem.name}
@@ -1126,7 +1174,7 @@ export default function SoftwareHardwareManagement() {
                     ...editingHardwareItem,
                     name: e.target.value
                   })}
-                  placeholder="Enter hardware name"
+                  placeholder="Enter item name"
                 />
               </div>
               <div>
@@ -1157,10 +1205,10 @@ export default function SoftwareHardwareManagement() {
               <div>
                 <Label htmlFor="category">Category</Label>
                 <Select
-                  value={editingHardwareItem.category}
+                  value={editingHardwareItem.category_id}
                   onValueChange={(value) => setEditingHardwareItem({
                     ...editingHardwareItem,
-                    category: value
+                    category_id: value
                   })}
                 >
                   <SelectTrigger>
@@ -1168,7 +1216,7 @@ export default function SoftwareHardwareManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     {categories.length > 0 ? categories.map(category => (
-                      <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                     )) : (
                       <SelectItem value="no-categories" disabled>No categories available</SelectItem>
                     )}
