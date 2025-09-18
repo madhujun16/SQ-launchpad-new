@@ -352,7 +352,7 @@ const Approvals = () => {
       
       // Blue: Procurement Done, Deployed, Approved (changes_requested maps to blue)
       case 'changes_requested':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       
       default:
         return 'bg-gray-100 text-gray-800';
@@ -481,8 +481,8 @@ const Approvals = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Value Pending</p>
@@ -618,7 +618,7 @@ const Approvals = () => {
 
                   <div className="flex items-center space-x-4 text-sm">
                     <div className="flex items-center space-x-1">
-                      <Package className="h-4 w-4 text-blue-600" />
+                      <Package className="h-4 w-4 text-green-600" />
                       <span>{request.softwareCount} Software</span>
                     </div>
                     <div className="flex items-center space-x-1">
@@ -980,9 +980,9 @@ const Approvals = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-green-50">
                       <div className="flex items-center space-x-3">
-                        <FileText className="h-8 w-8 text-blue-600" />
+                        <FileText className="h-8 w-8 text-green-600" />
                         <div>
                           <p className="font-medium">Site Study Report</p>
                           <p className="text-sm text-gray-600">PDF document with detailed site analysis</p>

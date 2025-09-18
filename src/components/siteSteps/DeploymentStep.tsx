@@ -45,7 +45,7 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
         <Card className="shadow-sm border border-gray-200">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <ProgressIcon className="mr-2 h-5 w-5 text-blue-600" />
+              <ProgressIcon className="mr-2 h-5 w-5 text-green-600" />
               Deployment Progress
             </CardTitle>
             <CardDescription className="text-gray-600">
@@ -81,13 +81,13 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
 
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <Clock className="h-5 w-5 text-blue-600" />
+                      <Clock className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="font-medium">Installation In Progress</p>
                         <p className="text-sm text-gray-600">POS terminals being installed</p>
                       </div>
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
+                    <Badge className="bg-green-100 text-green-800">In Progress</Badge>
                   </div>
 
                   <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -147,7 +147,7 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
                   <div className="space-y-2">
                     <Label htmlFor="current-phase">Current Phase</Label>
                     <div className="flex items-center space-x-2">
-                      <Badge className="bg-blue-100 text-blue-800">Installation</Badge>
+                      <Badge className="bg-green-100 text-green-800">Installation</Badge>
                     </div>
                   </div>
                 </div>

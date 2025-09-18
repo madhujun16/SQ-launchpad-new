@@ -80,7 +80,7 @@ export const Stepper: React.FC<StepperProps> = ({
                   className={cn(
                     "flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-200 shadow-sm",
                     isCompleted && "bg-green-500 border-green-500 text-white shadow-lg scale-110",
-                    isCurrent && "bg-blue-500 border-blue-500 text-white shadow-lg",
+                    isCurrent && "bg-green-500 border-green-500 text-white shadow-lg",
                     isUpcoming && "bg-gray-100 border-gray-300 text-gray-400 hover:border-gray-400",
                     onStepClick && "cursor-pointer hover:scale-105"
                   )}
@@ -104,7 +104,7 @@ export const Stepper: React.FC<StepperProps> = ({
                   <p className={cn(
                     "text-sm font-semibold",
                     isCompleted && "text-green-600",
-                    isCurrent && "text-blue-600",
+                    isCurrent && "text-green-600",
                     isUpcoming && "text-gray-500"
                   )}>
                     {step.title}

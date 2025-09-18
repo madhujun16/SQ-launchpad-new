@@ -92,13 +92,13 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
 
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <Clock className="h-5 w-5 text-blue-600" />
+                      <Clock className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="font-medium">Staff Training</p>
                         <p className="text-sm text-gray-600">Team training in progress</p>
                       </div>
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
+                    <Badge className="bg-green-100 text-green-800">In Progress</Badge>
                   </div>
 
                   <div className="flex items-center justify-between p-3 border rounded-lg">

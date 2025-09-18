@@ -371,7 +371,7 @@ export default function AuditLogs() {
             {/* Log Statistics */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-green-600">
                   {auditLogs.filter(l => l.type === 'create').length}
                 </div>
                 <div className="text-sm text-gray-600">Create</div>
@@ -389,7 +389,7 @@ export default function AuditLogs() {
                 <div className="text-sm text-gray-600">Delete</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-green-600">
                   {auditLogs.filter(l => l.type === 'info').length}
                 </div>
                 <div className="text-sm text-gray-600">Info</div>

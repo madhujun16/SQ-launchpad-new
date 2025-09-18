@@ -167,7 +167,7 @@ export const NotificationCenter: React.FC = () => {
                 <div key={notification.id}>
                   <div
                     className={`p-3 hover:bg-muted/50 cursor-pointer transition-colors ${
-                      !notification.is_read ? 'bg-blue-50/50' : ''
+                      !notification.is_read ? 'bg-green-50/50' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -181,7 +181,7 @@ export const NotificationCenter: React.FC = () => {
                             {notification.title}
                           </p>
                           {!notification.is_read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2" />
+                            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 ml-2" />
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2 mt-1">

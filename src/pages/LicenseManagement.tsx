@@ -317,7 +317,7 @@ export default function LicenseManagement() {
       case 'error':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'info':
-        return <Activity className="h-4 w-4 text-blue-500" />;
+        return <Activity className="h-4 w-4 text-green-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }
@@ -498,7 +498,7 @@ export default function LicenseManagement() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <PieChart className="h-5 w-5 text-blue-600" />
+                        <PieChart className="h-5 w-5 text-green-600" />
                         License Type Distribution
                       </CardTitle>
                       <CardDescription>Breakdown by license type</CardDescription>
@@ -593,7 +593,7 @@ export default function LicenseManagement() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setSelectedLicense(license)}
-                                className="hover:bg-blue-50 hover:text-blue-600"
+                                className="hover:bg-green-50 hover:text-green-600"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>

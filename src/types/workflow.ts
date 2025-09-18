@@ -260,14 +260,14 @@ export const getWorkflowStageLabel = (stage: DeploymentStage): string => {
 
 export const getWorkflowStageColor = (stage: DeploymentStage): string => {
   const colors: Record<DeploymentStage, string> = {
-    Created: 'bg-blue-100 text-blue-800',
+    Created: 'bg-green-100 text-green-800',
     study_in_progress: 'bg-yellow-100 text-yellow-800',
     study_completed: 'bg-green-100 text-green-800',
     hardware_scoped: 'bg-purple-100 text-purple-800',
     approval_pending: 'bg-orange-100 text-orange-800',
     approval_approved: 'bg-green-100 text-green-800',
     approval_rejected: 'bg-red-100 text-red-800',
-    deployment_scheduled: 'bg-blue-100 text-blue-800',
+    deployment_scheduled: 'bg-green-100 text-green-800',
     deployment_in_progress: 'bg-yellow-100 text-yellow-800',
     deployment_completed: 'bg-green-100 text-green-800',
     live_ready: 'bg-green-100 text-green-800',

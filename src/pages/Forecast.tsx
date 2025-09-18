@@ -376,7 +376,7 @@ const Forecast: React.FC = () => {
       case 'deployed':
       case 'approved':
       case 'scoping_done':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       
       default: 
         return 'bg-gray-100 text-gray-800';
@@ -529,8 +529,8 @@ const Forecast: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">On Track</p>
@@ -660,7 +660,7 @@ const Forecast: React.FC = () => {
                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                        <div>
                          <div className="text-sm text-gray-600">Hardware Costs</div>
-                         <div className="text-lg font-semibold text-blue-600">
+                         <div className="text-lg font-semibold text-green-600">
                            £{month.hardwareCosts.toLocaleString()}
                          </div>
                        </div>

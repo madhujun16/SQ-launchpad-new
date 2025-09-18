@@ -301,10 +301,10 @@ const Sites = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleViewSite(site)}
-            className="h-8 w-8 p-0 hover:bg-blue-50"
+            className="h-8 w-8 p-0 hover:bg-green-50"
             title="View Site"
           >
-            <Eye className="h-4 w-4 text-blue-600" />
+            <Eye className="h-4 w-4 text-green-600" />
           </Button>
           <Button
             variant="ghost"
@@ -324,10 +324,10 @@ const Sites = () => {
           variant="ghost"
           size="sm"
           onClick={() => handleViewSite(site)}
-          className="h-8 w-8 p-0 hover:bg-blue-50"
+          className="h-8 w-8 p-0 hover:bg-green-50"
           title="View Site"
         >
-          <Eye className="h-4 w-4 text-blue-600" />
+          <Eye className="h-4 w-4 text-green-600" />
         </Button>
       );
     } else if (isCreated || isIntermediateStatus) {

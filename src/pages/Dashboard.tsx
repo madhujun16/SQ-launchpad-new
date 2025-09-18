@@ -16,10 +16,71 @@ import {
   Settings,
   CheckCircle,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  PieChart,
+  Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
+} from 'recharts';
+
+// Chart data for visual representations
+const SITE_PROGRESS_DATA = [
+  { month: 'Jan', sites: 2, deployed: 1 },
+  { month: 'Feb', sites: 4, deployed: 2 },
+  { month: 'Mar', sites: 6, deployed: 4 },
+  { month: 'Apr', sites: 8, deployed: 6 },
+  { month: 'May', sites: 10, deployed: 8 },
+  { month: 'Jun', sites: 8, deployed: 12 }
+];
+
+const STATUS_DISTRIBUTION_DATA = [
+  { name: 'In Progress', value: 8, color: '#8b5cf6' },
+  { name: 'Awaiting Review', value: 3, color: '#f59e0b' },
+  { name: 'Deployed', value: 12, color: '#10b981' },
+  { name: 'Pending Approval', value: 4, color: '#ef4444' }
+];
+
+const FINANCIAL_TREND_DATA = [
+  { month: 'Jan', investment: 15000, opex: 2000, budget: 500000 },
+  { month: 'Feb', investment: 25000, opex: 2200, budget: 500000 },
+  { month: 'Mar', investment: 35000, opex: 2400, budget: 500000 },
+  { month: 'Apr', investment: 45000, opex: 2600, budget: 500000 },
+  { month: 'May', investment: 55000, opex: 2800, budget: 500000 },
+  { month: 'Jun', investment: 185700, opex: 2558, budget: 500000 }
+];
+
+const WEEKLY_DEPLOYMENT_DATA = [
+  { week: 'Week 1', deployed: 2, inProgress: 3 },
+  { week: 'Week 2', deployed: 3, inProgress: 4 },
+  { week: 'Week 3', deployed: 5, inProgress: 2 },
+  { week: 'Week 4', deployed: 4, inProgress: 3 },
+  { week: 'Week 5', deployed: 6, inProgress: 1 },
+  { week: 'Week 6', deployed: 8, inProgress: 2 }
+];
+
+const OPERATIONS_DATA = [
+  { metric: 'Response Time', value: 2.3, unit: 'days', color: '#8b5cf6' },
+  { metric: 'Software Licenses', value: 156, unit: 'licenses', color: '#10b981' },
+  { metric: 'Total Assets', value: 89, unit: 'assets', color: '#f59e0b' },
+  { metric: 'Go-Live Time', value: 34.2, unit: 'days', color: '#ef4444' }
+];
 
 // Simple mock data - no heavy operations
 const MOCK_METRICS = [
@@ -28,7 +89,7 @@ const MOCK_METRICS = [
     value: '8',
     change: '+2 this week',
     icon: Building,
-    color: 'text-blue-600'
+    color: 'text-green-600'
   },
   {
     title: 'Awaiting review',
@@ -99,7 +160,9 @@ const MOCK_FINANCIAL_DATA = {
   costPerSite: 23212,
   totalSites: 8,
   budgetUtilization: 78.5,
-  resourceUtilization: 92.3
+  resourceUtilization: 92.3,
+  totalBudget: 500000,
+  remainingBudget: 314300
 };
 
 // Mock user role - in real app this would come from context
@@ -135,7 +198,7 @@ const Dashboard = () => {
       
       // Blue: Procurement Done, Deployed, Approved
       case 'procurement':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       
       default:
         return 'bg-gray-100 text-gray-800';
@@ -187,8 +250,96 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Financial Overview */}
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Site Progress Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <span>Site Progress Trend</span>
+              </CardTitle>
+              <CardDescription>
+                Monthly site deployment progress
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={SITE_PROGRESS_DATA}>
+                  <defs>
+                    <linearGradient id="colorSites" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="colorDeployed" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="sites"
+                    stroke="#8b5cf6"
+                    fillOpacity={1}
+                    fill="url(#colorSites)"
+                    name="Sites in Progress"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="deployed"
+                    stroke="#10b981"
+                    fillOpacity={1}
+                    fill="url(#colorDeployed)"
+                    name="Sites Deployed"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Status Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <PieChart className="h-5 w-5 text-green-600" />
+                <span>Site Status Distribution</span>
+              </CardTitle>
+              <CardDescription>
+                Current distribution of site statuses
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <RechartsPieChart>
+                  <Pie
+                    data={STATUS_DISTRIBUTION_DATA}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {STATUS_DISTRIBUTION_DATA.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Financial Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Financial Trend */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -196,35 +347,107 @@ const Dashboard = () => {
                 <span>Financial Overview</span>
               </CardTitle>
               <CardDescription>
-                Current investment and operational metrics
+                Investment vs Budget utilization
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Total Investment</p>
-                  <p className="text-2xl font-bold text-gray-900">
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={FINANCIAL_TREND_DATA}>
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip formatter={(value, name) => [`£${value.toLocaleString()}`, name]} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="investment"
+                    stroke="#8b5cf6"
+                    strokeWidth={3}
+                    name="Investment"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="budget"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="Total Budget"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <p className="text-gray-600">Total Investment</p>
+                  <p className="text-xl font-bold text-gray-900">
                     £{MOCK_FINANCIAL_DATA.totalInvestment.toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Monthly OPEX</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    £{MOCK_FINANCIAL_DATA.monthlyOPEX.toLocaleString()}
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <p className="text-gray-600">Remaining Budget</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    £{MOCK_FINANCIAL_DATA.remainingBudget.toLocaleString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Cost per Site</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    £{MOCK_FINANCIAL_DATA.costPerSite.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Budget Utilization</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_FINANCIAL_DATA.budgetUtilization}%
-                  </p>
-                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Weekly Deployments */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5 text-green-600" />
+                <span>Weekly Deployments</span>
+              </CardTitle>
+              <CardDescription>
+                Deployment progress by week
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={WEEKLY_DEPLOYMENT_DATA}>
+                  <XAxis dataKey="week" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="deployed" fill="#10b981" name="Deployed" />
+                  <Bar dataKey="inProgress" fill="#8b5cf6" name="In Progress" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Operations Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="h-5 w-5 text-green-600" />
+                <span>Operations Metrics</span>
+              </CardTitle>
+              <CardDescription>
+                Key operational performance indicators
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {OPERATIONS_DATA.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{item.metric}</p>
+                      <p className="text-xs text-gray-600">{item.unit}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-2xl font-bold text-gray-900">{item.value}</div>
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -232,38 +455,52 @@ const Dashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5 text-blue-600" />
-                <span>Operations Overview</span>
+                <Target className="h-5 w-5 text-green-600" />
+                <span>Performance Indicators</span>
               </CardTitle>
               <CardDescription>
-                Key operational metrics and resource tracking
+                Success rates and utilization metrics
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Average Response Time</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.avgResponseTime}
-                  </p>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                    {MOCK_FINANCIAL_DATA.deploymentSuccessRate}%
+                  </div>
+                  <p className="text-sm text-gray-600">Deployment Success Rate</p>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full" 
+                      style={{ width: `${MOCK_FINANCIAL_DATA.deploymentSuccessRate}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Software Licenses</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.softwareLicenses}
-                  </p>
+                
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                    {MOCK_FINANCIAL_DATA.budgetUtilization}%
+                  </div>
+                  <p className="text-sm text-gray-600">Budget Utilization</p>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full" 
+                      style={{ width: `${MOCK_FINANCIAL_DATA.budgetUtilization}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Assets</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.totalAssets}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Avg Go-Live Time (days)</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {MOCK_PLATFORM_DATA.avgGoLiveDays}
-                  </p>
+
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                    {MOCK_FINANCIAL_DATA.resourceUtilization}%
+                  </div>
+                  <p className="text-sm text-gray-600">Resource Utilization</p>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-purple-600 h-2 rounded-full" 
+                      style={{ width: `${MOCK_FINANCIAL_DATA.resourceUtilization}%` }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             </CardContent>

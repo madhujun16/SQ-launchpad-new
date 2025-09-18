@@ -446,7 +446,7 @@ export default function SoftwareHardwareManagement() {
     const categoryLower = categoryName.toLowerCase();
     
     if (categoryLower.includes('kitchen') || categoryLower.includes('kds')) {
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-green-100 text-green-800';
     }
     if (categoryLower.includes('support') || categoryLower.includes('sundries')) {
       return 'bg-orange-100 text-orange-800';
@@ -711,8 +711,8 @@ export default function SoftwareHardwareManagement() {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Database className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Database className="h-6 w-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Software Modules</p>
@@ -958,7 +958,7 @@ export default function SoftwareHardwareManagement() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge className="bg-blue-100 text-blue-800">
+                            <Badge className="bg-green-100 text-green-800">
                               {item.type || 'Other'}
                             </Badge>
                           </TableCell>

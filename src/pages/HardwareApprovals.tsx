@@ -339,7 +339,7 @@ const HardwareApprovals = () => {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'approved': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
-      case 'under_review': return 'bg-blue-100 text-blue-800';
+      case 'under_review': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -356,7 +356,7 @@ const HardwareApprovals = () => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': return 'bg-blue-100 text-blue-800';
+      case 'low': return 'bg-green-100 text-green-800';
       case 'medium': return 'bg-orange-100 text-orange-800';
       case 'high': return 'bg-red-100 text-red-800';
       case 'urgent': return 'bg-purple-100 text-purple-800';
@@ -672,9 +672,9 @@ const HardwareApprovals = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Under Review</p>
-                  <p className="text-2xl font-bold text-blue-600">{underReviewCount}</p>
+                  <p className="text-2xl font-bold text-green-600">{underReviewCount}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-blue-600" />
+                <AlertTriangle className="h-8 w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
@@ -866,7 +866,7 @@ const HardwareApprovals = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-600" />
+              <Shield className="h-5 w-5 text-green-600" />
               Approval Request Details
             </DialogTitle>
             <DialogDescription>

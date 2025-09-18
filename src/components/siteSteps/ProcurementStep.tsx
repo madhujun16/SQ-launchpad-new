@@ -44,7 +44,7 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
         <Card className="shadow-sm border border-gray-200">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <ShoppingCart className="mr-2 h-5 w-5 text-blue-600" />
+              <ShoppingCart className="mr-2 h-5 w-5 text-green-600" />
               Procurement Status
             </CardTitle>
             <CardDescription className="text-gray-600">
@@ -55,15 +55,15 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
             <div className="space-y-6">
               <div>
                 <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Progress Overview</h4>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                     <div>
-                      <p className="font-semibold text-blue-800">Procurement Progress</p>
-                      <p className="text-sm text-blue-600">In progress - 75% complete</p>
+                      <p className="font-semibold text-green-800">Procurement Progress</p>
+                      <p className="text-sm text-green-600">In progress - 75% complete</p>
                     </div>
                   </div>
-                  <Badge className="bg-blue-100 text-blue-800 border border-blue-200">
+                  <Badge className="bg-green-100 text-green-800 border border-green-200">
                     {site?.procurement?.status ? site.procurement.status.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : 'In Progress'}
                   </Badge>
                 </div>
@@ -82,7 +82,7 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-sm font-medium text-gray-700">Delivered</span>
-                    <Badge className="bg-blue-100 text-blue-800">6</Badge>
+                    <Badge className="bg-green-100 text-green-800">6</Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="text-sm font-medium text-gray-700">Pending</span>
@@ -167,13 +167,13 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                     </div>
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
-                  <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-blue-800">Orders Placed</p>
-                      <p className="text-xs text-blue-600">Dec 20, 2024</p>
+                      <p className="text-sm font-medium text-green-800">Orders Placed</p>
+                      <p className="text-xs text-green-600">Dec 20, 2024</p>
                     </div>
-                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
                   <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                     <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -243,30 +243,30 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                   </div>
 
                   {/* Item 2 */}
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
-                        <Package className="h-5 w-5 text-blue-600" />
-                        <h4 className="font-semibold text-blue-900">Power Supply Units</h4>
+                        <Package className="h-5 w-5 text-green-600" />
+                        <h4 className="font-semibold text-green-900">Power Supply Units</h4>
                       </div>
-                      <Badge className="bg-blue-100 text-blue-800">Ordered</Badge>
+                      <Badge className="bg-green-100 text-green-800">Ordered</Badge>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Quantity:</span>
-                        <span className="text-blue-900 font-medium">4 units</span>
+                        <span className="text-green-700">Quantity:</span>
+                        <span className="text-green-900 font-medium">4 units</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Cost:</span>
-                        <span className="text-blue-900 font-medium">$6,200</span>
+                        <span className="text-green-700">Cost:</span>
+                        <span className="text-green-900 font-medium">$6,200</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Supplier:</span>
-                        <span className="text-blue-900 font-medium">PowerTech</span>
+                        <span className="text-green-700">Supplier:</span>
+                        <span className="text-green-900 font-medium">PowerTech</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Delivery:</span>
-                        <span className="text-blue-900 font-medium">Jan 8, 2025</span>
+                        <span className="text-green-700">Delivery:</span>
+                        <span className="text-green-900 font-medium">Jan 8, 2025</span>
                       </div>
                     </div>
                   </div>
@@ -311,11 +311,11 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
             <Download className="h-4 w-4 mr-2" />
             Export Procurement Report
           </Button>
-          <Button variant="outline" className="border-blue-300 hover:border-blue-400">
+          <Button variant="outline" className="border-green-300 hover:border-green-400">
             <Plus className="h-4 w-4 mr-2" />
             Add Procurement Item
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button variant="gradient">
             <ShoppingCart className="h-4 w-4 mr-2" />
             Update Procurement Status
           </Button>

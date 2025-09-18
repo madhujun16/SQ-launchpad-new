@@ -257,7 +257,7 @@ const Assets = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'hardware': return 'bg-blue-100 text-blue-800';
+      case 'hardware': return 'bg-green-100 text-green-800';
       case 'software': return 'bg-purple-100 text-purple-800';
       case 'license': return 'bg-indigo-100 text-indigo-800';
       case 'certificate': return 'bg-teal-100 text-teal-800';
@@ -357,8 +357,8 @@ const Assets = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Value</p>

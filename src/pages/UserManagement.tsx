@@ -458,7 +458,7 @@ export default function UserManagement() {
           <Card className="card-surface">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-blue-600" />
+                <Users className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold">{userStats.total_users}</p>
                   <p className="text-sm text-gray-600">Total Users</p>
@@ -480,7 +480,7 @@ export default function UserManagement() {
           <Card className="card-surface">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-blue-600" />
+                <Users className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold">{userStats.ops_manager_count}</p>
                   <p className="text-sm text-gray-600">Ops Managers</p>
@@ -588,7 +588,7 @@ export default function UserManagement() {
                                 const roleConfig = getRoleConfig(role.role);
                                 const badgeColors = {
                                   admin: 'bg-red-100 text-red-800 border-red-200',
-                                  ops_manager: 'bg-blue-100 text-blue-800 border-blue-200',
+                                  ops_manager: 'bg-green-100 text-green-800 border-green-200',
                                   deployment_engineer: 'bg-green-100 text-green-800 border-green-200'
                                 };
                                 return (

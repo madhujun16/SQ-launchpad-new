@@ -210,7 +210,7 @@ export const getStatusColor = (status: string) => {
     case 'approved':
     case 'scoping_done':
     case 'hardware_scoped':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-green-100 text-green-800';
     
     // Default gray for unknown statuses
     case 'archived':

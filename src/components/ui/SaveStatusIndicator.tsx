@@ -26,10 +26,10 @@ export const SaveStatusIndicator: React.FC<SaveStatusIndicatorProps> = ({
       case 'saving':
         return {
           icon: <Loader2 className="h-4 w-4 animate-spin" />,
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-50',
+          color: 'text-green-600',
+          bgColor: 'bg-green-50',
           text: 'Saving...',
-          textColor: 'text-blue-700'
+          textColor: 'text-green-700'
         };
       case 'unsaved':
         return {
@@ -130,7 +130,7 @@ export const AutoSaveSummary: React.FC<AutoSaveSummaryProps> = ({
     <div className={`flex items-center gap-4 text-sm text-gray-600 ${className}`}>
       {isSaving && (
         <div className="flex items-center gap-1">
-          <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
+          <Loader2 className="h-3 w-3 animate-spin text-green-600" />
           <span>Saving...</span>
         </div>
       )}

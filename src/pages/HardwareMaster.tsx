@@ -230,7 +230,7 @@ const HardwareMaster = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'deployed': return 'bg-green-100 text-green-800';
-      case 'available': return 'bg-blue-100 text-blue-800';
+      case 'available': return 'bg-green-100 text-green-800';
       case 'maintenance': return 'bg-yellow-100 text-yellow-800';
       case 'retired': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -250,7 +250,7 @@ const HardwareMaster = () => {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'Kitchen Display System (KDS)': return 'bg-blue-100 text-blue-800';
+      case 'Kitchen Display System (KDS)': return 'bg-green-100 text-green-800';
       case 'Support & Sundries': return 'bg-orange-100 text-orange-800';
       case 'Kiosk': return 'bg-purple-100 text-purple-800';
       case 'POS Terminal': return 'bg-indigo-100 text-indigo-800';
@@ -320,9 +320,9 @@ const HardwareMaster = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Hardware</p>
-                  <p className="text-2xl font-bold text-blue-600">{totalHardware}</p>
+                  <p className="text-2xl font-bold text-green-600">{totalHardware}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-600" />
+                <Package className="h-8 w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
@@ -532,7 +532,7 @@ const HardwareMaster = () => {
                 <Card key={site.siteId} className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Building className="h-5 w-5 text-blue-600" />
+                      <Building className="h-5 w-5 text-green-600" />
                       {site.siteName}
                     </CardTitle>
                     <CardDescription>{site.organization}</CardDescription>
@@ -541,7 +541,7 @@ const HardwareMaster = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-600">Total Hardware</p>
-                        <p className="text-2xl font-bold text-blue-600">{site.totalHardware}</p>
+                        <p className="text-2xl font-bold text-green-600">{site.totalHardware}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Deployed Date</p>
@@ -579,7 +579,7 @@ const HardwareMaster = () => {
               <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <BarChart3 className="h-5 w-5 text-green-600" />
                     Deployment Report
                   </CardTitle>
                   <CardDescription>Hardware deployment by site</CardDescription>

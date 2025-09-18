@@ -306,7 +306,7 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
           <Card className="shadow-sm border border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Monitor className="mr-2 h-5 w-5 text-blue-600" />
+                <Monitor className="mr-2 h-5 w-5 text-green-600" />
                 Software Selection
               </CardTitle>
               <CardDescription className="text-gray-600">

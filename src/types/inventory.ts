@@ -329,7 +329,7 @@ export const GROUP_TYPES: { value: GroupType; label: string }[] = [
 
 export const INVENTORY_STATUSES: { value: InventoryStatus; label: string; color: string }[] = [
   { value: 'available', label: 'Available', color: 'bg-green-100 text-green-800' },
-  { value: 'deployed', label: 'Deployed', color: 'bg-blue-100 text-blue-800' },
+  { value: 'deployed', label: 'Deployed', color: 'bg-green-100 text-green-800' },
   { value: 'maintenance', label: 'Maintenance', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'retired', label: 'Retired', color: 'bg-gray-100 text-gray-800' },
 ];

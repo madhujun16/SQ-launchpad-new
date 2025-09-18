@@ -57,7 +57,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       <Card className="shadow-sm border border-gray-200">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <FileText className="mr-2 h-5 w-5 text-blue-600" />
+            <FileText className="mr-2 h-5 w-5 text-green-600" />
             General Information
           </CardTitle>
           <CardDescription className="text-gray-600">

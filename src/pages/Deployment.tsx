@@ -329,7 +329,7 @@ const Deployment = () => {
       
       // Blue: Procurement Done, Deployed, Approved
       case 'deployed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       
       default:
         return 'bg-gray-100 text-gray-800';
@@ -349,7 +349,7 @@ const Deployment = () => {
   const getStepStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'in_progress': return 'bg-green-100 text-green-800';
       case 'blocked': return 'bg-red-100 text-red-800';
       case 'pending': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -581,7 +581,7 @@ const Deployment = () => {
                     <div key={step.id} className="flex flex-col items-center space-y-1">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         step.status === 'completed' ? 'bg-green-100 text-green-600' :
-                        step.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
+                        step.status === 'in_progress' ? 'bg-green-100 text-green-600' :
                         'bg-gray-100 text-gray-400'
                       }`}>
                         {step.status === 'completed' ? (
@@ -716,8 +716,8 @@ const Deployment = () => {
                   <div className="space-y-4">
                     {selectedDeployment.notes.map((note) => (
                       <div key={note.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-blue-600" />
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-green-600" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">

@@ -488,7 +488,7 @@ const SiteCreation = () => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-blue-600" />
+                  <Building className="h-5 w-5 text-green-600" />
                   <CardTitle className="text-lg">General Information</CardTitle>
                 </div>
                 {expandedSections.general ? (

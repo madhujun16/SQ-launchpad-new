@@ -125,7 +125,7 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/hardware-approvals',
       '/hardware-master'
     ],
-    color: 'text-blue-600'
+    color: 'text-green-600'
   },
   deployment_engineer: {
     key: 'deployment_engineer',

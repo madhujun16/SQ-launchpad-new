@@ -230,7 +230,7 @@ const GeneralSettings: React.FC = () => {
         <Card className="shadow-sm border border-gray-200">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5 text-blue-600" />
+              <Calendar className="mr-2 h-5 w-5 text-green-600" />
               Date Format
             </CardTitle>
             <CardDescription className="text-gray-600">
@@ -248,12 +248,12 @@ const GeneralSettings: React.FC = () => {
                 helpText="This format will be used across all date displays in the application"
               />
               
-              <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="bg-green-50 p-4 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <Info className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">Preview</span>
+                  <Info className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-900">Preview</span>
                 </div>
-                <p className="text-sm text-blue-800">
+                <p className="text-sm text-green-800">
                   Example: {new Date().toLocaleDateString('en-GB', {
                     day: '2-digit',
                     month: 'short',

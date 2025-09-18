@@ -353,7 +353,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
             <Card className="bg-gray-50">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Calculator className="h-5 w-5 text-blue-600" />
+                  <Calculator className="h-5 w-5 text-green-600" />
                   <span>Cost Summary</span>
                 </CardTitle>
               </CardHeader>
@@ -366,7 +366,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
                     <div className="text-xs text-gray-600">Hardware</div>
                   </div>
                   <div className="text-center p-3 bg-white rounded-lg">
-                    <div className="text-lg font-bold text-blue-600">
+                    <div className="text-lg font-bold text-green-600">
                       {formatCurrency(totals.software)}
                     </div>
                     <div className="text-xs text-gray-600">Software</div>
@@ -436,7 +436,7 @@ export const CostingSubmissionForm: React.FC<CostingSubmissionFormProps> = ({
                   <div className="text-xs text-gray-600">Hardware</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-blue-600">
+                  <div className="text-lg font-bold text-green-600">
                     {formatCurrency(totals.software)}
                   </div>
                   <div className="text-xs text-gray-600">Software</div>

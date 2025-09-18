@@ -50,7 +50,7 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({
       case 'medium':
         return 'border-yellow-200 bg-yellow-50 text-yellow-800';
       case 'low':
-        return 'border-blue-200 bg-blue-50 text-blue-800';
+        return 'border-green-200 bg-green-50 text-green-800';
       default:
         return 'border-gray-200 bg-gray-50 text-gray-800';
     }

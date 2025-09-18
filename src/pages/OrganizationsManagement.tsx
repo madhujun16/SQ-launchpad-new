@@ -917,10 +917,10 @@ export default function OrganizationsManagement() {
                                  variant="ghost"
                               size="sm" 
                                  onClick={() => unarchiveOrganization(org)}
-                                 className="h-8 w-8 p-0 hover:bg-blue-50"
+                                 className="h-8 w-8 p-0 hover:bg-green-50"
                                  title="Unarchive Organization"
                             >
-                                 <Trash2 className="h-4 w-4 text-blue-600" />
+                                 <Trash2 className="h-4 w-4 text-green-600" />
                             </Button>
                              ) : (
                                <Button
@@ -1164,9 +1164,9 @@ export default function OrganizationsManagement() {
                  </div>
                )}
                
-               <div className="bg-blue-50 p-3 rounded-lg">
-                 <h4 className="text-sm font-medium text-blue-900 mb-2">CSV Format Example:</h4>
-                 <pre className="text-xs text-blue-800 bg-blue-100 p-2 rounded">
+               <div className="bg-green-50 p-3 rounded-lg">
+                 <h4 className="text-sm font-medium text-green-900 mb-2">CSV Format Example:</h4>
+                 <pre className="text-xs text-green-800 bg-green-100 p-2 rounded">
 {`name,description,sector,unit_code
 "Acme Corp","Technology company","Business & Industry","ACM"
 "Health Plus","Healthcare provider","Healthcare & Senior Living","HLP"`}

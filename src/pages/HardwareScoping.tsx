@@ -493,7 +493,7 @@ const HardwareScoping = () => {
         return 'bg-yellow-100 text-yellow-800';
       case 'in-progress':
       case 'dispatched':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
       default:
@@ -543,7 +543,7 @@ const HardwareScoping = () => {
         <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Building className="h-5 w-5 text-blue-600" />
+              <Building className="h-5 w-5 text-green-600" />
               Select Site & Organization
             </CardTitle>
             <CardDescription className="text-gray-600">Choose the site and organization for hardware scoping</CardDescription>
@@ -610,9 +610,9 @@ const HardwareScoping = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm shadow-lg border-0">
-            <TabsTrigger value="scope" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Hardware Scope</TabsTrigger>
-            <TabsTrigger value="approval" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Approval Workflow</TabsTrigger>
-            <TabsTrigger value="tracking" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Delivery Tracking</TabsTrigger>
+            <TabsTrigger value="scope" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">Hardware Scope</TabsTrigger>
+            <TabsTrigger value="approval" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">Approval Workflow</TabsTrigger>
+            <TabsTrigger value="tracking" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">Delivery Tracking</TabsTrigger>
           </TabsList>
 
           <TabsContent value="scope" className="space-y-6">
@@ -621,7 +621,7 @@ const HardwareScoping = () => {
               <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Building className="h-5 w-5 text-blue-600" />
+                    <Building className="h-5 w-5 text-green-600" />
                     {isAllSites ? "Overview Summary" : "Site Summary"}
                   </CardTitle>
                   <CardDescription className="text-gray-600">
@@ -701,7 +701,7 @@ const HardwareScoping = () => {
                             <TableCell className="font-medium text-gray-900">{item.type}</TableCell>
                             <TableCell className="text-gray-700">{item.quantity}</TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                                 {item.source === 'site-study' ? 'Site Study' : 'Manual'}
                               </Badge>
                             </TableCell>
@@ -777,7 +777,7 @@ const HardwareScoping = () => {
                           <Button variant="outline" onClick={() => setIsAddHardwareOpen(false)} className="border-gray-300 text-gray-700 hover:bg-gray-50">
                             Cancel
                           </Button>
-                          <Button onClick={() => setIsAddHardwareOpen(false)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                          <Button onClick={() => setIsAddHardwareOpen(false)} variant="gradient">
                             Add Hardware
                           </Button>
                         </DialogFooter>
@@ -920,8 +920,8 @@ const HardwareScoping = () => {
                               <p className="text-2xl font-bold text-orange-600">£{costSummary.hardwareCosts.reduce((sum, item) => sum + item.totalCost, 0).toFixed(2)}</p>
                             </div>
                             <div className="p-4 border-0 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 shadow-md">
-                              <p className="text-sm text-blue-700 font-medium">CAPEX (Hardware)</p>
-                              <p className="text-2xl font-bold text-blue-600">£{costSummary.capex.toFixed(2)}</p>
+                              <p className="text-sm text-green-700 font-medium">CAPEX (Hardware)</p>
+                              <p className="text-2xl font-bold text-green-600">£{costSummary.capex.toFixed(2)}</p>
                             </div>
                             <div className="p-4 border-0 rounded-xl bg-gradient-to-br from-green-50 to-green-100 shadow-md">
                               <p className="text-sm text-green-700 font-medium">OPEX (Services)</p>
@@ -1127,8 +1127,8 @@ const HardwareScoping = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-blue-600" />
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
                         <p className="font-medium">Admin / Engineer</p>
@@ -1314,15 +1314,15 @@ const HardwareScoping = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Monitor className="h-4 w-4 text-blue-600" />
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <Monitor className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
                         <p className="font-medium">Device Installation</p>
                         <p className="text-sm text-muted-foreground">POS Terminals installed</p>
                       </div>
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800">
+                    <Badge className="bg-green-100 text-green-800">
                       <Package className="h-4 w-4 mr-1" />
                       In Progress
                     </Badge>

@@ -46,7 +46,7 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
     },
     procurement_done: {
       label: "Procurement Done",
-      className: "bg-blue-100 text-blue-800 border-blue-200"
+      className: "bg-green-100 text-green-800 border-blue-200"
     },
     deployed: {
       label: "Deployed",
@@ -75,7 +75,7 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
     },
     procurement: {
       label: "Procurement Done",
-      className: "bg-blue-100 text-blue-800 border-blue-200"
+      className: "bg-green-100 text-green-800 border-blue-200"
     },
     deployment: {
       label: "Deployed",

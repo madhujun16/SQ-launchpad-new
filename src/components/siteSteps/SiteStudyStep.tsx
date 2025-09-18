@@ -370,7 +370,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           <CardHeader>
             <SectionHeader
               title="Site Configuration"
-              icon={<Building className="mr-2 h-5 w-5 text-blue-600" />}
+              icon={<Building className="mr-2 h-5 w-5 text-green-600" />}
               status={sectionStatus['basic-info'] || 'saved'}
             />
             <CardDescription className="text-gray-600">
@@ -782,7 +782,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           <CardHeader>
             <SectionHeader
               title="Software"
-              icon={<Monitor className="mr-2 h-6 w-6 text-blue-600" />}
+              icon={<Monitor className="mr-2 h-6 w-6 text-green-600" />}
               status={sectionStatus['software'] || 'saved'}
             />
             <CardDescription className="text-gray-600">
