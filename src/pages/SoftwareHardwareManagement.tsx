@@ -31,26 +31,24 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'sonner';
+import { CategoryService } from '@/services/categoryService';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLoader } from '@/components/ui/loader';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
 
-// Service types for hardware
-const SERVICE_TYPES = [
-  { value: 'On-site Support', label: 'On-site Support' },
-  { value: 'Remote Support', label: 'Remote Support' },
-  { value: 'Delivery', label: 'Delivery' }
-] as const;
-
-// Mounting types for hardware
-const MOUNTING_TYPES = [
-  { value: 'Wall Mounted', label: 'Wall Mounted' },
-  { value: 'Floor Mounted', label: 'Floor Mounted' },
-  { value: 'Desk Mounted', label: 'Desk Mounted' },
-  { value: 'Free Standing', label: 'Free Standing' },
-  { value: 'Fixed', label: 'Fixed' },
+// Hardware types for the type dropdown
+const HARDWARE_TYPES = [
+  { value: 'Display Screen', label: 'Display Screen' },
+  { value: 'Touch Screen', label: 'Touch Screen' },
+  { value: 'Support', label: 'Support' },
+  { value: 'POS Terminal', label: 'POS Terminal' },
+  { value: 'Scanner', label: 'Scanner' },
+  { value: 'Printer', label: 'Printer' },
+  { value: 'Tablet', label: 'Tablet' },
+  { value: 'Accessories', label: 'Accessories' },
+  { value: 'Connectivity', label: 'Connectivity' },
   { value: 'Other', label: 'Other' }
 ] as const;
 
@@ -73,6 +71,7 @@ interface HardwareItem {
   category: string;
   manufacturer: string | null;
   unit_cost: number | null;
+  type: string | null;
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;
@@ -98,6 +97,7 @@ export default function SoftwareHardwareManagement() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<{ name: string; id?: string } | null>(null);
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -120,6 +120,7 @@ export default function SoftwareHardwareManagement() {
   useEffect(() => {
     if (!currentRole) return;
     loadData();
+    loadCategories();
   }, [currentRole]);
 
   const loadData = async () => {
@@ -166,37 +167,63 @@ export default function SoftwareHardwareManagement() {
   const handleSaveSoftwareModule = async () => {
     if (!editingSoftwareModule) return;
 
+    // Validation
+    if (!editingSoftwareModule.name?.trim()) {
+      toast.error('Please enter a software module name');
+      return;
+    }
+    if (!editingSoftwareModule.category?.trim()) {
+      toast.error('Please select a category');
+      return;
+    }
+
     try {
       setSaving(true);
       
+      console.log('Saving software module:', editingSoftwareModule);
+      
       if (editingSoftwareModule.id) {
         // Update existing
+        const updateData = {
+          name: editingSoftwareModule.name,
+          description: editingSoftwareModule.description,
+          category: editingSoftwareModule.category,
+          license_fee: editingSoftwareModule.license_fee,
+          is_active: editingSoftwareModule.is_active
+        };
+        
+        console.log('Updating software module with data:', updateData);
+        
         const { error } = await supabase
           .from('software_modules')
-          .update({
-            name: editingSoftwareModule.name,
-            description: editingSoftwareModule.description,
-            category: editingSoftwareModule.category,
-            license_fee: editingSoftwareModule.license_fee,
-            is_active: editingSoftwareModule.is_active
-          } as any)
-          .eq('id', editingSoftwareModule.id as any);
+          .update(updateData)
+          .eq('id', editingSoftwareModule.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         toast.success('Software module updated successfully');
       } else {
         // Create new
+        const insertData = {
+          name: editingSoftwareModule.name,
+          description: editingSoftwareModule.description,
+          category: editingSoftwareModule.category,
+          license_fee: editingSoftwareModule.license_fee,
+          is_active: editingSoftwareModule.is_active
+        };
+        
+        console.log('Creating software module with data:', insertData);
+        
         const { error } = await supabase
           .from('software_modules')
-          .insert({
-            name: editingSoftwareModule.name,
-            description: editingSoftwareModule.description,
-            category: editingSoftwareModule.category,
-            license_fee: editingSoftwareModule.license_fee,
-            is_active: editingSoftwareModule.is_active
-          } as any);
+          .insert(insertData);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         toast.success('Software module created successfully');
       }
 
@@ -213,39 +240,71 @@ export default function SoftwareHardwareManagement() {
   const handleSaveHardwareItem = async () => {
     if (!editingHardwareItem) return;
 
+    // Validation
+    if (!editingHardwareItem.name?.trim()) {
+      toast.error('Please enter a hardware item name');
+      return;
+    }
+    if (!editingHardwareItem.category?.trim()) {
+      toast.error('Please select a category');
+      return;
+    }
+    if (!editingHardwareItem.unit_cost || editingHardwareItem.unit_cost <= 0) {
+      toast.error('Please enter a valid unit cost');
+      return;
+    }
+
     try {
       setSaving(true);
       
+      console.log('Saving hardware item:', editingHardwareItem);
+      
       if (editingHardwareItem.id) {
         // Update existing
+        const updateData = {
+          name: editingHardwareItem.name,
+          description: editingHardwareItem.description,
+          category: editingHardwareItem.category,
+          manufacturer: editingHardwareItem.manufacturer,
+          unit_cost: editingHardwareItem.unit_cost,
+          type: editingHardwareItem.type,
+          is_active: editingHardwareItem.is_active
+        };
+        
+        console.log('Updating hardware item with data:', updateData);
+        
         const { error } = await supabase
           .from('hardware_items')
-          .update({
-            name: editingHardwareItem.name,
-            description: editingHardwareItem.description,
-            category: editingHardwareItem.category,
-            manufacturer: editingHardwareItem.manufacturer,
-            unit_cost: editingHardwareItem.unit_cost,
-            is_active: editingHardwareItem.is_active
-          } as any)
-          .eq('id', editingHardwareItem.id as any);
+          .update(updateData)
+          .eq('id', editingHardwareItem.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         toast.success('Hardware item updated successfully');
       } else {
         // Create new
+        const insertData = {
+          name: editingHardwareItem.name,
+          description: editingHardwareItem.description,
+          category: editingHardwareItem.category,
+          manufacturer: editingHardwareItem.manufacturer,
+          unit_cost: editingHardwareItem.unit_cost,
+          type: editingHardwareItem.type,
+          is_active: editingHardwareItem.is_active
+        };
+        
+        console.log('Creating hardware item with data:', insertData);
+        
         const { error } = await supabase
           .from('hardware_items')
-          .insert({
-            name: editingHardwareItem.name,
-            description: editingHardwareItem.description,
-            category: editingHardwareItem.category,
-            manufacturer: editingHardwareItem.manufacturer,
-            unit_cost: editingHardwareItem.unit_cost,
-            is_active: editingHardwareItem.is_active
-          } as any);
+          .insert(insertData);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
         toast.success('Hardware item created successfully');
       }
 
@@ -374,8 +433,32 @@ export default function SoftwareHardwareManagement() {
     setShowCategoryModal(true);
   };
 
+  // Load categories from backend
+  const loadCategories = async () => {
+    try {
+      console.log('Loading categories...');
+      const categoriesData = await CategoryService.getCategories();
+      console.log('Loaded categories:', categoriesData);
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      // Fallback to local categories if backend fails
+      const localCategories = Array.from(new Set([
+        ...softwareModules.map(sm => sm.category).filter(Boolean),
+        ...hardwareItems.map(hi => hi.category).filter(Boolean)
+      ]));
+      
+      console.log('Using fallback categories:', localCategories);
+      setCategories(localCategories.map(name => ({ id: name, name, is_active: true })));
+    }
+  };
+
   const handleEditCategory = (categoryName: string) => {
-    setEditingCategory({ name: categoryName });
+    const category = categories.find(c => c.name === categoryName);
+    setEditingCategory({ 
+      name: categoryName, 
+      id: category?.id 
+    });
     setShowCategoryModal(true);
   };
 
@@ -388,57 +471,56 @@ export default function SoftwareHardwareManagement() {
     try {
       setSaving(true);
       
-      // Check if category already exists
-      const existingCategories = Array.from(new Set([
-        ...softwareModules.map(sm => sm.category).filter(Boolean),
-        ...hardwareItems.map(hi => hi.category).filter(Boolean)
-      ]));
+      console.log('Saving category:', editingCategory);
       
-      if (existingCategories.includes(editingCategory.name.trim()) && !editingCategory.id) {
+      // Check if category already exists
+      const exists = await CategoryService.categoryExists(editingCategory.name.trim(), editingCategory.id);
+      if (exists) {
         toast.error('Category already exists');
         return;
       }
 
-      // For now, we'll just show success since categories are stored as text in items
-      // In a real implementation, you might want to create a separate categories table
-      toast.success('Category saved successfully');
-      setShowCategoryModal(false);
+      if (editingCategory.id) {
+        // Update existing category
+        console.log('Updating category with ID:', editingCategory.id);
+        await CategoryService.updateCategory(editingCategory.id, editingCategory.name.trim());
+        toast.success('Category updated successfully');
+      } else {
+        // Create new category
+        console.log('Creating new category:', editingCategory.name.trim());
+        await CategoryService.createCategory(editingCategory.name.trim());
+        toast.success('Category created successfully');
+      }
+
+      // Refresh categories list
+      await loadCategories();
       setEditingCategory(null);
-      
-      // Refresh data to show updated categories
-      loadData();
     } catch (error) {
       console.error('Error saving category:', error);
-      toast.error('Failed to save category');
+      toast.error(`Failed to save category: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteCategory = async (categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete the category "${categoryName}"? This will affect all items using this category.`)) {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
       return;
     }
 
     try {
-      // Update all software modules with this category
-      const { error: softwareError } = await supabase
-        .from('software_modules')
-        .update({ category: 'Other' })
-        .eq('category', categoryName);
+      // Find category by name to get ID
+      const category = categories.find(c => c.name === categoryName);
+      if (!category) {
+        toast.error('Category not found');
+        return;
+      }
 
-      if (softwareError) throw softwareError;
-
-      // Update all hardware items with this category
-      const { error: hardwareError } = await supabase
-        .from('hardware_items')
-        .update({ category: 'Other' })
-        .eq('category', categoryName);
-
-      if (hardwareError) throw hardwareError;
-
-      toast.success('Category deleted and items updated successfully');
-      loadData();
+      await CategoryService.deleteCategory(category.id);
+      toast.success('Category deleted successfully');
+      
+      // Refresh categories list
+      await loadCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error('Failed to delete category');
@@ -446,8 +528,8 @@ export default function SoftwareHardwareManagement() {
   };
 
   // Filter categories based on search term
-  const filteredCategories = allCategories.filter(category =>
-    category.toLowerCase().includes(categorySearchTerm.toLowerCase())
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(categorySearchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -494,6 +576,7 @@ export default function SoftwareHardwareManagement() {
                   category: '',
                   manufacturer: '',
                   unit_cost: 0,
+                  type: 'Other',
                   is_active: true,
                   created_at: '',
                   updated_at: ''
@@ -530,7 +613,7 @@ export default function SoftwareHardwareManagement() {
                 <Package className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Hardware Items</p>
+                <p className="text-sm text-gray-600">Hardware & Support</p>
                 <p className="text-2xl font-bold text-gray-900">{hardwareItems.length}</p>
               </div>
             </div>
@@ -585,7 +668,7 @@ export default function SoftwareHardwareManagement() {
             className="flex-1"
           >
             <Package className="h-4 w-4 mr-2" />
-            Hardware Items ({hardwareItems.length})
+            Hardware & Support ({hardwareItems.length})
           </Button>
         </div>
       </div>
@@ -722,7 +805,7 @@ export default function SoftwareHardwareManagement() {
         <div className="space-y-6">
           {/* Filters removed; using global filter bar above */}
 
-          {/* Hardware Items Table */}
+          {/* Hardware & Support Table */}
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -730,6 +813,7 @@ export default function SoftwareHardwareManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Manufacturer</TableHead>
                       <TableHead>Unit Cost</TableHead>
@@ -740,7 +824,7 @@ export default function SoftwareHardwareManagement() {
                   <TableBody>
                     {currentHardwareItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12">
+                        <TableCell colSpan={7} className="text-center py-12">
                           <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                           <p className="text-sm text-gray-500">No hardware items found</p>
                           <p className="text-xs text-gray-400">Create your first hardware item to get started</p>
@@ -756,6 +840,11 @@ export default function SoftwareHardwareManagement() {
                                 <div className="text-sm text-gray-500">{item.description}</div>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {item.type || 'Other'}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -897,8 +986,8 @@ export default function SoftwareHardwareManagement() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allCategories.length > 0 ? allCategories.map(category => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    {categories.length > 0 ? categories.map(category => (
+                      <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
                     )) : (
                       <SelectItem value="no-categories" disabled>No categories available</SelectItem>
                     )}
@@ -996,11 +1085,30 @@ export default function SoftwareHardwareManagement() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allCategories.length > 0 ? allCategories.map(category => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    {categories.length > 0 ? categories.map(category => (
+                      <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
                     )) : (
                       <SelectItem value="no-categories" disabled>No categories available</SelectItem>
                     )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Select
+                  value={editingHardwareItem.type || 'Other'}
+                  onValueChange={(value) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    type: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HARDWARE_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1064,24 +1172,18 @@ export default function SoftwareHardwareManagement() {
 
       {/* Category Management Modal */}
       <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Tag className="h-5 w-5 mr-2 text-green-600" />
-              Manage Categories
-            </DialogTitle>
+            <DialogTitle>Manage Categories</DialogTitle>
             <DialogDescription>
-              Add, edit, or delete categories for software modules and hardware items.
+              Add, edit, or delete categories for software and hardware items.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Add/Edit Category Form */}
             {editingCategory && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">
-                  {editingCategory.id ? 'Edit Category' : 'Add New Category'}
-                </h3>
+              <div className="space-y-3">
                 <div className="flex gap-2">
                   <Input
                     value={editingCategory.name}
@@ -1092,13 +1194,14 @@ export default function SoftwareHardwareManagement() {
                   <Button
                     onClick={handleSaveCategory}
                     disabled={saving || !editingCategory.name.trim()}
-                    className="bg-green-600 hover:bg-green-700"
+                    size="sm"
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setEditingCategory(null)}
+                    size="sm"
                   >
                     Cancel
                   </Button>
@@ -1106,91 +1209,46 @@ export default function SoftwareHardwareManagement() {
               </div>
             )}
 
-            {/* Search Categories */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search categories..."
-                value={categorySearchTerm}
-                onChange={(e) => setCategorySearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
 
             {/* Categories List */}
-            <div className="max-h-96 overflow-y-auto">
-              <div className="space-y-2">
-                {filteredCategories.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Tag className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>No categories found</p>
-                    <p className="text-sm">Add a new category to get started</p>
-                  </div>
-                ) : (
-                  filteredCategories.map((category) => (
-                    <div
-                      key={category}
-                      className="flex items-center justify-between p-3 bg-white border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          {getCategoryIcon(category)}
-                        </div>
-                        <div>
-                          <div className="font-medium">{category}</div>
-                          <div className="text-sm text-gray-500">
-                            Used by {softwareModules.filter(sm => sm.category === category).length + hardwareItems.filter(hi => hi.category === category).length} items
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditCategory(category)}
-                          className="h-8 w-8 p-0 hover:bg-blue-50"
-                          title="Edit Category"
-                        >
-                          <Edit className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteCategory(category)}
-                          className="h-8 w-8 p-0 hover:bg-red-50"
-                          title="Delete Category"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
+            <div className="max-h-80 overflow-y-auto space-y-2">
+              {filteredCategories.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Tag className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No categories found</p>
+                </div>
+              ) : (
+                filteredCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="font-medium">{category.name}</div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCategory(category.name)}
+                        className="h-8 w-8 p-0"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category.name)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
 
-            {/* Required Categories Info */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">Required Categories</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm text-blue-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>POS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Kiosk</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Kitchen Display (KDS)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Inventory</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <DialogFooter>
@@ -1204,6 +1262,15 @@ export default function SoftwareHardwareManagement() {
             >
               Close
             </Button>
+            {!editingCategory && (
+              <Button
+                onClick={() => setEditingCategory({ name: '' })}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
