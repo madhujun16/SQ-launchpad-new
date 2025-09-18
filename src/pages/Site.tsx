@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/roles';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { getStatusColor, getStatusDisplayName, getStepperStepFromStatus, validateStatusProgression, type UnifiedSiteStatus } from '@/lib/siteTypes';
+import { SiteWorkflowService, type SiteWorkflowData } from '@/services/siteWorkflowService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -833,6 +834,7 @@ const SiteDetail = () => {
   const navigate = useNavigate();
   const { sites } = useSiteContext();
   const [site, setSite] = useState<Site | null>(null);
+  const [workflowData, setWorkflowData] = useState<SiteWorkflowData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedStep, setSelectedStep] = useState(0);
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
@@ -929,53 +931,199 @@ const SiteDetail = () => {
     }
   }, [site, organisations]);
 
-  // Load site data - GET ACTUAL SITE DATA FROM SITES LIST
+  // Load site data - GET REAL DATA FROM DATABASE
   useEffect(() => {
     if (id) {
-      console.log('Loading site data for ID:', id);
+      console.log('Loading site workflow data for ID:', id);
+      setLoading(true);
 
-      // First try to get site from context (Sites list)
-      const existingSite = sites.find(s => s.id === id);
-      
-      if (existingSite) {
-        console.log('Found site in context:', existingSite);
-        console.log('Site data fields:', {
-          name: existingSite.name,
-          organization: existingSite.organization,
-          organization_name: (existingSite as any).organization_name,
-          location: (existingSite as any).location,
-          postcode: (existingSite as any).postcode
-        });
-        // Use basic site details from context and create mock data for the rest
-        const mockSite: Site = createMockSiteWithStatus(id, existingSite.status as UnifiedSiteStatus, existingSite);
-        
-        // Override with actual site data from context (now properly transformed)
-        mockSite.name = existingSite.name || mockSite.name;
-        mockSite.organization = existingSite.organization || mockSite.organization;
-        mockSite.sector = existingSite.sector || mockSite.sector;
-        mockSite.unitCode = existingSite.unitCode || mockSite.unitCode;
-        mockSite.goLiveDate = existingSite.goLiveDate || mockSite.goLiveDate;
-        mockSite.priority = existingSite.priority || mockSite.priority;
-        mockSite.assignedOpsManager = existingSite.assignedOpsManager || mockSite.assignedOpsManager;
-        mockSite.assignedDeploymentEngineer = existingSite.assignedDeploymentEngineer || mockSite.assignedDeploymentEngineer;
-        mockSite.notes = existingSite.notes || mockSite.notes;
-        mockSite.description = existingSite.description || mockSite.description;
-        
-        setSite(mockSite);
-        setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
-              setLoading(false);
-        setIsMockSite(false);
-            } else {
-        // If not found in context, create mock data based on the ID
-        console.log('Site not found in context, creating mock data for ID:', id);
-        const mockSite: Site = createMockSiteWithStatus(id, 'Created');
+      const loadSiteData = async () => {
+        try {
+          // Get complete workflow data from database
+          const workflowData = await SiteWorkflowService.getSiteWorkflowData(id);
+          
+          if (workflowData) {
+            console.log('✅ Real workflow data loaded:', {
+              id: workflowData.id,
+              name: workflowData.name,
+              organization: workflowData.organization,
+              status: workflowData.status,
+              hasCreationData: !!workflowData.siteCreation,
+              hasStudyData: !!workflowData.siteStudy,
+              hasScopingData: !!workflowData.scoping,
+              hasApprovalData: !!workflowData.approval,
+              hasProcurementData: !!workflowData.procurement,
+              hasDeploymentData: !!workflowData.deployment,
+              hasGoLiveData: !!workflowData.goLive
+            });
+
+            // Convert workflow data to Site interface format
+            const siteData: Site = {
+              id: workflowData.id,
+              name: workflowData.name,
+              organization: workflowData.organization,
+              foodCourt: workflowData.name,
+              unitCode: workflowData.unit_code,
+              sector: workflowData.sector,
+              goLiveDate: workflowData.target_live_date,
+              priority: workflowData.criticality_level,
+              riskLevel: 'medium',
+              criticality: workflowData.criticality_level,
+              status: workflowData.status as UnifiedSiteStatus,
+              assignedOpsManager: workflowData.assigned_ops_manager,
+              assignedDeploymentEngineer: workflowData.assigned_deployment_engineer,
+              stakeholders: [],
+              notes: '',
+              description: '',
+              lastUpdated: workflowData.updated_at ? new Date(workflowData.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              
+              // Map workflow step data
+              siteCreation: workflowData.siteCreation ? {
+                contactInfo: {
+                  unitManagerName: workflowData.siteCreation.unit_manager_name,
+                  jobTitle: workflowData.siteCreation.job_title,
+                  unitManagerEmail: workflowData.siteCreation.unit_manager_email,
+                  unitManagerMobile: workflowData.siteCreation.unit_manager_mobile,
+                  additionalContactName: workflowData.siteCreation.additional_contact_name,
+                  additionalContactEmail: workflowData.siteCreation.additional_contact_email
+                },
+                locationInfo: {
+                  location: workflowData.siteCreation.location,
+                  postcode: workflowData.siteCreation.postcode,
+                  region: workflowData.siteCreation.region,
+                  country: workflowData.siteCreation.country,
+                  latitude: workflowData.siteCreation.latitude,
+                  longitude: workflowData.siteCreation.longitude
+                },
+                additionalNotes: workflowData.siteCreation.additional_notes
+              } : undefined,
+              
+              siteStudy: workflowData.siteStudy ? {
+                contactInfo: {
+                  primaryContact: {
+                    name: workflowData.siteStudy.primary_contact_name,
+                    jobTitle: workflowData.siteStudy.primary_contact_job_title,
+                    email: workflowData.siteStudy.primary_contact_email,
+                    mobile: workflowData.siteStudy.primary_contact_mobile
+                  },
+                  additionalContact: {
+                    name: workflowData.siteStudy.additional_contact_name,
+                    email: workflowData.siteStudy.additional_contact_email
+                  }
+                },
+                infrastructure: {
+                  siteAddress: workflowData.siteStudy.site_address,
+                  postcode: workflowData.siteStudy.postcode,
+                  region: workflowData.siteStudy.region,
+                  country: workflowData.siteStudy.country,
+                  numberOfCounters: workflowData.siteStudy.number_of_counters,
+                  floorPlanAvailable: workflowData.siteStudy.floor_plan_available,
+                  mealSessions: workflowData.siteStudy.meal_sessions,
+                  floor: workflowData.siteStudy.floor,
+                  liftAccess: workflowData.siteStudy.lift_access,
+                  securityRestrictions: workflowData.siteStudy.security_restrictions,
+                  deliveryWindow: workflowData.siteStudy.delivery_window
+                },
+                staffCapacity: {
+                  employeeStrength: workflowData.siteStudy.employee_strength,
+                  operatingHours: workflowData.siteStudy.operating_hours,
+                  expectedFootfall: workflowData.siteStudy.expected_footfall,
+                  peakHours: workflowData.siteStudy.peak_hours,
+                  seatingCapacity: workflowData.siteStudy.seating_capacity,
+                  kitchenStaff: workflowData.siteStudy.kitchen_staff,
+                  operatingDays: workflowData.siteStudy.operating_days,
+                  serviceStaff: workflowData.siteStudy.service_staff,
+                  management: workflowData.siteStudy.management
+                },
+                itInfrastructure: {
+                  lanPoints: workflowData.siteStudy.lan_points,
+                  upsPowerPos: workflowData.siteStudy.ups_power_pos,
+                  wifiAvailable: workflowData.siteStudy.wifi_available,
+                  upsPowerCeiling: workflowData.siteStudy.ups_power_ceiling,
+                  bandwidth: workflowData.siteStudy.bandwidth,
+                  staticIp: workflowData.siteStudy.static_ip
+                },
+                softwareScoping: {
+                  selectedSolutions: workflowData.siteStudy.selected_solutions
+                }
+              } : undefined,
+              
+              scoping: workflowData.scoping ? {
+                selectedSoftware: workflowData.scoping.selected_software,
+                selectedHardware: workflowData.scoping.selected_hardware,
+                status: workflowData.scoping.status,
+                submittedAt: workflowData.scoping.submitted_at,
+                approvedAt: workflowData.scoping.approved_at,
+                approvedBy: workflowData.scoping.approved_by,
+                costSummary: workflowData.scoping.cost_summary
+              } : undefined,
+              
+              approval: workflowData.approval ? {
+                status: workflowData.approval.status,
+                requestedAt: workflowData.approval.requested_at,
+                approvedAt: workflowData.approval.approved_at,
+                approvedBy: workflowData.approval.approved_by,
+                comments: workflowData.approval.comments,
+                approverDetails: workflowData.approval.approver_details
+              } : undefined,
+              
+              procurement: workflowData.procurement ? {
+                status: workflowData.procurement.status,
+                lastUpdated: workflowData.procurement.last_updated,
+                softwareModules: workflowData.procurement.software_modules,
+                hardwareItems: workflowData.procurement.hardware_items,
+                summary: workflowData.procurement.summary
+              } : undefined,
+              
+              deployment: workflowData.deployment ? {
+                status: workflowData.deployment.status,
+                startDate: workflowData.deployment.start_date,
+                endDate: workflowData.deployment.end_date,
+                assignedEngineer: workflowData.deployment.assigned_engineer,
+                notes: workflowData.deployment.notes,
+                progress: workflowData.deployment.progress,
+                timeline: workflowData.deployment.timeline
+              } : undefined,
+              
+              goLive: workflowData.goLive ? {
+                status: workflowData.goLive.status,
+                date: workflowData.goLive.date,
+                signedOffBy: workflowData.goLive.signed_off_by,
+                notes: workflowData.goLive.notes,
+                checklist: workflowData.goLive.checklist,
+                timeline: workflowData.goLive.timeline
+              } : undefined
+            };
+
+            setWorkflowData(workflowData);
+            setSite(siteData);
+            setSelectedStep(getStepperStepFromStatus(siteData.status));
+            setLoading(false);
+            setIsMockSite(false);
+            
+          } else {
+            console.log('❌ No workflow data found, falling back to mock data');
+            // Fallback to mock data if no real data found
+            const mockSite: Site = createMockSiteWithStatus(id, 'Created');
+            setSite(mockSite);
+            setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
+            setLoading(false);
+            setIsMockSite(true);
+          }
+        } catch (error) {
+          console.error('❌ Error loading site data:', error);
+          // Fallback to mock data on error
+          const mockSite: Site = createMockSiteWithStatus(id, 'Created');
           setSite(mockSite);
           setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
           setLoading(false);
-        setIsMockSite(true);
-      }
+          setIsMockSite(true);
+        }
+      };
+
+      loadSiteData();
     }
-  }, [id, sites]);
+  }, [id]);
 
   // Update document title when site is loaded
   useEffect(() => {

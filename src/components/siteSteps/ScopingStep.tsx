@@ -292,7 +292,7 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
           </Button>
           <Button size="sm">
             <CheckCircle className="h-4 w-4 mr-1" />
-            Mark as Completed
+            Mark Complete
           </Button>
         </div>
       </div>
