@@ -50,7 +50,20 @@ interface SiteStudyStepProps {
 
 const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(site?.siteStudy || {});
+  const [formData, setFormData] = useState(site?.siteStudy || {
+    siteDetails: { clientName: '', siteAddress: '', siteContact: [] },
+    schedule: { targetGoLiveDate: '', operatingHours: [] },
+    environment: { spaceType: 'Front-of-house', isListedBuilding: false, permitRequired: false },
+    powerInfrastructure: { availablePower: [], distanceFromPower: 0 },
+    dataInfrastructure: { networkConnectivity: 'Ethernet', ethernetPorts: 0, wifiSSIDs: '', vlanIPPlan: '', proxyWebFiltering: false, firewallEgress: false, mobileSignal: 'Good' },
+    mounting: { mountType: 'Wall', surfaceMaterial: 'Drywall', drillingRestrictions: false },
+    layout: { clearanceAvailable: '', distanceToTill: 0, accessibilityCompliance: false },
+    devices: { kiosk: { numberOfKiosks: 0, screenSize: '15"', cardPaymentDevice: 'Not required', receiptPrinter: false, grabGoShelf: false }, pos: { numberOfTerminals: 0, cashDrawer: false }, kitchen: { numberOfKDSScreens: 0, kitchenPrinter: false }, other: { scanners: false, nfc: false, customerDisplay: false } },
+    softwareModules: { modulesRequired: [], userRoles: [] },
+    compliance: { pciResponsibilities: '', brandAssetsAvailable: false },
+    payments: { gateway: { paymentProvider: '', p2peRequired: 'Not required', settlementCurrency: '' }, ped: { commsMethod: 'Ethernet', mountingType: 'None' } },
+    securityHSE: { device: { mdmRequired: 'No', assetTagging: false }, hse: { ramsApproval: false, workingConstraints: '' } }
+  });
   const [categories, setCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState<string>('basic-info');
 
