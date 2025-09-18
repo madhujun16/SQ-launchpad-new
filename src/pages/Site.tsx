@@ -470,47 +470,47 @@ interface EnhancedStepperStep {
 }
 
 // Helper function to create comprehensive mock site data based on status
-const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site => {
+const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus, siteData?: any): Site => {
   const baseSite: Site = {
     id: id,
-    name: `ASDA Redditch`,
-    organization: 'ASDA',
-    foodCourt: 'ASDA Redditch',
-    unitCode: 'AR004',
-    sector: 'Eurest',
-    goLiveDate: '2025-11-15',
-    priority: 'high',
+    name: siteData?.name || `Site ${id.slice(0, 8)}`,
+    organization: siteData?.organization_name || 'Unknown Organization',
+    foodCourt: siteData?.name || `Site ${id.slice(0, 8)}`,
+    unitCode: siteData?.unit_code || `UNIT-${id.slice(0, 8)}`,
+    sector: siteData?.sector || 'Retail',
+    goLiveDate: siteData?.target_live_date || '2025-12-31',
+    priority: siteData?.criticality_level || 'medium',
     riskLevel: 'medium',
-    criticality: 'high',
+    criticality: siteData?.criticality_level || 'medium',
     status: status,
-    assignedOpsManager: 'Jessica Cleaver',
-    assignedDeploymentEngineer: 'John Smith',
+    assignedOpsManager: siteData?.assigned_ops_manager || 'TBD',
+    assignedDeploymentEngineer: siteData?.assigned_deployment_engineer || 'TBD',
     stakeholders: [
-      { id: '1', name: 'Sarah Johnson', role: 'Unit Manager', email: 'sarah.johnson@company.com', phone: '+44 20 7123 4567', organization: 'Company Ltd' },
-      { id: '2', name: 'Mike Wilson', role: 'IT Manager', email: 'mike.wilson@company.com', phone: '+44 20 7123 4568', organization: 'Company Ltd' }
+      { id: '1', name: siteData?.unit_manager_name || 'Site Manager', role: 'Unit Manager', email: siteData?.unit_manager_email || 'manager@site.com', phone: siteData?.unit_manager_mobile || '+44 20 7123 4567', organization: siteData?.organization_name || 'Organization' },
+      { id: '2', name: siteData?.additional_contact_name || 'IT Contact', role: 'IT Manager', email: siteData?.additional_contact_email || 'it@site.com', phone: '+44 20 7123 4568', organization: siteData?.organization_name || 'Organization' }
     ],
-    notes: 'Full POS and Kiosk implementation for ASDA Redditch location',
-    lastUpdated: '2024-12-30',
-    description: 'Full POS and Kiosk implementation for ASDA Redditch location',
+    notes: `Implementation for ${siteData?.name || 'site'} location`,
+    lastUpdated: siteData?.updated_at ? new Date(siteData.updated_at).toISOString().split('T')[0] : '2024-12-30',
+    description: `Full POS and Kiosk implementation for ${siteData?.name || 'site'} location`,
   };
 
   // Site Creation data (always available)
   baseSite.siteCreation = {
     contactInfo: {
-      unitManagerName: 'Sarah Johnson',
-      jobTitle: 'Operations Manager',
-      unitManagerEmail: 'sarah.johnson@company.com',
-      unitManagerMobile: '+44 7700 900123',
-      additionalContactName: 'Mike Wilson',
-      additionalContactEmail: 'mike.wilson@company.com'
+      unitManagerName: siteData?.unit_manager_name || 'Site Manager',
+      jobTitle: siteData?.job_title || 'Operations Manager',
+      unitManagerEmail: siteData?.unit_manager_email || 'manager@site.com',
+      unitManagerMobile: siteData?.unit_manager_mobile || '+44 7700 900123',
+      additionalContactName: siteData?.additional_contact_name || 'IT Contact',
+      additionalContactEmail: siteData?.additional_contact_email || 'it@site.com'
     },
     locationInfo: {
-      location: 'ASDA Redditch, Redditch, Worcestershire',
-      postcode: 'B98 8AA',
-      region: 'West Midlands',
-      country: 'United Kingdom',
-      latitude: 52.3067,
-      longitude: -1.9456
+      location: `${siteData?.name || 'Site'}, ${siteData?.location || 'Location'}`,
+      postcode: siteData?.postcode || 'POSTCODE',
+      region: siteData?.region || 'Region',
+      country: siteData?.country || 'United Kingdom',
+      latitude: siteData?.latitude || 52.3067,
+      longitude: siteData?.longitude || -1.9456
     },
     additionalNotes: 'Kitchen area needs additional power outlets for POS terminals. Storage area available for hardware installation.'
   };
@@ -520,21 +520,21 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus): Site =
     baseSite.siteStudy = {
       contactInfo: {
         primaryContact: {
-          name: 'Sarah Johnson',
-          jobTitle: 'Operations Manager',
-          email: 'sarah.johnson@company.com',
-          mobile: '+44 7700 900123'
+          name: siteData?.unit_manager_name || 'Site Manager',
+          jobTitle: siteData?.job_title || 'Operations Manager',
+          email: siteData?.unit_manager_email || 'manager@site.com',
+          mobile: siteData?.unit_manager_mobile || '+44 7700 900123'
         },
         additionalContact: {
-          name: 'John Smith',
-          email: 'john.smith@company.com'
+          name: siteData?.additional_contact_name || 'IT Contact',
+          email: siteData?.additional_contact_email || 'it@site.com'
         }
       },
       infrastructure: {
-        siteAddress: 'ASDA Redditch, Redditch, Worcestershire',
-        postcode: 'B98 8AA',
-        region: 'West Midlands',
-        country: 'United Kingdom',
+        siteAddress: `${siteData?.name || 'Site'}, ${siteData?.location || 'Location'}`,
+        postcode: siteData?.postcode || 'POSTCODE',
+        region: siteData?.region || 'Region',
+        country: siteData?.country || 'United Kingdom',
         numberOfCounters: 4,
         floorPlanAvailable: true,
         mealSessions: ['Breakfast', 'Lunch', 'Dinner'],
@@ -940,7 +940,7 @@ const SiteDetail = () => {
       if (existingSite) {
         console.log('Found site in context:', existingSite);
         // Use basic site details from context and create mock data for the rest
-        const mockSite: Site = createMockSiteWithStatus(id, existingSite.status as UnifiedSiteStatus);
+        const mockSite: Site = createMockSiteWithStatus(id, existingSite.status as UnifiedSiteStatus, existingSite);
         
         // Override with actual site data from context
         mockSite.name = existingSite.name;
