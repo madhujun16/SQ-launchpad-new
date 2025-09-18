@@ -109,7 +109,46 @@ const Sites = () => {
         const sitesData = await SitesService.getAllSites();
         
         if (isMounted) {
-          setSites(sitesData);
+          // Transform SitesService data to match SiteContext interface
+          const transformedSites = sitesData.map((site: any) => {
+            const transformed = {
+              ...site,
+              organization: site.organization_name || site.organization || 'Unknown Organization',
+              foodCourt: site.name || `Site ${site.id.slice(0, 8)}`,
+              unitCode: site.unit_code || `UNIT-${site.id.slice(0, 8)}`,
+              goLiveDate: site.target_live_date || '2025-12-31',
+              priority: site.criticality_level || 'medium',
+              riskLevel: 'medium',
+              criticality: site.criticality_level || 'medium',
+              assignedOpsManager: site.assigned_ops_manager || 'TBD',
+              assignedDeploymentEngineer: site.assigned_deployment_engineer || 'TBD',
+              stakeholders: site.stakeholders || [],
+              notes: site.notes || '',
+              description: site.description || '',
+              lastUpdated: site.updated_at ? new Date(site.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            };
+            
+            // Debug logging for the first site
+            if (site.id === sitesData[0]?.id) {
+              console.log('🔍 Sites data transformation:', {
+                original: {
+                  id: site.id,
+                  name: site.name,
+                  organization_name: site.organization_name,
+                  organization: site.organization
+                },
+                transformed: {
+                  id: transformed.id,
+                  name: transformed.name,
+                  organization: transformed.organization
+                }
+              });
+            }
+            
+            return transformed;
+          });
+          
+          setSites(transformedSites);
           setLoading(false);
           clearTimeout(timeoutId);
         }

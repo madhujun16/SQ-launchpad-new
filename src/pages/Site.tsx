@@ -949,17 +949,17 @@ const SiteDetail = () => {
         // Use basic site details from context and create mock data for the rest
         const mockSite: Site = createMockSiteWithStatus(id, existingSite.status as UnifiedSiteStatus, existingSite);
         
-        // Override with actual site data from context
-        mockSite.name = existingSite.name;
-        mockSite.organization = (existingSite as any).organization_name || existingSite.organization || mockSite.organization;
-        mockSite.sector = (existingSite as any).sector || existingSite.sector || mockSite.sector;
-        mockSite.unitCode = (existingSite as any).unit_code || existingSite.unitCode || mockSite.unitCode;
-        mockSite.goLiveDate = (existingSite as any).target_live_date || existingSite.goLiveDate || mockSite.goLiveDate;
-        mockSite.priority = (existingSite as any).criticality_level || existingSite.priority || mockSite.priority;
-        mockSite.assignedOpsManager = (existingSite as any).assigned_ops_manager || existingSite.assignedOpsManager || mockSite.assignedOpsManager;
-        mockSite.assignedDeploymentEngineer = (existingSite as any).assigned_deployment_engineer || existingSite.assignedDeploymentEngineer || mockSite.assignedDeploymentEngineer;
-        mockSite.notes = (existingSite as any).notes || existingSite.notes || mockSite.notes;
-        mockSite.description = (existingSite as any).description || existingSite.description || mockSite.description;
+        // Override with actual site data from context (now properly transformed)
+        mockSite.name = existingSite.name || mockSite.name;
+        mockSite.organization = existingSite.organization || mockSite.organization;
+        mockSite.sector = existingSite.sector || mockSite.sector;
+        mockSite.unitCode = existingSite.unitCode || mockSite.unitCode;
+        mockSite.goLiveDate = existingSite.goLiveDate || mockSite.goLiveDate;
+        mockSite.priority = existingSite.priority || mockSite.priority;
+        mockSite.assignedOpsManager = existingSite.assignedOpsManager || mockSite.assignedOpsManager;
+        mockSite.assignedDeploymentEngineer = existingSite.assignedDeploymentEngineer || mockSite.assignedDeploymentEngineer;
+        mockSite.notes = existingSite.notes || mockSite.notes;
+        mockSite.description = existingSite.description || mockSite.description;
         
         setSite(mockSite);
         setSelectedStep(getStepperStepFromStatus(mockSite.status as UnifiedSiteStatus));
