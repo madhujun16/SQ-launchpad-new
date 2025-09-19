@@ -1526,9 +1526,6 @@ const SiteDetail = () => {
                   {step.status === 'blocked' && (
                     <span className="block text-xs text-red-600 mt-1">⚠ Blocked</span>
                   )}
-                  {step.status === 'current' && (
-                    <span className="block text-xs text-slate-600 mt-1">● Active</span>
-                  )}
                 </div>
                 
                 {/* Progress Indicator Line */}
