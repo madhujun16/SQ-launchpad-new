@@ -41,13 +41,13 @@ import {
 } from 'recharts';
 
 // Chart data for visual representations
-const SITE_PROGRESS_DATA = [
-  { month: 'Jan', sites: 2, deployed: 1 },
-  { month: 'Feb', sites: 4, deployed: 2 },
-  { month: 'Mar', sites: 6, deployed: 4 },
-  { month: 'Apr', sites: 8, deployed: 6 },
-  { month: 'May', sites: 10, deployed: 8 },
-  { month: 'Jun', sites: 8, deployed: 12 }
+const SITE_WORKFLOW_STAGES_DATA = [
+  { stage: 'Site Study', sites: 5, avgDays: 12 },
+  { stage: 'Scoping', sites: 8, avgDays: 8 },
+  { stage: 'Approval', sites: 3, avgDays: 5 },
+  { stage: 'Procurement', sites: 6, avgDays: 15 },
+  { stage: 'Deployment', sites: 4, avgDays: 10 },
+  { stage: 'Go Live', sites: 2, avgDays: 3 }
 ];
 
 const STATUS_DISTRIBUTION_DATA = [
@@ -258,52 +258,34 @@ const Dashboard = () => {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Site Progress Trend */}
+          {/* Site Workflow Stages */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <span>Site Progress Trend</span>
+                <Activity className="h-5 w-5 text-primary" />
+                <span>Site Workflow Stages</span>
               </CardTitle>
               <CardDescription>
-                Monthly site deployment progress
+                Current distribution of sites across workflow stages
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={SITE_PROGRESS_DATA}>
-                  <defs>
-                    <linearGradient id="colorSites" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                    </linearGradient>
-                    <linearGradient id="colorDeployed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="month" />
+                <BarChart data={SITE_WORKFLOW_STAGES_DATA}>
+                  <XAxis dataKey="stage" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
+                  <Tooltip 
+                    formatter={(value, name) => [
+                      name === 'sites' ? `${value} sites` : `${value} days`,
+                      name === 'sites' ? 'Sites' : 'Avg Days'
+                    ]}
+                    labelFormatter={(label) => `Stage: ${label}`}
+                  />
                   <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="sites"
-                    stroke="#3B82F6"
-                    fillOpacity={1}
-                    fill="url(#colorSites)"
-                    name="Sites in Progress"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="deployed"
-                    stroke="#10B981"
-                    fillOpacity={1}
-                    fill="url(#colorDeployed)"
-                    name="Sites Deployed"
-                  />
-                </AreaChart>
+                  <Bar dataKey="sites" fill="#3B82F6" name="Sites" />
+                  <Bar dataKey="avgDays" fill="#F59E0B" name="Avg Days" />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
