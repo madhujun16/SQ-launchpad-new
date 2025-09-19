@@ -51,10 +51,10 @@ const SITE_WORKFLOW_STAGES_DATA = [
 ];
 
 const STATUS_DISTRIBUTION_DATA = [
-  { name: 'In Progress', value: 8, color: '#3B82F6' }, // Blue
-  { name: 'Awaiting Review', value: 3, color: '#F59E0B' }, // Amber
+  { name: 'Site Study', value: 8, color: '#3B82F6' }, // Blue
+  { name: 'Scoping', value: 6, color: '#F59E0B' }, // Amber
   { name: 'Deployed', value: 12, color: '#10B981' }, // Emerald
-  { name: 'Pending Approval', value: 4, color: '#EF4444' } // Red
+  { name: 'Live', value: 4, color: '#8B5CF6' } // Purple
 ];
 
 const FINANCIAL_TREND_DATA = [
