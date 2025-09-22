@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, MapPin, Lock, Edit as EditIcon } from 'lucide-react';
+import { FileText, MapPin, Lock, Edit as EditIcon, User, Users } from 'lucide-react';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Site } from '@/types/siteTypes';
+import { UserService, UserWithRole } from '@/services/userService';
 
 interface CreateSiteStepProps {
   site: Site;
@@ -14,6 +16,31 @@ interface CreateSiteStepProps {
 
 const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) => {
   const [showLocationEditor, setShowLocationEditor] = useState(false);
+  const [opsManagers, setOpsManagers] = useState<UserWithRole[]>([]);
+  const [deploymentEngineers, setDeploymentEngineers] = useState<UserWithRole[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  // Fetch users by role
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const [opsManagersData, deploymentEngineersData] = await Promise.all([
+          UserService.getOpsManagers(),
+          UserService.getDeploymentEngineers()
+        ]);
+        
+        setOpsManagers(opsManagersData);
+        setDeploymentEngineers(deploymentEngineersData);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
 
 
@@ -31,6 +58,24 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       }
     });
     setShowLocationEditor(false);
+  };
+
+  // Handle Operations Manager selection
+  const handleOpsManagerSelect = (userId: string) => {
+    const selectedUser = opsManagers.find(user => user.user_id === userId);
+    onSiteUpdate({
+      ...site,
+      assignedOpsManager: selectedUser?.full_name || ''
+    });
+  };
+
+  // Handle Deployment Engineer selection
+  const handleDeploymentEngineerSelect = (userId: string) => {
+    const selectedUser = deploymentEngineers.find(user => user.user_id === userId);
+    onSiteUpdate({
+      ...site,
+      assignedDeploymentEngineer: selectedUser?.full_name || ''
+    });
   };
 
   // Allow edits until site study is completed
@@ -101,11 +146,65 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ops-manager">Operations Manager</Label>
-                  <Input value={site.assignedOpsManager} readOnly className="bg-gray-50" />
+                  {loadingUsers ? (
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                      <span>Loading operations managers...</span>
+                    </div>
+                  ) : (
+                    <Select
+                      value={opsManagers.find(user => user.full_name === site.assignedOpsManager)?.user_id || ''}
+                      onValueChange={handleOpsManagerSelect}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Operations Manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {opsManagers.map((user) => (
+                          <SelectItem key={user.user_id} value={user.user_id}>
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">{user.full_name}</div>
+                                <div className="text-xs text-gray-500">{user.email}</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="deployment-engineer">Deployment Engineer</Label>
-                  <Input value={site.assignedDeploymentEngineer} readOnly className="bg-gray-50" />
+                  {loadingUsers ? (
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                      <span>Loading deployment engineers...</span>
+                    </div>
+                  ) : (
+                    <Select
+                      value={deploymentEngineers.find(user => user.full_name === site.assignedDeploymentEngineer)?.user_id || ''}
+                      onValueChange={handleDeploymentEngineerSelect}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Deployment Engineer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deploymentEngineers.map((user) => (
+                          <SelectItem key={user.user_id} value={user.user_id}>
+                            <div className="flex items-center space-x-2">
+                              <Users className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">{user.full_name}</div>
+                                <div className="text-xs text-gray-500">{user.email}</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </div>

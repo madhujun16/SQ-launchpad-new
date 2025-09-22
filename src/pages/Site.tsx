@@ -1259,7 +1259,8 @@ const SiteDetail = () => {
     switch (index) {
       case 0: // Create Site
         if (site?.siteCreation) {
-          return `Site created on ${site.lastUpdated}. Contact: ${site.siteCreation.contactInfo.unitManagerName}`;
+          const unitManagerName = site.siteCreation.contactInfo?.unitManagerName || 'Not specified';
+          return `Site created on ${site.lastUpdated}. Contact: ${unitManagerName}`;
         }
         return 'Site creation pending';
       case 1: // Site Study
