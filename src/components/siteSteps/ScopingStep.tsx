@@ -360,63 +360,64 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-        <div className="space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-              <span className="ml-2 text-sm text-gray-500">Loading software modules...</span>
-            </div>
-          ) : availableSoftwareModules.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Monitor className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No software modules available</p>
-              <p className="text-xs text-gray-400 mt-1">Select software categories in Site Study step first</p>
-            </div>
-          ) : (
-            availableSoftwareModules.map((software) => (
-                  <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox 
-                        id={software.id} 
-                        checked={site?.scoping?.selectedSoftware?.includes(software.id) || false}
-                        onCheckedChange={() => handleSoftwareToggle(software.id)}
-                        disabled={!isEditing}
-                      />
-                      <div>
-                        <Label htmlFor={software.id} className="text-sm font-medium">
-                          {software.name}
-                        </Label>
-                        <p className="text-xs text-gray-500">{software.description}</p>
-                        <Badge variant="outline" className="mt-1 text-xs">
-                          {software.category}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      {/* Software License Qty */}
-                      {site?.scoping?.selectedSoftware?.includes(software.id) && (
-                        <div className="flex items-center space-x-2">
-                          <Label htmlFor={`qty-${software.id}`} className="text-xs text-gray-600">
-                            Qty:
-                          </Label>
-                          <Input
-                            id={`qty-${software.id}`}
-                            type="number"
-                            min="1"
-                            value={getSoftwareQuantity(software.id)}
-                            onChange={(e) => handleQuantityChange(software.id, parseInt(e.target.value) || 1)}
-                            className="w-16 h-8 text-xs"
-                            disabled={!isEditing}
-                          />
-                        </div>
-                      )}
-                      <div className="text-right">
-                        <p className="text-sm font-medium">£{software.monthly_fee}/month</p>
-                        <p className="text-xs text-gray-500">£{software.setup_fee} setup</p>
-                      </div>
-                    </div>
+              <div className="space-y-4">
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-500">Loading software modules...</span>
                   </div>
-                ))}
+                ) : availableSoftwareModules.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Monitor className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No software modules available</p>
+                    <p className="text-xs text-gray-400 mt-1">Select software categories in Site Study step first</p>
+                  </div>
+                ) : (
+                  availableSoftwareModules.map((software) => (
+                    <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox 
+                          id={software.id} 
+                          checked={site?.scoping?.selectedSoftware?.includes(software.id) || false}
+                          onCheckedChange={() => handleSoftwareToggle(software.id)}
+                          disabled={!isEditing}
+                        />
+                        <div>
+                          <Label htmlFor={software.id} className="text-sm font-medium">
+                            {software.name}
+                          </Label>
+                          <p className="text-xs text-gray-500">{software.description}</p>
+                          <Badge variant="outline" className="mt-1 text-xs">
+                            {software.category}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        {/* Software License Qty */}
+                        {site?.scoping?.selectedSoftware?.includes(software.id) && (
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor={`qty-${software.id}`} className="text-xs text-gray-600">
+                              Qty:
+                            </Label>
+                            <Input
+                              id={`qty-${software.id}`}
+                              type="number"
+                              min="1"
+                              value={getSoftwareQuantity(software.id)}
+                              onChange={(e) => handleQuantityChange(software.id, parseInt(e.target.value) || 1)}
+                              className="w-16 h-8 text-xs"
+                              disabled={!isEditing}
+                            />
+                          </div>
+                        )}
+                        <div className="text-right">
+                          <p className="text-sm font-medium">£{software.monthly_fee}/month</p>
+                          <p className="text-xs text-gray-500">£{software.setup_fee} setup</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
