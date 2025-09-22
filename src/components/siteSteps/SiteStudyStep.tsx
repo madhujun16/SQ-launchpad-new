@@ -371,13 +371,14 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 Space Assessment
               </CardTitle>
               <CardDescription>
-                Understanding the physical space and operational context
+                Understanding the physical space, operational context, and installation requirements
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="space-type">Space Type *</Label>
+                  <p className="text-xs text-gray-500 mb-2">Type of space affects equipment placement and requirements</p>
                   <Select 
                     value={getValue('spaceAssessment.spaceType')} 
                     onValueChange={(value) => handleInputChange('spaceAssessment.spaceType', value)}
@@ -590,28 +591,109 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clearance-available">Clearance Available</Label>
-                  <Input
-                    id="clearance-available"
-                    value={getValue('spaceAssessment.mounting.clearanceAvailable')}
-                    onChange={(e) => handleInputChange('spaceAssessment.mounting.clearanceAvailable', e.target.value)}
-                    placeholder="e.g., 2m clearance, no obstructions"
-                    disabled={!isEditing}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="clearance-available">Clearance Available</Label>
+                    <p className="text-xs text-gray-500 mb-1">Space around installation area</p>
+                    <Input
+                      id="clearance-available"
+                      value={getValue('spaceAssessment.mounting.clearanceAvailable')}
+                      onChange={(e) => handleInputChange('spaceAssessment.mounting.clearanceAvailable', e.target.value)}
+                      placeholder="e.g., 2m clearance, no obstructions"
+                      disabled={!isEditing}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="distance-to-nearest">Distance to Nearest Power Outlet</Label>
+                    <p className="text-xs text-gray-500 mb-1">Distance in meters</p>
+                    <Input
+                      id="distance-to-nearest"
+                      type="number"
+                      value={getValue('spaceAssessment.mounting.distanceToNearest')}
+                      onChange={(e) => handleInputChange('spaceAssessment.mounting.distanceToNearest', e.target.value)}
+                      placeholder="Distance in meters"
+                      disabled={!isEditing}
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="distance-to-nearest">Distance to Nearest</Label>
-                  <Input
-                    id="distance-to-nearest"
-                    type="number"
-                    value={getValue('spaceAssessment.mounting.distanceToNearest')}
-                    onChange={(e) => handleInputChange('spaceAssessment.mounting.distanceToNearest', e.target.value)}
-                    placeholder="Distance in meters"
-                    disabled={!isEditing}
-                  />
+            </CardContent>
+          </Card>
+
+          {/* Infrastructure Check */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Wifi className="mr-2 h-5 w-5 text-indigo-600" />
+                Infrastructure Check
+              </CardTitle>
+              <CardDescription>
+                Assess basic infrastructure readiness before defining requirements
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3">
+                  <Zap className="h-5 w-5 text-yellow-500" />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="power-available"
+                      checked={getValue('infrastructure.powerAvailable')}
+                      onCheckedChange={(checked) => handleInputChange('infrastructure.powerAvailable', checked)}
+                      disabled={!isEditing}
+                    />
+                    <Label htmlFor="power-available">Power Available</Label>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Wifi className="h-5 w-5 text-blue-500" />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="network-available"
+                      checked={getValue('infrastructure.networkAvailable')}
+                      onCheckedChange={(checked) => handleInputChange('infrastructure.networkAvailable', checked)}
+                      disabled={!isEditing}
+                    />
+                    <Label htmlFor="network-available">Network Available</Label>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="wifi-quality">WiFi Quality Assessment</Label>
+                <Select 
+                  value={getValue('infrastructure.wifiQuality')} 
+                  onValueChange={(value) => handleInputChange('infrastructure.wifiQuality', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assess WiFi quality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excellent">Excellent</SelectItem>
+                    <SelectItem value="good">Good</SelectItem>
+                    <SelectItem value="fair">Fair</SelectItem>
+                    <SelectItem value="poor">Poor</SelectItem>
+                    <SelectItem value="none">No WiFi</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Physical Constraints</Label>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  {['Limited Wall Space', 'No Drilling Allowed', 'Cable Management Issues', 'Accessibility Concerns'].map((constraint) => (
+                    <div key={constraint} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={constraint}
+                        checked={(getValue('infrastructure.physicalConstraints') || []).includes(constraint)}
+                        onCheckedChange={(checked) => handleMultiSelectChange('infrastructure.physicalConstraints', constraint, !!checked)}
+                        disabled={!isEditing}
+                      />
+                      <Label htmlFor={constraint} className="text-sm">{constraint}</Label>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -642,14 +724,15 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               </div>
 
               <div>
-                <Label htmlFor="expected-transactions">Expected Daily Transactions</Label>
+                <Label htmlFor="expected-transactions">Expected Daily Transactions (Total Site)</Label>
+                <p className="text-xs text-gray-500 mb-2">Total transactions across all terminals/kiosks per day</p>
                 <Select 
                   value={getValue('requirements.expectedTransactions')} 
                   onValueChange={(value) => handleInputChange('requirements.expectedTransactions', value)}
                   disabled={!isEditing}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select transaction volume" />
+                    <SelectValue placeholder="Select total daily transaction volume" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="<50">Less than 50</SelectItem>
@@ -953,6 +1036,9 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 <Clock className="mr-2 h-5 w-5 text-orange-600" />
                 Timeline
               </CardTitle>
+              <CardDescription>
+                Project timeline based on requirements and infrastructure assessment
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1025,30 +1111,31 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               </div>
             </CardContent>
           </Card>
+
         </div>
           {/* Stakeholders */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Users className="mr-2 h-5 w-5 text-purple-600" />
-                Key Stakeholders
+                Configuration & Support Team
               </CardTitle>
               <CardDescription>
-                People involved in the project decision and implementation
+                Users who will configure and support the applications when sites go live
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>Stakeholder Contacts</Label>
+                  <Label>App Configuration Team</Label>
                   {isEditing && (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => addArrayItem('stakeholders', { userId: '', name: '', role: '', email: '', phone: '', department: '', details: '' })}
+                      onClick={() => addArrayItem('stakeholders', { userId: '', name: '', role: '', email: '', phone: '', department: '', details: '', responsibilities: [] })}
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Add Stakeholder
+                      Add Team Member
                     </Button>
                   )}
                 </div>
@@ -1057,7 +1144,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                   <div key={index} className="grid grid-cols-1 gap-3 p-3 border rounded-lg">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label>Select User</Label>
+                        <Label>Select Configuration User</Label>
                         {loadingUsers ? (
                           <div className="flex items-center space-x-2 text-sm text-gray-500">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
@@ -1076,7 +1163,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                             disabled={!isEditing}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select user" />
+                              <SelectValue placeholder="Select configuration user" />
                             </SelectTrigger>
                             <SelectContent>
                               {allUsers.map((user) => (
@@ -1095,13 +1182,23 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                         )}
                       </div>
                       <div>
-                        <Label>Role/Title</Label>
-                        <Input
-                          placeholder="Role/Title *"
-                          value={stakeholder.role || ''}
-                          onChange={(e) => handleArrayChange('stakeholders', index, 'role', e.target.value)}
+                        <Label>Configuration Role</Label>
+                        <Select
+                          value={stakeholder.configurationRole || ''}
+                          onValueChange={(value) => handleArrayChange('stakeholders', index, 'configurationRole', value)}
                           disabled={!isEditing}
-                        />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select configuration role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Primary Configurator">Primary Configurator</SelectItem>
+                            <SelectItem value="Backup Configurator">Backup Configurator</SelectItem>
+                            <SelectItem value="Technical Support">Technical Support</SelectItem>
+                            <SelectItem value="Training Lead">Training Lead</SelectItem>
+                            <SelectItem value="Go-Live Support">Go-Live Support</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -1136,9 +1233,31 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                         />
                       </div>
                       <div>
-                        <Label>Additional Details</Label>
+                        <Label>Configuration Responsibilities</Label>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {['App Setup', 'User Training', 'Go-Live Support', 'Post-Launch Support', 'System Configuration', 'Data Migration'].map((responsibility) => (
+                            <div key={responsibility} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`${responsibility}-${index}`}
+                                checked={(stakeholder.responsibilities || []).includes(responsibility)}
+                                onCheckedChange={(checked) => {
+                                  const currentResponsibilities = stakeholder.responsibilities || [];
+                                  const newResponsibilities = checked 
+                                    ? [...currentResponsibilities, responsibility]
+                                    : currentResponsibilities.filter((r: string) => r !== responsibility);
+                                  handleArrayChange('stakeholders', index, 'responsibilities', newResponsibilities);
+                                }}
+                                disabled={!isEditing}
+                              />
+                              <Label htmlFor={`${responsibility}-${index}`} className="text-sm">{responsibility}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Additional Notes</Label>
                         <Textarea
-                          placeholder="Additional details about this stakeholder's involvement..."
+                          placeholder="Additional notes about this team member's role in configuration..."
                           value={stakeholder.details || ''}
                           onChange={(e) => handleArrayChange('stakeholders', index, 'details', e.target.value)}
                           disabled={!isEditing}
@@ -1154,7 +1273,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                           onClick={() => removeArrayItem('stakeholders', index)}
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
-                          Remove
+                          Remove Team Member
                         </Button>
                       </div>
                     )}
@@ -1164,91 +1283,14 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 {(!getValue('stakeholders') || getValue('stakeholders').length === 0) && (
                   <div className="text-center py-4 text-gray-500">
                     <Users className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p>No stakeholders added yet</p>
+                    <p>No configuration team members added yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Add team members who will configure and support the applications</p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Infrastructure Check */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Wifi className="mr-2 h-5 w-5 text-indigo-600" />
-                Infrastructure Check
-              </CardTitle>
-              <CardDescription>
-                Basic infrastructure readiness assessment
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3">
-                  <Zap className="h-5 w-5 text-yellow-500" />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="power-available"
-                      checked={getValue('infrastructure.powerAvailable')}
-                      onCheckedChange={(checked) => handleInputChange('infrastructure.powerAvailable', checked)}
-                      disabled={!isEditing}
-                    />
-                    <Label htmlFor="power-available">Power Available</Label>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <Wifi className="h-5 w-5 text-blue-500" />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="network-available"
-                      checked={getValue('infrastructure.networkAvailable')}
-                      onCheckedChange={(checked) => handleInputChange('infrastructure.networkAvailable', checked)}
-                      disabled={!isEditing}
-                    />
-                    <Label htmlFor="network-available">Network Available</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="wifi-quality">WiFi Quality Assessment</Label>
-                <Select 
-                  value={getValue('infrastructure.wifiQuality')} 
-                  onValueChange={(value) => handleInputChange('infrastructure.wifiQuality', value)}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Assess WiFi quality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="excellent">Excellent</SelectItem>
-                    <SelectItem value="good">Good</SelectItem>
-                    <SelectItem value="fair">Fair</SelectItem>
-                    <SelectItem value="poor">Poor</SelectItem>
-                    <SelectItem value="none">No WiFi</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Physical Constraints</Label>
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  {['Limited Wall Space', 'No Drilling Allowed', 'Cable Management Issues', 'Accessibility Concerns'].map((constraint) => (
-                    <div key={constraint} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={constraint}
-                        checked={(getValue('infrastructure.physicalConstraints') || []).includes(constraint)}
-                        onCheckedChange={(checked) => handleMultiSelectChange('infrastructure.physicalConstraints', constraint, !!checked)}
-                        disabled={!isEditing}
-                      />
-                      <Label htmlFor={constraint} className="text-sm">{constraint}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Findings & Recommendations */}
           <Card className="shadow-sm border border-gray-200">
