@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,18 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DateField,
-  TextField,
-  EmailField,
-  PhoneField,
-  TextareaField,
-  SelectField,
-  NumberField,
-  CurrencyField
-} from '@/components/ui/widgets';
 import { 
   Edit, 
   Download, 
@@ -26,21 +15,17 @@ import {
   Wifi, 
   Building, 
   Users, 
-  Monitor,
-  Plus,
-  Trash2,
-  Calendar,
   Zap,
   Shield,
-  CreditCard,
-  Settings,
   Save,
-  X
+  X,
+  Plus,
+  Trash2,
+  Clock,
+  Camera,
+  FileText
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
-import { CategoryService } from '@/services/categoryService';
-import { useSectionAutoSave } from '@/hooks/useSectionAutoSave';
-import { SectionHeader, AutoSaveSummary } from '@/components/ui/SaveStatusIndicator';
 import { toast } from 'sonner';
 
 interface SiteStudyStepProps {
@@ -51,101 +36,41 @@ interface SiteStudyStepProps {
 const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(site?.siteStudy || {
-    siteDetails: { clientName: '', siteAddress: '', siteContact: [] },
-    schedule: { targetGoLiveDate: '', operatingHours: [] },
-    environment: { spaceType: 'Front-of-house', isListedBuilding: false, permitRequired: false },
-    powerInfrastructure: { availablePower: [], distanceFromPower: 0 },
-    dataInfrastructure: { networkConnectivity: 'Ethernet', ethernetPorts: 0, wifiSSIDs: '', vlanIPPlan: '', proxyWebFiltering: false, firewallEgress: false, mobileSignal: 'Good' },
-    mounting: { mountType: 'Wall', surfaceMaterial: 'Drywall', drillingRestrictions: false },
-    layout: { clearanceAvailable: '', distanceToTill: 0, accessibilityCompliance: false },
-    devices: { kiosk: { numberOfKiosks: 0, screenSize: '15"', cardPaymentDevice: 'Not required', receiptPrinter: false, grabGoShelf: false }, pos: { numberOfTerminals: 0, cashDrawer: false }, kitchen: { numberOfKDSScreens: 0, kitchenPrinter: false }, other: { scanners: false, nfc: false, customerDisplay: false } },
-    softwareModules: { modulesRequired: [], userRoles: [] },
-    compliance: { pciResponsibilities: '', brandAssetsAvailable: false },
-    payments: { gateway: { paymentProvider: '', p2peRequired: 'Not required', settlementCurrency: '' }, ped: { commsMethod: 'Ethernet', mountingType: 'None' } },
-    securityHSE: { device: { mdmRequired: 'No', assetTagging: false }, hse: { ramsApproval: false, workingConstraints: '' } },
-    staffCapacity: { employeeStrength: 0, seatingCapacity: 0 }
-  });
-  const [categories, setCategories] = useState<any[]>([]);
-  const [activeSection, setActiveSection] = useState<string>('basic-info');
-
-  // Define section mappings
-  const sectionMappings = {
-    'basic-info': ['siteDetails', 'schedule', 'contacts'],
-    'infrastructure': ['infrastructure'],
-    'physical-setup': ['physicalSetup'],
-    'software': ['software'],
-    'device-requirements': ['deviceRequirements'],
-    'payments': ['payments'],
-    'security-hse': ['security', 'hse'],
-    'logistics': ['logistics'],
-    'pre-install-checks': ['preInstallChecks'],
-    'acceptance': ['acceptance']
-  };
-
-  // Auto-save functionality
-  const handleSaveSection = useCallback(async (sectionName: string, data: any) => {
-    try {
-      const updatedSite = {
-        ...site,
-        siteStudy: {
-          ...site?.siteStudy,
-          ...data
-        }
-      };
-      
-      await onSiteUpdate(updatedSite);
-      toast.success(`${sectionName} section saved successfully`);
-    } catch (error) {
-      console.error(`Failed to save ${sectionName} section:`, error);
-      throw error;
-    }
-  }, [site, onSiteUpdate]);
-
-  const {
-    sectionStatus,
-    isSaving,
-    lastSaved,
-    handleSectionChange,
-    updateSectionData,
-    forceSaveAll,
-    getUnsavedCount,
-    hasUnsavedChanges
-  } = useSectionAutoSave({
-    onSave: handleSaveSection,
-    debounceMs: 1000, // 1 second delay
-    retryAttempts: 3,
-    retryDelay: 2000
+    // Planning Phase Data
+    spaceAssessment: {
+      spaceType: '',
+      footfallPattern: '',
+      operatingHours: '',
+      peakTimes: '',
+      constraints: []
+    },
+    stakeholders: [],
+    requirements: {
+      primaryPurpose: '',
+      expectedTransactions: '',
+      paymentMethods: [],
+      specialRequirements: []
+    },
+    infrastructure: {
+      powerAvailable: false,
+      networkAvailable: false,
+      wifiQuality: '',
+      physicalConstraints: []
+    },
+    timeline: {
+      studyDate: '',
+      proposedGoLive: '',
+      urgency: 'normal'
+    },
+    findings: '',
+    recommendations: ''
   });
 
-  // Initialize form data with proper structure
-  React.useEffect(() => {
+  useEffect(() => {
     if (site?.siteStudy) {
       setFormData(site.siteStudy);
     }
   }, [site?.siteStudy]);
-
-  // Load categories from backend
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await CategoryService.getCategories();
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-        // Fallback to default categories
-        setCategories([
-          { id: 'pos', name: 'POS', description: 'Point of Sale systems' },
-          { id: 'kiosk', name: 'Kiosk', description: 'Self-service kiosks' },
-          { id: 'kds', name: 'Kitchen Display (KDS)', description: 'Kitchen display systems' },
-          { id: 'inventory', name: 'Inventory', description: 'Inventory management' },
-          { id: 'subscriptions', name: 'Subscriptions', description: 'Subscription management' },
-          { id: 'loyalty', name: 'Loyalty', description: 'Loyalty programs' }
-        ]);
-      }
-    };
-
-    loadCategories();
-  }, []);
 
   const handleInputChange = (path: string, value: any) => {
     setFormData(prev => {
@@ -161,48 +86,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       }
       
       current[keys[keys.length - 1]] = value;
-      
-      // Update auto-save for the current section
-      if (isEditing && activeSection) {
-        const sectionData = getSectionData(newData, activeSection);
-        updateSectionData(activeSection, sectionData);
-      }
-      
       return newData;
     });
-  };
-
-  // Helper function to get section-specific data
-  const getSectionData = (data: any, sectionName: string) => {
-    const fields = sectionMappings[sectionName as keyof typeof sectionMappings] || [];
-    const sectionData: any = {};
-    
-    fields.forEach(field => {
-      if (data[field]) {
-        sectionData[field] = data[field];
-      }
-    });
-    
-    return sectionData;
-  };
-
-  // Handle section focus/blur for auto-save
-  const handleSectionFocus = (sectionName: string) => {
-    setActiveSection(sectionName);
-    handleSectionChange(sectionName);
-  };
-
-  const handleNestedInputChange = (section: string, subsection: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [subsection]: {
-          ...prev[section as keyof typeof prev]?.[subsection as keyof any],
-          [field]: value
-        }
-      }
-    }));
   };
 
   const handleArrayChange = (path: string, index: number, field: string, value: any) => {
@@ -269,9 +154,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
 
   const handleSave = async () => {
     try {
-      // Force save all sections before final save
-      await forceSaveAll();
-      
       const updatedSite = {
         ...site,
         siteStudy: formData
@@ -290,9 +172,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     setIsEditing(false);
   };
 
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
-  // Helper function to get nested value safely
   const getValue = (path: string) => {
     const keys = path.split('.');
     let current = formData;
@@ -306,21 +185,21 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     return current || '';
   };
 
+  const handleMultiSelectChange = (path: string, value: string, checked: boolean) => {
+    const currentValues = getValue(path) || [];
+    const newValues = checked 
+      ? [...currentValues, value]
+      : currentValues.filter((v: string) => v !== value);
+    handleInputChange(path, newValues);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Site Study</h2>
-          <p className="text-gray-600 mt-1">Comprehensive site assessment and deployment readiness</p>
-          {isEditing && (
-            <AutoSaveSummary
-              unsavedCount={getUnsavedCount()}
-              isSaving={isSaving}
-              lastSaved={lastSaved}
-              className="mt-2"
-            />
-          )}
+          <p className="text-gray-600 mt-1">Planning phase assessment to understand deployment requirements</p>
         </div>
         <div className="flex space-x-2">
           {!isEditing ? (
@@ -331,11 +210,15 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 onClick={() => setIsEditing(true)}
               >
                 <Edit className="h-4 w-4 mr-1" />
-                Edit Site Study
+                Edit Study
               </Button>
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-1" />
                 Export Report
+              </Button>
+              <Button size="sm">
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Complete Study
               </Button>
             </>
           ) : (
@@ -353,1239 +236,452 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 onClick={handleSave}
               >
                 <Save className="h-4 w-4 mr-1" />
-                Save Changes
+                Save Study
               </Button>
             </>
           )}
         </div>
       </div>
       
-      {/* Simplified Form Sections */}
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('basic-info')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Site Configuration"
-              icon={<Building className="mr-2 h-5 w-5 text-green-600" />}
-              status={sectionStatus['basic-info'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Space type and site contacts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <SelectField
-                label="Space Type"
-                value={getValue('environment.spaceType')}
-                onChange={(value) => handleInputChange('environment.spaceType', value)}
-                options={[
-                  { value: 'Front-of-house', label: 'Front-of-house' },
-                  { value: 'Back-of-house', label: 'Back-of-house' },
-                  { value: 'Reception', label: 'Reception' },
-                  { value: 'Cafeteria', label: 'Cafeteria' },
-                  { value: 'Grab & Go', label: 'Grab & Go' },
-                  { value: 'Other', label: 'Other' }
-                ]}
-                placeholder="Select space type"
-                required
-                disabled={!isEditing}
-              />
-
-              {/* Site Contacts */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <Label className="text-sm font-medium">Site Contacts *</Label>
-                  {isEditing && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => addArrayItem('siteDetails.siteContact', { name: '', role: '', email: '', phone: '' })}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Contact
-                    </Button>
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Space Assessment */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2 h-5 w-5 text-blue-600" />
+                Space Assessment
+              </CardTitle>
+              <CardDescription>
+                Understanding the physical space and operational context
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="space-type">Space Type *</Label>
+                  <Select 
+                    value={getValue('spaceAssessment.spaceType')} 
+                    onValueChange={(value) => handleInputChange('spaceAssessment.spaceType', value)}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select space type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cafeteria">Cafeteria</SelectItem>
+                      <SelectItem value="Reception">Reception</SelectItem>
+                      <SelectItem value="Restaurant">Restaurant</SelectItem>
+                      <SelectItem value="Grab & Go">Grab & Go</SelectItem>
+                      <SelectItem value="Coffee Shop">Coffee Shop</SelectItem>
+                      <SelectItem value="Food Court">Food Court</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-3">
-                  {(getValue('siteDetails.siteContact') || []).map((contact: any, index: number) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded-lg">
-                      <TextField
-                        label="Name"
-                        value={contact.name || ''}
-                        onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'name', value)}
-                        placeholder="Contact name"
+                
+                <div>
+                  <Label htmlFor="footfall">Footfall Pattern *</Label>
+                  <Select 
+                    value={getValue('spaceAssessment.footfallPattern')} 
+                    onValueChange={(value) => handleInputChange('spaceAssessment.footfallPattern', value)}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select footfall pattern" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High (200+ daily)">High (200+ daily)</SelectItem>
+                      <SelectItem value="Medium (100-200 daily)">Medium (100-200 daily)</SelectItem>
+                      <SelectItem value="Low (<100 daily)">Low (&lt;100 daily)</SelectItem>
+                      <SelectItem value="Variable">Variable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="operating-hours">Operating Hours *</Label>
+                <Input
+                  id="operating-hours"
+                  value={getValue('spaceAssessment.operatingHours')}
+                  onChange={(e) => handleInputChange('spaceAssessment.operatingHours', e.target.value)}
+                  placeholder="e.g., Mon-Fri 8AM-6PM, Sat-Sun 9AM-4PM"
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="peak-times">Peak Times</Label>
+                <Input
+                  id="peak-times"
+                  value={getValue('spaceAssessment.peakTimes')}
+                  onChange={(e) => handleInputChange('spaceAssessment.peakTimes', e.target.value)}
+                  placeholder="e.g., 12PM-2PM lunch rush, 4PM-6PM afternoon"
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <Label>Physical Constraints</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {['Listed Building', 'Limited Power', 'No Drilling', 'Accessibility Requirements', 'Fire Safety Restrictions', 'Heritage Restrictions'].map((constraint) => (
+                    <div key={constraint} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={constraint}
+                        checked={(getValue('spaceAssessment.constraints') || []).includes(constraint)}
+                        onCheckedChange={(checked) => handleMultiSelectChange('spaceAssessment.constraints', constraint, !!checked)}
                         disabled={!isEditing}
-                        className="md:col-span-1"
                       />
-                      <TextField
-                        label="Role"
-                        value={contact.role || ''}
-                        onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'role', value)}
-                        placeholder="Contact role"
-                        disabled={!isEditing}
-                        className="md:col-span-1"
-                      />
-                      <EmailField
-                        label="Email"
-                        value={contact.email || ''}
-                        onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'email', value)}
-                        placeholder="Contact email"
-                        disabled={!isEditing}
-                        className="md:col-span-1"
-                      />
-                      <div className="flex gap-2 md:col-span-1">
-                        <PhoneField
-                          label="Phone"
-                          value={contact.phone || ''}
-                          onChange={(value) => handleArrayChange('siteDetails.siteContact', index, 'phone', value)}
-                          placeholder="Contact phone"
-                          disabled={!isEditing}
-                          className="flex-1"
-                        />
-                        {isEditing && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => removeArrayItem('siteDetails.siteContact', index)}
-                            className="mt-6"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      <Label htmlFor={constraint} className="text-sm">{constraint}</Label>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Infrastructure */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('infrastructure')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Infrastructure"
-              icon={<Wifi className="mr-2 h-5 w-5 text-purple-600" />}
-              status={sectionStatus['infrastructure'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Power, network, and connectivity requirements
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Power */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Power Requirements</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label>Available Power Sources *</Label>
-                      <div className="space-y-2">
-                        {['UK 13A socket', 'Spur', 'PoE', 'UPS', 'Other'].map((powerType) => (
-                          <div key={powerType} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`power-${powerType}`}
-                              checked={(getValue('powerInfrastructure.availablePower') || []).includes(powerType)}
-                              onCheckedChange={(checked) => {
-                                const currentPower = getValue('powerInfrastructure.availablePower') || [];
-                                const newPower = checked 
-                                  ? [...currentPower, powerType]
-                                  : currentPower.filter(p => p !== powerType);
-                                handleInputChange('powerInfrastructure.availablePower', newPower);
-                              }}
-                              disabled={!isEditing}
-                            />
-                            <Label htmlFor={`power-${powerType}`} className="text-sm">{powerType}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="distance-power">Distance from power to device (meters) *</Label>
-                      <Input 
-                        id="distance-power" 
-                        type="number"
-                        value={getValue('powerInfrastructure.distanceFromPower')} 
-                        onChange={(e) => handleInputChange('powerInfrastructure.distanceFromPower', Number(e.target.value))}
-                        disabled={!isEditing}
-                        placeholder="e.g., 5"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Network */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Network Requirements</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="network-connectivity">Network Connectivity *</Label>
-                      <Select 
-                        value={getValue('dataInfrastructure.networkConnectivity')} 
-                        onValueChange={(value) => handleInputChange('dataInfrastructure.networkConnectivity', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select connectivity" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ethernet">Ethernet</SelectItem>
-                          <SelectItem value="Dual-band Wi‑Fi">Dual-band Wi‑Fi</SelectItem>
-                          <SelectItem value="4G/5G SIM">4G/5G SIM</SelectItem>
-                          <SelectItem value="Not available">Not available</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ethernet-ports">Ethernet ports available *</Label>
-                      <Input 
-                        id="ethernet-ports" 
-                        type="number"
-                        value={getValue('dataInfrastructure.ethernetPorts')} 
-                        onChange={(e) => handleInputChange('dataInfrastructure.ethernetPorts', Number(e.target.value))}
-                        disabled={!isEditing}
-                        placeholder="e.g., 4"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="mobile-signal">Mobile signal quality *</Label>
-                      <Select 
-                        value={getValue('dataInfrastructure.mobileSignal')} 
-                        onValueChange={(value) => handleInputChange('dataInfrastructure.mobileSignal', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select signal quality" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Excellent">Excellent</SelectItem>
-                          <SelectItem value="Good">Good</SelectItem>
-                          <SelectItem value="Poor">Poor</SelectItem>
-                          <SelectItem value="No signal">No signal</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional Network Details */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Additional Network Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="wifi-ssids">Wi-Fi Network Names</Label>
-                    <Input 
-                      id="wifi-ssids" 
-                      value={getValue('dataInfrastructure.wifiSSIDs')} 
-                      onChange={(e) => handleInputChange('dataInfrastructure.wifiSSIDs', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="Production and guest network names"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="vlan-ip-plan">Network Configuration *</Label>
-                    <Input 
-                      id="vlan-ip-plan" 
-                      value={getValue('dataInfrastructure.vlanIPPlan')} 
-                      onChange={(e) => handleInputChange('dataInfrastructure.vlanIPPlan', e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="VLAN & IP plan (DHCP/Static)"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="proxy-filtering">Proxy / Web filtering in place?</Label>
-                    <Select 
-                      value={getValue('dataInfrastructure.proxyWebFiltering') ? 'Yes' : 'No'} 
-                      onValueChange={(value) => handleInputChange('dataInfrastructure.proxyWebFiltering', value === 'Yes')}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="firewall-egress">Firewall egress allow-list possible?</Label>
-                    <Select 
-                      value={getValue('dataInfrastructure.firewallEgress') ? 'Yes' : 'No'} 
-                      onValueChange={(value) => handleInputChange('dataInfrastructure.firewallEgress', value === 'Yes')}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Physical Setup */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('physical-setup')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Physical Setup"
-              icon={<Settings className="mr-2 h-5 w-5 text-indigo-600" />}
-              status={sectionStatus['physical-setup'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Mounting, layout, and accessibility requirements
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Mounting */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Mounting Requirements</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="mount-type">Mount Type *</Label>
-                      <Select 
-                        value={getValue('mounting.mountType')} 
-                        onValueChange={(value) => handleInputChange('mounting.mountType', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select mount type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Wall">Wall</SelectItem>
-                          <SelectItem value="Desk/Counter">Desk/Counter</SelectItem>
-                          <SelectItem value="Floor-standing">Floor-standing</SelectItem>
-                          <SelectItem value="Free-standing">Free-standing</SelectItem>
-                          <SelectItem value="Table">Table</SelectItem>
-                          <SelectItem value="To be confirmed">To be confirmed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="surface-material">Surface Material *</Label>
-                      <Select 
-                        value={getValue('mounting.surfaceMaterial')} 
-                        onValueChange={(value) => handleInputChange('mounting.surfaceMaterial', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select material" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Drywall">Drywall</SelectItem>
-                          <SelectItem value="Brick">Brick</SelectItem>
-                          <SelectItem value="Concrete">Concrete</SelectItem>
-                          <SelectItem value="Steel">Steel</SelectItem>
-                          <SelectItem value="Wood">Wood</SelectItem>
-                          <SelectItem value="Composite">Composite</SelectItem>
-                          <SelectItem value="Unknown">Unknown</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="drilling-restrictions">Drilling restrictions / RAMS needed?</Label>
-                      <Select 
-                        value={getValue('mounting.drillingRestrictions') ? 'Yes' : 'No'} 
-                        onValueChange={(value) => handleInputChange('mounting.drillingRestrictions', value === 'Yes')}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Layout */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Layout & Accessibility</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="clearance-available">Available Clearance</Label>
-                      <Input 
-                        id="clearance-available" 
-                        value={getValue('layout.clearanceAvailable')} 
-                        onChange={(e) => handleInputChange('layout.clearanceAvailable', e.target.value)}
-                        disabled={!isEditing}
-                        placeholder="W x D x H (cm) - e.g., 100 x 80 x 200"
-                      />
-                      <p className="text-xs text-gray-500">Check door swing, aisles, and ADA compliance</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="distance-till">Distance to nearest till/printer (meters) *</Label>
-                      <Input 
-                        id="distance-till" 
-                        type="number"
-                        value={getValue('layout.distanceToTill')} 
-                        onChange={(e) => handleInputChange('layout.distanceToTill', Number(e.target.value))}
-                        disabled={!isEditing}
-                        placeholder="e.g., 5"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="accessibility-compliance">ADA compliance required? *</Label>
-                      <Select 
-                        value={getValue('layout.accessibilityCompliance') ? 'Yes' : 'No'} 
-                        onValueChange={(value) => handleInputChange('layout.accessibilityCompliance', value === 'Yes')}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Software */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('software')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Software"
-              icon={<Monitor className="mr-2 h-6 w-6 text-green-600" />}
-              status={sectionStatus['software'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Software modules, accounts, compliance, and branding
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Modules Subsection */}
+          {/* Requirements Analysis */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="mr-2 h-5 w-5 text-green-600" />
+                Requirements Analysis
+              </CardTitle>
+              <CardDescription>
+                Understanding what needs to be achieved
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Software Categories</h3>
-                <div className="space-y-2">
-                  <Label>Software Categories required *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {categories.map((category) => (
-                      <div key={category.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`module-${category.id}`}
-                          checked={(getValue('softwareModules.modulesRequired') || []).includes(category.name)}
-                          onCheckedChange={(checked) => {
-                            const currentModules = getValue('softwareModules.modulesRequired') || [];
-                            const newModules = checked 
-                              ? [...currentModules, category.name]
-                              : currentModules.filter(m => m !== category.name);
-                            handleInputChange('softwareModules.modulesRequired', newModules);
-                          }}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor={`module-${category.id}`} className="text-sm">{category.name}</Label>
-                      </div>
-                    ))}
-                  </div>
+                <Label htmlFor="primary-purpose">Primary Purpose *</Label>
+                <Textarea
+                  id="primary-purpose"
+                  value={getValue('requirements.primaryPurpose')}
+                  onChange={(e) => handleInputChange('requirements.primaryPurpose', e.target.value)}
+                  placeholder="What is the main goal of this digital transformation?"
+                  disabled={!isEditing}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="expected-transactions">Expected Daily Transactions</Label>
+                <Select 
+                  value={getValue('requirements.expectedTransactions')} 
+                  onValueChange={(value) => handleInputChange('requirements.expectedTransactions', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select transaction volume" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="<50">Less than 50</SelectItem>
+                    <SelectItem value="50-150">50-150</SelectItem>
+                    <SelectItem value="150-300">150-300</SelectItem>
+                    <SelectItem value="300-500">300-500</SelectItem>
+                    <SelectItem value="500+">500+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Payment Methods Required</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {['Card Payments', 'Contactless', 'Mobile Payments', 'Cash', 'Corporate Cards', 'Gift Cards'].map((method) => (
+                    <div key={method} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={method}
+                        checked={(getValue('requirements.paymentMethods') || []).includes(method)}
+                        onCheckedChange={(checked) => handleMultiSelectChange('requirements.paymentMethods', method, !!checked)}
+                        disabled={!isEditing}
+                      />
+                      <Label htmlFor={method} className="text-sm">{method}</Label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Accounts Subsection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Accounts</h3>
+                <Label>Special Requirements</Label>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  {['Multi-language Support', 'Accessibility Features', 'Integration with Existing Systems', 'Custom Branding', 'Loyalty Program', 'Reporting & Analytics'].map((req) => (
+                    <div key={req} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={req}
+                        checked={(getValue('requirements.specialRequirements') || []).includes(req)}
+                        onCheckedChange={(checked) => handleMultiSelectChange('requirements.specialRequirements', req, !!checked)}
+                        disabled={!isEditing}
+                      />
+                      <Label htmlFor={req} className="text-sm">{req}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Timeline */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="mr-2 h-5 w-5 text-orange-600" />
+                Timeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <Label className="text-sm font-medium">User roles & counts *</Label>
-                    {isEditing && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => addArrayItem('softwareModules', 'userRoles', { role: '', count: 0, notes: '' })}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Role
-                      </Button>
-                    )}
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Count</TableHead>
-                        <TableHead>Notes</TableHead>
-                        {isEditing && <TableHead>Actions</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(formData.softwareModules?.userRoles || []).map((userRole: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Input 
-                              value={userRole.role || ''} 
-                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { role: e.target.value })}
-                              disabled={!isEditing}
-                              className={!isEditing ? "bg-gray-50" : ""}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input 
-                              type="number"
-                              value={userRole.count || ''} 
-                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { count: Number(e.target.value) })}
-                              disabled={!isEditing}
-                              className={!isEditing ? "bg-gray-50" : ""}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input 
-                              value={userRole.notes || ''} 
-                              onChange={(e) => handleArrayChange('softwareModules', 'userRoles', index, { notes: e.target.value })}
-                              disabled={!isEditing}
-                              className={!isEditing ? "bg-gray-50" : ""}
-                            />
-                          </TableCell>
-                          {isEditing && (
-                            <TableCell>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => removeArrayItem('softwareModules', 'userRoles', index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-
-              {/* Compliance Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Compliance</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="pci-responsibilities">PCI responsibilities (SAQ type, network segmentation) *</Label>
-                  <Input 
-                    id="pci-responsibilities" 
-                    value={formData.compliance?.pciResponsibilities || ''} 
-                    onChange={(e) => handleInputChange('compliance', 'pciResponsibilities', e.target.value)}
+                  <Label htmlFor="study-date">Study Date *</Label>
+                  <Input
+                    id="study-date"
+                    type="date"
+                    value={getValue('timeline.studyDate')}
+                    onChange={(e) => handleInputChange('timeline.studyDate', e.target.value)}
                     disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="proposed-go-live">Proposed Go-Live Date</Label>
+                  <Input
+                    id="proposed-go-live"
+                    type="date"
+                    value={getValue('timeline.proposedGoLive')}
+                    onChange={(e) => handleInputChange('timeline.proposedGoLive', e.target.value)}
+                    disabled={!isEditing}
                   />
                 </div>
               </div>
 
-              {/* Branding Subsection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Branding</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="brand-assets">Brand assets available (logo, fonts, colour codes)?</Label>
-                  <Select 
-                    value={formData.compliance?.brandAssetsAvailable ? 'Yes' : 'No'} 
-                    onValueChange={(value) => handleInputChange('compliance', 'brandAssetsAvailable', value === 'Yes')}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Yes">Yes</SelectItem>
-                      <SelectItem value="No">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label htmlFor="urgency">Urgency Level</Label>
+                <Select 
+                  value={getValue('timeline.urgency')} 
+                  onValueChange={(value) => handleInputChange('timeline.urgency', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select urgency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low - Flexible timeline</SelectItem>
+                    <SelectItem value="normal">Normal - Standard timeline</SelectItem>
+                    <SelectItem value="high">High - Rush deployment</SelectItem>
+                    <SelectItem value="critical">Critical - Emergency replacement</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Device Requirements */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('device-requirements')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Device Requirements"
-              icon={<Monitor className="mr-2 h-5 w-5 text-cyan-600" />}
-              status={sectionStatus['device-requirements'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Hardware and device specifications needed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Kiosk */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Kiosk Requirements</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="kiosk-count">Number of kiosks *</Label>
-                      <Input 
-                        id="kiosk-count" 
-                        type="number"
-                        value={getValue('devices.kiosk.numberOfKiosks')} 
-                        onChange={(e) => handleNestedInputChange('devices', 'kiosk', 'numberOfKiosks', Number(e.target.value))}
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Stakeholders */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="mr-2 h-5 w-5 text-purple-600" />
+                Key Stakeholders
+              </CardTitle>
+              <CardDescription>
+                People involved in the project decision and implementation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Stakeholder Contacts</Label>
+                  {isEditing && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => addArrayItem('stakeholders', { name: '', role: '', email: '', phone: '', department: '' })}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Stakeholder
+                    </Button>
+                  )}
+                </div>
+                
+                {(getValue('stakeholders') || []).map((stakeholder: any, index: number) => (
+                  <div key={index} className="grid grid-cols-1 gap-3 p-3 border rounded-lg">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        placeholder="Name *"
+                        value={stakeholder.name || ''}
+                        onChange={(e) => handleArrayChange('stakeholders', index, 'name', e.target.value)}
                         disabled={!isEditing}
-                        placeholder="e.g., 2"
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="screen-size">Screen size *</Label>
-                      <Select 
-                        value={getValue('devices.kiosk.screenSize')} 
-                        onValueChange={(value) => handleNestedInputChange('devices', 'kiosk', 'screenSize', value)}
+                      <Input
+                        placeholder="Role/Title *"
+                        value={stakeholder.role || ''}
+                        onChange={(e) => handleArrayChange('stakeholders', index, 'role', e.target.value)}
                         disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select screen size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15&quot;">15"</SelectItem>
-                          <SelectItem value="22&quot;">22"</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="card-payment-device">Payment device type *</Label>
-                      <Select 
-                        value={getValue('devices.kiosk.cardPaymentDevice')} 
-                        onValueChange={(value) => handleNestedInputChange('devices', 'kiosk', 'cardPaymentDevice', value)}
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select PED type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Verifone">Verifone</SelectItem>
-                          <SelectItem value="Ingenico">Ingenico</SelectItem>
-                          <SelectItem value="PAX">PAX</SelectItem>
-                          <SelectItem value="Adyen">Adyen</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                          <SelectItem value="Not required">Not required</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="receipt-printer">Receipt printer?</Label>
-                        <Select 
-                          value={getValue('devices.kiosk.receiptPrinter') ? 'Yes' : 'No'} 
-                          onValueChange={(value) => handleNestedInputChange('devices', 'kiosk', 'receiptPrinter', value === 'Yes')}
-                          disabled={!isEditing}
+                      <Input
+                        placeholder="Email"
+                        type="email"
+                        value={stakeholder.email || ''}
+                        onChange={(e) => handleArrayChange('stakeholders', index, 'email', e.target.value)}
+                        disabled={!isEditing}
+                      />
+                      <Input
+                        placeholder="Phone"
+                        value={stakeholder.phone || ''}
+                        onChange={(e) => handleArrayChange('stakeholders', index, 'phone', e.target.value)}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <Input
+                        placeholder="Department"
+                        value={stakeholder.department || ''}
+                        onChange={(e) => handleArrayChange('stakeholders', index, 'department', e.target.value)}
+                        disabled={!isEditing}
+                        className="flex-1"
+                      />
+                      {isEditing && (
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => removeArrayItem('stakeholders', index)}
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="grab-go-shelf">Grab & Go shelf?</Label>
-                        <Select 
-                          value={getValue('devices.kiosk.grabGoShelf') ? 'Yes' : 'No'} 
-                          onValueChange={(value) => handleNestedInputChange('devices', 'kiosk', 'grabGoShelf', value === 'Yes')}
-                          disabled={!isEditing}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Yes">Yes</SelectItem>
-                            <SelectItem value="No">No</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
-                </div>
-
-                {/* Other Devices */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Other Devices</h4>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="pos-terminals">POS terminals</Label>
-                      <Input 
-                        id="pos-terminals" 
-                        type="number"
-                        value={getValue('devices.pos.numberOfTerminals')} 
-                        onChange={(e) => handleNestedInputChange('devices', 'pos', 'numberOfTerminals', Number(e.target.value))}
-                        disabled={!isEditing}
-                        placeholder="e.g., 3"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="kds-screens">Kitchen display screens</Label>
-                      <Input 
-                        id="kds-screens" 
-                        type="number"
-                        value={getValue('devices.kitchen.numberOfKDSScreens')} 
-                        onChange={(e) => handleNestedInputChange('devices', 'kitchen', 'numberOfKDSScreens', Number(e.target.value))}
-                        disabled={!isEditing}
-                        placeholder="e.g., 2"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Additional Requirements</Label>
-                      <div className="space-y-2">
-                        {[
-                          { key: 'scanners', label: 'Scanner' },
-                          { key: 'nfc', label: 'NFC' },
-                          { key: 'customerDisplay', label: 'Customer Display' }
-                        ].map((item) => (
-                          <div key={item.key} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={item.key}
-                              checked={getValue(`devices.other.${item.key}`) || false}
-                              onCheckedChange={(checked) => handleNestedInputChange('devices', 'other', item.key, checked)}
-                              disabled={!isEditing}
-                            />
-                            <Label htmlFor={item.key} className="text-sm">{item.label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                ))}
+                
+                {(!getValue('stakeholders') || getValue('stakeholders').length === 0) && (
+                  <div className="text-center py-4 text-gray-500">
+                    <Users className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                    <p>No stakeholders added yet</p>
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Payments */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('payments')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Payments"
-              icon={<CreditCard className="mr-2 h-6 w-6 text-green-600" />}
-              status={sectionStatus['payments'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Payment gateway and PED configuration
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Gateway Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Gateway</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="payment-provider">Payment provider & MID/TID readiness *</Label>
-                    <Input 
-                      id="payment-provider" 
-                      value={formData.payments?.gateway?.paymentProvider || ''} 
-                      onChange={(e) => handleInputChange('payments', 'gateway', { ...formData.payments?.gateway, paymentProvider: e.target.value })}
+          {/* Infrastructure Check */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Wifi className="mr-2 h-5 w-5 text-indigo-600" />
+                Infrastructure Check
+              </CardTitle>
+              <CardDescription>
+                Basic infrastructure readiness assessment
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3">
+                  <Zap className="h-5 w-5 text-yellow-500" />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="power-available"
+                      checked={getValue('infrastructure.powerAvailable')}
+                      onCheckedChange={(checked) => handleInputChange('infrastructure.powerAvailable', checked)}
                       disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
                     />
+                    <Label htmlFor="power-available">Power Available</Label>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="p2pe-required">Is P2PE or SRED required?</Label>
-                    <Select 
-                      value={formData.payments?.gateway?.p2peRequired || ''} 
-                      onValueChange={(value) => handleInputChange('payments', 'gateway', { ...formData.payments?.gateway, p2peRequired: value })}
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Wifi className="h-5 w-5 text-blue-500" />
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="network-available"
+                      checked={getValue('infrastructure.networkAvailable')}
+                      onCheckedChange={(checked) => handleInputChange('infrastructure.networkAvailable', checked)}
                       disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue placeholder="Select requirement" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Required">Required</SelectItem>
-                        <SelectItem value="Preferred">Preferred</SelectItem>
-                        <SelectItem value="Not required">Not required</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="settlement-currency">Settlement currency & tips/gratuity options</Label>
-                    <Input 
-                      id="settlement-currency" 
-                      value={formData.payments?.gateway?.settlementCurrency || ''} 
-                      onChange={(e) => handleInputChange('payments', 'gateway', { ...formData.payments?.gateway, settlementCurrency: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
                     />
+                    <Label htmlFor="network-available">Network Available</Label>
                   </div>
                 </div>
               </div>
 
-              {/* PED Subsection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">PED</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="ped-comms">PED comms method *</Label>
-                    <Select 
-                      value={formData.payments?.ped?.commsMethod || ''} 
-                      onValueChange={(value) => handleInputChange('payments', 'ped', { ...formData.payments?.ped, commsMethod: value })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue placeholder="Select comms method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Ethernet">Ethernet</SelectItem>
-                        <SelectItem value="Wi‑Fi">Wi‑Fi</SelectItem>
-                        <SelectItem value="Bluetooth">Bluetooth</SelectItem>
-                        <SelectItem value="Serial">Serial</SelectItem>
-                        <SelectItem value="USB">USB</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ped-mounting">Mounting or cradle for PED *</Label>
-                    <Select 
-                      value={formData.payments?.ped?.mountingType || ''} 
-                      onValueChange={(value) => handleInputChange('payments', 'ped', { ...formData.payments?.ped, mountingType: value })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue placeholder="Select mounting type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Integrated">Integrated</SelectItem>
-                        <SelectItem value="Stanchion">Stanchion</SelectItem>
-                        <SelectItem value="Counter cradle">Counter cradle</SelectItem>
-                        <SelectItem value="Wall bracket">Wall bracket</SelectItem>
-                        <SelectItem value="None">None</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Security & HSE */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('security-hse')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Security & HSE"
-              icon={<Shield className="mr-2 h-6 w-6 text-purple-600" />}
-              status={sectionStatus['security-hse'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Device security and health & safety requirements
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Device Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Device</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mdm-required">MDM (SOTI/Intune/Other) required? *</Label>
-                    <Select 
-                      value={formData.securityHSE?.device?.mdmRequired || ''} 
-                      onValueChange={(value) => handleInputChange('securityHSE', 'device', { ...formData.securityHSE?.device, mdmRequired: value })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue placeholder="Select MDM requirement" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SOTI">SOTI</SelectItem>
-                        <SelectItem value="Intune">Intune</SelectItem>
-                        <SelectItem value="Nubis">Nubis</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="asset-tagging">Asset tagging & tamper seals needed?</Label>
-                    <Select 
-                      value={formData.securityHSE?.device?.assetTagging ? 'Yes' : 'No'} 
-                      onValueChange={(value) => handleInputChange('securityHSE', 'device', { ...formData.securityHSE?.device, assetTagging: value === 'Yes' })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                <Label htmlFor="wifi-quality">WiFi Quality Assessment</Label>
+                <Select 
+                  value={getValue('infrastructure.wifiQuality')} 
+                  onValueChange={(value) => handleInputChange('infrastructure.wifiQuality', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assess WiFi quality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excellent">Excellent</SelectItem>
+                    <SelectItem value="good">Good</SelectItem>
+                    <SelectItem value="fair">Fair</SelectItem>
+                    <SelectItem value="poor">Poor</SelectItem>
+                    <SelectItem value="none">No WiFi</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* HSE Subsection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">HSE</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="rams-approval">RAMS approval required?</Label>
-                    <Select 
-                      value={formData.securityHSE?.hse?.ramsApproval ? 'Yes' : 'No'} 
-                      onValueChange={(value) => handleInputChange('securityHSE', 'hse', { ...formData.securityHSE?.hse, ramsApproval: value === 'Yes' })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="working-constraints">Working-at-height or out-of-hours constraints</Label>
-                    <Textarea 
-                      id="working-constraints" 
-                      value={formData.securityHSE?.hse?.workingConstraints || ''} 
-                      onChange={(e) => handleInputChange('securityHSE', 'hse', { ...formData.securityHSE?.hse, workingConstraints: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Logistics */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('logistics')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Logistics"
-              icon={<MapPin className="mr-2 h-6 w-6 text-orange-600" />}
-              status={sectionStatus['logistics'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Access, staging, and on-site logistics
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Access Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Access</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="delivery-address">Deliver-to address & receiving window *</Label>
-                    <Textarea 
-                      id="delivery-address" 
-                      value={formData.logistics?.access?.deliveryAddress || ''} 
-                      onChange={(e) => handleInputChange('logistics', 'access', { ...formData.logistics?.access, deliveryAddress: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="parking-access">Parking/loading bay access & height limits</Label>
-                    <Textarea 
-                      id="parking-access" 
-                      value={formData.logistics?.access?.parkingAccess || ''} 
-                      onChange={(e) => handleInputChange('logistics', 'access', { ...formData.logistics?.access, parkingAccess: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Staging Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Staging</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="delivery-preference">Preferred delivery: single-shipment vs staged</Label>
-                  <Select 
-                    value={formData.logistics?.staging?.deliveryPreference || ''} 
-                    onValueChange={(value) => handleInputChange('logistics', 'staging', { ...formData.logistics?.staging, deliveryPreference: value })}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                      <SelectValue placeholder="Select delivery preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Single">Single</SelectItem>
-                      <SelectItem value="Staged">Staged</SelectItem>
-                      <SelectItem value="On-demand">On-demand</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* On-site Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">On-site</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="induction-time">Induction time on day of install</Label>
-                    <Input 
-                      id="induction-time" 
-                      type="time"
-                      value={formData.logistics?.onSite?.inductionTime || ''} 
-                      onChange={(e) => handleInputChange('logistics', 'onSite', { ...formData.logistics?.onSite, inductionTime: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="escort-required">Escort required for areas?</Label>
-                    <Select 
-                      value={formData.logistics?.onSite?.escortRequired ? 'Yes' : 'No'} 
-                      onValueChange={(value) => handleInputChange('logistics', 'onSite', { ...formData.logistics?.onSite, escortRequired: value === 'Yes' })}
-                      disabled={!isEditing}
-                    >
-                      <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pre-Install Checks */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('pre-install-checks')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Pre-Install Checks"
-              icon={<CheckCircle className="mr-2 h-6 w-6 text-green-600" />}
-              status={sectionStatus['pre-install-checks'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Network, Wi-Fi, and power verification
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Network Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Network</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Ping to SmartQ endpoints from site network *</Label>
-                    <div className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="ping-pass"
-                          checked={formData.preInstallChecks?.network?.pingPass || false}
-                          onCheckedChange={(checked) => handleInputChange('preInstallChecks', 'network', { ...formData.preInstallChecks?.network, pingPass: checked })}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="ping-pass" className="text-sm">Pass</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="ping-fail"
-                          checked={formData.preInstallChecks?.network?.pingFail || false}
-                          onCheckedChange={(checked) => handleInputChange('preInstallChecks', 'network', { ...formData.preInstallChecks?.network, pingFail: checked })}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="ping-fail" className="text-sm">Fail</Label>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>HTTP/HTTPS egress allowed *</Label>
-                    <div className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="egress-pass"
-                          checked={formData.preInstallChecks?.network?.egressPass || false}
-                          onCheckedChange={(checked) => handleInputChange('preInstallChecks', 'network', { ...formData.preInstallChecks?.network, egressPass: checked })}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="egress-pass" className="text-sm">Pass</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="egress-fail"
-                          checked={formData.preInstallChecks?.network?.egressFail || false}
-                          onCheckedChange={(checked) => handleInputChange('preInstallChecks', 'network', { ...formData.preInstallChecks?.network, egressFail: checked })}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="egress-fail" className="text-sm">Fail</Label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wi-Fi Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Wi‑Fi</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="rssi-level">RSSI at install points (dBm)</Label>
-                  <Input 
-                    id="rssi-level" 
-                    type="number"
-                    value={formData.preInstallChecks?.wifi?.rssiLevel || ''} 
-                    onChange={(e) => handleInputChange('preInstallChecks', 'wifi', { ...formData.preInstallChecks?.wifi, rssiLevel: Number(e.target.value) })}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-              </div>
-
-              {/* Power Subsection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Power</h3>
-                <div className="space-y-2">
-                  <Label>Power outlets tested and labelled *</Label>
-                  <div className="flex space-x-4">
-                    <div className="flex items-center space-x-2">
+                <Label>Physical Constraints</Label>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  {['Limited Wall Space', 'No Drilling Allowed', 'Cable Management Issues', 'Accessibility Concerns'].map((constraint) => (
+                    <div key={constraint} className="flex items-center space-x-2">
                       <Checkbox
-                        id="power-pass"
-                        checked={formData.preInstallChecks?.power?.powerPass || false}
-                        onCheckedChange={(checked) => handleInputChange('preInstallChecks', 'power', { ...formData.preInstallChecks?.power, powerPass: checked })}
+                        id={constraint}
+                        checked={(getValue('infrastructure.physicalConstraints') || []).includes(constraint)}
+                        onCheckedChange={(checked) => handleMultiSelectChange('infrastructure.physicalConstraints', constraint, !!checked)}
                         disabled={!isEditing}
                       />
-                      <Label htmlFor="power-pass" className="text-sm">Pass</Label>
+                      <Label htmlFor={constraint} className="text-sm">{constraint}</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="power-fail"
-                        checked={formData.preInstallChecks?.power?.powerFail || false}
-                        onCheckedChange={(checked) => handleInputChange('preInstallChecks', 'power', { ...formData.preInstallChecks?.power, powerFail: checked })}
-                        disabled={!isEditing}
-                      />
-                      <Label htmlFor="power-fail" className="text-sm">Fail</Label>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Acceptance */}
-        <Card 
-          className="shadow-sm border border-gray-200"
-          onMouseEnter={() => handleSectionFocus('acceptance')}
-        >
-          <CardHeader>
-            <SectionHeader
-              title="Acceptance"
-              icon={<Users className="mr-2 h-6 w-6 text-indigo-600" />}
-              status={sectionStatus['acceptance'] || 'saved'}
-            />
-            <CardDescription className="text-gray-600">
-              Pilot testing and support requirements
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-8">
-              {/* Pilot Subsection */}
+          {/* Findings & Recommendations */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Camera className="mr-2 h-5 w-5 text-red-600" />
+                Findings & Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Pilot</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="uat-scenarios">UAT scenarios agreed *</Label>
-                    <Textarea 
-                      id="uat-scenarios" 
-                      value={formData.acceptance?.pilot?.uatScenarios || ''} 
-                      onChange={(e) => handleInputChange('acceptance', 'pilot', { ...formData.acceptance?.pilot, uatScenarios: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="definition-of-done">Definition of Done for Go-Live *</Label>
-                    <Textarea 
-                      id="definition-of-done" 
-                      value={formData.acceptance?.pilot?.definitionOfDone || ''} 
-                      onChange={(e) => handleInputChange('acceptance', 'pilot', { ...formData.acceptance?.pilot, definitionOfDone: e.target.value })}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                      rows={3}
-                    />
-                  </div>
-                </div>
+                <Label htmlFor="findings">Key Findings</Label>
+                <Textarea
+                  id="findings"
+                  value={getValue('findings')}
+                  onChange={(e) => handleInputChange('findings', e.target.value)}
+                  placeholder="Document key observations, measurements, photos taken, etc."
+                  disabled={!isEditing}
+                  rows={4}
+                />
               </div>
 
-              {/* Support Subsection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">Support</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="first-week-support">First-week on-site support needed? *</Label>
-                  <Select 
-                    value={formData.acceptance?.support?.firstWeekSupport || ''} 
-                    onValueChange={(value) => handleInputChange('acceptance', 'support', { ...formData.acceptance?.support, firstWeekSupport: value })}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                      <SelectValue placeholder="Select support level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Yes (days)">Yes (days)</SelectItem>
-                      <SelectItem value="Remote only">Remote only</SelectItem>
-                      <SelectItem value="Not required">Not required</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label htmlFor="recommendations">Recommendations</Label>
+                <Textarea
+                  id="recommendations"
+                  value={getValue('recommendations')}
+                  onChange={(e) => handleInputChange('recommendations', e.target.value)}
+                  placeholder="Recommended approach, potential challenges, next steps..."
+                  disabled={!isEditing}
+                  rows={4}
+                />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

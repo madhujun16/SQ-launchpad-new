@@ -139,7 +139,7 @@ export interface ProcurementData {
   status: 'pending' | 'ordered' | 'delivered' | 'partially_delivered';
   software_modules: Array<{
     name: string;
-    status: string;
+    status: 'pending' | 'ordered' | 'delivered';
     orderDate?: string;
     deliveryDate?: string;
     licenseKey?: string;
@@ -147,7 +147,7 @@ export interface ProcurementData {
   hardware_items: Array<{
     name: string;
     quantity: number;
-    status: string;
+    status: 'pending' | 'ordered' | 'delivered';
     orderDate?: string;
     deliveryDate?: string;
     trackingNumber?: string;
