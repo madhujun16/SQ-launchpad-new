@@ -110,10 +110,13 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
     const fetchHardwareItems = async () => {
       try {
         setLoading(true);
+        console.log('🔍 Fetching hardware items for procurement...');
         const hardwareItems = await PlatformConfigService.getAllActiveHardwareItems();
+        console.log('📦 Hardware items fetched for procurement:', hardwareItems);
+        console.log('📊 Number of items:', hardwareItems.length);
         setAvailableHardwareItems(hardwareItems);
       } catch (error) {
-        console.error('Error fetching hardware items:', error);
+        console.error('❌ Error fetching hardware items:', error);
       } finally {
         setLoading(false);
       }
@@ -307,43 +310,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="item-type">Item Type</Label>
-                    <Select 
-                      value={newItem.type} 
-                      onValueChange={(value) => setNewItem({...newItem, type: value as 'hardware' | 'support'})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hardware">Hardware</SelectItem>
-                        <SelectItem value="support">Support</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="item-category">Category</Label>
-                    <Select 
-                      value={newItem.category} 
-                      onValueChange={(value) => setNewItem({...newItem, category: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Hardware">Hardware</SelectItem>
-                        <SelectItem value="Support">Support</SelectItem>
-                        <SelectItem value="Cabling">Cabling</SelectItem>
-                        <SelectItem value="Networking">Networking</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
                 <div>
-                  <Label htmlFor="item-name">Select Item</Label>
+                  <Label htmlFor="item-name">Select Hardware/Support Item</Label>
+                  <p className="text-sm text-gray-600 mb-2">Choose from available items in the backend</p>
                   <Select 
                     value={newItem.name} 
                     onValueChange={(value) => {
@@ -352,6 +321,7 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                         ...newItem, 
                         name: value,
                         category: selectedItem?.category || 'Hardware',
+                        type: selectedItem?.category?.toLowerCase().includes('support') ? 'support' : 'hardware',
                         unitCost: selectedItem?.unit_cost || 0
                       });
                     }}
@@ -360,14 +330,29 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                       <SelectValue placeholder="Select hardware or support item" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableHardwareItems.map((item) => (
-                        <SelectItem key={item.id} value={item.name}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{item.name}</span>
-                            <span className="text-sm text-gray-500 ml-2">£{item.unit_cost}</span>
+                      {loading ? (
+                        <SelectItem value="loading" disabled>
+                          <div className="flex items-center justify-center w-full py-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+                            <span className="text-sm text-gray-500">Loading items...</span>
                           </div>
                         </SelectItem>
-                      ))}
+                      ) : availableHardwareItems.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          <div className="flex items-center justify-center w-full py-2">
+                            <span className="text-sm text-gray-500">No hardware items available</span>
+                          </div>
+                        </SelectItem>
+                      ) : (
+                        availableHardwareItems.map((item) => (
+                          <SelectItem key={item.id} value={item.name}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{item.name}</span>
+                              <span className="text-sm text-gray-500 ml-2">£{item.unit_cost}</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
