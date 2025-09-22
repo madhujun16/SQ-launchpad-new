@@ -42,34 +42,33 @@ import {
 
 // Chart data for visual representations
 const SITE_WORKFLOW_STAGES_DATA = [
-  { stage: 'Site Study', sites: 5, avgDays: 12 },
-  { stage: 'Scoping', sites: 8, avgDays: 8 },
-  { stage: 'Approval', sites: 3, avgDays: 5 },
-  { stage: 'Procurement', sites: 6, avgDays: 15 },
-  { stage: 'Deployment', sites: 4, avgDays: 10 },
-  { stage: 'Go Live', sites: 2, avgDays: 3 }
+  { stage: 'Site Study', avgDays: 12, color: '#3B82F6' },
+  { stage: 'Scoping', avgDays: 8, color: '#F59E0B' },
+  { stage: 'Approval', avgDays: 5, color: '#8B5CF6' },
+  { stage: 'Procurement', avgDays: 15, color: '#EF4444' },
+  { stage: 'Deployment', avgDays: 10, color: '#10B981' },
+  { stage: 'Go Live', avgDays: 3, color: '#06B6D4' }
 ];
 
-const STATUS_DISTRIBUTION_DATA = [
-  { name: 'Site Study', value: 8, color: '#3B82F6' }, // Blue
-  { name: 'Scoping', value: 6, color: '#F59E0B' }, // Amber
-  { name: 'Deployed', value: 12, color: '#10B981' }, // Emerald
-  { name: 'Live', value: 4, color: '#8B5CF6' } // Purple
+const SITE_STAGES_BREAKUP_DATA = [
+  { stage: 'Site Study', sites: 12, color: '#3B82F6' },
+  { stage: 'Scoping', sites: 8, color: '#F59E0B' },
+  { stage: 'Approval', sites: 5, color: '#8B5CF6' },
+  { stage: 'Procurement', sites: 15, color: '#EF4444' },
+  { stage: 'Deployment', sites: 10, color: '#10B981' },
+  { stage: 'Go Live', sites: 6, color: '#06B6D4' }
 ];
 
 const FINANCIAL_TREND_DATA = [
-  { month: 'Jan', investment: 15000, opex: 2000, budget: 500000 },
-  { month: 'Feb', investment: 25000, opex: 2200, budget: 500000 },
-  { month: 'Mar', investment: 35000, opex: 2400, budget: 500000 },
-  { month: 'Apr', investment: 45000, opex: 2600, budget: 500000 },
-  { month: 'May', investment: 55000, opex: 2800, budget: 500000 },
-  { month: 'Jun', investment: 185700, opex: 2558, budget: 500000 }
+  { month: 'Jul', investment: 200000, opex: 2500, budget: 500000 },
+  { month: 'Aug', investment: 250000, opex: 2600, budget: 500000 },
+  { month: 'Sep', investment: 300000, opex: 2700, budget: 500000 }
 ];
 
 const MONTHLY_DEPLOYMENT_DATA = [
-  { month: 'Oct 24', deployed: 3, inProgress: 2 },
-  { month: 'Nov 24', deployed: 5, inProgress: 3 },
-  { month: 'Dec 24', deployed: 4, inProgress: 4 },
+  { month: 'Oct 24', deployed: 3, inProgress: 5 },
+  { month: 'Nov 24', deployed: 4, inProgress: 4 },
+  { month: 'Dec 24', deployed: 5, inProgress: 3 },
   { month: 'Jan 25', deployed: 6, inProgress: 2 },
   { month: 'Feb 25', deployed: 7, inProgress: 3 },
   { month: 'Mar 25', deployed: 8, inProgress: 1 },
@@ -263,62 +262,63 @@ const Dashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Activity className="h-5 w-5 text-primary" />
-                <span>Site Workflow Stages</span>
+                <span>Workflow Stage Duration</span>
               </CardTitle>
               <CardDescription>
-                Current distribution of sites across workflow stages
+                Average days spent in each workflow stage
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={SITE_WORKFLOW_STAGES_DATA}>
-                  <XAxis dataKey="stage" />
-                  <YAxis />
+                <BarChart data={SITE_WORKFLOW_STAGES_DATA} margin={{ top: 5, right: 30, left: 20, bottom: 20 }}>
+                  <XAxis 
+                    dataKey="stage" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    fontSize={12}
+                  />
+                  <YAxis domain={[0, 20]} />
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip 
-                    formatter={(value, name) => [
-                      name === 'sites' ? `${value} sites` : `${value} days`,
-                      name === 'sites' ? 'Sites' : 'Avg Days'
-                    ]}
+                    formatter={(value) => [`${value} days`, 'Avg Days']}
                     labelFormatter={(label) => `Stage: ${label}`}
                   />
-                  <Legend />
-                  <Bar dataKey="sites" fill="#3B82F6" name="Sites" />
-                  <Bar dataKey="avgDays" fill="#F59E0B" name="Avg Days" />
+                  <Bar dataKey="avgDays" fill="#3B82F6" name="Avg Days" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Status Distribution */}
+          {/* Site Stages Breakup */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <PieChart className="h-5 w-5 text-primary" />
-                <span>Site Status Distribution</span>
+                <span>Site Stages Breakup</span>
               </CardTitle>
               <CardDescription>
-                Current distribution of site statuses
+                Distribution of sites across workflow stages
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsPieChart>
                   <Pie
-                    data={STATUS_DISTRIBUTION_DATA}
+                    data={SITE_STAGES_BREAKUP_DATA}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ stage, percent }) => `${stage} ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
-                    dataKey="value"
+                    dataKey="sites"
                   >
-                    {STATUS_DISTRIBUTION_DATA.map((entry, index) => (
+                    {SITE_STAGES_BREAKUP_DATA.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={(value) => [`${value} sites`, 'Sites']} />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -384,7 +384,7 @@ const Dashboard = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
+                <TrendingUp className="h-5 w-5 text-primary" />
                 <span>Monthly Deployments</span>
               </CardTitle>
               <CardDescription>
@@ -393,15 +393,29 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={MONTHLY_DEPLOYMENT_DATA}>
+                <LineChart data={MONTHLY_DEPLOYMENT_DATA}>
                   <XAxis dataKey="month" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="deployed" fill="#10B981" name="Deployed" />
-                  <Bar dataKey="inProgress" fill="#3B82F6" name="In Progress" />
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="deployed"
+                    stroke="#10B981"
+                    strokeWidth={3}
+                    name="Deployed"
+                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="inProgress"
+                    stroke="#3B82F6"
+                    strokeWidth={3}
+                    name="In Progress"
+                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
