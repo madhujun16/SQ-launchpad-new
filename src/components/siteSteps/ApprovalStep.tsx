@@ -27,9 +27,6 @@ interface ApprovalStepProps {
 
 const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
   const [approvalResponseTime, setApprovalResponseTime] = useState<number>(24);
-  const [isEditing, setIsEditing] = useState(false);
-  const [approvalComment, setApprovalComment] = useState('');
-  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null);
 
   // Load approval response time from settings
   useEffect(() => {
@@ -108,30 +105,6 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
     };
   };
 
-  const handleApprovalAction = async (action: 'approve' | 'reject') => {
-    try {
-      const updatedSite = {
-        ...site,
-        approval: {
-          ...site.approval,
-          status: action,
-          approvedAt: new Date().toISOString(),
-          approvedBy: 'Current User', // TODO: Get from auth context
-          comments: approvalComment
-        }
-      };
-      
-      onSiteUpdate(updatedSite);
-      setIsEditing(false);
-      setApprovalComment('');
-      setApprovalAction(null);
-      
-      toast.success(`Approval ${action}d successfully`);
-    } catch (error) {
-      console.error('Error updating approval:', error);
-      toast.error('Failed to update approval');
-    }
-  };
 
   const nextAction = getNextAction();
 
@@ -360,48 +333,6 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                     <p className="text-sm text-gray-800 leading-relaxed">
                       {site?.approval?.comments || 'Site scoping submitted for review. Ops Manager will review hardware requirements, software selections, and budget allocation. Expected response within 48 hours.'}
                     </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Approval Action Section - Only show if pending and user can approve */}
-            {(!site?.approval?.status || site?.approval?.status === 'pending') && (
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Handshake className="h-5 w-5 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-900">Approval Decision Required</p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="approval-comment">Approval Comments</Label>
-                    <Textarea
-                      id="approval-comment"
-                      value={approvalComment}
-                      onChange={(e) => setApprovalComment(e.target.value)}
-                      placeholder="Add your approval comments or feedback..."
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  
-                  <div className="flex space-x-3">
-                    <Button
-                      onClick={() => handleApprovalAction('approve')}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      disabled={!approvalComment.trim()}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button
-                      onClick={() => handleApprovalAction('reject')}
-                      variant="destructive"
-                      disabled={!approvalComment.trim()}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Reject
-                    </Button>
                   </div>
                 </div>
               </div>
