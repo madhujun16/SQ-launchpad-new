@@ -243,8 +243,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column */}
+      <div className="space-y-6">
+        {/* Vertical Layout */}
         <div className="space-y-6">
           {/* Space Assessment */}
           <Card className="shadow-sm border border-gray-200">
@@ -476,9 +476,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
             </CardContent>
           </Card>
         </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
           {/* Stakeholders */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader>
@@ -683,7 +680,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           </Card>
         </div>
       </div>
-    </div>
   );
 };
 
