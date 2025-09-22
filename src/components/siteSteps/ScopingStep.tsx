@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,12 @@ import {
   Monitor, 
   Package, 
   BarChart3, 
-  FileCheck
+  FileCheck,
+  Loader2
 } from 'lucide-react';
 import { Site, SoftwareModule, HardwareItem } from '@/types/siteTypes';
+import { PlatformConfigService, SoftwareModule as BackendSoftwareModule, HardwareItem as BackendHardwareItem } from '@/services/platformConfigService';
+import { toast } from 'sonner';
 
 interface ScopingStepProps {
   site: Site;
@@ -58,42 +61,6 @@ const softwareModules: SoftwareModule[] = [
     setupFee: 200,
     category: 'Inventory',
     hardwareRequirements: ['tablet', 'barcode-scanner']
-  },
-  {
-    id: 'customer-management',
-    name: 'Customer Management System',
-    description: 'Customer data and loyalty programs',
-    monthlyFee: 20,
-    setupFee: 150,
-    category: 'Customer Management',
-    hardwareRequirements: ['tablet']
-  },
-  {
-    id: 'analytics-dashboard',
-    name: 'Analytics Dashboard',
-    description: 'Business intelligence and reporting',
-    monthlyFee: 35,
-    setupFee: 250,
-    category: 'Analytics',
-    hardwareRequirements: ['monitor']
-  },
-  {
-    id: 'integration-middleware',
-    name: 'Integration Middleware',
-    description: 'Third-party system connections',
-    monthlyFee: 40,
-    setupFee: 300,
-    category: 'Integration',
-    hardwareRequirements: ['server']
-  },
-  {
-    id: 'security-suite',
-    name: 'Security Suite',
-    description: 'Data protection and compliance tools',
-    monthlyFee: 25,
-    setupFee: 200,
-    category: 'Security',
-    hardwareRequirements: ['firewall']
   }
 ];
 
@@ -161,76 +128,82 @@ const hardwareItems: HardwareItem[] = [
     manufacturer: 'Samsung',
     unitCost: 200,
     category: 'Tablet'
-  },
-  {
-    id: 'monitor',
-    name: 'Monitor',
-    description: '24-inch LED monitor for analytics dashboard',
-    manufacturer: 'Dell',
-    unitCost: 150,
-    category: 'Display'
-  },
-  {
-    id: 'server',
-    name: 'Server',
-    description: 'Dell PowerEdge server for integration middleware',
-    manufacturer: 'Dell',
-    unitCost: 1200,
-    category: 'Server'
-  },
-  {
-    id: 'firewall',
-    name: 'Firewall',
-    description: 'Cisco ASA firewall for security suite',
-    manufacturer: 'Cisco',
-    unitCost: 800,
-    category: 'Security'
   }
 ];
 
 const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [softwareQuantities, setSoftwareQuantities] = useState<Record<string, number>>({});
+  const [availableSoftwareModules, setAvailableSoftwareModules] = useState<BackendSoftwareModule[]>([]);
+  const [availableHardwareItems, setAvailableHardwareItems] = useState<BackendHardwareItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get software modules based on categories selected in Site Study
-  const availableSoftwareModules = useMemo(() => {
-    const selectedCategories = site?.siteStudy?.requirements?.softwareCategories || [];
-    
-    if (selectedCategories.length === 0) {
-      return softwareModules; // Show all if no categories selected
-    }
-    
-    return softwareModules.filter(module => 
-      selectedCategories.includes(module.category)
-    );
+  // Fetch software modules and hardware items based on selected categories from Site Study
+  useEffect(() => {
+    const fetchScopingData = async () => {
+      try {
+        setLoading(true);
+        
+        // Get selected software categories from Site Study
+        const selectedCategories = site?.siteStudy?.requirements?.softwareCategories || [];
+        
+        if (selectedCategories.length === 0) {
+          // If no categories selected, show all available items
+          const [softwareModules, hardwareItems] = await Promise.all([
+            PlatformConfigService.getAllSoftwareModules(),
+            PlatformConfigService.getAllHardwareItems()
+          ]);
+          
+          setAvailableSoftwareModules(softwareModules);
+          setAvailableHardwareItems(hardwareItems);
+        } else {
+          // Fetch items based on selected categories
+          const [softwareModules, hardwareItems] = await Promise.all([
+            PlatformConfigService.getSoftwareModulesByCategories(selectedCategories),
+            PlatformConfigService.getHardwareItemsByCategories(selectedCategories)
+          ]);
+          
+          setAvailableSoftwareModules(softwareModules);
+          setAvailableHardwareItems(hardwareItems);
+        }
+      } catch (error) {
+        console.error('Error fetching scoping data:', error);
+        toast.error('Failed to load software and hardware options');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScopingData();
   }, [site?.siteStudy?.requirements?.softwareCategories]);
-
-  // Get recommended hardware based on selected software
   const recommendedHardware = useMemo(() => {
-    if (!site?.scoping?.selectedSoftware) return [];
+    if (!site?.scoping?.selectedSoftware || availableSoftwareModules.length === 0) return [];
     
     const hardwareIds = new Set<string>();
     site.scoping.selectedSoftware.forEach(softwareId => {
-      const software = softwareModules.find(sm => sm.id === softwareId);
+      const software = availableSoftwareModules.find(sm => sm.id === softwareId);
       if (software) {
-        software.hardwareRequirements.forEach(hwId => hardwareIds.add(hwId));
+        // For now, we'll recommend hardware based on category matching
+        // In a real implementation, you'd have hardware requirements in the database
+        const categoryHardware = availableHardwareItems.filter(hw => hw.category === software.category);
+        categoryHardware.forEach(hw => hardwareIds.add(hw.id));
       }
     });
     
     return Array.from(hardwareIds).map(hwId => {
-      const hardware = hardwareItems.find(hw => hw.id === hwId);
+      const hardware = availableHardwareItems.find(hw => hw.id === hwId);
       const quantity = site?.scoping?.selectedHardware?.find(sh => sh.id === hwId)?.quantity || 1;
       return hardware ? { ...hardware, quantity } : null;
     }).filter(Boolean);
-  }, [site?.scoping?.selectedSoftware, site?.scoping?.selectedHardware]);
+  }, [site?.scoping?.selectedSoftware, availableSoftwareModules, availableHardwareItems, site?.scoping?.selectedHardware]);
 
   // Calculate costs for Scoping step
   const calculateHardwareCosts = () => {
     let totalCost = 0;
     site?.scoping?.selectedHardware?.forEach(item => {
-      const hardware = hardwareItems.find(h => h.id === item.id);
+      const hardware = availableHardwareItems.find(h => h.id === item.id);
       if (hardware) {
-        totalCost += hardware.unitCost * item.quantity;
+        totalCost += hardware.unit_cost * item.quantity;
       }
     });
     return totalCost;
@@ -239,10 +212,10 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
   const calculateSoftwareSetupCosts = () => {
     let totalCost = 0;
     site?.scoping?.selectedSoftware?.forEach(softwareId => {
-      const software = softwareModules.find(s => s.id === softwareId);
+      const software = availableSoftwareModules.find(s => s.id === softwareId);
       if (software) {
         const quantity = getSoftwareQuantity(softwareId);
-        totalCost += software.setupFee * quantity;
+        totalCost += software.setup_fee * quantity;
       }
     });
     return totalCost;
@@ -251,10 +224,10 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
   const calculateSoftwareMonthlyCosts = () => {
     let totalCost = 0;
     site?.scoping?.selectedSoftware?.forEach(softwareId => {
-      const software = softwareModules.find(s => s.id === softwareId);
+      const software = availableSoftwareModules.find(s => s.id === softwareId);
       if (software) {
         const quantity = getSoftwareQuantity(softwareId);
-        totalCost += software.monthlyFee * quantity;
+        totalCost += software.monthly_fee * quantity;
       }
     });
     return totalCost;
@@ -370,30 +343,6 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
         </div>
       </div>
       
-      {/* Site Study Categories Summary */}
-      {site?.siteStudy?.requirements?.softwareCategories && site.siteStudy.requirements.softwareCategories.length > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-800 text-lg">Software Categories from Site Study</CardTitle>
-            <CardDescription className="text-blue-600">
-              Based on the requirements analysis, the following software categories were identified:
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {site.siteStudy.requirements.softwareCategories.map((category) => (
-                <Badge key={category} variant="secondary" className="bg-blue-100 text-blue-800">
-                  {category}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-sm text-blue-600 mt-3">
-              Software modules below are filtered to show only those matching the selected categories.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-      
       {/* Main Content - Side by Side Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Side - Software Selection */}
@@ -411,8 +360,20 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {availableSoftwareModules.map((software) => (
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <span className="ml-2 text-sm text-gray-500">Loading software modules...</span>
+            </div>
+          ) : availableSoftwareModules.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Monitor className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">No software modules available</p>
+              <p className="text-xs text-gray-400 mt-1">Select software categories in Site Study step first</p>
+            </div>
+          ) : (
+            availableSoftwareModules.map((software) => (
                   <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-3">
                       <Checkbox 
@@ -450,8 +411,8 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
                         </div>
                       )}
                       <div className="text-right">
-                        <p className="text-sm font-medium">£{software.monthlyFee}/month</p>
-                        <p className="text-xs text-gray-500">£{software.setupFee} setup</p>
+                        <p className="text-sm font-medium">£{software.monthly_fee}/month</p>
+                        <p className="text-xs text-gray-500">£{software.setup_fee} setup</p>
                       </div>
                     </div>
                   </div>
@@ -487,7 +448,7 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
                       </div>
                       <div className="flex items-center space-x-3">
                         <div className="text-right">
-                          <p className="font-medium">£{hardware.unitCost.toLocaleString()}</p>
+                          <p className="font-medium">£{hardware.unit_cost.toLocaleString()}</p>
                           <p className="text-sm text-gray-600">{hardware.manufacturer}</p>
                         </div>
                         <div className="flex items-center space-x-2">

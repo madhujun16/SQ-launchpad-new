@@ -25,10 +25,12 @@ import {
   Camera,
   FileText,
   Upload,
-  Image
+  Image,
+  Loader2
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
+import { PlatformConfigService, SoftwareCategory } from '@/services/platformConfigService';
 
 interface SiteStudyStepProps {
   site: Site;
@@ -37,6 +39,8 @@ interface SiteStudyStepProps {
 
 const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [softwareCategories, setSoftwareCategories] = useState<SoftwareCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [formData, setFormData] = useState(site?.siteStudy || {
     // Planning Phase Data
     spaceAssessment: {
@@ -75,6 +79,24 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       setFormData(site.siteStudy);
     }
   }, [site?.siteStudy]);
+
+  // Fetch software categories on component mount
+  useEffect(() => {
+    const fetchSoftwareCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const categories = await PlatformConfigService.getSoftwareCategories();
+        setSoftwareCategories(categories);
+      } catch (error) {
+        console.error('Error fetching software categories:', error);
+        toast.error('Failed to load software categories');
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchSoftwareCategories();
+  }, []);
 
   const handleInputChange = (path: string, value: any) => {
     setFormData(prev => {
@@ -491,39 +513,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               </div>
 
               <div>
-                <Label>Software Categories Required *</Label>
-                <p className="text-sm text-gray-600 mb-3">Select the software categories needed for this deployment</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                  {[
-                    { id: 'POS', name: 'Point of Sale (POS)', description: 'Transaction processing and payment handling' },
-                    { id: 'Kiosk', name: 'Self-Service Kiosk', description: 'Customer self-ordering and payment' },
-                    { id: 'Kitchen Display (KDS)', name: 'Kitchen Display System', description: 'Order management and kitchen operations' },
-                    { id: 'Inventory', name: 'Inventory Management', description: 'Stock tracking and management' },
-                    { id: 'Customer Management', name: 'Customer Management', description: 'Customer data and loyalty programs' },
-                    { id: 'Analytics', name: 'Analytics & Reporting', description: 'Business intelligence and reporting' },
-                    { id: 'Integration', name: 'System Integration', description: 'Third-party system connections' },
-                    { id: 'Security', name: 'Security & Compliance', description: 'Data protection and compliance tools' }
-                  ].map((category) => (
-                    <div key={category.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <Checkbox
-                        id={category.id}
-                        checked={(getValue('requirements.softwareCategories') || []).includes(category.id)}
-                        onCheckedChange={(checked) => handleMultiSelectChange('requirements.softwareCategories', category.id, !!checked)}
-                        disabled={!isEditing}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <Label htmlFor={category.id} className="text-sm font-medium cursor-pointer">
-                          {category.name}
-                        </Label>
-                        <p className="text-xs text-gray-500 mt-1">{category.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
                 <Label>Special Requirements</Label>
                 <div className="grid grid-cols-1 gap-2 mt-2">
                   {['Multi-language Support', 'Accessibility Features', 'Integration with Existing Systems', 'Custom Branding', 'Loyalty Program', 'Reporting & Analytics'].map((req) => (
@@ -538,6 +527,37 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <Label>Software Categories Required *</Label>
+                <p className="text-sm text-gray-600 mb-3">Select the software categories needed for this deployment</p>
+                {loadingCategories ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-500">Loading categories...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    {softwareCategories.map((category) => (
+                      <div key={category.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <Checkbox
+                          id={category.id}
+                          checked={(getValue('requirements.softwareCategories') || []).includes(category.id)}
+                          onCheckedChange={(checked) => handleMultiSelectChange('requirements.softwareCategories', category.id, !!checked)}
+                          disabled={!isEditing}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor={category.id} className="text-sm font-medium cursor-pointer">
+                            {category.name}
+                          </Label>
+                          <p className="text-xs text-gray-500 mt-1">{category.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
