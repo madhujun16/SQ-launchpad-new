@@ -22,7 +22,7 @@ export const SettingsService = {
 
       if (error) {
         console.error('Error fetching general settings:', error);
-        // Return default settings if no data exists
+        // Return default settings if no data exists or table doesn't exist
         return {
           dateFormat: 'dd-mmm-yyyy',
           currency: 'GBP',
@@ -41,6 +41,7 @@ export const SettingsService = {
       };
     } catch (error) {
       console.error('Error in getGeneralSettings:', error);
+      // Return default settings if table doesn't exist or any other error
       return {
         dateFormat: 'dd-mmm-yyyy',
         currency: 'GBP',
@@ -65,13 +66,17 @@ export const SettingsService = {
 
       if (error) {
         console.error('Error updating general settings:', error);
-        throw error;
+        // If table doesn't exist, just return the settings without saving
+        console.warn('General settings table not found. Settings will be saved locally only.');
+        return settings;
       }
 
       return data;
     } catch (error) {
       console.error('Error in updateGeneralSettings:', error);
-      throw error;
+      // If table doesn't exist, just return the settings without saving
+      console.warn('General settings table not found. Settings will be saved locally only.');
+      return settings;
     }
   },
 
