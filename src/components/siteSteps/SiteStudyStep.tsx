@@ -52,7 +52,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       primaryPurpose: '',
       expectedTransactions: '',
       paymentMethods: [],
-      specialRequirements: []
+      specialRequirements: [],
+      softwareCategories: []
     },
     infrastructure: {
       powerAvailable: false,
@@ -484,6 +485,39 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                         disabled={!isEditing}
                       />
                       <Label htmlFor={method} className="text-sm">{method}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>Software Categories Required *</Label>
+                <p className="text-sm text-gray-600 mb-3">Select the software categories needed for this deployment</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                  {[
+                    { id: 'POS', name: 'Point of Sale (POS)', description: 'Transaction processing and payment handling' },
+                    { id: 'Kiosk', name: 'Self-Service Kiosk', description: 'Customer self-ordering and payment' },
+                    { id: 'Kitchen Display (KDS)', name: 'Kitchen Display System', description: 'Order management and kitchen operations' },
+                    { id: 'Inventory', name: 'Inventory Management', description: 'Stock tracking and management' },
+                    { id: 'Customer Management', name: 'Customer Management', description: 'Customer data and loyalty programs' },
+                    { id: 'Analytics', name: 'Analytics & Reporting', description: 'Business intelligence and reporting' },
+                    { id: 'Integration', name: 'System Integration', description: 'Third-party system connections' },
+                    { id: 'Security', name: 'Security & Compliance', description: 'Data protection and compliance tools' }
+                  ].map((category) => (
+                    <div key={category.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <Checkbox
+                        id={category.id}
+                        checked={(getValue('requirements.softwareCategories') || []).includes(category.id)}
+                        onCheckedChange={(checked) => handleMultiSelectChange('requirements.softwareCategories', category.id, !!checked)}
+                        disabled={!isEditing}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor={category.id} className="text-sm font-medium cursor-pointer">
+                          {category.name}
+                        </Label>
+                        <p className="text-xs text-gray-500 mt-1">{category.description}</p>
+                      </div>
                     </div>
                   ))}
                 </div>

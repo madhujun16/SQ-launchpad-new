@@ -58,6 +58,42 @@ const softwareModules: SoftwareModule[] = [
     setupFee: 200,
     category: 'Inventory',
     hardwareRequirements: ['tablet', 'barcode-scanner']
+  },
+  {
+    id: 'customer-management',
+    name: 'Customer Management System',
+    description: 'Customer data and loyalty programs',
+    monthlyFee: 20,
+    setupFee: 150,
+    category: 'Customer Management',
+    hardwareRequirements: ['tablet']
+  },
+  {
+    id: 'analytics-dashboard',
+    name: 'Analytics Dashboard',
+    description: 'Business intelligence and reporting',
+    monthlyFee: 35,
+    setupFee: 250,
+    category: 'Analytics',
+    hardwareRequirements: ['monitor']
+  },
+  {
+    id: 'integration-middleware',
+    name: 'Integration Middleware',
+    description: 'Third-party system connections',
+    monthlyFee: 40,
+    setupFee: 300,
+    category: 'Integration',
+    hardwareRequirements: ['server']
+  },
+  {
+    id: 'security-suite',
+    name: 'Security Suite',
+    description: 'Data protection and compliance tools',
+    monthlyFee: 25,
+    setupFee: 200,
+    category: 'Security',
+    hardwareRequirements: ['firewall']
   }
 ];
 
@@ -125,12 +161,49 @@ const hardwareItems: HardwareItem[] = [
     manufacturer: 'Samsung',
     unitCost: 200,
     category: 'Tablet'
+  },
+  {
+    id: 'monitor',
+    name: 'Monitor',
+    description: '24-inch LED monitor for analytics dashboard',
+    manufacturer: 'Dell',
+    unitCost: 150,
+    category: 'Display'
+  },
+  {
+    id: 'server',
+    name: 'Server',
+    description: 'Dell PowerEdge server for integration middleware',
+    manufacturer: 'Dell',
+    unitCost: 1200,
+    category: 'Server'
+  },
+  {
+    id: 'firewall',
+    name: 'Firewall',
+    description: 'Cisco ASA firewall for security suite',
+    manufacturer: 'Cisco',
+    unitCost: 800,
+    category: 'Security'
   }
 ];
 
 const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [softwareQuantities, setSoftwareQuantities] = useState<Record<string, number>>({});
+
+  // Get software modules based on categories selected in Site Study
+  const availableSoftwareModules = useMemo(() => {
+    const selectedCategories = site?.siteStudy?.requirements?.softwareCategories || [];
+    
+    if (selectedCategories.length === 0) {
+      return softwareModules; // Show all if no categories selected
+    }
+    
+    return softwareModules.filter(module => 
+      selectedCategories.includes(module.category)
+    );
+  }, [site?.siteStudy?.requirements?.softwareCategories]);
 
   // Get recommended hardware based on selected software
   const recommendedHardware = useMemo(() => {
@@ -297,6 +370,30 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
         </div>
       </div>
       
+      {/* Site Study Categories Summary */}
+      {site?.siteStudy?.requirements?.softwareCategories && site.siteStudy.requirements.softwareCategories.length > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-800 text-lg">Software Categories from Site Study</CardTitle>
+            <CardDescription className="text-blue-600">
+              Based on the requirements analysis, the following software categories were identified:
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {site.siteStudy.requirements.softwareCategories.map((category) => (
+                <Badge key={category} variant="secondary" className="bg-blue-100 text-blue-800">
+                  {category}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-sm text-blue-600 mt-3">
+              Software modules below are filtered to show only those matching the selected categories.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Main Content - Side by Side Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Side - Software Selection */}
@@ -315,7 +412,7 @@ const ScopingStep: React.FC<ScopingStepProps> = ({ site, onSiteUpdate }) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {softwareModules.map((software) => (
+                {availableSoftwareModules.map((software) => (
                   <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                     <div className="flex items-center space-x-3">
                       <Checkbox 
