@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Edit, 
   Download, 
@@ -26,11 +28,19 @@ import {
   FileText,
   Upload,
   Image,
-  Loader2
+  Loader2,
+  CalendarIcon,
+  User,
+  Monitor,
+  CreditCard,
+  Printer,
+  Smartphone
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
 import { PlatformConfigService, SoftwareCategory } from '@/services/platformConfigService';
+import { UserService, UserWithRole } from '@/services/userService';
+import { format } from 'date-fns';
 
 interface SiteStudyStepProps {
   site: Site;
@@ -41,6 +51,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [softwareCategories, setSoftwareCategories] = useState<SoftwareCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [allUsers, setAllUsers] = useState<UserWithRole[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [formData, setFormData] = useState(site?.siteStudy || {
     // Planning Phase Data
     spaceAssessment: {
@@ -49,7 +61,16 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       operatingHours: '',
       peakTimes: '',
       constraints: [],
-      layoutPhotos: []
+      layoutPhotos: [],
+      // Mounting/Layout/Accessibility information
+      mounting: {
+        mountType: '',
+        surfaceMaterial: '',
+        drillingRequired: false,
+        clearanceAvailable: '',
+        distanceToNearest: '',
+        accessibleHeight: false
+      }
     },
     stakeholders: [],
     requirements: {
@@ -57,7 +78,28 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       expectedTransactions: '',
       paymentMethods: [],
       specialRequirements: [],
-      softwareCategories: []
+      softwareCategories: [],
+      // Category-specific requirements
+      categoryRequirements: {
+        foodOrderingApp: {
+          brandAssetsAvailable: false
+        },
+        kiosk: {
+          numberOfKiosks: 0,
+          preferredScreenSize: '',
+          cardPaymentDeviceType: '',
+          receiptPrinterRequired: false,
+          grabAndGoShelfRequired: false
+        },
+        pos: {
+          numberOfPosTerminals: 0,
+          cashDrawerRequired: false
+        },
+        kitchen: {
+          numberOfKdsScreens: 0,
+          kitchenPrinterRequired: false
+        }
+      }
     },
     infrastructure: {
       powerAvailable: false,
@@ -80,22 +122,30 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     }
   }, [site?.siteStudy]);
 
-  // Fetch software categories on component mount
+  // Fetch software categories and users on component mount
   useEffect(() => {
-    const fetchSoftwareCategories = async () => {
+    const fetchData = async () => {
       try {
         setLoadingCategories(true);
-        const categories = await PlatformConfigService.getSoftwareCategories();
+        setLoadingUsers(true);
+        
+        const [categories, users] = await Promise.all([
+          PlatformConfigService.getSoftwareCategories(),
+          UserService.getAllUsers()
+        ]);
+        
         setSoftwareCategories(categories);
+        setAllUsers(users);
       } catch (error) {
-        console.error('Error fetching software categories:', error);
-        toast.error('Failed to load software categories');
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load data');
       } finally {
         setLoadingCategories(false);
+        setLoadingUsers(false);
       }
     };
 
-    fetchSoftwareCategories();
+    fetchData();
   }, []);
 
   const handleInputChange = (path: string, value: any) => {
@@ -239,6 +289,25 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     const currentPhotos = getValue(path) || [];
     const updatedPhotos = currentPhotos.filter((photo: any) => photo.id !== photoId);
     handleInputChange(path, updatedPhotos);
+  };
+
+  // Helper function to format date for display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Helper function to handle date selection
+  const handleDateSelect = (path: string, date: Date | undefined) => {
+    if (date) {
+      handleInputChange(path, date.toISOString().split('T')[0]);
+    } else {
+      handleInputChange(path, '');
+    }
   };
 
   return (
@@ -451,6 +520,103 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
             </CardContent>
           </Card>
 
+          {/* Mounting & Layout Assessment */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MapPin className="mr-2 h-5 w-5 text-indigo-600" />
+                Mounting & Layout Assessment
+              </CardTitle>
+              <CardDescription>
+                Physical installation requirements and accessibility considerations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="mount-type">Mount Type Required</Label>
+                  <Select 
+                    value={getValue('spaceAssessment.mounting.mountType')} 
+                    onValueChange={(value) => handleInputChange('spaceAssessment.mounting.mountType', value)}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select mount type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Wall">Wall</SelectItem>
+                      <SelectItem value="Desk/Counter">Desk/Counter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="surface-material">Surface Material</Label>
+                  <Select 
+                    value={getValue('spaceAssessment.mounting.surfaceMaterial')} 
+                    onValueChange={(value) => handleInputChange('spaceAssessment.mounting.surfaceMaterial', value)}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select surface material" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Drywall">Drywall</SelectItem>
+                      <SelectItem value="Brick">Brick</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="drilling-required"
+                    checked={getValue('spaceAssessment.mounting.drillingRequired')}
+                    onCheckedChange={(checked) => handleInputChange('spaceAssessment.mounting.drillingRequired', checked)}
+                    disabled={!isEditing}
+                  />
+                  <Label htmlFor="drilling-required">Any drilling required?</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="accessible-height"
+                    checked={getValue('spaceAssessment.mounting.accessibleHeight')}
+                    onCheckedChange={(checked) => handleInputChange('spaceAssessment.mounting.accessibleHeight', checked)}
+                    disabled={!isEditing}
+                  />
+                  <Label htmlFor="accessible-height">Accessible height?</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="clearance-available">Clearance Available</Label>
+                  <Input
+                    id="clearance-available"
+                    value={getValue('spaceAssessment.mounting.clearanceAvailable')}
+                    onChange={(e) => handleInputChange('spaceAssessment.mounting.clearanceAvailable', e.target.value)}
+                    placeholder="e.g., 2m clearance, no obstructions"
+                    disabled={!isEditing}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="distance-to-nearest">Distance to Nearest</Label>
+                  <Input
+                    id="distance-to-nearest"
+                    type="number"
+                    value={getValue('spaceAssessment.mounting.distanceToNearest')}
+                    onChange={(e) => handleInputChange('spaceAssessment.mounting.distanceToNearest', e.target.value)}
+                    placeholder="Distance in meters"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Requirements Analysis */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader>
@@ -514,16 +680,45 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
 
               <div>
                 <Label>Special Requirements</Label>
-                <div className="grid grid-cols-1 gap-2 mt-2">
+                <div className="grid grid-cols-1 gap-3 mt-2">
                   {['Multi-language Support', 'Accessibility Features', 'Integration with Existing Systems', 'Custom Branding', 'Loyalty Program', 'Reporting & Analytics'].map((req) => (
-                    <div key={req} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={req}
-                        checked={(getValue('requirements.specialRequirements') || []).includes(req)}
-                        onCheckedChange={(checked) => handleMultiSelectChange('requirements.specialRequirements', req, !!checked)}
-                        disabled={!isEditing}
-                      />
-                      <Label htmlFor={req} className="text-sm">{req}</Label>
+                    <div key={req} className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={req}
+                          checked={(getValue('requirements.specialRequirements') || []).some((item: any) => item.name === req)}
+                          onCheckedChange={(checked) => {
+                            const currentReqs = getValue('requirements.specialRequirements') || [];
+                            if (checked) {
+                              const newReqs = [...currentReqs, { name: req, details: '' }];
+                              handleInputChange('requirements.specialRequirements', newReqs);
+                            } else {
+                              const newReqs = currentReqs.filter((item: any) => item.name !== req);
+                              handleInputChange('requirements.specialRequirements', newReqs);
+                            }
+                          }}
+                          disabled={!isEditing}
+                        />
+                        <Label htmlFor={req} className="text-sm">{req}</Label>
+                      </div>
+                      {(getValue('requirements.specialRequirements') || []).some((item: any) => item.name === req) && (
+                        <div className="ml-6">
+                          <Textarea
+                            placeholder={`Provide details for ${req.toLowerCase()}...`}
+                            value={(getValue('requirements.specialRequirements') || []).find((item: any) => item.name === req)?.details || ''}
+                            onChange={(e) => {
+                              const currentReqs = getValue('requirements.specialRequirements') || [];
+                              const updatedReqs = currentReqs.map((item: any) => 
+                                item.name === req ? { ...item, details: e.target.value } : item
+                              );
+                              handleInputChange('requirements.specialRequirements', updatedReqs);
+                            }}
+                            disabled={!isEditing}
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -559,6 +754,195 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                   </div>
                 )}
               </div>
+
+              {/* Category-Specific Requirements */}
+              {(getValue('requirements.softwareCategories') || []).length > 0 && (
+                <div className="mt-6">
+                  <Label className="text-lg font-semibold">Category-Specific Requirements</Label>
+                  <p className="text-sm text-gray-600 mb-4">Configure specific requirements for each selected category</p>
+                  
+                  <div className="space-y-6">
+                    {/* Food Ordering App */}
+                    {(getValue('requirements.softwareCategories') || []).includes('Food Ordering App') && (
+                      <Card className="border border-blue-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center text-lg">
+                            <Smartphone className="mr-2 h-5 w-5 text-blue-600" />
+                            Food Ordering App
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="brand-assets"
+                              checked={getValue('requirements.categoryRequirements.foodOrderingApp.brandAssetsAvailable')}
+                              onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.foodOrderingApp.brandAssetsAvailable', checked)}
+                              disabled={!isEditing}
+                            />
+                            <Label htmlFor="brand-assets">Brand assets available (logo, fonts, colour codes)?</Label>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Kiosk */}
+                    {(getValue('requirements.softwareCategories') || []).includes('Kiosk') && (
+                      <Card className="border border-green-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center text-lg">
+                            <Monitor className="mr-2 h-5 w-5 text-green-600" />
+                            Kiosk
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="kiosk-count">Number of kiosks per outlet</Label>
+                              <Input
+                                id="kiosk-count"
+                                type="number"
+                                min="0"
+                                value={getValue('requirements.categoryRequirements.kiosk.numberOfKiosks')}
+                                onChange={(e) => handleInputChange('requirements.categoryRequirements.kiosk.numberOfKiosks', parseInt(e.target.value) || 0)}
+                                disabled={!isEditing}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="screen-size">Preferred screen size</Label>
+                              <Select 
+                                value={getValue('requirements.categoryRequirements.kiosk.preferredScreenSize')} 
+                                onValueChange={(value) => handleInputChange('requirements.categoryRequirements.kiosk.preferredScreenSize', value)}
+                                disabled={!isEditing}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select screen size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="15">15"</SelectItem>
+                                  <SelectItem value="22">22"</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="ped-type">Card payment device (PED) type</Label>
+                              <Select 
+                                value={getValue('requirements.categoryRequirements.kiosk.cardPaymentDeviceType')} 
+                                onValueChange={(value) => handleInputChange('requirements.categoryRequirements.kiosk.cardPaymentDeviceType', value)}
+                                disabled={!isEditing}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select PED type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Verifone">Verifone</SelectItem>
+                                  <SelectItem value="Ingenico">Ingenico</SelectItem>
+                                  <SelectItem value="PAX">PAX</SelectItem>
+                                  <SelectItem value="Adyen">Adyen</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                  <SelectItem value="Not required">Not required</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="receipt-printer"
+                                checked={getValue('requirements.categoryRequirements.kiosk.receiptPrinterRequired')}
+                                onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.kiosk.receiptPrinterRequired', checked)}
+                                disabled={!isEditing}
+                              />
+                              <Label htmlFor="receipt-printer">Receipt printer required?</Label>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="grab-go-shelf"
+                              checked={getValue('requirements.categoryRequirements.kiosk.grabAndGoShelfRequired')}
+                              onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.kiosk.grabAndGoShelfRequired', checked)}
+                              disabled={!isEditing}
+                            />
+                            <Label htmlFor="grab-go-shelf">Grab & Go shelf or additional plate needed?</Label>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* POS */}
+                    {(getValue('requirements.softwareCategories') || []).includes('POS') && (
+                      <Card className="border border-purple-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center text-lg">
+                            <CreditCard className="mr-2 h-5 w-5 text-purple-600" />
+                            POS
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="pos-count">Number of POS terminals</Label>
+                              <Input
+                                id="pos-count"
+                                type="number"
+                                min="0"
+                                value={getValue('requirements.categoryRequirements.pos.numberOfPosTerminals')}
+                                onChange={(e) => handleInputChange('requirements.categoryRequirements.pos.numberOfPosTerminals', parseInt(e.target.value) || 0)}
+                                disabled={!isEditing}
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="cash-drawer"
+                                checked={getValue('requirements.categoryRequirements.pos.cashDrawerRequired')}
+                                onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.pos.cashDrawerRequired', checked)}
+                                disabled={!isEditing}
+                              />
+                              <Label htmlFor="cash-drawer">Cash drawer required?</Label>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Kitchen Display */}
+                    {(getValue('requirements.softwareCategories') || []).includes('Kitchen Display (KDS)') && (
+                      <Card className="border border-orange-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center text-lg">
+                            <Printer className="mr-2 h-5 w-5 text-orange-600" />
+                            Kitchen Display (KDS)
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="kds-count">Number of KDS screens</Label>
+                              <Input
+                                id="kds-count"
+                                type="number"
+                                min="0"
+                                value={getValue('requirements.categoryRequirements.kitchen.numberOfKdsScreens')}
+                                onChange={(e) => handleInputChange('requirements.categoryRequirements.kitchen.numberOfKdsScreens', parseInt(e.target.value) || 0)}
+                                disabled={!isEditing}
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="kitchen-printer"
+                                checked={getValue('requirements.categoryRequirements.kitchen.kitchenPrinterRequired')}
+                                onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.kitchen.kitchenPrinterRequired', checked)}
+                                disabled={!isEditing}
+                              />
+                              <Label htmlFor="kitchen-printer">Kitchen printer required?</Label>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -574,24 +958,50 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="study-date">Study Date *</Label>
-                  <Input
-                    id="study-date"
-                    type="date"
-                    value={getValue('timeline.studyDate')}
-                    onChange={(e) => handleInputChange('timeline.studyDate', e.target.value)}
-                    disabled={!isEditing}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${!getValue('timeline.studyDate') ? 'text-muted-foreground' : ''}`}
+                        disabled={!isEditing}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {getValue('timeline.studyDate') ? formatDate(getValue('timeline.studyDate')) : 'Pick a date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={getValue('timeline.studyDate') ? new Date(getValue('timeline.studyDate')) : undefined}
+                        onSelect={(date) => handleDateSelect('timeline.studyDate', date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div>
                   <Label htmlFor="proposed-go-live">Proposed Go-Live Date</Label>
-                  <Input
-                    id="proposed-go-live"
-                    type="date"
-                    value={getValue('timeline.proposedGoLive')}
-                    onChange={(e) => handleInputChange('timeline.proposedGoLive', e.target.value)}
-                    disabled={!isEditing}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${!getValue('timeline.proposedGoLive') ? 'text-muted-foreground' : ''}`}
+                        disabled={!isEditing}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {getValue('timeline.proposedGoLive') ? formatDate(getValue('timeline.proposedGoLive')) : 'Pick a date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={getValue('timeline.proposedGoLive') ? new Date(getValue('timeline.proposedGoLive')) : undefined}
+                        onSelect={(date) => handleDateSelect('timeline.proposedGoLive', date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
@@ -635,7 +1045,7 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => addArrayItem('stakeholders', { name: '', role: '', email: '', phone: '', department: '' })}
+                      onClick={() => addArrayItem('stakeholders', { userId: '', name: '', role: '', email: '', phone: '', department: '', details: '' })}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Stakeholder
@@ -646,52 +1056,108 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 {(getValue('stakeholders') || []).map((stakeholder: any, index: number) => (
                   <div key={index} className="grid grid-cols-1 gap-3 p-3 border rounded-lg">
                     <div className="grid grid-cols-2 gap-3">
-                      <Input
-                        placeholder="Name *"
-                        value={stakeholder.name || ''}
-                        onChange={(e) => handleArrayChange('stakeholders', index, 'name', e.target.value)}
-                        disabled={!isEditing}
-                      />
-                      <Input
-                        placeholder="Role/Title *"
-                        value={stakeholder.role || ''}
-                        onChange={(e) => handleArrayChange('stakeholders', index, 'role', e.target.value)}
-                        disabled={!isEditing}
-                      />
+                      <div>
+                        <Label>Select User</Label>
+                        {loadingUsers ? (
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                            <span>Loading users...</span>
+                          </div>
+                        ) : (
+                          <Select
+                            value={stakeholder.userId || ''}
+                            onValueChange={(value) => {
+                              const selectedUser = allUsers.find(user => user.user_id === value);
+                              handleArrayChange('stakeholders', index, 'userId', value);
+                              handleArrayChange('stakeholders', index, 'name', selectedUser?.full_name || '');
+                              handleArrayChange('stakeholders', index, 'email', selectedUser?.email || '');
+                              handleArrayChange('stakeholders', index, 'role', selectedUser?.role || '');
+                            }}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select user" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allUsers.map((user) => (
+                                <SelectItem key={user.user_id} value={user.user_id}>
+                                  <div className="flex items-center space-x-2">
+                                    <User className="h-4 w-4 text-gray-400" />
+                                    <div>
+                                      <div className="font-medium">{user.full_name}</div>
+                                      <div className="text-xs text-gray-500">{user.email} • {user.role}</div>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <div>
+                        <Label>Role/Title</Label>
+                        <Input
+                          placeholder="Role/Title *"
+                          value={stakeholder.role || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'role', e.target.value)}
+                          disabled={!isEditing}
+                        />
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Input
-                        placeholder="Email"
-                        type="email"
-                        value={stakeholder.email || ''}
-                        onChange={(e) => handleArrayChange('stakeholders', index, 'email', e.target.value)}
-                        disabled={!isEditing}
-                      />
-                      <Input
-                        placeholder="Phone"
-                        value={stakeholder.phone || ''}
-                        onChange={(e) => handleArrayChange('stakeholders', index, 'phone', e.target.value)}
-                        disabled={!isEditing}
-                      />
+                      <div>
+                        <Label>Email</Label>
+                        <Input
+                          placeholder="Email"
+                          type="email"
+                          value={stakeholder.email || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'email', e.target.value)}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div>
+                        <Label>Phone</Label>
+                        <Input
+                          placeholder="Phone"
+                          value={stakeholder.phone || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'phone', e.target.value)}
+                          disabled={!isEditing}
+                        />
+                      </div>
                     </div>
-                    <div className="flex gap-3">
-                      <Input
-                        placeholder="Department"
-                        value={stakeholder.department || ''}
-                        onChange={(e) => handleArrayChange('stakeholders', index, 'department', e.target.value)}
-                        disabled={!isEditing}
-                        className="flex-1"
-                      />
-                      {isEditing && (
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <Label>Department</Label>
+                        <Input
+                          placeholder="Department"
+                          value={stakeholder.department || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'department', e.target.value)}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div>
+                        <Label>Additional Details</Label>
+                        <Textarea
+                          placeholder="Additional details about this stakeholder's involvement..."
+                          value={stakeholder.details || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'details', e.target.value)}
+                          disabled={!isEditing}
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                    {isEditing && (
+                      <div className="flex justify-end">
                         <Button 
                           size="sm" 
                           variant="destructive"
                           onClick={() => removeArrayItem('stakeholders', index)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 
