@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
 import { 
   Dialog,
   DialogContent,
@@ -28,9 +31,9 @@ import {
   Package, 
   Clock, 
   AlertTriangle,
-  Calendar,
   FileText,
-  Wrench
+  Wrench,
+  CalendarIcon
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { PlatformConfigService, HardwareItem } from '@/services/platformConfigService';
@@ -184,8 +187,8 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
 
   // Handle add new item
   const handleAddItem = () => {
-    if (!newItem.name || !newItem.quantity || !newItem.unitCost) {
-      toast.error('Please fill in all required fields');
+    if (!newItem.name || !newItem.quantity) {
+      toast.error('Please select an item and enter quantity');
       return;
     }
 
@@ -340,13 +343,33 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                 </div>
                 
                 <div>
-                  <Label htmlFor="item-name">Item Name</Label>
-                  <Input
-                    id="item-name"
-                    value={newItem.name || ''}
-                    onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                    placeholder="Enter item name"
-                  />
+                  <Label htmlFor="item-name">Select Item</Label>
+                  <Select 
+                    value={newItem.name} 
+                    onValueChange={(value) => {
+                      const selectedItem = availableHardwareItems.find(item => item.name === value);
+                      setNewItem({
+                        ...newItem, 
+                        name: value,
+                        category: selectedItem?.category || 'Hardware',
+                        unitCost: selectedItem?.unit_cost || 0
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select hardware or support item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableHardwareItems.map((item) => (
+                        <SelectItem key={item.id} value={item.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{item.name}</span>
+                            <span className="text-sm text-gray-500 ml-2">£{item.unit_cost}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -366,8 +389,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                       id="unit-cost"
                       type="number"
                       value={newItem.unitCost || ''}
-                      onChange={(e) => setNewItem({...newItem, unitCost: parseFloat(e.target.value)})}
-                      placeholder="Enter unit cost"
+                      readOnly
+                      className="bg-gray-50"
+                      placeholder="Auto-filled from selected item"
                     />
                   </div>
                 </div>
@@ -419,12 +443,25 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
             <div className="space-y-4">
               <div>
                 <Label htmlFor="start-date">Procurement Start Date</Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={procurementStartDate}
-                  onChange={(e) => setProcurementStartDate(e.target.value)}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {procurementStartDate ? format(new Date(procurementStartDate), 'PPP') : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={procurementStartDate ? new Date(procurementStartDate) : undefined}
+                      onSelect={(date) => setProcurementStartDate(date ? date.toISOString() : '')}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <Label htmlFor="procurement-note">Notes</Label>
@@ -432,12 +469,12 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                   id="procurement-note"
                   value={procurementNote}
                   onChange={(e) => setProcurementNote(e.target.value)}
-                  placeholder="Add procurement notes"
+                  placeholder="Add procurement notes (e.g., Request Raised to Melford)"
                 />
               </div>
               <Button onClick={handleProcurementStart} className="w-full">
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Start Procurement
+                Procurement Started
               </Button>
             </div>
           </CardContent>
@@ -450,7 +487,7 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
               Procurement Status
             </CardTitle>
             <CardDescription>
-              Procurement started on {new Date(procurementStartDate).toLocaleDateString()}
+              Procurement started on {procurementStartDate ? format(new Date(procurementStartDate), 'PPP') : 'Unknown date'}
             </CardDescription>
           </CardHeader>
           <CardContent>
