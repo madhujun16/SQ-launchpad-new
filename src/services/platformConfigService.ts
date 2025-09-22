@@ -117,6 +117,48 @@ export const PlatformConfigService = {
     }
   },
 
+  // Get all active software modules for scoping
+  async getAllActiveSoftwareModules(): Promise<SoftwareModule[]> {
+    try {
+      const { data, error } = await supabase
+        .from('software_modules')
+        .select('*')
+        .eq('is_active', true)
+        .order('category, name');
+
+      if (error) {
+        console.error('Error fetching all active software modules:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllActiveSoftwareModules:', error);
+      return [];
+    }
+  },
+
+  // Get all active hardware items for scoping
+  async getAllActiveHardwareItems(): Promise<HardwareItem[]> {
+    try {
+      const { data, error } = await supabase
+        .from('hardware_items')
+        .select('*')
+        .eq('is_active', true)
+        .order('category, name');
+
+      if (error) {
+        console.error('Error fetching all active hardware items:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllActiveHardwareItems:', error);
+      return [];
+    }
+  },
+
   // Get recommendation rules for software categories
   async getRecommendationRules(categories: string[]): Promise<RecommendationRule[]> {
     try {
