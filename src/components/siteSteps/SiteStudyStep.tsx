@@ -23,7 +23,9 @@ import {
   Trash2,
   Clock,
   Camera,
-  FileText
+  FileText,
+  Upload,
+  Image
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
@@ -42,7 +44,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       footfallPattern: '',
       operatingHours: '',
       peakTimes: '',
-      constraints: []
+      constraints: [],
+      layoutPhotos: []
     },
     stakeholders: [],
     requirements: {
@@ -193,6 +196,28 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     handleInputChange(path, newValues);
   };
 
+  const handleFileUpload = (path: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const newPhotos = Array.from(files).map(file => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      file: file
+    }));
+    
+    const currentPhotos = getValue(path) || [];
+    handleInputChange(path, [...currentPhotos, ...newPhotos]);
+  };
+
+  const removePhoto = (path: string, photoId: number) => {
+    const currentPhotos = getValue(path) || [];
+    const updatedPhotos = currentPhotos.filter((photo: any) => photo.id !== photoId);
+    handleInputChange(path, updatedPhotos);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -337,6 +362,67 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                       <Label htmlFor={constraint} className="text-sm">{constraint}</Label>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>Layout Photos</Label>
+                <div className="space-y-3">
+                  {isEditing && (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                      <input
+                        type="file"
+                        id="layout-photos"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload('spaceAssessment.layoutPhotos', e.target.files)}
+                        className="hidden"
+                      />
+                      <label htmlFor="layout-photos" className="cursor-pointer">
+                        <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-600">Click to upload layout photos</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB each</p>
+                      </label>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {(getValue('spaceAssessment.layoutPhotos') || []).map((photo: any) => (
+                      <div key={photo.id} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden border border-gray-200">
+                          <img
+                            src={photo.url}
+                            alt={photo.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
+                            {isEditing && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removePhoto('spaceAssessment.layoutPhotos', photo.id)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 truncate" title={photo.name}>
+                          {photo.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {(!getValue('spaceAssessment.layoutPhotos') || getValue('spaceAssessment.layoutPhotos').length === 0) && (
+                    <div className="text-center py-4 text-gray-500">
+                      <Image className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">No layout photos uploaded yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
