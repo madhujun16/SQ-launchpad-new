@@ -39,7 +39,6 @@ import {
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
 import { PlatformConfigService, SoftwareCategory } from '@/services/platformConfigService';
-import { UserService, UserWithRole } from '@/services/userService';
 import { format } from 'date-fns';
 
 interface SiteStudyStepProps {
@@ -51,8 +50,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
   const [isEditing, setIsEditing] = useState(false);
   const [softwareCategories, setSoftwareCategories] = useState<SoftwareCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [allUsers, setAllUsers] = useState<UserWithRole[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
   const [formData, setFormData] = useState(site?.siteStudy || {
     // Planning Phase Data
     spaceAssessment: {
@@ -122,26 +119,19 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     }
   }, [site?.siteStudy]);
 
-  // Fetch software categories and users on component mount
+  // Fetch software categories on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoadingCategories(true);
-        setLoadingUsers(true);
         
-        const [categories, users] = await Promise.all([
-          PlatformConfigService.getSoftwareCategories(),
-          UserService.getAllUsers()
-        ]);
-        
+        const categories = await PlatformConfigService.getSoftwareCategories();
         setSoftwareCategories(categories);
-        setAllUsers(users);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load data');
+        console.error('Error fetching software categories:', error);
+        toast.error('Failed to load software categories');
       } finally {
         setLoadingCategories(false);
-        setLoadingUsers(false);
       }
     };
 
@@ -1144,68 +1134,29 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                   <div key={index} className="grid grid-cols-1 gap-3 p-3 border rounded-lg">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label>Select Configuration User</Label>
-                        {loadingUsers ? (
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-                            <span>Loading users...</span>
-                          </div>
-                        ) : (
-                          <Select
-                            value={stakeholder.userId || ''}
-                            onValueChange={(value) => {
-                              const selectedUser = allUsers.find(user => user.user_id === value);
-                              handleArrayChange('stakeholders', index, 'userId', value);
-                              handleArrayChange('stakeholders', index, 'name', selectedUser?.full_name || '');
-                              handleArrayChange('stakeholders', index, 'email', selectedUser?.email || '');
-                              handleArrayChange('stakeholders', index, 'role', selectedUser?.role || '');
-                            }}
-                            disabled={!isEditing}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select configuration user" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {allUsers.map((user) => (
-                                <SelectItem key={user.user_id} value={user.user_id}>
-                                  <div className="flex items-center space-x-2">
-                                    <User className="h-4 w-4 text-gray-400" />
-                                    <div>
-                                      <div className="font-medium">{user.full_name}</div>
-                                      <div className="text-xs text-gray-500">{user.email} • {user.role}</div>
-                                    </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
+                        <Label>Configuration User Name</Label>
+                        <Input
+                          placeholder="Enter user name"
+                          value={stakeholder.name || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'name', e.target.value)}
+                          disabled={!isEditing}
+                        />
                       </div>
                       <div>
                         <Label>Configuration Role</Label>
-                        <Select
+                        <Input
+                          placeholder="e.g., Primary Configurator, Support Specialist"
                           value={stakeholder.configurationRole || ''}
-                          onValueChange={(value) => handleArrayChange('stakeholders', index, 'configurationRole', value)}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'configurationRole', e.target.value)}
                           disabled={!isEditing}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select configuration role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Primary Configurator">Primary Configurator</SelectItem>
-                            <SelectItem value="Backup Configurator">Backup Configurator</SelectItem>
-                            <SelectItem value="Technical Support">Technical Support</SelectItem>
-                            <SelectItem value="Training Lead">Training Lead</SelectItem>
-                            <SelectItem value="Go-Live Support">Go-Live Support</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       <div>
                         <Label>Email</Label>
                         <Input
-                          placeholder="Email"
+                          placeholder="Email address"
                           type="email"
                           value={stakeholder.email || ''}
                           onChange={(e) => handleArrayChange('stakeholders', index, 'email', e.target.value)}
@@ -1215,9 +1166,18 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                       <div>
                         <Label>Phone</Label>
                         <Input
-                          placeholder="Phone"
+                          placeholder="Phone number"
                           value={stakeholder.phone || ''}
                           onChange={(e) => handleArrayChange('stakeholders', index, 'phone', e.target.value)}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div>
+                        <Label>User Role/Title</Label>
+                        <Input
+                          placeholder="e.g., Deployment Engineer, Operations Manager"
+                          value={stakeholder.role || ''}
+                          onChange={(e) => handleArrayChange('stakeholders', index, 'role', e.target.value)}
                           disabled={!isEditing}
                         />
                       </div>
