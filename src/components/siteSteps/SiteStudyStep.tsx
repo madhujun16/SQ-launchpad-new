@@ -353,6 +353,89 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       <div className="space-y-6">
         {/* Vertical Layout */}
         <div className="space-y-6">
+          {/* Timeline */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Clock className="mr-2 h-5 w-5 text-orange-600" />
+                Timeline
+              </CardTitle>
+              <CardDescription>
+                Project timeline and urgency assessment
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="study-date">Study Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${!getValue('timeline.studyDate') ? 'text-muted-foreground' : ''}`}
+                        disabled={!isEditing}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {getValue('timeline.studyDate') ? formatDate(getValue('timeline.studyDate')) : 'Pick a date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={getValue('timeline.studyDate') ? new Date(getValue('timeline.studyDate')) : undefined}
+                        onSelect={(date) => handleDateSelect('timeline.studyDate', date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <div>
+                  <Label htmlFor="proposed-go-live">Proposed Go-Live Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${!getValue('timeline.proposedGoLive') ? 'text-muted-foreground' : ''}`}
+                        disabled={!isEditing}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {getValue('timeline.proposedGoLive') ? formatDate(getValue('timeline.proposedGoLive')) : 'Pick a date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={getValue('timeline.proposedGoLive') ? new Date(getValue('timeline.proposedGoLive')) : undefined}
+                        onSelect={(date) => handleDateSelect('timeline.proposedGoLive', date)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="urgency">Urgency Level</Label>
+                <Select 
+                  value={getValue('timeline.urgency')} 
+                  onValueChange={(value) => handleInputChange('timeline.urgency', value)}
+                  disabled={!isEditing}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select urgency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low - Flexible timeline</SelectItem>
+                    <SelectItem value="normal">Normal - Standard timeline</SelectItem>
+                    <SelectItem value="high">High - Rush deployment</SelectItem>
+                    <SelectItem value="critical">Critical - Emergency replacement</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Space Assessment */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader>
@@ -1019,88 +1102,6 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
             </CardContent>
           </Card>
 
-          {/* Timeline */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="mr-2 h-5 w-5 text-orange-600" />
-                Timeline
-              </CardTitle>
-              <CardDescription>
-                Project timeline based on requirements and infrastructure assessment
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="study-date">Study Date *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start text-left font-normal ${!getValue('timeline.studyDate') ? 'text-muted-foreground' : ''}`}
-                        disabled={!isEditing}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {getValue('timeline.studyDate') ? formatDate(getValue('timeline.studyDate')) : 'Pick a date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={getValue('timeline.studyDate') ? new Date(getValue('timeline.studyDate')) : undefined}
-                        onSelect={(date) => handleDateSelect('timeline.studyDate', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div>
-                  <Label htmlFor="proposed-go-live">Proposed Go-Live Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start text-left font-normal ${!getValue('timeline.proposedGoLive') ? 'text-muted-foreground' : ''}`}
-                        disabled={!isEditing}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {getValue('timeline.proposedGoLive') ? formatDate(getValue('timeline.proposedGoLive')) : 'Pick a date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={getValue('timeline.proposedGoLive') ? new Date(getValue('timeline.proposedGoLive')) : undefined}
-                        onSelect={(date) => handleDateSelect('timeline.proposedGoLive', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="urgency">Urgency Level</Label>
-                <Select 
-                  value={getValue('timeline.urgency')} 
-                  onValueChange={(value) => handleInputChange('timeline.urgency', value)}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select urgency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low - Flexible timeline</SelectItem>
-                    <SelectItem value="normal">Normal - Standard timeline</SelectItem>
-                    <SelectItem value="high">High - Rush deployment</SelectItem>
-                    <SelectItem value="critical">Critical - Emergency replacement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
         </div>
           {/* Stakeholders */}
