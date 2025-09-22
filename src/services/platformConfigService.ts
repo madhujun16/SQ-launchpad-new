@@ -52,7 +52,7 @@ export const PlatformConfigService = {
   async getSoftwareCategories(): Promise<SoftwareCategory[]> {
     try {
       const { data, error } = await supabase
-        .from('software_categories')
+        .from('categories')
         .select('*')
         .eq('is_active', true)
         .order('name');
