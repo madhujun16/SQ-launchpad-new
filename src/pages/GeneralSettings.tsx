@@ -14,13 +14,15 @@ import {
   RotateCcw,
   CheckCircle,
   AlertCircle,
-  Info
+  Info,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { PageLoader } from '@/components/ui/loader';
+import { SettingsService, GeneralSettings as GeneralSettingsType } from '@/services/settingsService';
 import { 
   SelectField,
   CurrencyField,
@@ -49,6 +51,7 @@ interface GeneralSettings {
   currency: string;
   fyBudget: number;
   siteTargets: number;
+  approvalResponseTime: number; // in hours
 }
 
 const GeneralSettings: React.FC = () => {
@@ -60,14 +63,16 @@ const GeneralSettings: React.FC = () => {
     dateFormat: 'dd-mmm-yyyy',
     currency: 'GBP',
     fyBudget: 500000,
-    siteTargets: 1000
+    siteTargets: 1000,
+    approvalResponseTime: 24 // 24 hours default
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<GeneralSettings>({
     dateFormat: 'dd-mmm-yyyy',
     currency: 'GBP',
     fyBudget: 500000,
-    siteTargets: 1000
+    siteTargets: 1000,
+    approvalResponseTime: 24
   });
 
   // Check if user has permission to access this page
@@ -83,20 +88,12 @@ const GeneralSettings: React.FC = () => {
     const loadSettings = async () => {
       try {
         setLoading(true);
-        // TODO: Replace with actual API call to load settings
-        // const response = await fetch('/api/platform-configuration/general-settings');
-        // const data = await response.json();
         
-        // Mock data for now
-        const mockSettings: GeneralSettings = {
-          dateFormat: 'dd-mmm-yyyy',
-          currency: 'GBP',
-          fyBudget: 500000,
-          siteTargets: 1000
-        };
+        // Use SettingsService to load settings
+        const loadedSettings = await SettingsService.getGeneralSettings();
         
-        setSettings(mockSettings);
-        setOriginalSettings(mockSettings);
+        setSettings(loadedSettings);
+        setOriginalSettings(loadedSettings);
       } catch (error) {
         console.error('Failed to load settings:', error);
         toast.error('Failed to load settings');
@@ -127,21 +124,8 @@ const GeneralSettings: React.FC = () => {
     try {
       setSaving(true);
       
-      // TODO: Replace with actual API call to save settings
-      // const response = await fetch('/api/platform-configuration/general-settings', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(settings),
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Failed to save settings');
-      // }
-      
-      // Mock save operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use SettingsService to save settings
+      await SettingsService.updateGeneralSettings(settings);
       
       setOriginalSettings(settings);
       setHasChanges(false);
@@ -330,6 +314,44 @@ const GeneralSettings: React.FC = () => {
                 <div className="text-sm text-purple-800 space-y-1">
                   <p>Total Budget: {(settings.fyBudget).toLocaleString()} {settings.currency}</p>
                   <p>Per Site Average: {(settings.fyBudget / settings.siteTargets).toLocaleString()} {settings.currency}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Approval Response Time */}
+        <Card className="shadow-sm border border-gray-200">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Clock className="mr-2 h-5 w-5 text-blue-600" />
+              Approval Response Time
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Set the expected response time for approval requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <NumberField
+                label="Response Time (Hours)"
+                value={settings.approvalResponseTime}
+                onChange={(value) => handleSettingChange('approvalResponseTime', value)}
+                placeholder="Enter response time in hours"
+                min={1}
+                max={168} // 1 week max
+                helpText="This time will be used to determine overdue approval requests"
+              />
+              
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">Response Time Details</span>
+                </div>
+                <div className="text-sm text-blue-800 space-y-1">
+                  <p>Response Time: {settings.approvalResponseTime} hours ({Math.round(settings.approvalResponseTime / 24 * 10) / 10} days)</p>
+                  <p>Business Hours: {Math.round(settings.approvalResponseTime / 8 * 10) / 10} business days (8 hours/day)</p>
+                  <p>Overdue Threshold: Requests older than {settings.approvalResponseTime} hours will be marked as overdue</p>
                 </div>
               </div>
             </div>

@@ -41,13 +41,15 @@ import {
   History,
   ArrowRight,
   Check,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { AccessDenied } from '@/components/AccessDenied';
 import { PageLoader } from '@/components/ui/loader';
 import { getRoleConfig } from '@/lib/roles';
+import { SettingsService } from '@/services/settingsService';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/dateUtils';
@@ -122,6 +124,8 @@ const Approvals = () => {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
   const [reviewComment, setReviewComment] = useState('');
+  const [approvalResponseTime, setApprovalResponseTime] = useState<number>(24);
+  const [overdueApprovals, setOverdueApprovals] = useState<ApprovalRequest[]>([]);
 
   // Check access permissions
   const tabAccess = getTabAccess('/approvals-procurement');
@@ -134,6 +138,39 @@ const Approvals = () => {
         />
     );
   }
+
+  // Load approval response time and identify overdue approvals
+  useEffect(() => {
+    const loadSettingsAndOverdueApprovals = async () => {
+      try {
+        // Load approval response time from settings
+        const responseTime = await SettingsService.getApprovalResponseTime();
+        setApprovalResponseTime(responseTime);
+        
+        // Identify overdue approvals from mock data
+        const overdue = mockPendingRequests.filter(request => 
+          SettingsService.isApprovalOverdue(request.submittedAt, responseTime)
+        );
+        setOverdueApprovals(overdue);
+      } catch (error) {
+        console.error('Error loading approval settings:', error);
+      }
+    };
+
+    loadSettingsAndOverdueApprovals();
+  }, []);
+
+  // Helper function to check if approval is overdue
+  const isApprovalOverdue = (requestDate: string): boolean => {
+    return SettingsService.isApprovalOverdue(requestDate, approvalResponseTime);
+  };
+
+  // Helper function to get hours elapsed since request
+  const getHoursElapsed = (requestDate: string): number => {
+    const requestDateTime = new Date(requestDate);
+    const now = new Date();
+    return Math.floor((now.getTime() - requestDateTime.getTime()) / (1000 * 60 * 60));
+  };
 
   // Mock data
   const mockPendingRequests: ApprovalRequest[] = [
@@ -521,7 +558,18 @@ const Approvals = () => {
        {/* Content based on active tab */}
        {activeTab === 'pending' && (
          <div className="space-y-6">
-          {/* Filters */}
+          {/* Overdue Approvals Alert */}
+        {overdueApprovals.length > 0 && (
+          <Alert className="border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              <strong>{overdueApprovals.length} approval request{overdueApprovals.length > 1 ? 's' : ''} overdue</strong> 
+              (Response time: {approvalResponseTime}h). Please review and respond to these requests.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Filters */}
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4">
@@ -591,6 +639,12 @@ const Approvals = () => {
                          >
                            <Eye className="h-3 w-3 text-gray-500 hover:text-gray-700" />
                          </Button>
+                         {isApprovalOverdue(request.submittedAt) && (
+                           <Badge className="bg-red-100 text-red-800 border-red-200">
+                             <AlertTriangle className="h-3 w-3 mr-1" />
+                             Overdue
+                           </Badge>
+                         )}
                          <Badge className={getPriorityColor(request.priority)}>
                            {request.priority}
                          </Badge>
@@ -612,6 +666,14 @@ const Approvals = () => {
                       <p className="text-gray-600">Submitted</p>
                       <p className="font-medium">
                         {formatDate(request.submittedAt)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {getHoursElapsed(request.submittedAt)}h ago
+                        {isApprovalOverdue(request.submittedAt) && (
+                          <span className="text-red-600 ml-1">
+                            (Overdue by {getHoursElapsed(request.submittedAt) - approvalResponseTime}h)
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
