@@ -55,15 +55,20 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log('🔍 Fetching scoping data...');
+        
         const [softwareModules, hardwareItems] = await Promise.all([
           PlatformConfigService.getAllActiveSoftwareModules(),
           PlatformConfigService.getAllActiveHardwareItems()
         ]);
         
+        console.log('📦 Software modules fetched:', softwareModules);
+        console.log('🔧 Hardware items fetched:', hardwareItems);
+        
         setAvailableSoftwareModules(softwareModules);
         setAvailableHardwareItems(hardwareItems);
       } catch (error) {
-        console.error('Error fetching scoping data:', error);
+        console.error('❌ Error fetching scoping data:', error);
       } finally {
         setLoading(false);
       }
@@ -74,6 +79,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
 
   // Group software modules by category
   const groupedSoftwareModules = useMemo(() => {
+    console.log('🔄 Grouping software modules:', availableSoftwareModules);
     const grouped = availableSoftwareModules.reduce((acc, software) => {
       if (!acc[software.category]) {
         acc[software.category] = [];
@@ -82,6 +88,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       return acc;
     }, {} as Record<string, SoftwareModule[]>);
     
+    console.log('📊 Grouped software modules:', grouped);
     return grouped;
   }, [availableSoftwareModules]);
 
@@ -214,18 +221,18 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
 
   return (
     <div className="space-y-6">
-      {/* Software Selection */}
-      <Card className="shadow-sm border border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Monitor className="mr-2 h-5 w-5 text-green-600" />
-            Software Selection
-          </CardTitle>
-          <CardDescription className="text-gray-600">
+          {/* Software Selection */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Monitor className="mr-2 h-5 w-5 text-green-600" />
+                Software Selection
+              </CardTitle>
+              <CardDescription className="text-gray-600">
             Select software modules from all available categories
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
           <div className="space-y-6">
             {Object.entries(groupedSoftwareModules).map(([category, softwareModules]) => (
               <div key={category} className="space-y-3">
@@ -243,28 +250,28 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                   const selectedSoftwareItem = selectedSoftware.find(s => s.id === software.id);
                   
                   return (
-                    <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox 
-                          id={software.id} 
+                  <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox 
+                        id={software.id} 
                           checked={isSelected}
                           onCheckedChange={() => handleSoftwareToggle(software)}
-                          disabled={!isEditing}
-                        />
-                        <div>
-                          <Label htmlFor={software.id} className="text-sm font-medium">
-                            {software.name}
-                          </Label>
-                          <p className="text-xs text-gray-500">{software.description}</p>
+                        disabled={!isEditing}
+                      />
+                      <div>
+                        <Label htmlFor={software.id} className="text-sm font-medium">
+                          {software.name}
+                        </Label>
+                        <p className="text-xs text-gray-500">{software.description}</p>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
+                    </div>
+                    <div className="flex items-center space-x-4">
                         {/* Software Quantity */}
                         {isSelected && (
-                          <div className="flex items-center space-x-2">
-                            <Label htmlFor={`qty-${software.id}`} className="text-xs text-gray-600">
-                              Qty:
-                            </Label>
+                        <div className="flex items-center space-x-2">
+                          <Label htmlFor={`qty-${software.id}`} className="text-xs text-gray-600">
+                            Qty:
+                          </Label>
                             <div className="flex items-center space-x-1">
                               <Button
                                 variant="outline"
@@ -275,15 +282,15 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <Input
-                                id={`qty-${software.id}`}
-                                type="number"
-                                min="1"
+                          <Input
+                            id={`qty-${software.id}`}
+                            type="number"
+                            min="1"
                                 value={selectedSoftwareItem?.quantity || 1}
                                 onChange={(e) => handleSoftwareQuantityChange(software.id, parseInt(e.target.value) || 1)}
                                 className="w-16 h-8 text-xs text-center"
-                                disabled={!isEditing}
-                              />
+                            disabled={!isEditing}
+                          />
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -294,9 +301,9 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
-                          </div>
-                        )}
-                        <div className="text-right">
+                        </div>
+                      )}
+                      <div className="text-right">
                           <p className="text-sm font-medium">£{software.monthly_fee}/month</p>
                           <p className="text-xs text-gray-500">£{software.setup_fee} setup</p>
                         </div>
@@ -304,24 +311,24 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                     </div>
                   );
                 })}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Hardware Requirements */}
-      <Card className="shadow-sm border border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Package className="mr-2 h-5 w-5 text-orange-600" />
-            Hardware Requirements
-          </CardTitle>
-          <CardDescription className="text-gray-600">
+          {/* Hardware Requirements */}
+          <Card className="shadow-sm border border-gray-200">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Package className="mr-2 h-5 w-5 text-orange-600" />
+                Hardware Requirements
+              </CardTitle>
+              <CardDescription className="text-gray-600">
             Automatically recommended based on your software selections. You can modify quantities or remove items.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
           <div className="space-y-6">
             {Object.entries(groupedHardwareItems).map(([category, hardwareItems]) => {
               const categorySelectedHardware = selectedHardware.filter(h => h.category === category);
@@ -354,15 +361,15 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                             Qty:
                           </Label>
                           <div className="flex items-center space-x-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
+                          <Button
+                            variant="outline"
+                            size="sm"
                               onClick={() => handleHardwareQuantityChange(hardware.id, hardware.quantity - 1)}
                               disabled={!isEditing || hardware.quantity <= 0}
                               className="h-6 w-6 p-0"
-                            >
+                          >
                               <Minus className="h-3 w-3" />
-                            </Button>
+                          </Button>
                             <Input
                               id={`qty-${hardware.id}`}
                               type="number"
@@ -372,15 +379,15 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                               className="w-16 h-8 text-xs text-center"
                               disabled={!isEditing}
                             />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleHardwareQuantityChange(hardware.id, hardware.quantity + 1)}
-                              disabled={!isEditing}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleHardwareQuantityChange(hardware.id, hardware.quantity + 1)}
+                            disabled={!isEditing}
                               className="h-6 w-6 p-0"
-                            >
+                          >
                               <Plus className="h-3 w-3" />
-                            </Button>
+                          </Button>
                           </div>
                         </div>
                         <div className="text-right">
@@ -404,87 +411,87 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
             })}
             
             {selectedHardware.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500">
                 <Package className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                 <p className="text-sm">No hardware items selected</p>
                 <p className="text-xs text-gray-400 mt-1">Select software modules to see hardware recommendations</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
       {/* Cost Summary */}
       <Card className="shadow-sm border border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center">
+            <CardHeader>
+              <CardTitle className="flex items-center">
             <Package className="mr-2 h-5 w-5 text-blue-600" />
-            Cost Summary
-          </CardTitle>
-          <CardDescription className="text-gray-600">
+                Cost Summary
+              </CardTitle>
+              <CardDescription className="text-gray-600">
             Real-time cost calculations based on your selections
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
           <div className="space-y-4">
             {/* CAPEX */}
-            <div>
+                <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Capital Expenditure (CAPEX)</h4>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Hardware</span>
+                      <span>Hardware</span>
                   <span>£{costSummary.hardware.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Installation</span>
                   <span>£{costSummary.installation.toFixed(2)}</span>
-                </div>
+                    </div>
                 <div className="flex justify-between text-sm">
-                  <span>Software Setup</span>
+                      <span>Software Setup</span>
                   <span>£{costSummary.softwareSetup.toFixed(2)}</span>
-                </div>
+                    </div>
                 <div className="flex justify-between text-sm">
-                  <span>Contingency (15%)</span>
+                      <span>Contingency (15%)</span>
                   <span>£{costSummary.contingency.toFixed(2)}</span>
-                </div>
-                <Separator />
+                    </div>
+                    <Separator />
                 <div className="flex justify-between font-semibold">
-                  <span>Total CAPEX</span>
+                      <span>Total CAPEX</span>
                   <span>£{costSummary.totalCAPEX.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
             {/* OPEX */}
-            <div>
+                <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Operating Expenditure (OPEX)</h4>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Monthly Software Fees</span>
+                      <span>Monthly Software Fees</span>
                   <span>£{costSummary.softwareMonthly.toFixed(2)}/month</span>
-                </div>
+                    </div>
                 <div className="flex justify-between text-sm">
-                  <span>Maintenance</span>
+                      <span>Maintenance</span>
                   <span>£{costSummary.maintenance.toFixed(2)}/month</span>
-                </div>
-                <Separator />
+                    </div>
+                    <Separator />
                 <div className="flex justify-between font-semibold">
-                  <span>Total Monthly OPEX</span>
+                      <span>Total Monthly OPEX</span>
                   <span>£{costSummary.totalOPEX.toFixed(2)}/month</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Total Investment */}
+                {/* Total Investment */}
             <div className="pt-4 border-t">
-              <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-lg font-bold">
                 <span>Total Investment (Annual)</span>
                 <span>£{costSummary.totalInvestment.toFixed(2)}</span>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-3">

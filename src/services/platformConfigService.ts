@@ -120,6 +120,7 @@ export const PlatformConfigService = {
   // Get all active software modules for scoping
   async getAllActiveSoftwareModules(): Promise<SoftwareModule[]> {
     try {
+      console.log('🔍 Fetching all active software modules...');
       const { data, error } = await supabase
         .from('software_modules')
         .select('*')
@@ -127,13 +128,14 @@ export const PlatformConfigService = {
         .order('category, name');
 
       if (error) {
-        console.error('Error fetching all active software modules:', error);
+        console.error('❌ Error fetching all active software modules:', error);
         throw error;
       }
 
+      console.log('✅ Software modules fetched successfully:', data);
       return data || [];
     } catch (error) {
-      console.error('Error in getAllActiveSoftwareModules:', error);
+      console.error('❌ Error in getAllActiveSoftwareModules:', error);
       return [];
     }
   },
@@ -141,6 +143,7 @@ export const PlatformConfigService = {
   // Get all active hardware items for scoping
   async getAllActiveHardwareItems(): Promise<HardwareItem[]> {
     try {
+      console.log('🔍 Fetching all active hardware items...');
       const { data, error } = await supabase
         .from('hardware_items')
         .select('*')
@@ -148,13 +151,14 @@ export const PlatformConfigService = {
         .order('category, name');
 
       if (error) {
-        console.error('Error fetching all active hardware items:', error);
+        console.error('❌ Error fetching all active hardware items:', error);
         throw error;
       }
 
+      console.log('✅ Hardware items fetched successfully:', data);
       return data || [];
     } catch (error) {
-      console.error('Error in getAllActiveHardwareItems:', error);
+      console.error('❌ Error in getAllActiveHardwareItems:', error);
       return [];
     }
   },
