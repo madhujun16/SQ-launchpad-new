@@ -69,7 +69,7 @@ export const PlatformConfigService = {
     }
   },
 
-  // Get software modules by categories
+  // Get software modules by categories (by name)
   async getSoftwareModulesByCategories(categories: string[]): Promise<SoftwareModule[]> {
     try {
       if (categories.length === 0) return [];
@@ -93,7 +93,7 @@ export const PlatformConfigService = {
     }
   },
 
-  // Get hardware items by categories
+  // Get hardware items by categories (by name)
   async getHardwareItemsByCategories(categories: string[]): Promise<HardwareItem[]> {
     try {
       if (categories.length === 0) return [];

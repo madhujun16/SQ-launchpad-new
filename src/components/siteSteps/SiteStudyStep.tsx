@@ -543,8 +543,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                       <div key={category.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                         <Checkbox
                           id={category.id}
-                          checked={(getValue('requirements.softwareCategories') || []).includes(category.id)}
-                          onCheckedChange={(checked) => handleMultiSelectChange('requirements.softwareCategories', category.id, !!checked)}
+                          checked={(getValue('requirements.softwareCategories') || []).includes(category.name)}
+                          onCheckedChange={(checked) => handleMultiSelectChange('requirements.softwareCategories', category.name, !!checked)}
                           disabled={!isEditing}
                           className="mt-1"
                         />
