@@ -316,7 +316,7 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                   <Select 
                     value={newItem.name} 
                     onValueChange={(value) => {
-                      const selectedItem = availableHardwareItems.find(item => item.name === value);
+                      const selectedItem = availableHardwareItems.find(item => item.hardware_name === value);
                       setNewItem({
                         ...newItem, 
                         name: value,
@@ -345,9 +345,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
                         </SelectItem>
                       ) : (
                         availableHardwareItems.map((item) => (
-                          <SelectItem key={item.id} value={item.name}>
+                          <SelectItem key={item.id} value={item.hardware_name}>
                             <div className="flex items-center justify-between w-full">
-                              <span>{item.name}</span>
+                              <span>{item.hardware_name}</span>
                               <span className="text-sm text-gray-500 ml-2">£{item.unit_cost}</span>
                             </div>
                           </SelectItem>

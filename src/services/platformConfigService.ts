@@ -24,17 +24,22 @@ export interface SoftwareModule {
 
 export interface HardwareItem {
   id: string;
-  name: string;
-  description: string;
+  hardware_name: string; // Changed from 'name' to match actual table
+  description?: string;
   category: string;
-  manufacturer: string;
-  model: string;
+  subcategory?: string;
+  manufacturer?: string;
+  configuration_notes?: string;
   unit_cost: number;
-  installation_cost: number;
-  maintenance_cost: number;
+  quantity?: number;
+  total_cost?: number;
+  support_type?: string;
+  support_cost?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
 export interface RecommendationRule {
@@ -148,7 +153,7 @@ export const PlatformConfigService = {
         .from('hardware_items')
         .select('*')
         .eq('is_active', true)
-        .order('category, name');
+        .order('category, hardware_name'); // Changed from 'name' to 'hardware_name'
 
       if (error) {
         console.error('❌ Error fetching all active hardware items:', error);
