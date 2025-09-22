@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Download, 
   MessageSquare, 
@@ -11,9 +12,13 @@ import {
   AlertTriangle, 
   X, 
   Clock, 
-  Package 
+  Package,
+  Edit,
+  AlertCircle
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
+import { SettingsService } from '@/services/settingsService';
+import { toast } from 'sonner';
 
 interface ApprovalStepProps {
   site: Site;
@@ -21,6 +26,115 @@ interface ApprovalStepProps {
 }
 
 const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
+  const [approvalResponseTime, setApprovalResponseTime] = useState<number>(24);
+  const [isEditing, setIsEditing] = useState(false);
+  const [approvalComment, setApprovalComment] = useState('');
+  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null);
+
+  // Load approval response time from settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const responseTime = await SettingsService.getApprovalResponseTime();
+        setApprovalResponseTime(responseTime);
+      } catch (error) {
+        console.error('Error loading approval settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  // Auto-populate requested date from scoping completion
+  useEffect(() => {
+    if (site?.scoping?.submittedAt && !site?.approval?.requestedAt) {
+      const updatedSite = {
+        ...site,
+        approval: {
+          ...site.approval,
+          requestedAt: site.scoping.submittedAt,
+          status: 'pending' as const
+        }
+      };
+      onSiteUpdate(updatedSite);
+    }
+  }, [site?.scoping?.submittedAt, site?.approval?.requestedAt, site, onSiteUpdate]);
+
+  // Helper functions
+  const isApprovalOverdue = (): boolean => {
+    if (!site?.approval?.requestedAt) return false;
+    return SettingsService.isApprovalOverdue(site.approval.requestedAt, approvalResponseTime);
+  };
+
+  const getHoursElapsed = (): number => {
+    if (!site?.approval?.requestedAt) return 0;
+    const requestDateTime = new Date(site.approval.requestedAt);
+    const now = new Date();
+    return Math.floor((now.getTime() - requestDateTime.getTime()) / (1000 * 60 * 60));
+  };
+
+  const getNextAction = (): { text: string; action?: () => void; icon?: React.ReactNode } => {
+    const status = site?.approval?.status;
+    
+    if (!status || status === 'pending') {
+      const overdue = isApprovalOverdue();
+      return {
+        text: overdue ? 'Overdue - Awaiting Decision' : 'Pending - Awaiting Decision',
+        icon: overdue ? <AlertCircle className="h-4 w-4 text-red-500" /> : <Clock className="h-4 w-4 text-yellow-500" />
+      };
+    }
+    
+    if (status === 'rejected') {
+      return {
+        text: 'Edit Scoping Step',
+        action: () => {
+          // Navigate to scoping step for editing
+          toast.info('Redirecting to Scoping step for editing');
+        },
+        icon: <Edit className="h-4 w-4 text-orange-500" />
+      };
+    }
+    
+    if (status === 'approved') {
+      return {
+        text: 'Approval Completed - Proceed to Procurement',
+        icon: <CheckCircle className="h-4 w-4 text-green-500" />
+      };
+    }
+    
+    return {
+      text: 'Changes Requested - Review and Resubmit',
+      icon: <AlertTriangle className="h-4 w-4 text-yellow-500" />
+    };
+  };
+
+  const handleApprovalAction = async (action: 'approve' | 'reject') => {
+    try {
+      const updatedSite = {
+        ...site,
+        approval: {
+          ...site.approval,
+          status: action,
+          approvedAt: new Date().toISOString(),
+          approvedBy: 'Current User', // TODO: Get from auth context
+          comments: approvalComment
+        }
+      };
+      
+      onSiteUpdate(updatedSite);
+      setIsEditing(false);
+      setApprovalComment('');
+      setApprovalAction(null);
+      
+      toast.success(`Approval ${action}d successfully`);
+    } catch (error) {
+      console.error('Error updating approval:', error);
+      toast.error('Failed to update approval');
+    }
+  };
+
+  const nextAction = getNextAction();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -96,7 +210,7 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Assigned Ops Manager</Label>
                   <div className="p-3 bg-gray-50 rounded-lg border">
@@ -105,37 +219,48 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Department</Label>
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <p className="text-sm text-gray-900">{site?.approval?.approverDetails?.department || 'Operations'}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Requested Date</Label>
                   <div className="p-3 bg-gray-50 rounded-lg border">
-                    <p className="text-sm text-gray-900">{site?.approval?.requestedAt ? new Date(site.approval.requestedAt).toLocaleDateString() : 'Not specified'}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Decision Date</Label>
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <p className="text-sm text-gray-900">{site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleDateString() : 'Pending'}</p>
+                    <p className="text-sm text-gray-900">
+                      {site?.approval?.requestedAt ? new Date(site.approval.requestedAt).toLocaleString() : 'Auto-populated from Scoping'}
+                    </p>
+                    {site?.approval?.requestedAt && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getHoursElapsed()}h ago
+                        {isApprovalOverdue() && (
+                          <span className="text-red-600 ml-1">
+                            (Overdue by {getHoursElapsed() - approvalResponseTime}h)
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Response Time</Label>
                   <div className="p-3 bg-gray-50 rounded-lg border">
-                    <Badge className="bg-green-100 text-green-800">Within 48h</Badge>
+                    <Badge className={isApprovalOverdue() ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
+                      {isApprovalOverdue() ? 'Overdue' : `Within ${approvalResponseTime}h`}
+                    </Badge>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Next Action</Label>
                   <div className="p-3 bg-gray-50 rounded-lg border">
-                    <p className="text-sm text-gray-900">
-                      {site?.approval?.status === 'approved' ? 'Proceed to Procurement' : 
-                       site?.approval?.status === 'changes_requested' ? 'Review Changes & Resubmit' :
-                       site?.approval?.status === 'rejected' ? 'Project On Hold' : 'Awaiting Decision'}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      {nextAction.icon}
+                      <span className="text-sm text-gray-900">{nextAction.text}</span>
+                    </div>
+                    {nextAction.action && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={nextAction.action}
+                        className="mt-2 w-full"
+                      >
+                        {nextAction.text}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -165,7 +290,12 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-green-900 mb-2">Approval Granted</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-green-900">Approval Granted</p>
+                      <p className="text-xs text-green-600">
+                        {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
+                      </p>
+                    </div>
                     <p className="text-sm text-green-800 leading-relaxed">
                       {site?.approval?.comments || 'All requirements met. Budget approved. Proceed with procurement. Hardware specifications are suitable for the site requirements. Total investment of £45,000 is within budget limits.'}
                     </p>
@@ -182,7 +312,12 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                     <AlertTriangle className="h-4 w-4 text-yellow-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-yellow-900 mb-2">Changes Required</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-yellow-900">Changes Required</p>
+                      <p className="text-xs text-yellow-600">
+                        {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
+                      </p>
+                    </div>
                     <p className="text-sm text-yellow-800 leading-relaxed">
                       {site?.approval?.comments || 'Please review hardware quantities for kiosks. Requesting 2 more units to meet peak demand requirements. Also, consider upgrading the network switch to support additional devices.'}
                     </p>
@@ -199,7 +334,12 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                     <X className="h-4 w-4 text-red-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-red-900 mb-2">Rejection Reason</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-red-900">Rejection Reason</p>
+                      <p className="text-xs text-red-600">
+                        {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
+                      </p>
+                    </div>
                     <p className="text-sm text-red-800 leading-relaxed">
                       {site?.approval?.comments || 'Budget constraints. Project on hold until next quarter. Current allocation exceeds available budget by £15,000. Please revise scope to fit within £30,000 budget limit.'}
                     </p>
@@ -220,6 +360,48 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                     <p className="text-sm text-gray-800 leading-relaxed">
                       {site?.approval?.comments || 'Site scoping submitted for review. Ops Manager will review hardware requirements, software selections, and budget allocation. Expected response within 48 hours.'}
                     </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Approval Action Section - Only show if pending and user can approve */}
+            {(!site?.approval?.status || site?.approval?.status === 'pending') && (
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Handshake className="h-5 w-5 text-blue-600" />
+                    <p className="text-sm font-medium text-blue-900">Approval Decision Required</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label htmlFor="approval-comment">Approval Comments</Label>
+                    <Textarea
+                      id="approval-comment"
+                      value={approvalComment}
+                      onChange={(e) => setApprovalComment(e.target.value)}
+                      placeholder="Add your approval comments or feedback..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <Button
+                      onClick={() => handleApprovalAction('approve')}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={!approvalComment.trim()}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button
+                      onClick={() => handleApprovalAction('reject')}
+                      variant="destructive"
+                      disabled={!approvalComment.trim()}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Reject
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Monitor, Package, Loader2, Trash2, Plus, Minus } from 'lucide-react';
+import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock } from 'lucide-react';
 import { PlatformConfigService, SoftwareModule, HardwareItem } from '@/services/platformConfigService';
 import { Site } from '@/types/siteTypes';
 
@@ -221,7 +221,107 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
 
   return (
     <div className="space-y-6">
-          {/* Software Selection */}
+      {/* Approval Status Section - Show if approval was rejected */}
+      {site?.approval?.status === 'rejected' && (
+        <Card className="shadow-sm border border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-red-800">
+              <X className="mr-2 h-5 w-5 text-red-600" />
+              Approval Rejected - Review Required
+            </CardTitle>
+            <CardDescription className="text-red-700">
+              The approval request has been rejected. Please review the feedback and make necessary changes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-white rounded-lg border border-red-200">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <X className="h-4 w-4 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-red-900">Rejection Reason</p>
+                    <p className="text-xs text-red-600">
+                      {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
+                    </p>
+                  </div>
+                  <p className="text-sm text-red-800 leading-relaxed">
+                    {site?.approval?.comments || 'Budget constraints. Project on hold until next quarter. Current allocation exceeds available budget by £15,000. Please revise scope to fit within £30,000 budget limit.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approval Status Section - Show if approval is pending */}
+      {site?.approval?.status === 'pending' && (
+        <Card className="shadow-sm border border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-yellow-800">
+              <Clock className="mr-2 h-5 w-5 text-yellow-600" />
+              Approval Pending
+            </CardTitle>
+            <CardDescription className="text-yellow-700">
+              Your scoping request is currently under review by the Operations Manager.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-white rounded-lg border border-yellow-200">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-4 w-4 text-yellow-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-yellow-900 mb-2">Awaiting Review</p>
+                  <p className="text-sm text-yellow-800 leading-relaxed">
+                    Your scoping request has been submitted and is awaiting approval. You will be notified once a decision is made.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approval Status Section - Show if approved */}
+      {site?.approval?.status === 'approved' && (
+        <Card className="shadow-sm border border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-green-800">
+              <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
+              Approval Granted
+            </CardTitle>
+            <CardDescription className="text-green-700">
+              Your scoping request has been approved. You can proceed to the next step.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 bg-white rounded-lg border border-green-200">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-green-900">Approval Granted</p>
+                    <p className="text-xs text-green-600">
+                      {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
+                    </p>
+                  </div>
+                  <p className="text-sm text-green-800 leading-relaxed">
+                    {site?.approval?.comments || 'All requirements met. Budget approved. Proceed with procurement.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Software Selection */}
           <Card className="shadow-sm border border-gray-200">
             <CardHeader>
               <CardTitle className="flex items-center">
