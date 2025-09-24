@@ -47,7 +47,7 @@ const Landing = () => {
         {/* Lottie Animation Background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <DotLottieReact
-            src="/path/to/your/animation.lottie"
+            src="/hero-animation.lottie"
             loop
             autoplay
             style={{ 
@@ -69,11 +69,15 @@ const Landing = () => {
               <br />
               <span className="text-green-400 text-glow-green">With Confidence.</span>
             </h1>
+            
+            {/* Spacing for animation visibility */}
+            <div className="h-44 md:h-48 lg:h-52"></div>
+            
             <p className="text-xl md:text-2xl text-white/85 mb-10 max-w-3xl mx-auto leading-relaxed">
               Streamline site studies, hardware procurement, and inventory management — and track progress in real-time with SmartQ LaunchPad.
             </p>
 
-            <div className="flex justify-center mb-12 sm:mb-16">
+            <div className="flex justify-center mb-4 sm:mb-6">
               <Button 
                 size="lg"
                 onClick={handleLoginClick}
