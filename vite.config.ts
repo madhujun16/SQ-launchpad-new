@@ -91,7 +91,8 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-tooltip',
       '@supabase/supabase-js',
       '@tanstack/react-query',
-      'lucide-react'
+      'lucide-react',
+      'recharts'
     ],
     exclude: [],
     force: false
@@ -105,6 +106,10 @@ export default defineConfig(({ mode }) => ({
     },
     watch: {
       usePolling: true
+    },
+    // Better handling of dynamic imports
+    fs: {
+      strict: false
     }
   },
   preview: {

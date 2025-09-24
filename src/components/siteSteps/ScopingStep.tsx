@@ -9,20 +9,13 @@ import { Separator } from '@/components/ui/separator';
 import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock } from 'lucide-react';
 import { PlatformConfigService, SoftwareModule, HardwareItem } from '@/services/platformConfigService';
 import { Site } from '@/types/siteTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ScopingStepProps {
   site: Site | null;
   onUpdate: (updates: Partial<Site>) => void;
   isEditing: boolean;
-}
-
-interface SelectedSoftware {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  monthly_fee: number;
-  setup_fee: number;
 }
 
 interface SelectedHardware {
@@ -39,13 +32,14 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   const [availableSoftwareModules, setAvailableSoftwareModules] = useState<SoftwareModule[]>([]);
   const [availableHardwareItems, setAvailableHardwareItems] = useState<HardwareItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSoftware, setSelectedSoftware] = useState<SelectedSoftware[]>([]);
+  const [selectedSoftwareIds, setSelectedSoftwareIds] = useState<string[]>([]);
   const [selectedHardware, setSelectedHardware] = useState<SelectedHardware[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   // Initialize from site data
   useEffect(() => {
     if (site?.scoping) {
-      setSelectedSoftware(site.scoping.selectedSoftware || []);
+      setSelectedSoftwareIds(site.scoping.selectedSoftware || []);
       setSelectedHardware(site.scoping.selectedHardware || []);
     }
   }, [site]);
@@ -81,10 +75,11 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   const groupedSoftwareModules = useMemo(() => {
     console.log('🔄 Grouping software modules:', availableSoftwareModules);
     const grouped = availableSoftwareModules.reduce((acc, software) => {
-      if (!acc[software.category]) {
-        acc[software.category] = [];
+      const categoryName = software.category?.name || 'Uncategorized';
+      if (!acc[categoryName]) {
+        acc[categoryName] = [];
       }
-      acc[software.category].push(software);
+      acc[categoryName].push(software);
       return acc;
     }, {} as Record<string, SoftwareModule[]>);
     
@@ -92,122 +87,137 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     return grouped;
   }, [availableSoftwareModules]);
 
-  // Group hardware items by category
+  // Get filtered hardware items based on selected software categories
+  const filteredHardwareItems = useMemo(() => {
+    if (selectedSoftwareIds.length === 0) return [];
+    
+    // Get categories of selected software
+    const selectedSoftwareCategories = selectedSoftwareIds.map(id => {
+      const software = availableSoftwareModules.find(s => s.id === id);
+      return software?.category?.name;
+    }).filter(Boolean);
+    
+    // Filter hardware items that match these categories
+    return availableHardwareItems.filter(hardware => 
+      selectedSoftwareCategories.includes(hardware.category?.name)
+    );
+  }, [selectedSoftwareIds, availableSoftwareModules, availableHardwareItems]);
+
+  // Group filtered hardware items by category
   const groupedHardwareItems = useMemo(() => {
-    const grouped = availableHardwareItems.reduce((acc, hardware) => {
-      if (!acc[hardware.category]) {
-        acc[hardware.category] = [];
+    const grouped = filteredHardwareItems.reduce((acc, hardware) => {
+      const categoryName = hardware.category?.name || 'Uncategorized';
+      if (!acc[categoryName]) {
+        acc[categoryName] = [];
       }
-      acc[hardware.category].push(hardware);
+      acc[categoryName].push(hardware);
       return acc;
     }, {} as Record<string, HardwareItem[]>);
     
     return grouped;
-  }, [availableHardwareItems]);
+  }, [filteredHardwareItems]);
 
   // Handle software selection
-  const handleSoftwareToggle = (software: SoftwareModule) => {
-    const isSelected = selectedSoftware.some(s => s.id === software.id);
-    
-    if (isSelected) {
-      // Remove software
-      const updated = selectedSoftware.filter(s => s.id !== software.id);
-      setSelectedSoftware(updated);
-      
-      // Remove related hardware recommendations
-      const updatedHardware = selectedHardware.filter(h => 
-        !availableHardwareItems.some(ah => 
-          ah.id === h.id && ah.category === software.category
-        )
-      );
-      setSelectedHardware(updatedHardware);
-    } else {
-      // Add software
-      const newSoftware: SelectedSoftware = {
-        id: software.id,
-        name: software.name,
-        category: software.category,
-        quantity: 1,
-        monthly_fee: software.monthly_fee,
-        setup_fee: software.setup_fee
-      };
-      setSelectedSoftware([...selectedSoftware, newSoftware]);
-      
-      // Auto-add hardware recommendations for this category
-      const categoryHardware = availableHardwareItems.filter(h => h.category === software.category);
-      const newHardware = categoryHardware.map(hardware => ({
-        id: hardware.id,
-        name: hardware.name,
-        category: hardware.category,
-        quantity: 1,
-        unit_cost: hardware.unit_cost,
-        installation_cost: hardware.installation_cost,
-        maintenance_cost: hardware.maintenance_cost
-      }));
-      
-      // Only add hardware that's not already selected
-      const existingHardwareIds = selectedHardware.map(h => h.id);
-      const hardwareToAdd = newHardware.filter(h => !existingHardwareIds.includes(h.id));
-      setSelectedHardware([...selectedHardware, ...hardwareToAdd]);
-    }
-  };
-
-  // Handle software quantity change
-  const handleSoftwareQuantityChange = (softwareId: string, quantity: number) => {
-    setSelectedSoftware(prev => 
-      prev.map(s => s.id === softwareId ? { ...s, quantity: Math.max(1, quantity) } : s)
-    );
+  const handleSoftwareToggle = (softwareId: string) => {
+    setSelectedSoftwareIds(prev => {
+      if (prev.includes(softwareId)) {
+        // Remove software and clear related hardware
+        const newSoftwareIds = prev.filter(id => id !== softwareId);
+        const software = availableSoftwareModules.find(s => s.id === softwareId);
+        const categoryName = software?.category?.name;
+        
+        // Remove hardware items from the same category
+        const newHardware = selectedHardware.filter(hw => {
+          const hardware = availableHardwareItems.find(h => h.id === hw.id);
+          return hardware?.category?.name !== categoryName;
+        });
+        
+        setSelectedHardware(newHardware);
+        return newSoftwareIds;
+      } else {
+        return [...prev, softwareId];
+      }
+    });
   };
 
   // Handle hardware quantity change
   const handleHardwareQuantityChange = (hardwareId: string, quantity: number) => {
-    setSelectedHardware(prev => 
-      prev.map(h => h.id === hardwareId ? { ...h, quantity: Math.max(0, quantity) } : h)
-    );
-  };
-
-  // Remove hardware item
-  const removeHardwareItem = (hardwareId: string) => {
-    setSelectedHardware(prev => prev.filter(h => h.id !== hardwareId));
-  };
-
-  // Calculate costs
-  const costSummary = useMemo(() => {
-    const softwareSetupCosts = selectedSoftware.reduce((sum, s) => sum + (s.setup_fee * s.quantity), 0);
-    const softwareMonthlyCosts = selectedSoftware.reduce((sum, s) => sum + (s.monthly_fee * s.quantity), 0);
+    if (!isEditing) return;
     
-    const hardwareCosts = selectedHardware.reduce((sum, h) => sum + (h.unit_cost * h.quantity), 0);
-    const installationCosts = selectedHardware.reduce((sum, h) => sum + (h.installation_cost * h.quantity), 0);
-    const maintenanceCosts = selectedHardware.reduce((sum, h) => sum + (h.maintenance_cost * h.quantity), 0);
+    const currentHardware = selectedHardware || [];
+    const existingIndex = currentHardware.findIndex(hw => hw.id === hardwareId);
     
-    const totalHardware = hardwareCosts + installationCosts;
-    const contingency = totalHardware * 0.15;
-    const totalCAPEX = totalHardware + softwareSetupCosts + contingency;
-    const totalOPEX = softwareMonthlyCosts + maintenanceCosts;
-    
-    return {
-      hardware: hardwareCosts,
-      installation: installationCosts,
-      softwareSetup: softwareSetupCosts,
-      contingency,
-      totalCAPEX,
-      softwareMonthly: softwareMonthlyCosts,
-      maintenance: maintenanceCosts,
-      totalOPEX,
-      totalInvestment: totalCAPEX + (totalOPEX * 12) // Annual projection
-    };
-  }, [selectedSoftware, selectedHardware]);
-
-  // Save changes
-  const handleSave = () => {
-    onUpdate({
-      scoping: {
-        selectedSoftware,
-        selectedHardware,
-        costSummary,
-        lastUpdated: new Date().toISOString()
+    let newHardware;
+    if (existingIndex >= 0) {
+      newHardware = [...currentHardware];
+      newHardware[existingIndex] = { ...newHardware[existingIndex], quantity };
+    } else {
+      const hardware = availableHardwareItems.find(h => h.id === hardwareId);
+      if (hardware) {
+        newHardware = [...currentHardware, { 
+          id: hardwareId, 
+          name: hardware.name,
+          category: hardware.category?.name || 'Uncategorized',
+          quantity,
+          unit_cost: hardware.unit_cost || 0,
+          installation_cost: 0,
+          maintenance_cost: 0
+        }];
+      } else {
+        newHardware = currentHardware;
       }
-    });
+    }
+    
+    setSelectedHardware(newHardware);
+  };
+
+  // Handle scoping submission
+  const handleSubmitScoping = async () => {
+    if (selectedSoftwareIds.length === 0) {
+      toast.error('Please select at least one software module');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      // Save scoping data to database
+      const { error } = await supabase
+        .from('site_scoping')
+        .upsert({
+          site_id: site?.id,
+          selected_software: selectedSoftwareIds,
+          selected_hardware: selectedHardware,
+          status: 'submitted',
+          submitted_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error submitting scoping:', error);
+        toast.error('Failed to submit scoping');
+        return;
+      }
+
+      // Update site status
+      onUpdate({
+        scoping: {
+          selectedSoftware: selectedSoftwareIds,
+          selectedHardware: selectedHardware,
+          status: 'submitted',
+          submittedAt: new Date().toISOString()
+        },
+        status: 'scoping_done'
+      });
+
+      toast.success('Scoping submitted successfully for approval');
+    } catch (err) {
+      console.error('Error submitting scoping:', err);
+      toast.error('Failed to submit scoping');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -221,387 +231,152 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
 
   return (
     <div className="space-y-6">
-      {/* Approval Status Section - Show if approval was rejected */}
-      {site?.approval?.status === 'rejected' && (
-        <Card className="shadow-sm border border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-red-800">
-              <X className="mr-2 h-5 w-5 text-red-600" />
-              Approval Rejected - Review Required
-            </CardTitle>
-            <CardDescription className="text-red-700">
-              The approval request has been rejected. Please review the feedback and make necessary changes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 bg-white rounded-lg border border-red-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <X className="h-4 w-4 text-red-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-red-900">Rejection Reason</p>
-                    <p className="text-xs text-red-600">
-                      {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
-                    </p>
-                  </div>
-                  <p className="text-sm text-red-800 leading-relaxed">
-                    {site?.approval?.comments || 'Budget constraints. Project on hold until next quarter. Current allocation exceeds available budget by £15,000. Please revise scope to fit within £30,000 budget limit.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Approval Status Section - Show if approval is pending */}
-      {site?.approval?.status === 'pending' && (
-        <Card className="shadow-sm border border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-yellow-800">
-              <Clock className="mr-2 h-5 w-5 text-yellow-600" />
-              Approval Pending
-            </CardTitle>
-            <CardDescription className="text-yellow-700">
-              Your scoping request is currently under review by the Operations Manager.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 bg-white rounded-lg border border-yellow-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900 mb-2">Awaiting Review</p>
-                  <p className="text-sm text-yellow-800 leading-relaxed">
-                    Your scoping request has been submitted and is awaiting approval. You will be notified once a decision is made.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Approval Status Section - Show if approved */}
-      {site?.approval?.status === 'approved' && (
-        <Card className="shadow-sm border border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center text-green-800">
-              <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
-              Approval Granted
-            </CardTitle>
-            <CardDescription className="text-green-700">
-              Your scoping request has been approved. You can proceed to the next step.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 bg-white rounded-lg border border-green-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-green-900">Approval Granted</p>
-                    <p className="text-xs text-green-600">
-                      {site?.approval?.approvedAt ? new Date(site.approval.approvedAt).toLocaleString() : 'Decision Date'}
-                    </p>
-                  </div>
-                  <p className="text-sm text-green-800 leading-relaxed">
-                    {site?.approval?.comments || 'All requirements met. Budget approved. Proceed with procurement.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Software Selection */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Monitor className="mr-2 h-5 w-5 text-green-600" />
-                Software Selection
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-            Select software modules from all available categories
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Monitor className="mr-2 h-5 w-5 text-blue-600" />
+            Software Selection
+          </CardTitle>
+          <CardDescription>
+            Select the software modules you need for this site. Hardware recommendations will appear based on your selections.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-6">
-            {Object.entries(groupedSoftwareModules).map(([category, softwareModules]) => (
-              <div key={category} className="space-y-3">
-                {/* Category Header */}
-                <div className="flex items-center space-x-2 pb-2 border-b border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-700">{category}</h4>
-                  <Badge variant="secondary" className="text-xs">
-                    {softwareModules.length} module{softwareModules.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-                
-                {/* Software Modules in this Category */}
-                {softwareModules.map((software) => {
-                  const isSelected = selectedSoftware.some(s => s.id === software.id);
-                  const selectedSoftwareItem = selectedSoftware.find(s => s.id === software.id);
-                  
-                  return (
-                  <div key={software.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox 
-                        id={software.id} 
-                          checked={isSelected}
-                          onCheckedChange={() => handleSoftwareToggle(software)}
+            {Object.entries(groupedSoftwareModules).map(([categoryName, softwareModules]) => (
+              <div key={categoryName}>
+                <h4 className="font-medium text-gray-900 mb-3">{categoryName}</h4>
+                <div className="space-y-3">
+                  {softwareModules.map((software) => (
+                    <div key={software.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                      <Checkbox
+                        id={software.id}
+                        checked={selectedSoftwareIds.includes(software.id)}
+                        onCheckedChange={() => handleSoftwareToggle(software.id)}
                         disabled={!isEditing}
                       />
-                      <div>
-                        <Label htmlFor={software.id} className="text-sm font-medium">
+                      <div className="flex-1">
+                        <Label htmlFor={software.id} className="font-medium cursor-pointer">
                           {software.name}
                         </Label>
-                        <p className="text-xs text-gray-500">{software.description}</p>
+                        {software.description && (
+                          <p className="text-sm text-gray-600 mt-1">{software.description}</p>
+                        )}
+                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                          <span>License Fee: £{software.license_fee?.toLocaleString() || 0}</span>
                         </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                        {/* Software Quantity */}
-                        {isSelected && (
-                        <div className="flex items-center space-x-2">
-                          <Label htmlFor={`qty-${software.id}`} className="text-xs text-gray-600">
-                            Qty:
-                          </Label>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSoftwareQuantityChange(software.id, (selectedSoftwareItem?.quantity || 1) - 1)}
-                                disabled={!isEditing || (selectedSoftwareItem?.quantity || 1) <= 1}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                          <Input
-                            id={`qty-${software.id}`}
-                            type="number"
-                            min="1"
-                                value={selectedSoftwareItem?.quantity || 1}
-                                onChange={(e) => handleSoftwareQuantityChange(software.id, parseInt(e.target.value) || 1)}
-                                className="w-16 h-8 text-xs text-center"
-                            disabled={!isEditing}
-                          />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSoftwareQuantityChange(software.id, (selectedSoftwareItem?.quantity || 1) + 1)}
-                                disabled={!isEditing}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                        </div>
-                      )}
-                      <div className="text-right">
-                          <p className="text-sm font-medium">£{software.monthly_fee}/month</p>
-                          <p className="text-xs text-gray-500">£{software.setup_fee} setup</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Hardware Requirements */}
-          <Card className="shadow-sm border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Package className="mr-2 h-5 w-5 text-orange-600" />
-                Hardware Requirements
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-            Automatically recommended based on your software selections. You can modify quantities or remove items.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-          <div className="space-y-6">
-            {Object.entries(groupedHardwareItems).map(([category, hardwareItems]) => {
-              const categorySelectedHardware = selectedHardware.filter(h => h.category === category);
-              
-              if (categorySelectedHardware.length === 0) return null;
-              
-              return (
-                <div key={category} className="space-y-3">
-                  {/* Category Header */}
-                  <div className="flex items-center space-x-2 pb-2 border-b border-gray-200">
-                    <h4 className="text-sm font-semibold text-gray-700">{category}</h4>
-                    <Badge variant="secondary" className="text-xs">
-                      {categorySelectedHardware.length} item{categorySelectedHardware.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                  
-                  {/* Hardware Items in this Category */}
-                  {categorySelectedHardware.map((hardware) => (
-                    <div key={hardware.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <p className="font-medium">{hardware.name}</p>
-                          <p className="text-sm text-gray-600">{availableHardwareItems.find(h => h.id === hardware.id)?.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        {/* Hardware Quantity */}
-                        <div className="flex items-center space-x-2">
-                          <Label htmlFor={`qty-${hardware.id}`} className="text-xs text-gray-600">
-                            Qty:
-                          </Label>
-                          <div className="flex items-center space-x-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                              onClick={() => handleHardwareQuantityChange(hardware.id, hardware.quantity - 1)}
-                              disabled={!isEditing || hardware.quantity <= 0}
-                              className="h-6 w-6 p-0"
-                          >
-                              <Minus className="h-3 w-3" />
-                          </Button>
-                            <Input
-                              id={`qty-${hardware.id}`}
-                              type="number"
-                              min="0"
-                              value={hardware.quantity}
-                              onChange={(e) => handleHardwareQuantityChange(hardware.id, parseInt(e.target.value) || 0)}
-                              className="w-16 h-8 text-xs text-center"
-                              disabled={!isEditing}
-                            />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleHardwareQuantityChange(hardware.id, hardware.quantity + 1)}
-                            disabled={!isEditing}
-                              className="h-6 w-6 p-0"
-                          >
-                              <Plus className="h-3 w-3" />
-                          </Button>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">£{hardware.unit_cost} each</p>
-                          <p className="text-xs text-gray-500">£{hardware.installation_cost} install</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeHardwareItem(hardware.id)}
-                          disabled={!isEditing}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              );
-            })}
-            
-            {selectedHardware.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                <Package className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No hardware items selected</p>
-                <p className="text-xs text-gray-400 mt-1">Select software modules to see hardware recommendations</p>
-                  </div>
-                )}
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Cost Summary */}
-      <Card className="shadow-sm border border-gray-200">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-            <Package className="mr-2 h-5 w-5 text-blue-600" />
-                Cost Summary
-              </CardTitle>
-              <CardDescription className="text-gray-600">
-            Real-time cost calculations based on your selections
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-          <div className="space-y-4">
-            {/* CAPEX */}
-                <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Capital Expenditure (CAPEX)</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                      <span>Hardware</span>
-                  <span>£{costSummary.hardware.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Installation</span>
-                  <span>£{costSummary.installation.toFixed(2)}</span>
-                    </div>
-                <div className="flex justify-between text-sm">
-                      <span>Software Setup</span>
-                  <span>£{costSummary.softwareSetup.toFixed(2)}</span>
-                    </div>
-                <div className="flex justify-between text-sm">
-                      <span>Contingency (15%)</span>
-                  <span>£{costSummary.contingency.toFixed(2)}</span>
-                    </div>
-                    <Separator />
-                <div className="flex justify-between font-semibold">
-                      <span>Total CAPEX</span>
-                  <span>£{costSummary.totalCAPEX.toFixed(2)}</span>
-                    </div>
+      {/* Hardware Selection - Only show if software is selected */}
+      {selectedSoftwareIds.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Package className="mr-2 h-5 w-5 text-green-600" />
+              Hardware Selection
+            </CardTitle>
+            <CardDescription>
+              Hardware items recommended based on your software selection. Adjust quantities as needed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {Object.entries(groupedHardwareItems).map(([categoryName, hardwareItems]) => (
+                <div key={categoryName}>
+                  <h4 className="font-medium text-gray-900 mb-3">{categoryName}</h4>
+                  <div className="space-y-3">
+                    {hardwareItems.map((hardware) => {
+                      const selectedHardwareItem = selectedHardware.find(h => h.id === hardware.id);
+                      const quantity = selectedHardwareItem?.quantity || 0;
+                      
+                      return (
+                        <div key={hardware.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-medium">{hardware.name}</div>
+                            {hardware.description && (
+                              <p className="text-sm text-gray-600 mt-1">{hardware.description}</p>
+                            )}
+                            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                              <span>Cost: £{hardware.unit_cost?.toLocaleString() || 0}</span>
+                              {hardware.manufacturer && <span>Manufacturer: {hardware.manufacturer}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleHardwareQuantityChange(hardware.id, Math.max(0, quantity - 1))}
+                              disabled={!isEditing || quantity <= 0}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center">{quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleHardwareQuantityChange(hardware.id, quantity + 1)}
+                              disabled={!isEditing}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-            {/* OPEX */}
-                <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Operating Expenditure (OPEX)</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                      <span>Monthly Software Fees</span>
-                  <span>£{costSummary.softwareMonthly.toFixed(2)}/month</span>
-                    </div>
-                <div className="flex justify-between text-sm">
-                      <span>Maintenance</span>
-                  <span>£{costSummary.maintenance.toFixed(2)}/month</span>
-                    </div>
-                    <Separator />
-                <div className="flex justify-between font-semibold">
-                      <span>Total Monthly OPEX</span>
-                  <span>£{costSummary.totalOPEX.toFixed(2)}/month</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total Investment */}
-            <div className="pt-4 border-t">
-                  <div className="flex justify-between text-lg font-bold">
-                <span>Total Investment (Annual)</span>
-                <span>£{costSummary.totalInvestment.toFixed(2)}</span>
-              </div>
+              ))}
             </div>
-              </div>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-3">
-        <Button variant="outline" onClick={handleSave} disabled={!isEditing}>
-          Save Changes
-        </Button>
-        <Button onClick={handleSave} disabled={!isEditing}>
-          Mark Complete
-        </Button>
-      </div>
+      {/* Submit Button */}
+      {isEditing && selectedSoftwareIds.length > 0 && (
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleSubmitScoping}
+            disabled={submitting}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Submit for Approval
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Status Display */}
+      {site?.scoping?.status === 'submitted' && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <span className="text-blue-800 font-medium">Scoping submitted for approval</span>
+            </div>
+            <p className="text-blue-700 text-sm mt-1">
+              Submitted on {site.scoping.submittedAt ? new Date(site.scoping.submittedAt).toLocaleDateString() : 'Unknown date'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -15,36 +15,56 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 
-// Lazy load heavy components with better chunking
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Sites = lazy(() => import("./pages/Sites"));
-const ApprovalsProcurement = lazy(() => import("./pages/ApprovalsProcurement"));
-const Deployment = lazy(() => import("./pages/Deployment"));
-const Assets = lazy(() => import("./pages/Assets"));
+// Enhanced lazy loading with error handling
+const createLazyComponent = (importFn: () => Promise<any>) => {
+  return lazy(() => 
+    importFn().catch((error) => {
+      console.error('Failed to load component:', error);
+      // Return a fallback component
+      return {
+        default: () => (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-red-600 mb-2">Failed to Load Component</h3>
+              <p className="text-sm text-gray-600">Please refresh the page or contact support if the issue persists.</p>
+            </div>
+          </div>
+        )
+      };
+    })
+  );
+};
+
+// Lazy load heavy components with better chunking and error handling
+const Dashboard = createLazyComponent(() => import("./pages/Dashboard"));
+const Sites = createLazyComponent(() => import("./pages/Sites"));
+const ApprovalsProcurement = createLazyComponent(() => import("./pages/ApprovalsProcurement"));
+const Deployment = createLazyComponent(() => import("./pages/Deployment"));
+const Assets = createLazyComponent(() => import("./pages/Assets"));
 
 // Platform Configuration separate pages
-const OrganizationsManagement = lazy(() => import("./pages/OrganizationsManagement"));
-const UserManagement = lazy(() => import("./pages/UserManagement"));
-const SoftwareHardwareManagement = lazy(() => import("./pages/SoftwareHardwareManagement"));
-const GeneralSettings = lazy(() => import("./pages/GeneralSettings"));
-const AuditLogs = lazy(() => import("./pages/AuditLogs"));
+const OrganizationsManagement = createLazyComponent(() => import("./pages/OrganizationsManagement"));
+const UserManagement = createLazyComponent(() => import("./pages/UserManagement"));
+const SoftwareHardwareManagement = createLazyComponent(() => import("./pages/SoftwareHardwareManagement"));
+const GeneralSettings = createLazyComponent(() => import("./pages/GeneralSettings"));
+const AuditLogs = createLazyComponent(() => import("./pages/AuditLogs"));
 
-const Forecast = lazy(() => import("./pages/Forecast"));
+const Forecast = createLazyComponent(() => import("./pages/Forecast"));
 
 // Sites-related pages
-const Site = lazy(() => import("./pages/Site"));
-const SiteCreation = lazy(() => import("./pages/SiteCreation"));
-const SiteFlowHub = lazy(() => import("./pages/SiteFlowHub"));
-const SiteStepEdit = lazy(() => import("./pages/SiteStepEdit"));
+const Site = createLazyComponent(() => import("./pages/Site"));
+const SiteCreation = createLazyComponent(() => import("./pages/SiteCreation"));
+const SiteFlowHub = createLazyComponent(() => import("./pages/SiteFlowHub"));
+const SiteStepEdit = createLazyComponent(() => import("./pages/SiteStepEdit"));
 
 // Approvals & Procurement related pages
-const HardwareApprovals = lazy(() => import("./pages/HardwareApprovals"));
-const HardwareScoping = lazy(() => import("./pages/HardwareScoping"));
-const HardwareMaster = lazy(() => import("./pages/HardwareMaster"));
+const HardwareApprovals = createLazyComponent(() => import("./pages/HardwareApprovals"));
+const HardwareScoping = createLazyComponent(() => import("./pages/HardwareScoping"));
+const HardwareMaster = createLazyComponent(() => import("./pages/HardwareMaster"));
 
 // Assets-related pages
-const Inventory = lazy(() => import("./pages/Inventory"));
-const LicenseManagement = lazy(() => import("./pages/LicenseManagement"));
+const Inventory = createLazyComponent(() => import("./pages/Inventory"));
+const LicenseManagement = createLazyComponent(() => import("./pages/LicenseManagement"));
 
 // Create a client with optimized settings
 const queryClient = new QueryClient({

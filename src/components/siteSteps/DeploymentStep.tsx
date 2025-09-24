@@ -1,26 +1,224 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Edit, 
   CheckCircle, 
   BarChart3 as ProgressIcon, 
   CalendarDays, 
   Clock, 
-  AlertCircle 
+  AlertCircle,
+  Plus,
+  Package
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface DeploymentStepProps {
   site: Site;
   onSiteUpdate: (updatedSite: Site) => void;
 }
 
+interface HardwareDevice {
+  id: string;
+  name: string;
+  description: string | null;
+  category_id: string;
+  manufacturer: string | null;
+  unit_cost: number | null;
+  type: string | null;
+  is_active: boolean | null;
+  category?: {
+    id: string;
+    name: string;
+    description: string | null;
+  };
+}
+
+interface Asset {
+  id: string;
+  name: string;
+  type: string;
+  serial_number: string | null;
+  site_id: string | null;
+  site_name: string | null;
+  status: 'in_stock' | 'assigned' | 'deployed' | 'in_maintenance' | 'retired' | 'pending' | 'installed' | 'active';
+  location: string | null;
+  assigned_to: string | null;
+  purchase_date: string | null;
+  warranty_expiry: string | null;
+  last_maintenance: string | null;
+  next_maintenance: string | null;
+  maintenance_schedule: string | null;
+  license_key: string | null;
+  license_expiry: string | null;
+  cost: number;
+  manufacturer: string | null;
+  model: string | null;
+  notes: string | null;
+  hardware_item_id: string | null;
+  model_number: string | null;
+  service_cycle_months: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) => {
+  const [procuredHardware, setProcuredHardware] = useState<any[]>([]);
+  const [siteAssets, setSiteAssets] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAssetModal, setShowAssetModal] = useState(false);
+  const [selectedHardware, setSelectedHardware] = useState<HardwareDevice | null>(null);
+  const [assetForm, setAssetForm] = useState({
+    model_number: '',
+    service_cycle_months: 12
+  });
+
+  useEffect(() => {
+    loadProcuredHardware();
+    loadSiteAssets();
+  }, [site.id]);
+
+  const loadProcuredHardware = async () => {
+    try {
+      setLoading(true);
+      
+      // Load procured hardware items (status = 'delivered' or 'installed')
+      const { data: hardwareData, error: hardwareError } = await supabase
+        .from('site_procurement_items')
+        .select(`
+          *,
+          hardware_item:hardware_items(
+            id,
+            name,
+            description,
+            manufacturer,
+            unit_cost,
+            type,
+            category:categories(id, name, description)
+          )
+        `)
+        .eq('site_id', site.id)
+        .eq('item_type', 'hardware')
+        .in('status', ['delivered', 'installed'])
+        .order('created_at');
+      
+      if (hardwareError) {
+        console.error('Error loading procured hardware:', hardwareError);
+        toast.error('Failed to load procured hardware');
+        setProcuredHardware([]);
+      } else {
+        setProcuredHardware((hardwareData || []) as any);
+      }
+    } catch (err) {
+      console.error('Error loading procured hardware:', err);
+      toast.error('Failed to load procured hardware');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSiteAssets = async () => {
+    try {
+      // Load existing assets for this site
+      const { data: assetsData, error: assetsError } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('site_id', site.id);
+      
+      if (assetsError) {
+        console.error('Error loading site assets:', assetsError);
+        toast.error('Failed to load site assets');
+        setSiteAssets([]);
+      } else {
+        setSiteAssets(assetsData || []);
+      }
+    } catch (err) {
+      console.error('Error loading site assets:', err);
+      toast.error('Failed to load site assets');
+    }
+  };
+
+  const handleAddAsset = (procurementItem: any) => {
+    setSelectedHardware({
+      id: procurementItem.hardware_item_id,
+      name: procurementItem.item_name,
+      description: procurementItem.hardware_item?.description,
+      category_id: procurementItem.hardware_item?.category?.id,
+      manufacturer: procurementItem.hardware_item?.manufacturer,
+      unit_cost: procurementItem.unit_cost,
+      type: procurementItem.hardware_item?.type,
+      is_active: true,
+      category: procurementItem.hardware_item?.category
+    });
+    setAssetForm({
+      model_number: '',
+      service_cycle_months: 12
+    });
+    setShowAssetModal(true);
+  };
+
+  const handleSaveAsset = async () => {
+    if (!selectedHardware || !assetForm.model_number.trim()) {
+      toast.error('Please enter a model number');
+      return;
+    }
+
+    try {
+      // Find the procurement item to get the quantity
+      const procurementItem = procuredHardware.find(item => item.hardware_item_id === selectedHardware.id);
+      if (!procurementItem) {
+        toast.error('Procurement item not found');
+        return;
+      }
+
+      // Create assets based on quantity
+      const assetsToInsert = Array.from({ length: procurementItem.quantity }, (_, index) => ({
+        name: selectedHardware.name,
+        type: selectedHardware.type || 'Hardware',
+        serial_number: `SN-${String(index + 1).padStart(6, '0')}`,
+        site_id: site.id,
+        site_name: site.name,
+        status: 'pending' as const,
+        location: site.name,
+        cost: selectedHardware.unit_cost || 0,
+        manufacturer: selectedHardware.manufacturer,
+        model: selectedHardware.name,
+        model_number: `${assetForm.model_number}-${String(index + 1).padStart(3, '0')}`,
+        service_cycle_months: assetForm.service_cycle_months,
+        hardware_item_id: selectedHardware.id
+      }));
+
+      const { error } = await supabase
+        .from('assets')
+        .insert(assetsToInsert);
+
+      if (error) {
+        console.error('Error saving assets:', error);
+        toast.error('Failed to save assets');
+        return;
+      }
+
+      toast.success(`${procurementItem.quantity} assets added successfully`);
+      setShowAssetModal(false);
+      setSelectedHardware(null);
+      loadSiteAssets();
+    } catch (err) {
+      console.error('Error saving assets:', err);
+      toast.error('Failed to save assets');
+    }
+  };
+
+  const getAssetCount = (hardwareId: string) => {
+    return siteAssets.filter(asset => asset.hardware_item_id === hardwareId).length;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -155,6 +353,137 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
             </div>
           </CardContent>
         </Card>
+
+        {/* Procured Hardware Devices List */}
+        <Card className="shadow-sm border border-gray-200">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Package className="mr-2 h-5 w-5 text-blue-600" />
+              Procured Hardware Devices
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              Hardware devices that have been procured and are ready for deployment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Loading procured hardware...</span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {procuredHardware.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm text-gray-500">No procured hardware found</p>
+                    <p className="text-xs text-gray-400">Complete the procurement phase first</p>
+                  </div>
+                ) : (
+                  procuredHardware.map((procurementItem: any) => (
+                    <div key={procurementItem.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{procurementItem.item_name}</h4>
+                            {procurementItem.hardware_item?.description && (
+                              <p className="text-sm text-gray-600">{procurementItem.hardware_item.description}</p>
+                            )}
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-800">
+                            {procurementItem.hardware_item?.type || 'Hardware'}
+                          </Badge>
+                          {procurementItem.hardware_item?.category && (
+                            <Badge variant="outline">
+                              {procurementItem.hardware_item.category.name}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                          <span>Quantity: {procurementItem.quantity}</span>
+                          {procurementItem.hardware_item?.manufacturer && (
+                            <span>Manufacturer: {procurementItem.hardware_item.manufacturer}</span>
+                          )}
+                          <span>Unit Cost: £{procurementItem.unit_cost?.toLocaleString() || 0}</span>
+                          <span>Total: £{procurementItem.total_cost?.toLocaleString() || 0}</span>
+                          <span>Assets: {getAssetCount(procurementItem.hardware_item_id)}</span>
+                        </div>
+                        <div className="mt-2">
+                          <Badge className={
+                            procurementItem.status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                            procurementItem.status === 'installed' ? 'bg-purple-100 text-purple-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {procurementItem.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleAddAsset(procurementItem)}
+                        size="sm"
+                        className="ml-4"
+                        disabled={procurementItem.status !== 'delivered' && procurementItem.status !== 'installed'}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Assets
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Asset Modal */}
+        <Dialog open={showAssetModal} onOpenChange={setShowAssetModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Assets</DialogTitle>
+              <DialogDescription>
+                Add assets for {selectedHardware?.name}
+                {selectedHardware && (
+                  <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                    <strong>Quantity:</strong> {procuredHardware.find(item => item.hardware_item_id === selectedHardware.id)?.quantity || 0} units
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="model_number">Base Model Number</Label>
+                <Input
+                  id="model_number"
+                  value={assetForm.model_number}
+                  onChange={(e) => setAssetForm(prev => ({ ...prev, model_number: e.target.value }))}
+                  placeholder="Enter base model number (e.g., SQ-POS)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Assets will be numbered automatically (e.g., SQ-POS-001, SQ-POS-002, etc.)
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="service_cycle">Service Cycle (months)</Label>
+                <Input
+                  id="service_cycle"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={assetForm.service_cycle_months}
+                  onChange={(e) => setAssetForm(prev => ({ ...prev, service_cycle_months: parseInt(e.target.value) || 12 }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAssetModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveAsset}>
+                Add {procuredHardware.find(item => item.hardware_item_id === selectedHardware?.id)?.quantity || 0} Assets
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="text-right">
           <Button variant="outline" size="sm">

@@ -87,6 +87,12 @@ const OPERATIONS_DATA = [
   { metric: 'Go-Live Time', value: 34.2, unit: 'days', color: '#EF4444' } // Red
 ];
 
+const PERFORMANCE_DATA = [
+  { metric: 'Sites On-Time Deployment', value: 75.0, unit: '%', color: '#10B981' }, // Emerald
+  { metric: 'Budget Utilization', value: 78.5, unit: '%', color: '#3B82F6' }, // Blue
+  { metric: 'Resource Utilization', value: 92.3, unit: '%', color: '#F59E0B' } // Amber
+];
+
 // Simple mock data - no heavy operations
 const MOCK_METRICS = [
   {
@@ -465,45 +471,22 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <div className="text-3xl font-bold text-emerald-900 mb-2">
-                    {MOCK_FINANCIAL_DATA.sitesOnTimeDeployment}%
+              <div className="space-y-4">
+                {PERFORMANCE_DATA.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted/70 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{item.metric}</p>
+                      <p className="text-xs text-muted-foreground">{item.unit}</p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl font-bold text-foreground">{item.value}</div>
+                      <div 
+                        className="w-4 h-4 rounded-full shadow-sm" 
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                    </div>
                   </div>
-                  <p className="text-sm text-emerald-700 mb-3">Sites Deployed On/Before Target Date</p>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-emerald-500 h-3 rounded-full transition-all duration-500 ease-out" 
-                      style={{ width: `${MOCK_FINANCIAL_DATA.sitesOnTimeDeployment}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-3xl font-bold text-blue-900 mb-2">
-                    {MOCK_FINANCIAL_DATA.budgetUtilization}%
-                  </div>
-                  <p className="text-sm text-blue-700 mb-3">Budget Utilization</p>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-500 h-3 rounded-full transition-all duration-500 ease-out" 
-                      style={{ width: `${MOCK_FINANCIAL_DATA.budgetUtilization}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <div className="text-3xl font-bold text-amber-900 mb-2">
-                    {MOCK_FINANCIAL_DATA.resourceUtilization}%
-                  </div>
-                  <p className="text-sm text-amber-700 mb-3">Resource Utilization</p>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-amber-500 h-3 rounded-full transition-all duration-500 ease-out" 
-                      style={{ width: `${MOCK_FINANCIAL_DATA.resourceUtilization}%` }}
-                    ></div>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>

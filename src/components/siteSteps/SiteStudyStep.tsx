@@ -447,8 +447,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 Understanding the physical space, operational context, and installation requirements
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="space-type">Space Type *</Label>
                   <p className="text-xs text-gray-500 mb-2">Type of space affects equipment placement and requirements</p>
@@ -492,31 +492,33 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="operating-hours">Operating Hours *</Label>
-                <Input
-                  id="operating-hours"
-                  value={getValue('spaceAssessment.operatingHours')}
-                  onChange={(e) => handleInputChange('spaceAssessment.operatingHours', e.target.value)}
-                  placeholder="e.g., Mon-Fri 8AM-6PM, Sat-Sun 9AM-4PM"
-                  disabled={!isEditing}
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="operating-hours">Operating Hours *</Label>
+                  <Input
+                    id="operating-hours"
+                    value={getValue('spaceAssessment.operatingHours')}
+                    onChange={(e) => handleInputChange('spaceAssessment.operatingHours', e.target.value)}
+                    placeholder="e.g., Mon-Fri 8AM-6PM, Sat-Sun 9AM-4PM"
+                    disabled={!isEditing}
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="peak-times">Peak Times</Label>
-                <Input
-                  id="peak-times"
-                  value={getValue('spaceAssessment.peakTimes')}
-                  onChange={(e) => handleInputChange('spaceAssessment.peakTimes', e.target.value)}
-                  placeholder="e.g., 12PM-2PM lunch rush, 4PM-6PM afternoon"
-                  disabled={!isEditing}
-                />
+                <div>
+                  <Label htmlFor="peak-times">Peak Times</Label>
+                  <Input
+                    id="peak-times"
+                    value={getValue('spaceAssessment.peakTimes')}
+                    onChange={(e) => handleInputChange('spaceAssessment.peakTimes', e.target.value)}
+                    placeholder="e.g., 12PM-2PM lunch rush, 4PM-6PM afternoon"
+                    disabled={!isEditing}
+                  />
+                </div>
               </div>
 
               <div>
                 <Label>Physical Constraints</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                   {['Listed Building', 'Limited Power', 'No Drilling', 'Accessibility Requirements', 'Fire Safety Restrictions', 'Heritage Restrictions'].map((constraint) => (
                     <div key={constraint} className="flex items-center space-x-2">
                       <Checkbox
@@ -605,8 +607,8 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 Physical installation requirements and accessibility considerations
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="mount-type">Mount Type Required</Label>
                   <Select 
@@ -642,54 +644,60 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="drilling-required"
-                    checked={getValue('spaceAssessment.mounting.drillingRequired')}
-                    onCheckedChange={(checked) => handleInputChange('spaceAssessment.mounting.drillingRequired', checked)}
-                    disabled={!isEditing}
-                  />
-                  <Label htmlFor="drilling-required">Any drilling required?</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="drilling-required">Drilling Required?</Label>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Checkbox
+                      id="drilling-required"
+                      checked={getValue('spaceAssessment.mounting.drillingRequired')}
+                      onCheckedChange={(checked) => handleInputChange('spaceAssessment.mounting.drillingRequired', checked)}
+                      disabled={!isEditing}
+                    />
+                    <Label htmlFor="drilling-required">Yes, drilling is required</Label>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="accessible-height"
-                    checked={getValue('spaceAssessment.mounting.accessibleHeight')}
-                    onCheckedChange={(checked) => handleInputChange('spaceAssessment.mounting.accessibleHeight', checked)}
-                    disabled={!isEditing}
-                  />
-                  <Label htmlFor="accessible-height">Accessible height?</Label>
+                <div>
+                  <Label htmlFor="accessible-height">Accessible Height?</Label>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Checkbox
+                      id="accessible-height"
+                      checked={getValue('spaceAssessment.mounting.accessibleHeight')}
+                      onCheckedChange={(checked) => handleInputChange('spaceAssessment.mounting.accessibleHeight', checked)}
+                      disabled={!isEditing}
+                    />
+                    <Label htmlFor="accessible-height">Yes, height is accessible</Label>
+                  </div>
                 </div>
               </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="clearance-available">Clearance Available</Label>
-                    <p className="text-xs text-gray-500 mb-1">Space around installation area</p>
-                    <Input
-                      id="clearance-available"
-                      value={getValue('spaceAssessment.mounting.clearanceAvailable')}
-                      onChange={(e) => handleInputChange('spaceAssessment.mounting.clearanceAvailable', e.target.value)}
-                      placeholder="e.g., 2m clearance, no obstructions"
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="distance-to-nearest">Distance to Nearest Power Outlet</Label>
-                    <p className="text-xs text-gray-500 mb-1">Distance in meters</p>
-                    <Input
-                      id="distance-to-nearest"
-                      type="number"
-                      value={getValue('spaceAssessment.mounting.distanceToNearest')}
-                      onChange={(e) => handleInputChange('spaceAssessment.mounting.distanceToNearest', e.target.value)}
-                      placeholder="Distance in meters"
-                      disabled={!isEditing}
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="clearance-available">Clearance Available</Label>
+                  <p className="text-xs text-gray-500 mb-2">Space around installation area</p>
+                  <Input
+                    id="clearance-available"
+                    value={getValue('spaceAssessment.mounting.clearanceAvailable')}
+                    onChange={(e) => handleInputChange('spaceAssessment.mounting.clearanceAvailable', e.target.value)}
+                    placeholder="e.g., 2m clearance, no obstructions"
+                    disabled={!isEditing}
+                  />
                 </div>
+                
+                <div>
+                  <Label htmlFor="distance-to-nearest">Distance to Nearest Power Outlet</Label>
+                  <p className="text-xs text-gray-500 mb-2">Distance in meters</p>
+                  <Input
+                    id="distance-to-nearest"
+                    type="number"
+                    value={getValue('spaceAssessment.mounting.distanceToNearest')}
+                    onChange={(e) => handleInputChange('spaceAssessment.mounting.distanceToNearest', e.target.value)}
+                    placeholder="Distance in meters"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 

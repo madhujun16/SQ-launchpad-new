@@ -27,7 +27,8 @@ import {
   Truck,
   Tag,
   X,
-  Printer
+  Printer,
+  CheckCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
@@ -107,6 +108,7 @@ export default function SoftwareHardwareManagement() {
   const [activeTab, setActiveTab] = useState<'software' | 'hardware'>('software');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const [showArchived, setShowArchived] = useState(false);
   
   // Category management state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -136,7 +138,7 @@ export default function SoftwareHardwareManagement() {
     if (!currentRole) return;
     loadData();
     loadCategories();
-  }, [currentRole]);
+  }, [currentRole, showArchived]);
 
   const loadData = async () => {
     try {
@@ -149,6 +151,7 @@ export default function SoftwareHardwareManagement() {
           *,
           category:categories(id, name, description)
         `)
+        .eq('is_active', !showArchived)
         .order('name');
       
       if (softwareError) {
@@ -166,6 +169,7 @@ export default function SoftwareHardwareManagement() {
           *,
           category:categories(id, name, description)
         `)
+        .eq('is_active', !showArchived)
         .order('name');
       
       if (hardwareError) {
@@ -381,6 +385,74 @@ export default function SoftwareHardwareManagement() {
     } catch (error) {
       console.error('Error deleting software module:', error);
       toast.error('Failed to delete software module');
+    }
+  };
+
+  const handleArchiveSoftwareModule = async (id: string) => {
+    if (!confirm('Are you sure you want to archive this software module?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('software_modules')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Software module archived successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error archiving software module:', error);
+      toast.error('Failed to archive software module');
+    }
+  };
+
+  const handleArchiveHardwareItem = async (id: string) => {
+    if (!confirm('Are you sure you want to archive this hardware item?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('hardware_items')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Hardware item archived successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error archiving hardware item:', error);
+      toast.error('Failed to archive hardware item');
+    }
+  };
+
+  const handleRestoreSoftwareModule = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('software_modules')
+        .update({ is_active: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Software module restored successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error restoring software module:', error);
+      toast.error('Failed to restore software module');
+    }
+  };
+
+  const handleRestoreHardwareItem = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('hardware_items')
+        .update({ is_active: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Hardware item restored successfully');
+      loadData();
+    } catch (error) {
+      console.error('Error restoring hardware item:', error);
+      toast.error('Failed to restore hardware item');
     }
   };
 
@@ -816,6 +888,13 @@ export default function SoftwareHardwareManagement() {
                   )}
                 </SelectContent>
               </Select>
+              <Button 
+                variant={showArchived ? "default" : "outline"} 
+                onClick={() => setShowArchived(!showArchived)}
+                className="whitespace-nowrap"
+              >
+                {showArchived ? 'Show Active' : 'Show Archived'}
+              </Button>
               <Button variant="outline" onClick={clearFilters} className="whitespace-nowrap">
                 Clear Filters
               </Button>
@@ -892,6 +971,27 @@ export default function SoftwareHardwareManagement() {
                               >
                                 <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                               </Button>
+                              {showArchived ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRestoreSoftwareModule(module.id)}
+                                  className="h-8 w-8 p-0 hover:bg-green-100"
+                                  title="Restore Software Module"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-500 hover:text-green-700" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleArchiveSoftwareModule(module.id)}
+                                  className="h-8 w-8 p-0 hover:bg-orange-100"
+                                  title="Archive Software Module"
+                                >
+                                  <X className="h-4 w-4 text-orange-500 hover:text-orange-700" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -992,6 +1092,27 @@ export default function SoftwareHardwareManagement() {
                               >
                                 <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                               </Button>
+                              {showArchived ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRestoreHardwareItem(item.id)}
+                                  className="h-8 w-8 p-0 hover:bg-green-100"
+                                  title="Restore Hardware Item"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-500 hover:text-green-700" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleArchiveHardwareItem(item.id)}
+                                  className="h-8 w-8 p-0 hover:bg-orange-100"
+                                  title="Archive Hardware Item"
+                                >
+                                  <X className="h-4 w-4 text-orange-500 hover:text-orange-700" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"

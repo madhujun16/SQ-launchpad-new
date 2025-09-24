@@ -13,20 +13,23 @@ export interface SoftwareModule {
   id: string;
   name: string;
   description: string;
-  category: string;
-  monthly_fee: number;
-  setup_fee: number;
+  category_id: string; // Changed to category_id to match database
   license_fee: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  category?: {
+    id: string;
+    name: string;
+    description: string;
+  };
 }
 
 export interface HardwareItem {
   id: string;
-  hardware_name: string; // Changed from 'name' to match actual table
+  name: string; // Changed back to 'name' to match actual table
   description?: string;
-  category: string;
+  category_id: string; // Changed to category_id to match database
   subcategory?: string;
   manufacturer?: string;
   configuration_notes?: string;
@@ -40,6 +43,11 @@ export interface HardwareItem {
   updated_at: string;
   created_by?: string;
   updated_by?: string;
+  category?: {
+    id: string;
+    name: string;
+    description: string;
+  };
 }
 
 export interface RecommendationRule {
@@ -74,7 +82,7 @@ export const PlatformConfigService = {
     }
   },
 
-  // Get software modules by categories (by name)
+  // Get software modules by categories (by category_id)
   async getSoftwareModulesByCategories(categories: string[]): Promise<SoftwareModule[]> {
     try {
       if (categories.length === 0) return [];
@@ -82,7 +90,7 @@ export const PlatformConfigService = {
       const { data, error } = await supabase
         .from('software_modules')
         .select('*')
-        .in('category', categories)
+        .in('category_id', categories)
         .eq('is_active', true)
         .order('name');
 
@@ -98,7 +106,7 @@ export const PlatformConfigService = {
     }
   },
 
-  // Get hardware items by categories (by name)
+  // Get hardware items by categories (by category_id)
   async getHardwareItemsByCategories(categories: string[]): Promise<HardwareItem[]> {
     try {
       if (categories.length === 0) return [];
@@ -106,7 +114,7 @@ export const PlatformConfigService = {
       const { data, error } = await supabase
         .from('hardware_items')
         .select('*')
-        .in('category', categories)
+        .in('category_id', categories)
         .eq('is_active', true)
         .order('name');
 
@@ -128,9 +136,12 @@ export const PlatformConfigService = {
       console.log('🔍 Fetching all active software modules...');
       const { data, error } = await supabase
         .from('software_modules')
-        .select('*')
+        .select(`
+          *,
+          category:categories(id, name, description)
+        `)
         .eq('is_active', true)
-        .order('category, name');
+        .order('name');
 
       if (error) {
         console.error('❌ Error fetching all active software modules:', error);
@@ -151,9 +162,12 @@ export const PlatformConfigService = {
       console.log('🔍 Fetching all active hardware items...');
       const { data, error } = await supabase
         .from('hardware_items')
-        .select('*')
+        .select(`
+          *,
+          category:categories(id, name, description)
+        `)
         .eq('is_active', true)
-        .order('category, hardware_name'); // Changed from 'name' to 'hardware_name'
+        .order('name');
 
       if (error) {
         console.error('❌ Error fetching all active hardware items:', error);

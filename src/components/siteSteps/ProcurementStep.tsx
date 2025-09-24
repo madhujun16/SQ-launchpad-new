@@ -5,18 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { 
   Select,
   SelectContent,
@@ -33,10 +21,10 @@ import {
   AlertTriangle,
   FileText,
   Wrench,
-  CalendarIcon
+  Loader2
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
-import { PlatformConfigService, HardwareItem } from '@/services/platformConfigService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ProcurementStepProps {
@@ -44,244 +32,150 @@ interface ProcurementStepProps {
   onSiteUpdate: (updatedSite: Site) => void;
 }
 
-interface ProcurementItem {
-  id: string;
-  name: string;
-  category: string;
-  type: 'hardware' | 'support';
-  quantity: number;
-  unitCost: number;
-  totalCost: number;
-  status: 'pending' | 'ordered' | 'delivered';
-  orderDate?: string;
-  deliveryDate?: string;
-  notes?: string;
-}
-
 const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate }) => {
-  const [procurementStarted, setProcurementStarted] = useState(false);
-  const [procurementStartDate, setProcurementStartDate] = useState('');
-  const [procurementNote, setProcurementNote] = useState('Request Raised to Melford');
-  const [procurementItems, setProcurementItems] = useState<ProcurementItem[]>([]);
-  const [availableHardwareItems, setAvailableHardwareItems] = useState<HardwareItem[]>([]);
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
-  const [newItem, setNewItem] = useState<Partial<ProcurementItem>>({});
+  const [approvedHardware, setApprovedHardware] = useState<any[]>([]);
+  const [procurementItems, setProcurementItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Initialize procurement data
   useEffect(() => {
-    if (site?.procurement) {
-      setProcurementStarted(site.procurement.status !== 'pending');
-      setProcurementStartDate(site.procurement.lastUpdated || '');
-      // Convert procurement hardware items to ProcurementItem format
-      const items: ProcurementItem[] = (site.procurement.hardwareItems || []).map((item, index) => ({
-        id: item.name || `item-${index}`,
-        name: item.name || 'Unknown Item',
-        category: 'Hardware',
-        type: 'hardware' as const,
-        quantity: item.quantity || 1,
-        unitCost: 0, // This should come from the hardware item
-        totalCost: 0,
-        status: item.status || 'pending',
-        orderDate: item.orderDate,
-        deliveryDate: item.deliveryDate,
-        notes: item.trackingNumber
-      }));
-      setProcurementItems(items);
-    } else if (site?.scoping?.selectedHardware) {
-      // Initialize from scoping data
-      const items: ProcurementItem[] = site.scoping.selectedHardware.map((item, index) => ({
-        id: `item-${index}`,
-        name: item.id, // This should be the hardware name
-        category: 'Hardware', // This should come from the hardware item
-        type: 'hardware' as const,
-        quantity: item.quantity,
-        unitCost: 0, // This should come from the hardware item
-        totalCost: 0,
-        status: 'pending' as const,
-        notes: item.customizations
-      }));
-      setProcurementItems(items);
-    }
-  }, [site]);
+    loadApprovedHardware();
+    loadProcurementItems();
+  }, [site.id]);
 
-  // Fetch available hardware items for adding new items
-  useEffect(() => {
-    const fetchHardwareItems = async () => {
-      try {
-        setLoading(true);
-        console.log('🔍 Fetching hardware items for procurement...');
-        const hardwareItems = await PlatformConfigService.getAllActiveHardwareItems();
-        console.log('📦 Hardware items fetched for procurement:', hardwareItems);
-        console.log('📊 Number of items:', hardwareItems.length);
-        setAvailableHardwareItems(hardwareItems);
-      } catch (error) {
-        console.error('❌ Error fetching hardware items:', error);
-      } finally {
-        setLoading(false);
+  const loadApprovedHardware = async () => {
+    try {
+      setLoading(true);
+      
+      // Load approved scoping data
+      const { data: scopingData, error: scopingError } = await supabase
+        .from('site_scoping')
+        .select('*')
+        .eq('site_id', site.id)
+        .eq('status', 'approved')
+        .single();
+      
+      if (scopingError && scopingError.code !== 'PGRST116') {
+        console.error('Error loading scoping data:', scopingError);
+        toast.error('Failed to load approved scoping');
+        return;
       }
-    };
 
-    fetchHardwareItems();
-  }, []);
-
-  // Group items by category
-  const groupedItems = procurementItems.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-    acc[item.category].push(item);
-    return acc;
-  }, {} as Record<string, ProcurementItem[]>);
-
-  // Check if all items are delivered
-  const allItemsDelivered = procurementItems.length > 0 && 
-    procurementItems.every(item => item.status === 'delivered');
-
-  // Handle procurement start
-  const handleProcurementStart = () => {
-    const updatedSite = {
-      ...site,
-      procurement: {
-        ...site.procurement,
-        status: 'ordered' as const,
-        lastUpdated: new Date().toISOString(),
-        hardwareItems: procurementItems,
-        summary: {
-          totalSoftwareModules: 0,
-          totalHardwareItems: procurementItems.length,
-          inProgress: procurementItems.filter(item => item.status === 'ordered').length,
-          completed: procurementItems.filter(item => item.status === 'delivered').length
-        }
+      if (scopingData && scopingData.selected_hardware) {
+        setApprovedHardware(scopingData.selected_hardware);
       }
-    };
-    
-    onSiteUpdate(updatedSite);
-    setProcurementStarted(true);
-    setProcurementStartDate(new Date().toISOString());
-    toast.success('Procurement started successfully');
+    } catch (err) {
+      console.error('Error loading approved hardware:', err);
+      toast.error('Failed to load approved hardware');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle item status update
-  const handleItemStatusUpdate = (itemId: string, status: 'pending' | 'ordered' | 'delivered') => {
-    const updatedItems = procurementItems.map(item => 
-      item.id === itemId ? { ...item, status } : item
-    );
-    
-    setProcurementItems(updatedItems);
-    
-    const updatedSite = {
-      ...site,
-      procurement: {
-        ...site.procurement,
-        hardwareItems: updatedItems,
-        summary: {
-          totalSoftwareModules: 0,
-          totalHardwareItems: updatedItems.length,
-          inProgress: updatedItems.filter(item => item.status === 'ordered').length,
-          completed: updatedItems.filter(item => item.status === 'delivered').length
-        }
+  const loadProcurementItems = async () => {
+    try {
+      // Load existing procurement items
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('site_procurement_items')
+        .select('*')
+        .eq('site_id', site.id)
+        .order('created_at');
+      
+      if (itemsError) {
+        console.error('Error loading procurement items:', itemsError);
+        toast.error('Failed to load procurement items');
+        return;
       }
-    };
-    
-    onSiteUpdate(updatedSite);
-    toast.success(`Item status updated to ${status}`);
+
+      setProcurementItems(itemsData || []);
+    } catch (err) {
+      console.error('Error loading procurement items:', err);
+      toast.error('Failed to load procurement items');
+    }
   };
 
-  // Handle add new item
-  const handleAddItem = () => {
-    if (!newItem.name || !newItem.quantity) {
-      toast.error('Please select an item and enter quantity');
+  const handleCreateProcurementItems = async () => {
+    if (approvedHardware.length === 0) {
+      toast.error('No approved hardware found');
       return;
     }
 
-    const totalCost = newItem.quantity! * newItem.unitCost!;
-    
-    // Check if approval required (> £2000)
-    if (totalCost > 2000) {
-      toast.warning('Approval required for items over £2000. Sending approval request to Ops Manager.');
-      // TODO: Send approval request to assigned Ops Manager
-    }
+    try {
+      setSubmitting(true);
+      
+      // Create procurement items for approved hardware
+      const itemsToInsert = approvedHardware.map((hardware: any) => ({
+        site_id: site.id,
+        hardware_item_id: hardware.id,
+        item_type: 'hardware',
+        item_name: hardware.name,
+        quantity: hardware.quantity,
+        unit_cost: hardware.unit_cost,
+        total_cost: hardware.unit_cost * hardware.quantity,
+        status: 'pending',
+        supplier: 'TBD',
+        order_reference: '',
+        notes: `Procurement item for ${hardware.name}`
+      }));
 
-    const item: ProcurementItem = {
-      id: `item-${Date.now()}`,
-      name: newItem.name!,
-      category: newItem.category || 'Hardware',
-      type: newItem.type || 'hardware',
-      quantity: newItem.quantity!,
-      unitCost: newItem.unitCost!,
-      totalCost,
-      status: 'pending',
-      notes: newItem.notes
-    };
+      const { error } = await supabase
+        .from('site_procurement_items')
+        .insert(itemsToInsert);
 
-    const updatedItems = [...procurementItems, item];
-    setProcurementItems(updatedItems);
-    
-    const updatedSite = {
-      ...site,
-      procurement: {
-        ...site.procurement,
-        hardwareItems: updatedItems,
-        summary: {
-          totalSoftwareModules: 0,
-          totalHardwareItems: updatedItems.length,
-          inProgress: updatedItems.filter(item => item.status === 'ordered').length,
-          completed: updatedItems.filter(item => item.status === 'delivered').length
-        }
+      if (error) {
+        console.error('Error creating procurement items:', error);
+        toast.error('Failed to create procurement items');
+        return;
       }
-    };
-    
-    onSiteUpdate(updatedSite);
-    setShowAddItemModal(false);
-    setNewItem({});
-    toast.success('Item added successfully');
+
+      toast.success('Procurement items created successfully');
+      loadProcurementItems();
+    } catch (err) {
+      console.error('Error creating procurement items:', err);
+      toast.error('Failed to create procurement items');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Handle mark complete
-  const handleMarkComplete = () => {
-    const updatedSite = {
-      ...site,
-      procurement: {
-        ...site.procurement,
-        status: 'delivered' as const,
-        lastUpdated: new Date().toISOString(),
-        hardwareItems: procurementItems,
-        summary: {
-          totalSoftwareModules: 0,
-          totalHardwareItems: procurementItems.length,
-          inProgress: 0,
-          completed: procurementItems.length
-        }
+  const handleUpdateItemStatus = async (itemId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('site_procurement_items')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', itemId);
+
+      if (error) {
+        console.error('Error updating item status:', error);
+        toast.error('Failed to update item status');
+        return;
       }
-    };
-    
-    onSiteUpdate(updatedSite);
-    toast.success('Procurement marked as complete');
+
+      toast.success('Item status updated successfully');
+      loadProcurementItems();
+    } catch (err) {
+      console.error('Error updating item status:', err);
+      toast.error('Failed to update item status');
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'ordered': return 'bg-blue-100 text-blue-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'ordered': return 'bg-blue-100 text-blue-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'installed': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'delivered': return <CheckCircle className="h-4 w-4" />;
-      case 'ordered': return <Clock className="h-4 w-4" />;
-      case 'pending': return <AlertTriangle className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         <span className="ml-3 text-gray-600">Loading procurement data...</span>
       </div>
     );
@@ -289,304 +183,172 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Procurement</h2>
-          <p className="text-gray-600 mt-1">Track equipment and materials acquisition</p>
-        </div>
-        <div className="flex space-x-2">
-          <Dialog open={showAddItemModal} onOpenChange={setShowAddItemModal}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Add New Procurement Item</DialogTitle>
-                <DialogDescription>
-                  Add hardware or support items to the procurement list
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="item-name">Select Hardware/Support Item</Label>
-                  <p className="text-sm text-gray-600 mb-2">Choose from available items in the backend</p>
-                  <Select 
-                    value={newItem.name} 
-                    onValueChange={(value) => {
-                      const selectedItem = availableHardwareItems.find(item => item.hardware_name === value);
-                      setNewItem({
-                        ...newItem, 
-                        name: value,
-                        category: selectedItem?.category || 'Hardware',
-                        type: selectedItem?.category?.toLowerCase().includes('support') ? 'support' : 'hardware',
-                        unitCost: selectedItem?.unit_cost || 0
-                      });
-                    }}
+      {/* Approved Hardware Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
+            Approved Hardware
+          </CardTitle>
+          <CardDescription>
+            Hardware items approved during the scoping phase
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {approvedHardware.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm text-gray-500">No approved hardware found</p>
+              <p className="text-xs text-gray-400">Complete the scoping phase first</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {approvedHardware.map((hardware: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{hardware.name}</div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Quantity: {hardware.quantity} | Unit Cost: £{hardware.unit_cost?.toLocaleString() || 0}
+                    </div>
+                    <div className="text-sm font-medium text-green-600 mt-1">
+                      Total: £{(hardware.unit_cost * hardware.quantity)?.toLocaleString() || 0}
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                </div>
+              ))}
+              
+              {procurementItems.length === 0 && (
+                <div className="flex justify-end mt-4">
+                  <Button 
+                    onClick={handleCreateProcurementItems}
+                    disabled={submitting}
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select hardware or support item" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loading ? (
-                        <SelectItem value="loading" disabled>
-                          <div className="flex items-center justify-center w-full py-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
-                            <span className="text-sm text-gray-500">Loading items...</span>
-                          </div>
-                        </SelectItem>
-                      ) : availableHardwareItems.length === 0 ? (
-                        <SelectItem value="empty" disabled>
-                          <div className="flex items-center justify-center w-full py-2">
-                            <span className="text-sm text-gray-500">No hardware items available</span>
-                          </div>
-                        </SelectItem>
-                      ) : (
-                        availableHardwareItems.map((item) => (
-                          <SelectItem key={item.id} value={item.hardware_name}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{item.hardware_name}</span>
-                              <span className="text-sm text-gray-500 ml-2">£{item.unit_cost}</span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="quantity">Quantity</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      value={newItem.quantity || ''}
-                      onChange={(e) => setNewItem({...newItem, quantity: parseInt(e.target.value)})}
-                      placeholder="Enter quantity"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="unit-cost">Unit Cost (£)</Label>
-                    <Input
-                      id="unit-cost"
-                      type="number"
-                      value={newItem.unitCost || ''}
-                      readOnly
-                      className="bg-gray-50"
-                      placeholder="Auto-filled from selected item"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={newItem.notes || ''}
-                    onChange={(e) => setNewItem({...newItem, notes: e.target.value})}
-                    placeholder="Additional notes (optional)"
-                  />
-                </div>
-                
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setShowAddItemModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddItem}>
-                    Add Item
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Procurement Items
+                      </>
+                    )}
                   </Button>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          {allItemsDelivered && (
-            <Button size="sm" onClick={handleMarkComplete}>
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Mark Complete
-            </Button>
+              )}
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Procurement Start Section */}
-      {!procurementStarted ? (
-        <Card className="shadow-sm border border-gray-200">
+      {/* Procurement Items Section */}
+      {procurementItems.length > 0 && (
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <ShoppingCart className="mr-2 h-5 w-5 text-blue-600" />
-              Start Procurement
+              Procurement Items
             </CardTitle>
             <CardDescription>
-              Begin the procurement process for approved items
+              Track the procurement status of approved hardware items
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="start-date">Procurement Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
+              {procurementItems.map((item: any) => (
+                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{item.item_name}</div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Quantity: {item.quantity} | Unit Cost: £{item.unit_cost?.toLocaleString() || 0}
+                    </div>
+                    <div className="text-sm font-medium text-blue-600 mt-1">
+                      Total: £{item.total_cost?.toLocaleString() || 0}
+                    </div>
+                    {item.supplier && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        Supplier: {item.supplier}
+                      </div>
+                    )}
+                    {item.order_reference && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        Order Ref: {item.order_reference}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getStatusColor(item.status)}>
+                      {item.status}
+                    </Badge>
+                    <Select
+                      value={item.status}
+                      onValueChange={(value) => handleUpdateItemStatus(item.id, value)}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {procurementStartDate ? format(new Date(procurementStartDate), 'PPP') : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={procurementStartDate ? new Date(procurementStartDate) : undefined}
-                      onSelect={(date) => setProcurementStartDate(date ? date.toISOString() : '')}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label htmlFor="procurement-note">Notes</Label>
-                <Textarea
-                  id="procurement-note"
-                  value={procurementNote}
-                  onChange={(e) => setProcurementNote(e.target.value)}
-                  placeholder="Add procurement notes (e.g., Request Raised to Melford)"
-                />
-              </div>
-              <Button onClick={handleProcurementStart} className="w-full">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Procurement Started
-              </Button>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="ordered">Ordered</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="installed">Installed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <Card className="shadow-sm border border-gray-200">
+      )}
+
+      {/* Summary Section */}
+      {procurementItems.length > 0 && (
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <ShoppingCart className="mr-2 h-5 w-5 text-green-600" />
-              Procurement Status
+              <FileText className="mr-2 h-5 w-5 text-purple-600" />
+              Procurement Summary
             </CardTitle>
-            <CardDescription>
-              Procurement started on {procurementStartDate ? format(new Date(procurementStartDate), 'PPP') : 'Unknown date'}
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-sm text-green-800">
-                <strong>Note:</strong> {procurementNote}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Hardware Items by Category */}
-      {procurementItems.length > 0 && (
-        <div className="space-y-6">
-          {Object.entries(groupedItems).map(([category, items]) => (
-            <Card key={category} className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Package className="mr-2 h-5 w-5 text-blue-600" />
-                  {category}
-                </CardTitle>
-                <CardDescription>
-                  {items.length} item{items.length !== 1 ? 's' : ''} in this category
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {items.map((item) => (
-                    <div key={item.id} className="p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                            <p className="text-sm text-gray-600">
-                              Quantity: {item.quantity} | Cost: £{item.totalCost.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(item.status)}>
-                            <div className="flex items-center space-x-1">
-                              {getStatusIcon(item.status)}
-                              <span>{item.status}</span>
-                            </div>
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4">
-                        <Button
-                          size="sm"
-                          variant={item.status === 'pending' ? 'default' : 'outline'}
-                          onClick={() => handleItemStatusUpdate(item.id, 'pending')}
-                        >
-                          Pending
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={item.status === 'ordered' ? 'default' : 'outline'}
-                          onClick={() => handleItemStatusUpdate(item.id, 'ordered')}
-                        >
-                          Ordered
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={item.status === 'delivered' ? 'default' : 'outline'}
-                          onClick={() => handleItemStatusUpdate(item.id, 'delivered')}
-                        >
-                          Delivered
-                        </Button>
-                      </div>
-                      
-                      {item.type === 'support' && item.status === 'delivered' && (
-                        <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                            <span className="text-sm text-green-800 font-medium">
-                              Support item completed
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {item.notes && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600">
-                            <strong>Notes:</strong> {item.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {procurementItems.filter(item => item.status === 'pending').length}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {procurementItems.length === 0 && (
-        <Card className="shadow-sm border border-gray-200">
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Items Added</h3>
-              <p className="text-gray-600 mb-4">
-                Start by adding hardware and support items to track procurement
-              </p>
-              <Button onClick={() => setShowAddItemModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add First Item
-              </Button>
+                <div className="text-sm text-yellow-700">Pending</div>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">
+                  {procurementItems.filter(item => item.status === 'ordered').length}
+                </div>
+                <div className="text-sm text-blue-700">Ordered</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {procurementItems.filter(item => item.status === 'delivered').length}
+                </div>
+                <div className="text-sm text-green-700">Delivered</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {procurementItems.filter(item => item.status === 'installed').length}
+                </div>
+                <div className="text-sm text-purple-700">Installed</div>
+              </div>
+            </div>
+            
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Total Procurement Value:</span>
+                <span className="text-lg font-bold text-gray-900">
+                  £{procurementItems.reduce((sum, item) => sum + (item.total_cost || 0), 0).toLocaleString()}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>

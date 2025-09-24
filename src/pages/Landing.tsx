@@ -4,9 +4,11 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { ArrowRight, Target, BarChart3, Users, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RocketIcon } from '@/components/ui/RocketIcon';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const dotLottieRef = React.useRef(null);
   
   const handleLoginClick = () => {
     navigate('/auth');
@@ -42,7 +44,25 @@ const Landing = () => {
 
       {/* Hero Section */}
       <section className="relative py-12 sm:py-16 px-4 sm:px-6">
-        <div className="container mx-auto text-center">
+        {/* Lottie Animation Background */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <DotLottieReact
+            src="/path/to/your/animation.lottie"
+            loop
+            autoplay
+            style={{ 
+              width: 'min(600px, 80vw)', 
+              height: 'min(400px, 60vh)', 
+              opacity: 0.3,
+              filter: 'blur(1px)'
+            }}
+            dotLottieRefCallback={(dotLottie) => {
+              dotLottieRef.current = dotLottie;
+            }}
+          />
+        </div>
+        
+        <div className="container mx-auto text-center relative z-20">
           <div className="max-w-5xl mx-auto">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-6">
               Deploy Sites Faster.
