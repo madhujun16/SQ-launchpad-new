@@ -40,9 +40,25 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   useEffect(() => {
     if (site?.scoping) {
       setSelectedSoftwareIds(site.scoping.selectedSoftware || []);
-      setSelectedHardware(site.scoping.selectedHardware || []);
+      // Convert the site's hardware format to SelectedHardware format
+      const convertedHardware = (site.scoping.selectedHardware || []).map(hw => {
+        const hardware = availableHardwareItems.find(h => h.id === hw.id);
+        const categoryName = typeof hardware?.category === 'string' 
+          ? hardware.category 
+          : hardware?.category?.name || 'Uncategorized';
+        return {
+          id: hw.id,
+          name: hardware?.name || 'Unknown',
+          category: categoryName,
+          quantity: hw.quantity,
+          unit_cost: hardware?.unit_cost || 0,
+          installation_cost: 0,
+          maintenance_cost: 0
+        };
+      });
+      setSelectedHardware(convertedHardware);
     }
-  }, [site]);
+  }, [site, availableHardwareItems]);
 
   // Fetch all software modules and hardware items
   useEffect(() => {
@@ -118,7 +134,6 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   }, [filteredHardwareItems]);
 
   // Handle software selection
-<<<<<<< HEAD
   const handleSoftwareToggle = (softwareId: string) => {
     setSelectedSoftwareIds(prev => {
       if (prev.includes(softwareId)) {
@@ -139,66 +154,12 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         return [...prev, softwareId];
       }
     });
-=======
-  const handleSoftwareToggle = (software: SoftwareModule) => {
-    const isSelected = selectedSoftware.some(s => s.id === software.id);
-    
-    if (isSelected) {
-      // Remove software
-      const updated = selectedSoftware.filter(s => s.id !== software.id);
-      setSelectedSoftware(updated);
-      
-      // Remove related hardware recommendations
-      const updatedHardware = selectedHardware.filter(h => 
-        !availableHardwareItems.some(ah => 
-          ah.id === h.id && ah.category === software.category
-        )
-      );
-      setSelectedHardware(updatedHardware);
-    } else {
-      // Add software
-      const newSoftware: SelectedSoftware = {
-        id: software.id,
-        name: software.name,
-        category: software.category,
-        quantity: 1,
-        monthly_fee: software.monthly_fee,
-        setup_fee: software.setup_fee
-      };
-      setSelectedSoftware([...selectedSoftware, newSoftware]);
-      
-      // Auto-add hardware recommendations for this category
-      const categoryHardware = availableHardwareItems.filter(h => h.category === software.category);
-      const newHardware = categoryHardware.map(hardware => ({
-        id: hardware.id,
-        name: hardware.hardware_name,
-        category: hardware.category,
-        quantity: 1,
-        unit_cost: hardware.unit_cost,
-        installation_cost: 0,
-        maintenance_cost: 0
-      }));
-      
-      // Only add hardware that's not already selected
-      const existingHardwareIds = selectedHardware.map(h => h.id);
-      const hardwareToAdd = newHardware.filter(h => !existingHardwareIds.includes(h.id));
-      setSelectedHardware([...selectedHardware, ...hardwareToAdd]);
-    }
-  };
-
-  // Handle software quantity change
-  const handleSoftwareQuantityChange = (softwareId: string, quantity: number) => {
-    setSelectedSoftware(prev => 
-      prev.map(s => s.id === softwareId ? { ...s, quantity: Math.max(1, quantity) } : s)
-    );
->>>>>>> 17f67812a11b1e16fe2dd0e7a777d9d18f3e2c84
   };
 
   // Handle hardware quantity change
   const handleHardwareQuantityChange = (hardwareId: string, quantity: number) => {
     if (!isEditing) return;
     
-<<<<<<< HEAD
     const currentHardware = selectedHardware || [];
     const existingIndex = currentHardware.findIndex(hw => hw.id === hardwareId);
     
@@ -220,10 +181,27 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         }];
       } else {
         newHardware = currentHardware;
-=======
+      }
+    }
+    
+    setSelectedHardware(newHardware);
+  };
+
+  // Calculate cost summary
+  const calculateCostSummary = () => {
     const hardwareCosts = selectedHardware.reduce((sum, h) => sum + (h.unit_cost * h.quantity), 0);
     const installationCosts = selectedHardware.reduce((sum, h) => sum + ((h.installation_cost || 0) * h.quantity), 0);
     const maintenanceCosts = selectedHardware.reduce((sum, h) => sum + ((h.maintenance_cost || 0) * h.quantity), 0);
+    
+    const softwareSetupCosts = selectedSoftwareIds.reduce((sum, id) => {
+      const software = availableSoftwareModules.find(s => s.id === id);
+      return sum + (software?.license_fee || 0);
+    }, 0);
+    
+    const softwareMonthlyCosts = selectedSoftwareIds.reduce((sum, id) => {
+      const software = availableSoftwareModules.find(s => s.id === id);
+      return sum + (software?.license_fee || 0); // Using license_fee as monthly cost for now
+    }, 0);
     
     const totalHardware = hardwareCosts + installationCosts;
     const contingency = totalHardware * 0.15;
@@ -241,21 +219,6 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       totalMonthlyOpex: totalOPEX,
       totalInvestment: totalCAPEX + (totalOPEX * 12) // Annual projection
     };
-  }, [selectedSoftware, selectedHardware]);
-
-  // Save changes
-  const handleSave = () => {
-    onUpdate({
-      scoping: {
-        selectedSoftware: selectedSoftware.map(s => s.id), // Convert back to string[] for compatibility
-        selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
-        costSummary,
-        lastUpdated: new Date().toISOString()
->>>>>>> 17f67812a11b1e16fe2dd0e7a777d9d18f3e2c84
-      }
-    }
-    
-    setSelectedHardware(newHardware);
   };
 
   // Handle scoping submission
@@ -268,13 +231,15 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     try {
       setSubmitting(true);
       
+      const costSummary = calculateCostSummary();
+      
       // Save scoping data to database
       const { error } = await supabase
         .from('site_scoping')
         .upsert({
           site_id: site?.id,
           selected_software: selectedSoftwareIds,
-          selected_hardware: selectedHardware,
+          selected_hardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
           status: 'submitted',
           submitted_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
@@ -291,9 +256,10 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       onUpdate({
         scoping: {
           selectedSoftware: selectedSoftwareIds,
-          selectedHardware: selectedHardware,
+          selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
           status: 'submitted',
-          submittedAt: new Date().toISOString()
+          submittedAt: new Date().toISOString(),
+          costSummary
         },
         status: 'scoping_done'
       });
