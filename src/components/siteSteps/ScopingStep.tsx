@@ -31,8 +31,8 @@ interface SelectedHardware {
   category: string;
   quantity: number;
   unit_cost: number;
-  installation_cost: number;
-  maintenance_cost: number;
+  installation_cost?: number;
+  maintenance_cost?: number;
 }
 
 export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepProps) {
@@ -45,7 +45,20 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   // Initialize from site data
   useEffect(() => {
     if (site?.scoping) {
-      setSelectedSoftware(site.scoping.selectedSoftware || []);
+      // Handle string[] format for selectedSoftware from legacy data
+      const legacySoftware = Array.isArray(site.scoping.selectedSoftware) && 
+        typeof site.scoping.selectedSoftware[0] === 'string' 
+        ? site.scoping.selectedSoftware.map(id => ({
+            id,
+            name: '',
+            category: '',
+            quantity: 1,
+            monthly_fee: 0,
+            setup_fee: 0
+          }))
+        : site.scoping.selectedSoftware || [];
+      
+      setSelectedSoftware(legacySoftware);
       setSelectedHardware(site.scoping.selectedHardware || []);
     }
   }, [site]);
@@ -137,12 +150,12 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       const categoryHardware = availableHardwareItems.filter(h => h.category === software.category);
       const newHardware = categoryHardware.map(hardware => ({
         id: hardware.id,
-        name: hardware.name,
+        name: hardware.hardware_name,
         category: hardware.category,
         quantity: 1,
         unit_cost: hardware.unit_cost,
-        installation_cost: hardware.installation_cost,
-        maintenance_cost: hardware.maintenance_cost
+        installation_cost: 0,
+        maintenance_cost: 0
       }));
       
       // Only add hardware that's not already selected
@@ -177,8 +190,8 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     const softwareMonthlyCosts = selectedSoftware.reduce((sum, s) => sum + (s.monthly_fee * s.quantity), 0);
     
     const hardwareCosts = selectedHardware.reduce((sum, h) => sum + (h.unit_cost * h.quantity), 0);
-    const installationCosts = selectedHardware.reduce((sum, h) => sum + (h.installation_cost * h.quantity), 0);
-    const maintenanceCosts = selectedHardware.reduce((sum, h) => sum + (h.maintenance_cost * h.quantity), 0);
+    const installationCosts = selectedHardware.reduce((sum, h) => sum + ((h.installation_cost || 0) * h.quantity), 0);
+    const maintenanceCosts = selectedHardware.reduce((sum, h) => sum + ((h.maintenance_cost || 0) * h.quantity), 0);
     
     const totalHardware = hardwareCosts + installationCosts;
     const contingency = totalHardware * 0.15;
@@ -186,14 +199,14 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     const totalOPEX = softwareMonthlyCosts + maintenanceCosts;
     
     return {
-      hardware: hardwareCosts,
-      installation: installationCosts,
-      softwareSetup: softwareSetupCosts,
-      contingency,
-      totalCAPEX,
-      softwareMonthly: softwareMonthlyCosts,
-      maintenance: maintenanceCosts,
-      totalOPEX,
+      hardwareCost: hardwareCosts,
+      softwareSetupCost: softwareSetupCosts,
+      installationCost: installationCosts,
+      contingencyCost: contingency,
+      totalCapex: totalCAPEX,
+      monthlySoftwareFees: softwareMonthlyCosts,
+      maintenanceCost: maintenanceCosts,
+      totalMonthlyOpex: totalOPEX,
       totalInvestment: totalCAPEX + (totalOPEX * 12) // Annual projection
     };
   }, [selectedSoftware, selectedHardware]);
@@ -202,8 +215,8 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   const handleSave = () => {
     onUpdate({
       scoping: {
-        selectedSoftware,
-        selectedHardware,
+        selectedSoftware: selectedSoftware.map(s => s.id), // Convert back to string[] for compatibility
+        selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
         costSummary,
         lastUpdated: new Date().toISOString()
       }

@@ -1379,7 +1379,7 @@ const SiteDetail = () => {
         return <SiteStudyStep site={site} onSiteUpdate={setSite} />;
 
       case 2: // Scoping
-        return <ScopingStep site={site} onSiteUpdate={setSite} />;
+        return <ScopingStep site={site} onUpdate={(updates) => setSite(prev => ({ ...prev, ...updates }))} isEditing={true} />;
 
       case 3: // Approval
         return <ApprovalStep site={site} onSiteUpdate={setSite} />;
