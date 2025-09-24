@@ -24,8 +24,8 @@ interface SelectedHardware {
   category: string;
   quantity: number;
   unit_cost: number;
-  installation_cost: number;
-  maintenance_cost: number;
+  installation_cost?: number;
+  maintenance_cost?: number;
 }
 
 export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepProps) {
@@ -118,6 +118,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   }, [filteredHardwareItems]);
 
   // Handle software selection
+<<<<<<< HEAD
   const handleSoftwareToggle = (softwareId: string) => {
     setSelectedSoftwareIds(prev => {
       if (prev.includes(softwareId)) {
@@ -138,12 +139,66 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         return [...prev, softwareId];
       }
     });
+=======
+  const handleSoftwareToggle = (software: SoftwareModule) => {
+    const isSelected = selectedSoftware.some(s => s.id === software.id);
+    
+    if (isSelected) {
+      // Remove software
+      const updated = selectedSoftware.filter(s => s.id !== software.id);
+      setSelectedSoftware(updated);
+      
+      // Remove related hardware recommendations
+      const updatedHardware = selectedHardware.filter(h => 
+        !availableHardwareItems.some(ah => 
+          ah.id === h.id && ah.category === software.category
+        )
+      );
+      setSelectedHardware(updatedHardware);
+    } else {
+      // Add software
+      const newSoftware: SelectedSoftware = {
+        id: software.id,
+        name: software.name,
+        category: software.category,
+        quantity: 1,
+        monthly_fee: software.monthly_fee,
+        setup_fee: software.setup_fee
+      };
+      setSelectedSoftware([...selectedSoftware, newSoftware]);
+      
+      // Auto-add hardware recommendations for this category
+      const categoryHardware = availableHardwareItems.filter(h => h.category === software.category);
+      const newHardware = categoryHardware.map(hardware => ({
+        id: hardware.id,
+        name: hardware.hardware_name,
+        category: hardware.category,
+        quantity: 1,
+        unit_cost: hardware.unit_cost,
+        installation_cost: 0,
+        maintenance_cost: 0
+      }));
+      
+      // Only add hardware that's not already selected
+      const existingHardwareIds = selectedHardware.map(h => h.id);
+      const hardwareToAdd = newHardware.filter(h => !existingHardwareIds.includes(h.id));
+      setSelectedHardware([...selectedHardware, ...hardwareToAdd]);
+    }
+  };
+
+  // Handle software quantity change
+  const handleSoftwareQuantityChange = (softwareId: string, quantity: number) => {
+    setSelectedSoftware(prev => 
+      prev.map(s => s.id === softwareId ? { ...s, quantity: Math.max(1, quantity) } : s)
+    );
+>>>>>>> 17f67812a11b1e16fe2dd0e7a777d9d18f3e2c84
   };
 
   // Handle hardware quantity change
   const handleHardwareQuantityChange = (hardwareId: string, quantity: number) => {
     if (!isEditing) return;
     
+<<<<<<< HEAD
     const currentHardware = selectedHardware || [];
     const existingIndex = currentHardware.findIndex(hw => hw.id === hardwareId);
     
@@ -165,6 +220,38 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         }];
       } else {
         newHardware = currentHardware;
+=======
+    const hardwareCosts = selectedHardware.reduce((sum, h) => sum + (h.unit_cost * h.quantity), 0);
+    const installationCosts = selectedHardware.reduce((sum, h) => sum + ((h.installation_cost || 0) * h.quantity), 0);
+    const maintenanceCosts = selectedHardware.reduce((sum, h) => sum + ((h.maintenance_cost || 0) * h.quantity), 0);
+    
+    const totalHardware = hardwareCosts + installationCosts;
+    const contingency = totalHardware * 0.15;
+    const totalCAPEX = totalHardware + softwareSetupCosts + contingency;
+    const totalOPEX = softwareMonthlyCosts + maintenanceCosts;
+    
+    return {
+      hardwareCost: hardwareCosts,
+      softwareSetupCost: softwareSetupCosts,
+      installationCost: installationCosts,
+      contingencyCost: contingency,
+      totalCapex: totalCAPEX,
+      monthlySoftwareFees: softwareMonthlyCosts,
+      maintenanceCost: maintenanceCosts,
+      totalMonthlyOpex: totalOPEX,
+      totalInvestment: totalCAPEX + (totalOPEX * 12) // Annual projection
+    };
+  }, [selectedSoftware, selectedHardware]);
+
+  // Save changes
+  const handleSave = () => {
+    onUpdate({
+      scoping: {
+        selectedSoftware: selectedSoftware.map(s => s.id), // Convert back to string[] for compatibility
+        selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
+        costSummary,
+        lastUpdated: new Date().toISOString()
+>>>>>>> 17f67812a11b1e16fe2dd0e7a777d9d18f3e2c84
       }
     }
     
