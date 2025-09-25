@@ -24,7 +24,10 @@ export default defineConfig(({ mode }) => ({
           // Core React libraries
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           
-          // UI component libraries
+          // Data layer
+          'data-layer': ['@supabase/supabase-js', '@tanstack/react-query'],
+          
+          // UI components
           'ui-components': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
@@ -36,65 +39,44 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-tooltip'
           ],
           
-          // Data and state management
-          'data-layer': ['@supabase/supabase-js', '@tanstack/react-query'],
-          
-          // Utility libraries
-          'utils': ['lucide-react', 'clsx', 'tailwind-merge'],
-          
-          // Page-specific chunks
-          'dashboard': ['./src/pages/Dashboard.tsx'],
-          'sites': ['./src/pages/Sites.tsx', './src/pages/Site.tsx', './src/pages/SiteCreation.tsx'],
-          'platform-config': [
-            './src/pages/OrganizationsManagement.tsx',
-            './src/pages/UserManagement.tsx',
-            './src/pages/SoftwareHardwareManagement.tsx',
-            './src/pages/AuditLogs.tsx'
-          ],
-          'approvals': [
-            './src/pages/ApprovalsProcurement.tsx',
-            './src/pages/HardwareApprovals.tsx',
-            './src/pages/HardwareScoping.tsx'
-          ],
-          'assets': [
-            './src/pages/Assets.tsx',
-            './src/pages/Inventory.tsx',
-            './src/pages/LicenseManagement.tsx',
-            './src/pages/HardwareMaster.tsx'
-          ]
+          // Heavy libraries
+          'charts': ['recharts'],
+          'icons': ['lucide-react'],
+          'date-utils': ['date-fns']
         }
+      },
+      treeshake: {
+        moduleSideEffects: false
       }
     },
     minify: 'esbuild',
     sourcemap: false,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500, // Reduced from 1000
     cssCodeSplit: true,
-    assetsInlineLimit: 4096,
-    // Optimize chunk loading
-    target: 'esnext',
+    assetsInlineLimit: 2048, // Reduced from 4096
+    // Optimize for modern browsers with better Chrome support
+    target: ['es2020', 'chrome80', 'firefox78', 'safari14'],
     modulePreload: {
       polyfill: false
-    }
+    },
+    // Better compression
+    reportCompressedSize: true
   },
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react-router-dom',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-label',
-      '@radix-ui/react-radio-group',
-      '@radix-ui/react-select',
-      '@radix-ui/react-slot',
-      '@radix-ui/react-toast',
-      '@radix-ui/react-tooltip',
       '@supabase/supabase-js',
       '@tanstack/react-query',
-      'lucide-react',
-      'recharts'
+      'clsx',
+      'tailwind-merge'
     ],
-    exclude: [],
+    exclude: [
+      'recharts', // Lazy load charts
+      'lucide-react', // Lazy load icons
+      'date-fns' // Lazy load date utils
+    ],
     force: false
   },
   server: {

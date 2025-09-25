@@ -15,71 +15,117 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 
-// Enhanced lazy loading with error handling
-const createLazyComponent = (importFn: () => Promise<any>) => {
-  return lazy(() => 
-    importFn().catch((error) => {
-      console.error('Failed to load component:', error);
-      // Return a fallback component
-      return {
-        default: () => (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-red-600 mb-2">Failed to Load Component</h3>
-              <p className="text-sm text-gray-600">Please refresh the page or contact support if the issue persists.</p>
+// Enhanced lazy loading with error handling and Chrome optimization
+const createLazyComponent = (importFn: () => Promise<any>, componentName: string) => {
+  return lazy(() => {
+    const startTime = performance.now();
+    console.log(`🔄 Loading ${componentName}...`);
+    
+    return importFn()
+      .then((module) => {
+        const loadTime = performance.now() - startTime;
+        console.log(`✅ ${componentName} loaded in ${loadTime.toFixed(2)}ms`);
+        return module;
+      })
+      .catch((error) => {
+        const loadTime = performance.now() - startTime;
+        console.error(`❌ Failed to load ${componentName} after ${loadTime.toFixed(2)}ms:`, error);
+        
+        // Return a fallback component with Chrome-specific styling
+        return {
+          default: () => (
+            <div className="flex items-center justify-center h-64 p-4">
+              <div className="text-center max-w-md">
+                <div className="w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-red-600 mb-2">Failed to Load {componentName}</h3>
+                <p className="text-sm text-gray-600 mb-4">Please refresh the page or contact support if the issue persists.</p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  Refresh Page
+                </button>
+              </div>
             </div>
-          </div>
-        )
-      };
-    })
-  );
+          )
+        };
+      });
+  });
 };
 
 // Lazy load heavy components with better chunking and error handling
-const Dashboard = createLazyComponent(() => import("./pages/Dashboard"));
-const Sites = createLazyComponent(() => import("./pages/Sites"));
-const ApprovalsProcurement = createLazyComponent(() => import("./pages/ApprovalsProcurement"));
-const Deployment = createLazyComponent(() => import("./pages/Deployment"));
-const Assets = createLazyComponent(() => import("./pages/Assets"));
+const Dashboard = createLazyComponent(() => import("./pages/Dashboard"), "Dashboard");
+const Sites = createLazyComponent(() => import("./pages/Sites"), "Sites");
+const ApprovalsProcurement = createLazyComponent(() => import("./pages/ApprovalsProcurement"), "ApprovalsProcurement");
+const Deployment = createLazyComponent(() => import("./pages/Deployment"), "Deployment");
+const Assets = createLazyComponent(() => import("./pages/Assets"), "Assets");
 
 // Platform Configuration separate pages
-const OrganizationsManagement = createLazyComponent(() => import("./pages/OrganizationsManagement"));
-const UserManagement = createLazyComponent(() => import("./pages/UserManagement"));
-const SoftwareHardwareManagement = createLazyComponent(() => import("./pages/SoftwareHardwareManagement"));
-const GeneralSettings = createLazyComponent(() => import("./pages/GeneralSettings"));
-const AuditLogs = createLazyComponent(() => import("./pages/AuditLogs"));
+const OrganizationsManagement = createLazyComponent(() => import("./pages/OrganizationsManagement"), "OrganizationsManagement");
+const UserManagement = createLazyComponent(() => import("./pages/UserManagement"), "UserManagement");
+const SoftwareHardwareManagement = createLazyComponent(() => import("./pages/SoftwareHardwareManagement"), "SoftwareHardwareManagement");
+const GeneralSettings = createLazyComponent(() => import("./pages/GeneralSettings"), "GeneralSettings");
+const AuditLogs = createLazyComponent(() => import("./pages/AuditLogs"), "AuditLogs");
 
-const Forecast = createLazyComponent(() => import("./pages/Forecast"));
+const Forecast = createLazyComponent(() => import("./pages/Forecast"), "Forecast");
 
 // Sites-related pages
-const Site = createLazyComponent(() => import("./pages/Site"));
-const SiteCreation = createLazyComponent(() => import("./pages/SiteCreation"));
-const SiteFlowHub = createLazyComponent(() => import("./pages/SiteFlowHub"));
-const SiteStepEdit = createLazyComponent(() => import("./pages/SiteStepEdit"));
+const Site = createLazyComponent(() => import("./pages/Site"), "Site");
+const SiteCreation = createLazyComponent(() => import("./pages/SiteCreation"), "SiteCreation");
+const SiteFlowHub = createLazyComponent(() => import("./pages/SiteFlowHub"), "SiteFlowHub");
+const SiteStepEdit = createLazyComponent(() => import("./pages/SiteStepEdit"), "SiteStepEdit");
 
 // Approvals & Procurement related pages
-const HardwareApprovals = createLazyComponent(() => import("./pages/HardwareApprovals"));
-const HardwareScoping = createLazyComponent(() => import("./pages/HardwareScoping"));
-const HardwareMaster = createLazyComponent(() => import("./pages/HardwareMaster"));
+const HardwareApprovals = createLazyComponent(() => import("./pages/HardwareApprovals"), "HardwareApprovals");
+const HardwareScoping = createLazyComponent(() => import("./pages/HardwareScoping"), "HardwareScoping");
+const HardwareMaster = createLazyComponent(() => import("./pages/HardwareMaster"), "HardwareMaster");
 
 // Assets-related pages
-const Inventory = createLazyComponent(() => import("./pages/Inventory"));
-const LicenseManagement = createLazyComponent(() => import("./pages/LicenseManagement"));
+const Inventory = createLazyComponent(() => import("./pages/Inventory"), "Inventory");
+const LicenseManagement = createLazyComponent(() => import("./pages/LicenseManagement"), "LicenseManagement");
 
-// Create a client with optimized settings
+// Create a client with optimized settings for Chrome and performance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes - reduced for better performance
-      retry: 1,
-      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+      staleTime: 1000 * 60 * 2, // 2 minutes - reduced for better performance
+      retry: (failureCount, error) => {
+        // Chrome-specific retry logic
+        if (error?.message?.includes('Chrome') || error?.message?.includes('extension')) {
+          console.warn('⚠️ Chrome-related error, reducing retries');
+          return failureCount < 1;
+        }
+        return failureCount < 2;
+      },
+      gcTime: 1000 * 60 * 5, // 5 minutes garbage collection
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: false,
       refetchInterval: false,
+      // Chrome-specific optimizations
+      networkMode: 'online',
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       retry: 1,
+      networkMode: 'online',
+    },
+  },
+  // Chrome-specific query client configuration
+  logger: {
+    log: console.log,
+    warn: console.warn,
+    error: (error) => {
+      // Enhanced error logging for Chrome
+      if (error?.message?.includes('Chrome') || error?.message?.includes('extension')) {
+        console.warn('⚠️ Chrome-related query error:', error);
+      } else {
+        console.error('❌ Query error:', error);
+      }
     },
   },
 });

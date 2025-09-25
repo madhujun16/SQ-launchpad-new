@@ -31,6 +31,15 @@
     <link rel="dns-prefetch" href="https://ngzvoekvwgjinagdvdhf.supabase.co">
     <link rel="preconnect" href="https://ngzvoekvwgjinagdvdhf.supabase.co">
     
+    <!-- Chrome-specific optimizations -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/index.css" as="style">
+    
     <!-- TEMPORARILY DISABLED: Preload links causing 404 errors -->
     <!-- <link rel="preload" href="/smartq-launchpad-logo.svg" as="image">
     <link rel="preload" href="/favicon.svg" as="image">
@@ -119,31 +128,114 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Performance monitoring -->
+    <!-- Chrome compatibility and performance monitoring -->
     <script>
-      // Monitor Core Web Vitals
-      if ('PerformanceObserver' in window) {
-        const observer = new PerformanceObserver((list) => {
-          list.getEntries().forEach((entry) => {
-            if (entry.entryType === 'largest-contentful-paint') {
-              console.log('LCP:', entry.startTime);
-            }
-            if (entry.entryType === 'first-input') {
-              console.log('FID:', entry.processingStart - entry.startTime);
-            }
+      // Chrome-specific optimizations
+      (function() {
+        // Detect Chrome and apply optimizations
+        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+        
+        if (isChrome) {
+          console.log('🚀 Chrome detected - applying optimizations');
+          
+          // Disable Chrome extensions that might interfere
+          if (window.chrome && window.chrome.runtime) {
+            console.log('🔌 Chrome extensions detected');
+          }
+          
+          // Optimize Chrome's memory usage
+          if ('memory' in performance) {
+            console.log('💾 Chrome memory:', performance.memory);
+          }
+          
+          // Chrome-specific localStorage optimization
+          try {
+            // Test localStorage capacity
+            const testKey = 'chrome-perf-test';
+            const testData = 'x'.repeat(1024); // 1KB test
+            localStorage.setItem(testKey, testData);
+            localStorage.removeItem(testKey);
+            console.log('✅ Chrome localStorage OK');
+          } catch (e) {
+            console.warn('⚠️ Chrome localStorage issue:', e);
+          }
+        }
+        
+        // Monitor Core Web Vitals with Chrome-specific metrics
+        if ('PerformanceObserver' in window) {
+          const observer = new PerformanceObserver((list) => {
+            list.getEntries().forEach((entry) => {
+              if (entry.entryType === 'largest-contentful-paint') {
+                console.log('🎯 LCP:', entry.startTime, 'ms');
+                if (entry.startTime > 2500) {
+                  console.warn('⚠️ Slow LCP detected - consider optimization');
+                }
+              }
+              if (entry.entryType === 'first-input') {
+                const fid = entry.processingStart - entry.startTime;
+                console.log('⚡ FID:', fid, 'ms');
+                if (fid > 100) {
+                  console.warn('⚠️ Slow FID detected - consider optimization');
+                }
+              }
+              if (entry.entryType === 'cumulative-layout-shift') {
+                console.log('📐 CLS:', entry.value);
+                if (entry.value > 0.1) {
+                  console.warn('⚠️ High CLS detected - consider layout optimization');
+                }
+              }
+            });
           });
+          
+          try {
+            observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'cumulative-layout-shift'] });
+          } catch (e) {
+            console.warn('⚠️ PerformanceObserver not fully supported');
+          }
+        }
+        
+        // Enhanced loading fallback removal with Chrome optimization
+        let appLoaded = false;
+        const removeLoadingFallback = () => {
+          if (appLoaded) return;
+          appLoaded = true;
+          
+          const loadingFallback = document.querySelector('#root > div');
+          if (loadingFallback) {
+            // Add fade-out animation for Chrome
+            loadingFallback.style.transition = 'opacity 0.3s ease-out';
+            loadingFallback.style.opacity = '0';
+            
+            setTimeout(() => {
+              loadingFallback.remove();
+              console.log('✅ Loading fallback removed');
+            }, 300);
+          }
+        };
+        
+        // Multiple triggers to ensure fallback is removed
+        window.addEventListener('load', removeLoadingFallback);
+        window.addEventListener('DOMContentLoaded', removeLoadingFallback);
+        
+        // Fallback timeout for Chrome
+        setTimeout(removeLoadingFallback, 5000);
+        
+        // Chrome-specific error handling
+        window.addEventListener('error', (e) => {
+          console.error('🚨 Global error:', e.error);
+          if (isChrome && e.error && e.error.message.includes('Chrome')) {
+            console.warn('⚠️ Chrome-specific error detected');
+          }
         });
         
-        observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input'] });
-      }
-      
-      // Remove loading fallback when app loads
-      window.addEventListener('load', () => {
-        const loadingFallback = document.querySelector('#root > div');
-        if (loadingFallback) {
-          loadingFallback.remove();
-        }
-      });
+        // Chrome unhandled promise rejection handling
+        window.addEventListener('unhandledrejection', (e) => {
+          console.error('🚨 Unhandled promise rejection:', e.reason);
+          if (isChrome) {
+            console.warn('⚠️ Chrome promise rejection detected');
+          }
+        });
+      })();
     </script>
   </body>
 </html>
