@@ -18,7 +18,12 @@ import {
   AlertTriangle,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  Timer,
+  Shield,
+  HardDrive,
+  Zap,
+  Gauge
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,16 +86,16 @@ const MONTHLY_DEPLOYMENT_DATA = [
 ];
 
 const OPERATIONS_DATA = [
-  { metric: 'Response Time', value: 2.3, unit: 'days', color: '#3B82F6' }, // Blue
-  { metric: 'Software Licenses', value: 156, unit: 'licenses', color: '#10B981' }, // Emerald
-  { metric: 'Total Assets', value: 89, unit: 'assets', color: '#F59E0B' }, // Amber
-  { metric: 'Go-Live Time', value: 34.2, unit: 'days', color: '#EF4444' } // Red
+  { metric: 'Response Time', value: 2.3, unit: 'days', color: '#3B82F6', icon: Timer, trend: 'down', description: 'Less is good' },
+  { metric: 'Software Licenses', value: 156, unit: 'licenses', color: '#10B981', icon: Shield, trend: 'neutral', description: 'Count' },
+  { metric: 'Total Assets', value: 89, unit: 'assets', color: '#F59E0B', icon: HardDrive, trend: 'neutral', description: 'Hardware count' },
+  { metric: 'Go-Live Time', value: 34.2, unit: 'days', color: '#EF4444', icon: Zap, trend: 'down', description: 'Less is good' }
 ];
 
 const PERFORMANCE_DATA = [
-  { metric: 'Sites On-Time Deployment', value: 75.0, unit: '%', color: '#10B981' }, // Emerald
-  { metric: 'Budget Utilization', value: 78.5, unit: '%', color: '#3B82F6' }, // Blue
-  { metric: 'Resource Utilization', value: 92.3, unit: '%', color: '#F59E0B' } // Amber
+  { metric: 'Sites On-Time Deployment', value: 75.0, unit: '%', color: '#10B981', icon: CheckCircle, description: 'Deployments on/before target date' },
+  { metric: 'Budget Utilization', value: 78.5, unit: '%', color: '#3B82F6', icon: DollarSign, description: 'Budget consumed this year' },
+  { metric: 'Resource Utilization', value: 92.3, unit: '%', color: '#F59E0B', icon: Gauge, description: 'Deployment engineers occupancy' }
 ];
 
 // Simple mock data - no heavy operations
@@ -429,64 +434,108 @@ const Dashboard = () => {
 
         {/* Operations Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Activity className="h-5 w-5 text-primary" />
+          <Card className="hover:shadow-md transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Activity className="h-5 w-5 text-blue-600" />
                 <span>Operations Metrics</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Key operational performance indicators
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {OPERATIONS_DATA.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted/70 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{item.metric}</p>
-                      <p className="text-xs text-muted-foreground">{item.unit}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {OPERATIONS_DATA.map((item, index) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="p-1.5 rounded-md" style={{ backgroundColor: `${item.color}20` }}>
+                            <IconComponent className="h-4 w-4" style={{ color: item.color }} />
+                          </div>
+                          <div className="text-xs font-medium text-gray-600">{item.unit}</div>
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">{item.value}</div>
+                      </div>
+                      <div className="text-sm font-medium text-gray-800">{item.metric}</div>
+                      <div className="text-xs text-gray-500 mt-1">{item.description}</div>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl font-bold text-foreground">{item.value}</div>
-                      <div 
-                        className="w-4 h-4 rounded-full shadow-sm" 
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5 text-primary" />
+          <Card className="hover:shadow-md transition-shadow duration-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Target className="h-5 w-5 text-green-600" />
                 <span>Performance Indicators</span>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Success rates and utilization metrics
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {PERFORMANCE_DATA.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted/70 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{item.metric}</p>
-                      <p className="text-xs text-muted-foreground">{item.unit}</p>
-                    </div>
+                {/* Sites On-Time Deployment with Progress Bar */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
-                      <div className="text-2xl font-bold text-foreground">{item.value}</div>
-                      <div 
-                        className="w-4 h-4 rounded-full shadow-sm" 
-                        style={{ backgroundColor: item.color }}
-                      ></div>
+                      <div className="p-2 rounded-md" style={{ backgroundColor: `${PERFORMANCE_DATA[0].color}20` }}>
+                        <CheckCircle className="h-4 w-4" style={{ color: PERFORMANCE_DATA[0].color }} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-800">{PERFORMANCE_DATA[0].metric}</div>
+                        <div className="text-xs text-gray-500">{PERFORMANCE_DATA[0].description}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900">{PERFORMANCE_DATA[0].value}%</div>
                     </div>
                   </div>
-                ))}
+                  
+                  {/* Simple Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="h-2 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${PERFORMANCE_DATA[0].value}%`,
+                        backgroundColor: PERFORMANCE_DATA[0].color
+                      }}
+                    ></div>
+                  </div>
+                  
+                  {/* Progress Labels */}
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>0%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+
+                {/* Resource and Budget Utilization - Horizontal Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {PERFORMANCE_DATA.slice(1).map((item, index) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="p-1.5 rounded-md" style={{ backgroundColor: `${item.color}20` }}>
+                              <IconComponent className="h-4 w-4" style={{ color: item.color }} />
+                            </div>
+                            <div className="text-xs font-medium text-gray-600">{item.unit}</div>
+                          </div>
+                          <div className="text-lg font-bold text-gray-900">{item.value}%</div>
+                        </div>
+                        <div className="text-sm font-medium text-gray-800">{item.metric}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
