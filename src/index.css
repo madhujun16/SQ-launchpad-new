@@ -450,6 +450,18 @@ All colors MUST be HSL.
   .text-glow-green {
     text-shadow: 0 0 10px rgba(28, 178, 85, 0.3);
   }
+
+  /* Rocket glow animation */
+  @keyframes rocketGlow {
+    0% {
+      opacity: 0.3;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    100% {
+      opacity: 0.6;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+  }
 }
 
 

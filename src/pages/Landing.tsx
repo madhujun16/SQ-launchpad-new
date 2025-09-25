@@ -46,20 +46,38 @@ const Landing = () => {
       <section className="relative py-12 sm:py-16 px-4 sm:px-6">
         {/* Lottie Animation Background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <DotLottieReact
-            src="/hero-animation.lottie"
-            loop
-            autoplay
-            style={{ 
-              width: 'min(600px, 80vw)', 
-              height: 'min(400px, 60vh)', 
-              opacity: 0.3,
-              filter: 'blur(1px)'
-            }}
-            dotLottieRefCallback={(dotLottie) => {
-              dotLottieRef.current = dotLottie;
-            }}
-          />
+          <div className="relative">
+            {/* Glow effect wrapper */}
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(67, 160, 71, 0.4) 0%, rgba(67, 160, 71, 0.2) 30%, rgba(67, 160, 71, 0.1) 60%, transparent 100%)',
+                filter: 'blur(20px)',
+                width: 'min(800px, 100vw)',
+                height: 'min(500px, 80vh)',
+                transform: 'translate(-50%, -50%)',
+                top: '50%',
+                left: '50%',
+                animation: 'rocketGlow 3s ease-in-out infinite alternate'
+              }}
+            />
+            <DotLottieReact
+              src="/hero-animation.lottie"
+              loop
+              autoplay
+              style={{ 
+                width: 'min(600px, 80vw)', 
+                height: 'min(400px, 60vh)', 
+                opacity: 0.4,
+                filter: 'blur(0.5px) drop-shadow(0 0 15px rgba(67, 160, 71, 0.3))',
+                position: 'relative',
+                zIndex: 1
+              }}
+              dotLottieRefCallback={(dotLottie) => {
+                dotLottieRef.current = dotLottie;
+              }}
+            />
+          </div>
         </div>
         
         <div className="container mx-auto text-center relative z-20">
