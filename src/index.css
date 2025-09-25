@@ -462,6 +462,35 @@ All colors MUST be HSL.
       transform: translate(-50%, -50%) scale(1.1);
     }
   }
+
+  /* Enhanced text glow for hero content */
+  .text-glow-green {
+    text-shadow: 0 0 20px rgba(67, 160, 71, 0.4), 0 0 40px rgba(67, 160, 71, 0.2);
+  }
+
+  /* Hero text animation */
+  @keyframes heroTextGlow {
+    0%, 100% {
+      text-shadow: 0 0 20px rgba(67, 160, 71, 0.4), 0 0 40px rgba(67, 160, 71, 0.2);
+    }
+    50% {
+      text-shadow: 0 0 30px rgba(67, 160, 71, 0.6), 0 0 60px rgba(67, 160, 71, 0.3);
+    }
+  }
+
+  /* Apply hero text glow animation */
+  .hero-glow-text {
+    animation: heroTextGlow 4s ease-in-out infinite;
+  }
+
+  /* Enhanced button glow */
+  .hero-button-glow {
+    box-shadow: 0 10px 30px rgba(67, 160, 71, 0.3), 0 0 0 1px rgba(67, 160, 71, 0.1);
+  }
+
+  .hero-button-glow:hover {
+    box-shadow: 0 15px 40px rgba(67, 160, 71, 0.4), 0 0 0 1px rgba(67, 160, 71, 0.2);
+  }
 }
 
 

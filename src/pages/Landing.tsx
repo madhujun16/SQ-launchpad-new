@@ -43,7 +43,7 @@ const Landing = () => {
       <div className="h-16" aria-hidden="true" />
 
       {/* Hero Section */}
-      <section className="relative py-12 sm:py-16 px-4 sm:px-6">
+      <section className="relative py-8 sm:py-12 px-4 sm:px-6 min-h-screen flex items-center">
         {/* Lottie Animation Background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <div className="relative">
@@ -85,13 +85,15 @@ const Landing = () => {
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-6">
               Deploy Sites Faster.
               <br />
-              <span className="text-green-400 text-glow-green">With Confidence.</span>
+              <span className="bg-gradient-to-r from-green-400 via-green-300 to-emerald-400 bg-clip-text text-transparent font-black text-glow-green hero-glow-text">
+                With Confidence.
+              </span>
             </h1>
             
             {/* Spacing for animation visibility */}
-            <div className="h-44 md:h-48 lg:h-52"></div>
+            <div className="h-32 md:h-36 lg:h-40"></div>
             
-            <p className="text-xl md:text-2xl text-white/85 mb-10 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed font-light">
               Streamline site studies, hardware procurement, and inventory management — and track progress in real-time with SmartQ LaunchPad.
             </p>
 
@@ -99,10 +101,12 @@ const Landing = () => {
               <Button 
                 size="lg"
                 onClick={handleLoginClick}
-                className="px-8 py-6 text-lg bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-xl active:scale-95 transition-all duration-200"
+                className="group px-10 py-6 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-green-500/25 active:scale-95 transition-all duration-300 border border-green-400/20 hover:border-green-300/40 hero-button-glow"
               >
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <span className="flex items-center space-x-2">
+                  <span>Get Started</span>
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
+                </span>
               </Button>
             </div>
           </div>
