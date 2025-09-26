@@ -51,8 +51,8 @@ const Landing = () => {
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.15) 30%, rgba(34, 197, 94, 0.08) 60%, transparent 100%)',
-                filter: 'blur(25px)',
+                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 30%, rgba(34, 197, 94, 0.04) 60%, transparent 100%)',
+                filter: 'blur(30px)',
                 width: 'min(800px, 80vw)',
                 height: 'min(600px, 70vh)',
                 transform: 'translate(-50%, -50%)',
@@ -66,10 +66,10 @@ const Landing = () => {
               loop
               autoplay
               style={{ 
-                width: 'min(600px, 70vw)', 
-                height: 'min(450px, 60vh)', 
-                opacity: 0.7,
-                filter: 'drop-shadow(0 0 30px rgba(34, 197, 94, 0.6)) brightness(1.2) contrast(1.1)',
+                width: 'min(900px, 70vw)', 
+                height: 'min(750px, 60vh)', 
+                opacity: 0.3,
+                filter: 'drop-shadow(0 0 20px rgba(34, 197, 94, 0.3)) brightness(1.1) contrast(1.05)',
                 position: 'relative',
                 zIndex: 1
               }}
@@ -93,8 +93,11 @@ const Landing = () => {
             {/* Increased spacing to prevent text overlap with animation */}
             <div className="h-32 md:h-40 lg:h-48"></div>
             
+            {/* Additional spacing before subtitle */}
+            <div className="h-8 md:h-12 lg:h-16"></div>
+            
             <p className="text-xl md:text-2xl text-white/95 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
-              Streamline site studies, hardware procurement, and inventory management — and track progress in real-time with SmartQ LaunchPad.
+              Streamline site studies, hardware procurement, and inventory management with real-time progress tracking.
             </p>
 
             <div className="flex justify-center mb-16 sm:mb-20">
