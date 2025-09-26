@@ -58,7 +58,7 @@ const createLazyComponent = (importFn: () => Promise<any>, componentName: string
 };
 
 // Lazy load heavy components with better chunking and error handling
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Dashboard = createLazyComponent(() => import("./pages/Dashboard"), "Dashboard");
 const Sites = createLazyComponent(() => import("./pages/Sites"), "Sites");
 const ApprovalsProcurement = createLazyComponent(() => import("./pages/ApprovalsProcurement"), "ApprovalsProcurement");
 const Deployment = createLazyComponent(() => import("./pages/Deployment"), "Deployment");

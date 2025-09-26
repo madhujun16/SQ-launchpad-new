@@ -34,12 +34,30 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   const [loading, setLoading] = useState(true);
   const [selectedSoftwareIds, setSelectedSoftwareIds] = useState<string[]>([]);
   const [selectedHardware, setSelectedHardware] = useState<SelectedHardware[]>([]);
+  const [softwareQuantities, setSoftwareQuantities] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
 
   // Initialize from site data
   useEffect(() => {
     if (site?.scoping) {
-      setSelectedSoftwareIds(site.scoping.selectedSoftware || []);
+      // Handle both old format (array of strings) and new format (array of objects)
+      const softwareData = site.scoping.selectedSoftware || [];
+      const softwareIds = softwareData.map(item => 
+        typeof item === 'string' ? item : (item as any).id
+      );
+      setSelectedSoftwareIds(softwareIds);
+      
+      // Initialize software quantities
+      const initialSoftwareQuantities: Record<string, number> = {};
+      softwareData.forEach(item => {
+        if (typeof item === 'object' && item && (item as any).id) {
+          initialSoftwareQuantities[(item as any).id] = (item as any).quantity || 1;
+        } else if (typeof item === 'string') {
+          initialSoftwareQuantities[item] = 1;
+        }
+      });
+      setSoftwareQuantities(initialSoftwareQuantities);
+      
       // Convert the site's hardware format to SelectedHardware format
       const convertedHardware = (site.scoping.selectedHardware || []).map(hw => {
         const hardware = availableHardwareItems.find(h => h.id === hw.id);
@@ -187,6 +205,16 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     setSelectedHardware(newHardware);
   };
 
+  // Handle software quantity change
+  const handleSoftwareQuantityChange = (softwareId: string, quantity: number) => {
+    if (!isEditing) return;
+    
+    setSoftwareQuantities(prev => ({
+      ...prev,
+      [softwareId]: Math.max(1, quantity)
+    }));
+  };
+
   // Calculate cost summary
   const calculateCostSummary = () => {
     const hardwareCosts = selectedHardware.reduce((sum, h) => sum + (h.unit_cost * h.quantity), 0);
@@ -195,12 +223,14 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     
     const softwareSetupCosts = selectedSoftwareIds.reduce((sum, id) => {
       const software = availableSoftwareModules.find(s => s.id === id);
-      return sum + (software?.license_fee || 0);
+      const quantity = softwareQuantities[id] || 1;
+      return sum + ((software?.license_fee || 0) * quantity);
     }, 0);
     
     const softwareMonthlyCosts = selectedSoftwareIds.reduce((sum, id) => {
       const software = availableSoftwareModules.find(s => s.id === id);
-      return sum + (software?.license_fee || 0); // Using license_fee as monthly cost for now
+      const quantity = softwareQuantities[id] || 1;
+      return sum + ((software?.license_fee || 0) * quantity);
     }, 0);
     
     const totalHardware = hardwareCosts + installationCosts;
@@ -238,7 +268,10 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         .from('site_scoping')
         .upsert({
           site_id: site?.id,
-          selected_software: selectedSoftwareIds,
+          selected_software: selectedSoftwareIds.map(id => ({
+            id,
+            quantity: softwareQuantities[id] || 1
+          })),
           selected_hardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
           status: 'submitted',
           submitted_at: new Date().toISOString(),
@@ -255,7 +288,10 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       // Update site status
       onUpdate({
         scoping: {
-          selectedSoftware: selectedSoftwareIds,
+          selectedSoftware: selectedSoftwareIds.map(id => ({
+            id,
+            quantity: softwareQuantities[id] || 1
+          })) as any,
           selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
           status: 'submitted',
           submittedAt: new Date().toISOString(),
@@ -301,27 +337,61 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
               <div key={categoryName}>
                 <h4 className="font-medium text-gray-900 mb-3">{categoryName}</h4>
                 <div className="space-y-3">
-                  {softwareModules.map((software) => (
-                    <div key={software.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <Checkbox
-                        id={software.id}
-                        checked={selectedSoftwareIds.includes(software.id)}
-                        onCheckedChange={() => handleSoftwareToggle(software.id)}
-                        disabled={!isEditing}
-                      />
-                      <div className="flex-1">
-                        <Label htmlFor={software.id} className="font-medium cursor-pointer">
-                          {software.name}
-                        </Label>
-                        {software.description && (
-                          <p className="text-sm text-gray-600 mt-1">{software.description}</p>
-                        )}
-                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                          <span>License Fee: £{software.license_fee?.toLocaleString() || 0}</span>
+                  {softwareModules.map((software) => {
+                    const isSelected = selectedSoftwareIds.includes(software.id);
+                    const quantity = softwareQuantities[software.id] || 1;
+                    
+                    return (
+                      <div key={software.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <Checkbox
+                          id={software.id}
+                          checked={isSelected}
+                          onCheckedChange={() => handleSoftwareToggle(software.id)}
+                          disabled={!isEditing}
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor={software.id} className="font-medium cursor-pointer">
+                            {software.name}
+                          </Label>
+                          {software.description && (
+                            <p className="text-sm text-gray-600 mt-1">{software.description}</p>
+                          )}
+                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                            <span>License Fee: £{software.license_fee?.toLocaleString() || 0}</span>
+                          </div>
                         </div>
+                        
+                        {/* Quantity Controls - Only show if software is selected */}
+                        {isSelected && isEditing && (
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSoftwareQuantityChange(software.id, Math.max(1, quantity - 1))}
+                              disabled={quantity <= 1}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center font-medium">{quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSoftwareQuantityChange(software.id, quantity + 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Show quantity if selected but not editing */}
+                        {isSelected && !isEditing && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Qty: {quantity}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}

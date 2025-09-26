@@ -54,7 +54,7 @@ export interface Site {
   
   // Scoping data
   scoping?: {
-    selectedSoftware: string[];
+    selectedSoftware: Array<{ id: string; quantity: number }>;
     selectedHardware: { id: string; quantity: number; customizations?: string }[];
     status: 'pending' | 'submitted' | 'approved' | 'rejected' | 'changes_requested';
     submittedAt?: string;

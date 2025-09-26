@@ -40,10 +40,10 @@ const Landing = () => {
       </header>
 
       {/* Spacer */}
-      <div className="h-16" aria-hidden="true" />
+      <div className="h-12" aria-hidden="true" />
 
       {/* Hero Section */}
-      <section className="relative py-8 sm:py-12 px-4 sm:px-6 min-h-screen flex items-center">
+      <section className="relative py-4 sm:py-6 px-4 sm:px-6 min-h-screen flex items-start pt-16">
         {/* Lottie Animation Background */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <div className="relative">
@@ -51,10 +51,10 @@ const Landing = () => {
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'radial-gradient(circle, rgba(67, 160, 71, 0.4) 0%, rgba(67, 160, 71, 0.2) 30%, rgba(67, 160, 71, 0.1) 60%, transparent 100%)',
-                filter: 'blur(20px)',
-                width: 'min(800px, 100vw)',
-                height: 'min(500px, 80vh)',
+                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.15) 30%, rgba(34, 197, 94, 0.08) 60%, transparent 100%)',
+                filter: 'blur(25px)',
+                width: 'min(800px, 80vw)',
+                height: 'min(600px, 70vh)',
                 transform: 'translate(-50%, -50%)',
                 top: '50%',
                 left: '50%',
@@ -66,10 +66,10 @@ const Landing = () => {
               loop
               autoplay
               style={{ 
-                width: 'min(600px, 80vw)', 
-                height: 'min(400px, 60vh)', 
-                opacity: 0.4,
-                filter: 'blur(0.5px) drop-shadow(0 0 15px rgba(67, 160, 71, 0.3))',
+                width: 'min(600px, 70vw)', 
+                height: 'min(450px, 60vh)', 
+                opacity: 0.7,
+                filter: 'drop-shadow(0 0 30px rgba(34, 197, 94, 0.6)) brightness(1.2) contrast(1.1)',
                 position: 'relative',
                 zIndex: 1
               }}
@@ -80,9 +80,9 @@ const Landing = () => {
           </div>
         </div>
         
-        <div className="container mx-auto text-center relative z-20">
-          <div className="max-w-5xl mx-auto">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-6">
+        <div className="container mx-auto text-center relative z-20 pt-16">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-12">
               Deploy Sites Faster.
               <br />
               <span className="bg-gradient-to-r from-green-400 via-green-300 to-emerald-400 bg-clip-text text-transparent font-black text-glow-green hero-glow-text">
@@ -90,14 +90,14 @@ const Landing = () => {
               </span>
             </h1>
             
-            {/* Spacing for animation visibility */}
-            <div className="h-32 md:h-36 lg:h-40"></div>
+            {/* Increased spacing to prevent text overlap with animation */}
+            <div className="h-32 md:h-40 lg:h-48"></div>
             
-            <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-xl md:text-2xl text-white/95 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
               Streamline site studies, hardware procurement, and inventory management — and track progress in real-time with SmartQ LaunchPad.
             </p>
 
-            <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="flex justify-center mb-16 sm:mb-20">
               <Button 
                 size="lg"
                 onClick={handleLoginClick}
