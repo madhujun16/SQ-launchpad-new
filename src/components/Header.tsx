@@ -206,12 +206,12 @@ const MobileNavigation = React.memo(({
   if (!isReady) {
     return (
       <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center">
-        <div className="auth-loading-background rounded-lg p-8 max-w-sm w-[85vw]">
+        <div className="bg-white rounded-lg p-8 max-w-sm w-[85vw] shadow-lg">
           <div className="flex items-center space-x-3 mb-4">
-            <RocketIcon className="h-6 w-6 text-green-400" />
-            <h2 className="text-xl font-bold text-white">SmartQ Launchpad</h2>
+            <RocketIcon className="h-6 w-6 text-green-600" />
+            <h2 className="text-xl font-bold text-gray-900">SmartQ Launchpad</h2>
           </div>
-          <p className="text-sm text-gray-300 mb-6">Loading navigation...</p>
+          <p className="text-sm text-gray-600 mb-6">Loading navigation...</p>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
           </div>

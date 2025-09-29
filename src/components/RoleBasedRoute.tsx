@@ -60,22 +60,40 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     setAccessTimeout(false);
   }, [location.pathname]);
 
-  // Show loading state only if still loading and no timeout
-  if (loading && !accessTimeout) {
+  // Show loading state if still loading
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center auth-loading-background">
-        <Loader size="lg" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <Loader size="lg" message="Setting up your workspace..." />
+          <p className="text-gray-500 mt-4">Loading your role and permissions</p>
+          <p className="text-gray-400 mt-2 text-sm">This may take a moment</p>
+        </div>
       </div>
     );
   }
 
-  if (!currentRole) {
+  // Only show access denied if we're done loading and still no role
+  if (!currentRole && !loading && !accessTimeout) {
     console.error('❌ No current role found for user');
     return (
       <AccessDenied 
         pageName={location.pathname}
         customMessage="No role assigned. Please contact an administrator."
       />
+    );
+  }
+
+  // If no currentRole but not done loading, show loading
+  if (!currentRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <Loader size="lg" message="Setting up your role..." />
+          <p className="text-gray-500 mt-4">Loading user permissions</p>
+          <p className="text-gray-400 mt-2 text-sm">This may take a moment</p>
+        </div>
+      </div>
     );
   }
 

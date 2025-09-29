@@ -81,11 +81,11 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Show loading state while auth is initializing (but with timeout)
   if (loading && !authTimeout) {
     return (
-      <div className="min-h-screen flex items-center justify-center auth-loading-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
-          <Loader size="lg" className="text-white" />
-          <p className="text-white mt-4">Authenticating...</p>
-          <p className="text-white mt-2 text-sm">This may take a few moments</p>
+          <Loader size="lg" message="Authenticating..." />
+          <p className="text-gray-500 mt-4">Setting up your secure session</p>
+          <p className="text-gray-400 mt-2 text-sm">This may take a few moments</p>
         </div>
       </div>
     );
@@ -94,14 +94,14 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // If auth times out, show a fallback UI
   if (authTimeout && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center auth-loading-background">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-4">Authentication Timeout</h2>
-            <p className="text-white/80 mb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Authentication Timeout</h2>
+            <p className="text-gray-700 mb-4">
               The authentication system is taking longer than expected. This might be due to:
             </p>
-            <ul className="text-white/70 text-sm mb-6 text-left space-y-1">
+            <ul className="text-gray-600 text-sm mb-6 text-left space-y-1">
               <li>• Network connectivity issues</li>
               <li>• Database connection problems</li>
               <li>• Authentication service delays</li>
