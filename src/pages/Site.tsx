@@ -999,53 +999,45 @@ const SiteDetail = () => {
               } : undefined,
               
               siteStudy: workflowData.siteStudy ? {
-                contactInfo: {
-                  primaryContact: {
-                    name: workflowData.siteStudy.primary_contact_name,
-                    jobTitle: workflowData.siteStudy.primary_contact_job_title,
-                    email: workflowData.siteStudy.primary_contact_email,
-                    mobile: workflowData.siteStudy.primary_contact_mobile
-                  },
-                  additionalContact: {
-                    name: workflowData.siteStudy.additional_contact_name,
-                    email: workflowData.siteStudy.additional_contact_email
+                // Map the database fields to the Site interface structure
+                spaceAssessment: {
+                  spaceType: workflowData.siteStudy.space_type,
+                  footfallPattern: workflowData.siteStudy.footfall_pattern,
+                  operatingHours: workflowData.siteStudy.operating_hours,
+                  peakTimes: workflowData.siteStudy.peak_times,
+                  constraints: workflowData.siteStudy.constraints || [],
+                  layoutPhotos: workflowData.siteStudy.layout_photos || [],
+                  mounting: {
+                    mountType: workflowData.siteStudy.mount_type,
+                    surfaceMaterial: workflowData.siteStudy.surface_material,
+                    drillingRequired: workflowData.siteStudy.drilling_required,
+                    clearanceAvailable: workflowData.siteStudy.clearance_available,
+                    distanceToNearest: workflowData.siteStudy.distance_to_nearest,
+                    accessibleHeight: workflowData.siteStudy.accessible_height
                   }
                 },
+                requirements: {
+                  primaryPurpose: workflowData.siteStudy.primary_purpose,
+                  expectedTransactions: workflowData.siteStudy.expected_transactions,
+                  paymentMethods: workflowData.siteStudy.payment_methods || [],
+                  specialRequirements: workflowData.siteStudy.special_requirements || [],
+                  softwareCategories: workflowData.siteStudy.software_categories || [],
+                  categoryRequirements: workflowData.siteStudy.category_requirements || {}
+                },
                 infrastructure: {
-                  siteAddress: workflowData.siteStudy.site_address,
-                  postcode: workflowData.siteStudy.postcode,
-                  region: workflowData.siteStudy.region,
-                  country: workflowData.siteStudy.country,
-                  numberOfCounters: workflowData.siteStudy.number_of_counters,
-                  floorPlanAvailable: workflowData.siteStudy.floor_plan_available,
-                  mealSessions: workflowData.siteStudy.meal_sessions,
-                  floor: workflowData.siteStudy.floor,
-                  liftAccess: workflowData.siteStudy.lift_access,
-                  securityRestrictions: workflowData.siteStudy.security_restrictions,
-                  deliveryWindow: workflowData.siteStudy.delivery_window
+                  powerAvailable: workflowData.siteStudy.power_available,
+                  networkAvailable: workflowData.siteStudy.network_available,
+                  wifiQuality: workflowData.siteStudy.wifi_quality,
+                  physicalConstraints: workflowData.siteStudy.physical_constraints || []
                 },
-                staffCapacity: {
-                  employeeStrength: workflowData.siteStudy.employee_strength,
-                  operatingHours: workflowData.siteStudy.operating_hours,
-                  expectedFootfall: workflowData.siteStudy.expected_footfall,
-                  peakHours: workflowData.siteStudy.peak_hours,
-                  seatingCapacity: workflowData.siteStudy.seating_capacity,
-                  kitchenStaff: workflowData.siteStudy.kitchen_staff,
-                  operatingDays: workflowData.siteStudy.operating_days,
-                  serviceStaff: workflowData.siteStudy.service_staff,
-                  management: workflowData.siteStudy.management
+                timeline: {
+                  studyDate: workflowData.siteStudy.study_date,
+                  proposedGoLive: workflowData.siteStudy.proposed_go_live,
+                  urgency: workflowData.siteStudy.urgency
                 },
-                itInfrastructure: {
-                  lanPoints: workflowData.siteStudy.lan_points,
-                  upsPowerPos: workflowData.siteStudy.ups_power_pos,
-                  wifiAvailable: workflowData.siteStudy.wifi_available,
-                  upsPowerCeiling: workflowData.siteStudy.ups_power_ceiling,
-                  bandwidth: workflowData.siteStudy.bandwidth,
-                  staticIp: workflowData.siteStudy.static_ip
-                },
-                softwareScoping: {
-                  selectedSolutions: workflowData.siteStudy.selected_solutions
-                }
+                stakeholders: workflowData.siteStudy.stakeholders || [],
+                findings: workflowData.siteStudy.findings,
+                recommendations: workflowData.siteStudy.recommendations
               } : undefined,
               
               scoping: workflowData.scoping ? {

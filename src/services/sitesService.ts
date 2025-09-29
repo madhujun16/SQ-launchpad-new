@@ -172,13 +172,15 @@ export class SitesService {
       
       console.log('🔍 Making Supabase query with organization join...');
       
-      // Query to get sites with organization data - only non-archived sites
+      // Query to get sites with organization data and user assignments - only non-archived sites
       // Add timeout to the query itself
       const queryPromise = supabase
         .from('sites')
         .select(`
           *,
-          organization:organizations(id, name, logo_url, sector, unit_code)
+          organization:organizations(id, name, logo_url, sector, unit_code),
+          ops_manager:profiles!assigned_ops_manager(user_id, full_name, email),
+          deployment_engineer:profiles!assigned_deployment_engineer(user_id, full_name, email)
         `)
         .eq('is_archived', false)
         .order('name');
@@ -233,8 +235,8 @@ export class SitesService {
           status: site.status || 'Unknown',
           target_live_date: site.target_live_date || '',
           suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
-          assigned_ops_manager: site.assigned_ops_manager || 'Unassigned',
-          assigned_deployment_engineer: site.assigned_deployment_engineer || 'Unassigned',
+          assigned_ops_manager: site.ops_manager?.full_name || site.assigned_ops_manager || 'Unassigned',
+          assigned_deployment_engineer: site.deployment_engineer?.full_name || site.assigned_deployment_engineer || 'Unassigned',
           sector: site.organization?.sector || site.sector || 'Unknown Sector',
           unit_code: site.organization?.unit_code || site.unit_code || site.food_court_unit || '',
           criticality_level: site.criticality_level || 'medium',

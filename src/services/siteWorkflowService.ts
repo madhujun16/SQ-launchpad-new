@@ -220,12 +220,14 @@ export class SiteWorkflowService {
     try {
       console.log('🔍 Fetching complete site workflow data for:', siteId);
 
-      // Get site basic data with organization
+      // Get site basic data with organization and user assignments
       const { data: siteData, error: siteError } = await supabase
         .from('sites')
         .select(`
           *,
-          organization:organizations(id, name, sector, unit_code)
+          organization:organizations(id, name, sector, unit_code),
+          ops_manager:profiles!assigned_ops_manager(user_id, full_name, email),
+          deployment_engineer:profiles!assigned_deployment_engineer(user_id, full_name, email)
         `)
         .eq('id', siteId)
         .eq('is_archived', false)
@@ -281,8 +283,8 @@ export class SiteWorkflowService {
         criticality_level: siteData.criticality_level,
         status: siteData.status,
         target_live_date: siteData.target_live_date,
-        assigned_ops_manager: siteData.assigned_ops_manager,
-        assigned_deployment_engineer: siteData.assigned_deployment_engineer,
+        assigned_ops_manager: siteData.ops_manager?.full_name || siteData.assigned_ops_manager,
+        assigned_deployment_engineer: siteData.deployment_engineer?.full_name || siteData.assigned_deployment_engineer,
         created_at: siteData.created_at,
         updated_at: siteData.updated_at
       };
@@ -383,13 +385,38 @@ export class SiteWorkflowService {
    */
   static async saveSiteCreationData(siteId: string, data: Partial<SiteCreationData>): Promise<boolean> {
     try {
+      // Prepare the data for database insertion
+      const dbData: any = {
+        site_id: siteId,
+        updated_at: new Date().toISOString()
+      };
+
+      // Map the data structure to database fields
+      if (data.locationInfo) {
+        dbData.location = data.locationInfo.location;
+        dbData.postcode = data.locationInfo.postcode;
+        dbData.region = data.locationInfo.region;
+        dbData.country = data.locationInfo.country;
+        dbData.latitude = data.locationInfo.latitude;
+        dbData.longitude = data.locationInfo.longitude;
+      }
+
+      if (data.contactInfo) {
+        dbData.unit_manager_name = data.contactInfo.unitManagerName;
+        dbData.job_title = data.contactInfo.jobTitle;
+        dbData.unit_manager_email = data.contactInfo.unitManagerEmail;
+        dbData.unit_manager_mobile = data.contactInfo.unitManagerMobile;
+        dbData.additional_contact_name = data.contactInfo.additionalContactName;
+        dbData.additional_contact_email = data.contactInfo.additionalContactEmail;
+      }
+
+      if (data.additionalNotes) {
+        dbData.additional_notes = data.additionalNotes;
+      }
+
       const { error } = await supabase
         .from('site_creation_data')
-        .upsert({
-          site_id: siteId,
-          ...data,
-          updated_at: new Date().toISOString()
-        }, {
+        .upsert(dbData, {
           onConflict: 'site_id'
         });
 
@@ -411,13 +438,68 @@ export class SiteWorkflowService {
    */
   static async saveSiteStudyData(siteId: string, data: Partial<SiteStudyData>): Promise<boolean> {
     try {
+      // Prepare the data for database insertion
+      const dbData: any = {
+        site_id: siteId,
+        updated_at: new Date().toISOString()
+      };
+
+      // Map the complex nested data structure to database fields
+      if (data.spaceAssessment) {
+        dbData.space_type = data.spaceAssessment.spaceType;
+        dbData.footfall_pattern = data.spaceAssessment.footfallPattern;
+        dbData.operating_hours = data.spaceAssessment.operatingHours;
+        dbData.peak_times = data.spaceAssessment.peakTimes;
+        dbData.constraints = data.spaceAssessment.constraints;
+        dbData.layout_photos = data.spaceAssessment.layoutPhotos;
+        
+        if (data.spaceAssessment.mounting) {
+          dbData.mount_type = data.spaceAssessment.mounting.mountType;
+          dbData.surface_material = data.spaceAssessment.mounting.surfaceMaterial;
+          dbData.drilling_required = data.spaceAssessment.mounting.drillingRequired;
+          dbData.clearance_available = data.spaceAssessment.mounting.clearanceAvailable;
+          dbData.distance_to_nearest = data.spaceAssessment.mounting.distanceToNearest;
+          dbData.accessible_height = data.spaceAssessment.mounting.accessibleHeight;
+        }
+      }
+
+      if (data.requirements) {
+        dbData.primary_purpose = data.requirements.primaryPurpose;
+        dbData.expected_transactions = data.requirements.expectedTransactions;
+        dbData.payment_methods = data.requirements.paymentMethods;
+        dbData.special_requirements = data.requirements.specialRequirements;
+        dbData.software_categories = data.requirements.softwareCategories;
+        dbData.category_requirements = data.requirements.categoryRequirements;
+      }
+
+      if (data.infrastructure) {
+        dbData.power_available = data.infrastructure.powerAvailable;
+        dbData.network_available = data.infrastructure.networkAvailable;
+        dbData.wifi_quality = data.infrastructure.wifiQuality;
+        dbData.physical_constraints = data.infrastructure.physicalConstraints;
+      }
+
+      if (data.timeline) {
+        dbData.study_date = data.timeline.studyDate;
+        dbData.proposed_go_live = data.timeline.proposedGoLive;
+        dbData.urgency = data.timeline.urgency;
+      }
+
+      if (data.stakeholders) {
+        dbData.stakeholders = data.stakeholders;
+      }
+
+      if (data.findings) {
+        dbData.findings = data.findings;
+      }
+
+      if (data.recommendations) {
+        dbData.recommendations = data.recommendations;
+      }
+
       const { error } = await supabase
         .from('site_study_data')
-        .upsert({
-          site_id: siteId,
-          ...data,
-          updated_at: new Date().toISOString()
-        }, {
+        .upsert(dbData, {
           onConflict: 'site_id'
         });
 
