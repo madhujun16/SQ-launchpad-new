@@ -228,8 +228,8 @@ export class SiteWorkflowService {
         .select(`
           *,
           organization:organizations(id, name, sector, unit_code),
-          ops_manager:profiles!assigned_ops_manager(user_id, full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer(user_id, full_name, email)
+          ops_manager:profiles!assigned_ops_manager_id(user_id, full_name, email),
+          deployment_engineer:profiles!assigned_deployment_engineer_id(user_id, full_name, email)
         `)
         .eq('id', siteId)
         .eq('is_archived', false)
@@ -398,10 +398,10 @@ export class SiteWorkflowService {
 
       // Add assigned managers if provided
       if (assigned_ops_manager !== undefined) {
-        siteUpdateData.assigned_ops_manager = assigned_ops_manager;
+        siteUpdateData.assigned_ops_manager_id = assigned_ops_manager;
       }
       if (assigned_deployment_engineer !== undefined) {
-        siteUpdateData.assigned_deployment_engineer = assigned_deployment_engineer;
+        siteUpdateData.assigned_deployment_engineer_id = assigned_deployment_engineer;
       }
 
       // Add location data if provided
