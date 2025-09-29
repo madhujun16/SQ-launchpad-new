@@ -226,8 +226,8 @@ export class SiteWorkflowService {
         .select(`
           *,
           organization:organizations(id, name, sector, unit_code),
-          ops_manager:profiles!assigned_ops_manager(user_id, full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer(user_id, full_name, email)
+          ops_manager:profiles!assigned_ops_manager_id(user_id, full_name, email),
+          deployment_engineer:profiles!assigned_deployment_engineer_id(user_id, full_name, email)
         `)
         .eq('id', siteId)
         .eq('is_archived', false)
