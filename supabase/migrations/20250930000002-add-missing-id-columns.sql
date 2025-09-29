@@ -26,7 +26,7 @@ BEGIN
     END IF;
     
     -- Copy data from old columns to new columns if they exist
-    -- Note: Only copy if the old columns contain valid UUIDs
+    -- Note: Only copy if the old columns contain valid UUIDs that exist in profiles table
     IF EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' 
@@ -37,7 +37,11 @@ BEGIN
         SET assigned_ops_manager_id = assigned_ops_manager::uuid 
         WHERE assigned_ops_manager_id IS NULL 
         AND assigned_ops_manager IS NOT NULL 
-        AND assigned_ops_manager ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+        AND assigned_ops_manager ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        AND EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE user_id = assigned_ops_manager::uuid
+        );
     END IF;
     
     IF EXISTS (
@@ -50,6 +54,10 @@ BEGIN
         SET assigned_deployment_engineer_id = assigned_deployment_engineer::uuid 
         WHERE assigned_deployment_engineer_id IS NULL 
         AND assigned_deployment_engineer IS NOT NULL 
-        AND assigned_deployment_engineer ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+        AND assigned_deployment_engineer ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        AND EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE user_id = assigned_deployment_engineer::uuid
+        );
     END IF;
 END $$;
