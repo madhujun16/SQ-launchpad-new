@@ -249,8 +249,8 @@ const SiteCreation = () => {
         status: 'Created', // Initial status
         sector: formData.sector,
         unit_code: formData.unitCode,
-        criticality_level: formData.criticalityLevel,
-        description: `Site created for organization: ${selectedOrg.name}, sector: ${formData.sector}, unit code: ${formData.unitCode}, priority: ${formData.criticalityLevel}`
+        criticality_level: formData.criticalityLevel
+        // Removed description field until the column is available in the database
       };
 
       // Create site using backend service
