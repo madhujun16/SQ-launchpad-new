@@ -521,9 +521,15 @@ const Sites = () => {
                           }
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</div>
-                            <div className="text-gray-500">{site.assigned_deployment_engineer || 'Unassigned'}</div>
+                          <div className="text-sm space-y-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full" title="Ops Manager"></div>
+                              <span className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full" title="Deployment Engineer"></div>
+                              <span className="text-gray-500">{site.assigned_deployment_engineer || 'Unassigned'}</span>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>

@@ -182,7 +182,8 @@ export default function OrganizationsManagement() {
         const { data: siteCounts, error: siteCountsError } = await supabase
           .from('sites')
           .select('organization_id')
-          .not('organization_id', 'is', null);
+          .not('organization_id', 'is', null)
+          .eq('is_archived', false);
 
         console.log('OrganizationsManagement: Site counts response:', { siteCounts: siteCounts?.length, siteCountsError });
 

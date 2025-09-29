@@ -78,13 +78,14 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.warn('Geocoding service unavailable, using coordinates:', error);
+        return `${lat}, ${lng}`;
       }
 
       const result: LocationIQResponse = data.data;
       return result.display_name || `${lat}, ${lng}`;
     } catch (error) {
-      setError('Failed to get address for coordinates');
+      console.warn('Geocoding service unavailable, using coordinates:', error);
       return `${lat}, ${lng}`;
     }
   }, []);
@@ -99,7 +100,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.warn('Geocoding service unavailable:', error);
+        return null;
       }
 
       const results = data.data;
@@ -115,7 +117,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       
       return null;
     } catch (error) {
-      setError('Failed to search for location');
+      console.warn('Geocoding service unavailable:', error);
       return null;
     }
   }, []);
@@ -136,12 +138,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       });
 
       if (error) {
-        throw new Error(error.message);
+        console.warn('Geocoding service unavailable:', error);
+        return [];
       }
 
       return data.data || [];
     } catch (error) {
-      setError('Failed to get search suggestions');
+      console.warn('Geocoding service unavailable:', error);
       return [];
     }
   }, []);
