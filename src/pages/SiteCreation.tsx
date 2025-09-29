@@ -242,6 +242,7 @@ const SiteCreation = () => {
       const siteData = {
         name: formData.name,
         organization_id: formData.organization,
+        organization_name: selectedOrg.name, // Add organization name for NOT NULL constraint
         location: formData.location,
         target_live_date: formData.targetLiveDate,
         assigned_ops_manager: formData.operationsManager,

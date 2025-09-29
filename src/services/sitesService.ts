@@ -53,6 +53,7 @@ export interface Organization {
 export interface CreateSiteData {
   name: string;
   organization_id: string;
+  organization_name: string; // Required for NOT NULL constraint
   location: string;
   target_live_date: string;
   assigned_ops_manager: string;
