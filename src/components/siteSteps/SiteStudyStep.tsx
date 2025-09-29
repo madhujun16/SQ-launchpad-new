@@ -39,6 +39,7 @@ import {
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
 import { PlatformConfigService, SoftwareCategory } from '@/services/platformConfigService';
+import { SiteWorkflowService } from '@/services/siteWorkflowService';
 import { format } from 'date-fns';
 
 interface SiteStudyStepProps {
@@ -224,9 +225,19 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
         ...site,
         siteStudy: formData
       };
+      
+      // Update local state
       onSiteUpdate(updatedSite);
-      setIsEditing(false);
-      toast.success('Site study saved successfully');
+      
+      // Save to backend
+      const success = await SiteWorkflowService.saveSiteStudyData(site.id, formData);
+      
+      if (success) {
+        setIsEditing(false);
+        toast.success('Site study saved successfully');
+      } else {
+        toast.error('Failed to save site study to backend');
+      }
     } catch (error) {
       console.error('Error saving site study:', error);
       toast.error('Failed to save site study');

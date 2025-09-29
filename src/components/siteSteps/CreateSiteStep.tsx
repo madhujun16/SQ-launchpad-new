@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, MapPin, Lock, Edit as EditIcon, User, Users } from 'lucide-react';
+import { FileText, MapPin, Lock, Edit as EditIcon, User, Users, Save } from 'lucide-react';
 import { LocationPicker } from '@/components/ui/location-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Site } from '@/types/siteTypes';
 import { UserService, UserWithRole } from '@/services/userService';
+import { SiteWorkflowService } from '@/services/siteWorkflowService';
+import { toast } from 'sonner';
 
 interface CreateSiteStepProps {
   site: Site;
@@ -19,6 +21,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
   const [opsManagers, setOpsManagers] = useState<UserWithRole[]>([]);
   const [deploymentEngineers, setDeploymentEngineers] = useState<UserWithRole[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Fetch users by role
   useEffect(() => {
@@ -44,8 +47,8 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
 
 
 
-  const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
-    onSiteUpdate({
+  const handleLocationSelect = async (location: { address: string; lat: number; lng: number }) => {
+    const updatedSite = {
       ...site,
       siteCreation: {
         ...site.siteCreation,
@@ -56,26 +59,68 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
           longitude: location.lng
         }
       }
-    });
+    };
+    
+    // Update local state
+    onSiteUpdate(updatedSite);
+    
+    // Save to backend
+    await saveSiteCreationData(updatedSite);
+    
     setShowLocationEditor(false);
   };
 
+  // Save site creation data to backend
+  const saveSiteCreationData = async (siteData: Site) => {
+    try {
+      setSaving(true);
+      const success = await SiteWorkflowService.saveSiteCreationData(site.id, {
+        locationInfo: siteData.siteCreation?.locationInfo,
+        assignedOpsManager: siteData.assignedOpsManager,
+        assignedDeploymentEngineer: siteData.assignedDeploymentEngineer
+      });
+      
+      if (success) {
+        toast.success('Site creation data saved successfully');
+      } else {
+        toast.error('Failed to save site creation data');
+      }
+    } catch (error) {
+      console.error('Error saving site creation data:', error);
+      toast.error('Failed to save site creation data');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Handle Operations Manager selection
-  const handleOpsManagerSelect = (userId: string) => {
+  const handleOpsManagerSelect = async (userId: string) => {
     const selectedUser = opsManagers.find(user => user.user_id === userId);
-    onSiteUpdate({
+    const updatedSite = {
       ...site,
       assignedOpsManager: selectedUser?.full_name || ''
-    });
+    };
+    
+    // Update local state
+    onSiteUpdate(updatedSite);
+    
+    // Save to backend
+    await saveSiteCreationData(updatedSite);
   };
 
   // Handle Deployment Engineer selection
-  const handleDeploymentEngineerSelect = (userId: string) => {
+  const handleDeploymentEngineerSelect = async (userId: string) => {
     const selectedUser = deploymentEngineers.find(user => user.user_id === userId);
-    onSiteUpdate({
+    const updatedSite = {
       ...site,
       assignedDeploymentEngineer: selectedUser?.full_name || ''
-    });
+    };
+    
+    // Update local state
+    onSiteUpdate(updatedSite);
+    
+    // Save to backend
+    await saveSiteCreationData(updatedSite);
   };
 
   // Allow edits until site study is completed
@@ -96,6 +141,12 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
           <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
           <p className="text-gray-600 mt-1">Basic site information and configuration</p>
         </div>
+        {saving && (
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+            <span>Saving...</span>
+          </div>
+        )}
       </div>
       
       {/* General Information Section */}
