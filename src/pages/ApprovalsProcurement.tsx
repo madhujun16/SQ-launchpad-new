@@ -887,7 +887,7 @@ const Approvals = () => {
             </Button>
             <Button 
               onClick={submitReview}
-              className={reviewAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+              variant={reviewAction === 'approve' ? 'approved' : 'reject'}
             >
               {reviewAction === 'approve' ? 'Approve' : 'Reject'}
             </Button>
@@ -1070,7 +1070,7 @@ const Approvals = () => {
                 setShowDetailsDialog(false);
                 handleReview(selectedRequest!, 'approve');
               }}
-              className="bg-green-600 hover:bg-green-700"
+              variant="approved"
             >
               <Check className="h-4 w-4 mr-1" />
               Approve Request

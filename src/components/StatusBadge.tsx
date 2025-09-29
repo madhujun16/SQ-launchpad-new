@@ -10,51 +10,51 @@ interface StatusBadgeProps {
 
 const StatusBadge = ({ status, className }: StatusBadgeProps) => {
   const statusConfig = {
-    // Generic statuses
+    // Generic statuses - Semantic color system based on UX best practices
     pending: {
       label: "Pending",
-      className: "bg-warning/10 text-warning border-warning/20 shadow-soft"
+      className: "bg-amber-100 text-amber-800 border-amber-200"
     },
     approved: {
       label: "Approved", 
-      className: "bg-success/10 text-success border-success/20 shadow-soft"
+      className: "bg-green-100 text-green-800 border-green-200"
     },
     "in-progress": {
       label: "In Progress",
-      className: "bg-primary/10 text-primary-dark border-primary/20 shadow-soft"
+      className: "bg-blue-100 text-blue-800 border-blue-200"
     },
     completed: {
       label: "Completed",
-      className: "bg-success/10 text-success border-success/20 shadow-soft"
+      className: "bg-green-100 text-green-800 border-green-200"
     },
     rejected: {
       label: "Rejected",
-      className: "bg-destructive/10 text-destructive border-destructive/20 shadow-soft"
+      className: "bg-red-100 text-red-800 border-red-200"
     },
-    // New finalized UnifiedSiteStatus values
+    // Site workflow statuses - Sequential progression with semantic colors
     Created: {
       label: "Site Created",
       className: "bg-gray-100 text-gray-800 border-gray-200"
     },
     site_study_done: {
       label: "Site Study Done",
-      className: "bg-yellow-100 text-yellow-800 border-yellow-200"
+      className: "bg-purple-100 text-purple-800 border-purple-200"
     },
     scoping_done: {
       label: "Scoping Done",
-      className: "bg-indigo-100 text-indigo-800 border-indigo-200"
+      className: "bg-blue-100 text-blue-800 border-blue-200"
     },
     procurement_done: {
       label: "Procurement Done",
-      className: "bg-green-100 text-green-800 border-blue-200"
+      className: "bg-cyan-100 text-cyan-800 border-cyan-200"
     },
     deployed: {
       label: "Deployed",
-      className: "bg-green-100 text-green-800 border-green-200"
+      className: "bg-green-200 text-green-900 border-green-300"
     },
     live: {
       label: "Live",
-      className: "bg-emerald-100 text-emerald-800 border-emerald-200"
+      className: "bg-gradient-to-r from-green-300 to-emerald-300 text-green-950 border-green-400 shadow-md"
     },
     // Legacy status mappings for backward compatibility
     created: {
@@ -63,33 +63,33 @@ const StatusBadge = ({ status, className }: StatusBadgeProps) => {
     },
     study_in_progress: {
       label: "Site Study Done",
-      className: "bg-yellow-100 text-yellow-800 border-yellow-200"
+      className: "bg-purple-100 text-purple-800 border-purple-200"
     },
     study_completed: {
       label: "Site Study Done",
-      className: "bg-yellow-100 text-yellow-800 border-yellow-200"
+      className: "bg-purple-100 text-purple-800 border-purple-200"
     },
     hardware_scoped: {
       label: "Scoping Done",
-      className: "bg-indigo-100 text-indigo-800 border-indigo-200"
+      className: "bg-blue-100 text-blue-800 border-blue-200"
     },
     procurement: {
       label: "Procurement Done",
-      className: "bg-green-100 text-green-800 border-blue-200"
+      className: "bg-cyan-100 text-cyan-800 border-cyan-200"
     },
     deployment: {
       label: "Deployed",
-      className: "bg-green-100 text-green-800 border-green-200"
+      className: "bg-green-200 text-green-900 border-green-300"
     },
     activated: {
       label: "Live",
-      className: "bg-emerald-100 text-emerald-800 border-emerald-200"
+      className: "bg-gradient-to-r from-green-300 to-emerald-300 text-green-950 border-green-400 shadow-md"
     }
   } as const;
 
   const config = statusConfig[status as keyof typeof statusConfig] || {
     label: status,
-    className: "bg-gray-100 text-gray-800 border-gray-200"
+    className: "bg-green-50 text-green-700 border-green-100"
   };
 
   return (

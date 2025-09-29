@@ -18,15 +18,16 @@ All colors MUST be HSL.
     --popover: 120 5% 99%; /* Very soft green popover background */
     --popover-foreground: 220 15% 20%;
 
-    /* Primary: Deep emerald green from hero section */
-    --primary: 150 40% 35%; /* #2F855A equivalent */
+    /* Primary: Professional emerald green hierarchy */
+    --primary: 142 76% 36%; /* #059669 - vibrant emerald */
     --primary-foreground: 0 0% 98%;
-    --primary-light: 150 35% 45%; /* #38A169 equivalent */
-    --primary-dark: 150 45% 25%; /* #276749 equivalent */
+    --primary-light: 142 76% 46%; /* #10B981 - lighter emerald */
+    --primary-dark: 142 76% 26%; /* #047857 - darker emerald */
 
-    /* Secondary: Light muted green */
-    --secondary: 120 15% 95%; /* #E6F5ED equivalent */
-    --secondary-foreground: 220 15% 20%;
+    /* Secondary: Professional green tints */
+    --secondary: 142 50% 92%; /* #ECFDF5 - light green surface */
+    --secondary-foreground: 142 76% 36%;
+    --secondary-hover: 142 50% 88%; /* #D1FAE5 - darker green on hover */
 
     /* Muted: Soft green grays */
     --muted: 120 10% 96%; /* #F0FDF4 equivalent */
@@ -36,23 +37,23 @@ All colors MUST be HSL.
     --accent: 120 15% 94%; /* #EDFDF4 equivalent */
     --accent-foreground: 220 15% 20%;
 
-    /* Status Colors */
-    --success: 142 76% 36%;
+    /* Green-Focused Status Colors */
+    --success: 142 76% 36%; /* Perfect green for success states */
     --success-foreground: 0 0% 98%;
     
-    --warning: 43 96% 56%;
-    --warning-foreground: 26 83% 14%;
+    --warning: 162 84% 44%; /* Green-yellow for warnings - softer than amber */
+    --warning-foreground: 0 0% 98%;
     
-    --info: 217 91% 60%;
+    --info: 168 76% 42%; /* Emerald blue-green for info */
     --info-foreground: 0 0% 98%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 74% 42%; /* Softened red for destructive actions */
     --destructive-foreground: 0 0% 98%;
 
     /* UI Elements */
-    --border: 120 10% 90%; /* Soft green border */
-    --input: 120 10% 90%;
-    --ring: 150 40% 35%; /* Primary green for focus rings */
+    --border: 142 30% 85%; /* Professional green border */
+    --input: 142 30% 85%;
+    --ring: 142 76% 36%; /* Primary emerald for focus rings */
 
     --radius: 0.5rem;
 
@@ -350,14 +351,71 @@ All colors MUST be HSL.
   }
 }
 
-/* Custom gradient utilities for black and green theme */
+/* Professional green utilities and design system */
 @layer utilities {
+  /* Typography Colors - Professional Hierarchy */
   .text-gradient-green {
-    background: linear-gradient(135deg, #38A169, #2F855A);
+    background: linear-gradient(135deg, #059669, #047857);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  
+  .text-green-primary { color: hsl(142 76% 36%); }
+  .text-green-secondary { color: hsl(142 50% 30%); }
+  .text-green-tertiary { color: hsl(142 30% 50%); }
+  .text-green-muted { color: hsl(142 20% 60%); }
+  
+  /* Background Colors - Professional Surfaces */
+  .bg-green-primary { background-color: hsl(142 76% 36%); }
+  .bg-green-secondary { background-color: hsl(142 50% 92%); }
+  .bg-green-tertiary { background-color: hsl(142 30% 95%); }
+  .bg-green-subtle { background-color: hsl(142 15% 98%); }
+  
+  /* Border Colors - Professional Boundaries */
+  .border-green-primary { border-color: hsl(142 76% 36%); }
+  .border-green-secondary { border-color: hsl(142 30% 85%); }
+  .border-green-subtle { border-color: hsl(142 20% 90%); }
+  
+  /* Button Gradient Utilities */
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #059669, #047857);
+    @apply text-white shadow-md hover:shadow-lg transition-all duration-200;
+  }
+  .btn-gradient-primary:hover {
+    background: linear-gradient(135deg, #10B981, #059669);
+  }
+  
+  /* Semantic Status & Action Colors - Professional Design System */
+  
+  /* Positive/Success States (Green) */
+  .status-active { background-color: #059669; color: white; }
+  .status-completed { background-color: #059669; color: white; }
+  .status-approved { background-color: #059669; color: white; }
+  .status-live { background-color: #047857; color: white; }
+  .status-deployed { background-color: #059669; color: white; }
+  
+  /* Warning/Waiting States (Amber) */
+  .status-pending { background-color: #F59E0B; color: white; }
+  .status-waiting { background-color: #F59E0B; color: white; }
+  .status-overdue { background-color: #F97316; color: white; }
+  
+  /* Information/In-Progress States (Blue) */
+  .status-in-progress { background-color: #3B82F6; color: white; }
+  .status-processing { background-color: #06B6D4; color: white; }
+  .status-info { background-color: #3B82F6; color: white; }
+  
+  /* Destructive/Critical States (Red) */
+  .status-error { background-color: #DC2626; color: white; }
+  .status-failed { background-color: #DC2626; color: white; }
+  .status-rejected { background-color: #DC2626; color: white; }
+  .status-cancelled { background-color: #DC2626; color: white; }
+  .status-deleted { background-color: #B91C1C; color: white; }
+  
+  /* Neutral States (Gray) */
+  .status-draft { background-color: #6B7280; color: white; }
+  .status-created { background-color: #6B7280; color: white; }
+  .status-disabled { background-color: #9CA3AF; color: white; }
 }
 
 @layer components {

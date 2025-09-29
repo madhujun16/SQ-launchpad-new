@@ -163,7 +163,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     // Reload with cache bypass
                     window.location.reload();
                   }}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   Chrome Troubleshooting
                 </button>

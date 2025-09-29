@@ -9,15 +9,37 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-dark shadow-md hover:shadow-lg transition-all duration-200",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-primary bg-background text-primary hover:bg-primary hover:text-primary-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        success: "bg-success text-success-foreground hover:bg-success/90 shadow-md",
-        warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-md",
-        info: "bg-info text-info-foreground hover:bg-info/90 shadow-md",
+        // Primary brand actions - main CTAs (green theme)
+        default: "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white shadow-md hover:shadow-lg transition-all duration-200",
+        primary: "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white shadow-md hover:shadow-lg transition-all duration-200",
+        
+        // Secondary actions - supporting/general actions
+        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300",
+        outline: "border border-gray-300 bg-background text-gray-700 hover:bg-gray-50 hover:border-gray-400",
+        
+        // Semantic actions based on UX best practices
+        success: "bg-green-600 hover:bg-green-700 text-white shadow-md",
+        approved: "bg-green-600 hover:bg-green-700 text-white shadow-md",
+        
+        // Destructive actions - critical operations
+        destructive: "bg-red-600 text-white hover:bg-red-700 shadow-md",
+        reject: "bg-red-600 text-white hover:bg-red-700 shadow-md",
+        delete: "bg-red-700 text-white hover:bg-red-800 shadow-md",
+        
+        // Warning/caution actions
+        warning: "bg-amber-500 hover:bg-amber-600 text-white shadow-md",
+        pending: "bg-amber-500 hover:bg-amber-600 text-white shadow-md",
+        
+        // Information actions
+        info: "bg-blue-500 hover:bg-blue-600 text-white shadow-md",
+        
+        // Subtle actions
+        ghost: "hover:bg-gray-100 hover:text-gray-900 text-gray-600",
+        
+        // Link style
+        link: "text-blue-600 underline-offset-4 hover:underline hover:text-blue-700",
+        
+        // Legacy variants for compatibility
         gradient: "bg-gradient-to-r from-green-700 to-green-800 hover:from-green-600 hover:to-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200",
         "light-primary": "bg-[#1CB255] text-white hover:bg-[#18a64d] shadow-md hover:shadow-lg rounded-lg",
         "light-outline": "border border-[#1CB255] text-[#1CB255] bg-white hover:bg-[#eafaf1] rounded-lg",
