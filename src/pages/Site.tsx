@@ -988,12 +988,12 @@ const SiteDetail = () => {
                   additionalContactEmail: workflowData.siteCreation.additional_contact_email
                 },
                 locationInfo: {
-                  location: workflowData.siteCreation.location,
+                  location: workflowData.siteCreation.location || workflowData.address,
                   postcode: workflowData.siteCreation.postcode,
                   region: workflowData.siteCreation.region,
                   country: workflowData.siteCreation.country,
-                  latitude: workflowData.siteCreation.latitude,
-                  longitude: workflowData.siteCreation.longitude
+                  latitude: workflowData.siteCreation.latitude || workflowData.latitude,
+                  longitude: workflowData.siteCreation.longitude || workflowData.longitude
                 },
                 additionalNotes: workflowData.siteCreation.additional_notes
               } : undefined,

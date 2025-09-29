@@ -15,6 +15,8 @@ export interface SiteWorkflowData {
   target_live_date: string;
   assigned_ops_manager: string;
   assigned_deployment_engineer: string;
+  latitude?: number;
+  longitude?: number;
   
   // Workflow step data
   siteCreation?: SiteCreationData;
@@ -285,6 +287,8 @@ export class SiteWorkflowService {
         target_live_date: siteData.target_live_date,
         assigned_ops_manager: siteData.ops_manager?.full_name || siteData.assigned_ops_manager,
         assigned_deployment_engineer: siteData.deployment_engineer?.full_name || siteData.assigned_deployment_engineer,
+        latitude: siteData.latitude,
+        longitude: siteData.longitude,
         created_at: siteData.created_at,
         updated_at: siteData.updated_at
       };
@@ -387,26 +391,41 @@ export class SiteWorkflowService {
     try {
       const { assigned_ops_manager, assigned_deployment_engineer, ...siteCreationFields } = data;
 
-      // Update the main sites table for assigned managers
-      if (assigned_ops_manager !== undefined || assigned_deployment_engineer !== undefined) {
-        const siteUpdateData: any = {
-          updated_at: new Date().toISOString()
-        };
+      // Update the main sites table for assigned managers and location data
+      const siteUpdateData: any = {
+        updated_at: new Date().toISOString()
+      };
 
-        if (assigned_ops_manager !== undefined) {
-          siteUpdateData.assigned_ops_manager = assigned_ops_manager;
-        }
-        if (assigned_deployment_engineer !== undefined) {
-          siteUpdateData.assigned_deployment_engineer = assigned_deployment_engineer;
-        }
+      // Add assigned managers if provided
+      if (assigned_ops_manager !== undefined) {
+        siteUpdateData.assigned_ops_manager = assigned_ops_manager;
+      }
+      if (assigned_deployment_engineer !== undefined) {
+        siteUpdateData.assigned_deployment_engineer = assigned_deployment_engineer;
+      }
 
+      // Add location data if provided
+      if (siteCreationFields.locationInfo) {
+        if (siteCreationFields.locationInfo.location) {
+          siteUpdateData.address = siteCreationFields.locationInfo.location;
+        }
+        if (siteCreationFields.locationInfo.latitude !== undefined) {
+          siteUpdateData.latitude = siteCreationFields.locationInfo.latitude;
+        }
+        if (siteCreationFields.locationInfo.longitude !== undefined) {
+          siteUpdateData.longitude = siteCreationFields.locationInfo.longitude;
+        }
+      }
+
+      // Only update if there's something to update
+      if (Object.keys(siteUpdateData).length > 1) { // More than just updated_at
         const { error: siteUpdateError } = await supabase
           .from('sites')
           .update(siteUpdateData)
           .eq('id', siteId);
 
         if (siteUpdateError) {
-          console.error('❌ Error updating site assigned managers:', siteUpdateError);
+          console.error('❌ Error updating site data:', siteUpdateError);
           return false;
         }
       }
