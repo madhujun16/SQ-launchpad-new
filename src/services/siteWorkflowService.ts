@@ -226,8 +226,8 @@ export class SiteWorkflowService {
         .select(`
           *,
           organization:organizations(id, name, sector, unit_code),
-          ops_manager:profiles!assigned_ops_manager_id(user_id, full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer_id(user_id, full_name, email)
+          ops_manager:profiles!assigned_ops_manager(user_id, full_name, email),
+          deployment_engineer:profiles!assigned_deployment_engineer(user_id, full_name, email)
         `)
         .eq('id', siteId)
         .eq('is_archived', false)
@@ -385,6 +385,32 @@ export class SiteWorkflowService {
    */
   static async saveSiteCreationData(siteId: string, data: Partial<SiteCreationData>): Promise<boolean> {
     try {
+      const { assigned_ops_manager, assigned_deployment_engineer, ...siteCreationFields } = data;
+
+      // Update the main sites table for assigned managers
+      if (assigned_ops_manager !== undefined || assigned_deployment_engineer !== undefined) {
+        const siteUpdateData: any = {
+          updated_at: new Date().toISOString()
+        };
+
+        if (assigned_ops_manager !== undefined) {
+          siteUpdateData.assigned_ops_manager = assigned_ops_manager;
+        }
+        if (assigned_deployment_engineer !== undefined) {
+          siteUpdateData.assigned_deployment_engineer = assigned_deployment_engineer;
+        }
+
+        const { error: siteUpdateError } = await supabase
+          .from('sites')
+          .update(siteUpdateData)
+          .eq('id', siteId);
+
+        if (siteUpdateError) {
+          console.error('❌ Error updating site assigned managers:', siteUpdateError);
+          return false;
+        }
+      }
+
       // Prepare the data for database insertion
       const dbData: any = {
         site_id: siteId,
@@ -392,26 +418,26 @@ export class SiteWorkflowService {
       };
 
       // Map the data structure to database fields
-      if (data.locationInfo) {
-        dbData.location = data.locationInfo.location;
-        dbData.postcode = data.locationInfo.postcode;
-        dbData.region = data.locationInfo.region;
-        dbData.country = data.locationInfo.country;
-        dbData.latitude = data.locationInfo.latitude;
-        dbData.longitude = data.locationInfo.longitude;
+      if (siteCreationFields.locationInfo) {
+        dbData.location = siteCreationFields.locationInfo.location;
+        dbData.postcode = siteCreationFields.locationInfo.postcode;
+        dbData.region = siteCreationFields.locationInfo.region;
+        dbData.country = siteCreationFields.locationInfo.country;
+        dbData.latitude = siteCreationFields.locationInfo.latitude;
+        dbData.longitude = siteCreationFields.locationInfo.longitude;
       }
 
-      if (data.contactInfo) {
-        dbData.unit_manager_name = data.contactInfo.unitManagerName;
-        dbData.job_title = data.contactInfo.jobTitle;
-        dbData.unit_manager_email = data.contactInfo.unitManagerEmail;
-        dbData.unit_manager_mobile = data.contactInfo.unitManagerMobile;
-        dbData.additional_contact_name = data.contactInfo.additionalContactName;
-        dbData.additional_contact_email = data.contactInfo.additionalContactEmail;
+      if (siteCreationFields.contactInfo) {
+        dbData.unit_manager_name = siteCreationFields.contactInfo.unitManagerName;
+        dbData.job_title = siteCreationFields.contactInfo.jobTitle;
+        dbData.unit_manager_email = siteCreationFields.contactInfo.unitManagerEmail;
+        dbData.unit_manager_mobile = siteCreationFields.contactInfo.unitManagerMobile;
+        dbData.additional_contact_name = siteCreationFields.contactInfo.additionalContactName;
+        dbData.additional_contact_email = siteCreationFields.contactInfo.additionalContactEmail;
       }
 
-      if (data.additionalNotes) {
-        dbData.additional_notes = data.additionalNotes;
+      if (siteCreationFields.additionalNotes) {
+        dbData.additional_notes = siteCreationFields.additionalNotes;
       }
 
       const { error } = await supabase
