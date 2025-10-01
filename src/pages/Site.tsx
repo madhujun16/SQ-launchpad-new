@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/roles';
 import { useSiteContext } from '@/contexts/SiteContext';
-import { getStatusColor, getStatusDisplayName, getStepperStepFromStatus, validateStatusProgression, type UnifiedSiteStatus } from '@/lib/siteTypes';
+import { getStatusColor, getStatusDisplayName, getStepperStepFromStatus, validateStatusProgression } from '@/lib/siteTypes';
 import { SiteWorkflowService, type SiteWorkflowData } from '@/services/siteWorkflowService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -248,215 +248,8 @@ const hardwareItems: HardwareItem[] = [
   }
 ];
 
-// Enhanced Site interface with comprehensive step data
-interface Site {
-  id: string;
-  name: string;
-  organization: string;
-  foodCourt?: string;
-  unitCode: string;
-  sector: string;
-  goLiveDate: string;
-  priority: 'low' | 'medium' | 'high';
-  riskLevel: 'low' | 'medium' | 'high';
-  criticality: 'low' | 'medium' | 'high';
-  status: UnifiedSiteStatus;
-  assignedOpsManager?: string;
-  assignedDeploymentEngineer?: string;
-  assignedOpsManagerId?: string;
-  assignedDeploymentEngineerId?: string;
-  stakeholders?: Stakeholder[];
-  notes?: string;
-  lastUpdated?: string;
-  description?: string;
-  
-  // Site Creation data
-  siteCreation?: {
-    contactInfo: {
-      unitManagerName: string;
-      jobTitle: string;
-      unitManagerEmail: string;
-      unitManagerMobile: string;
-      additionalContactName: string;
-      additionalContactEmail: string;
-    };
-    locationInfo: {
-      location: string;
-      postcode: string;
-      region: string;
-      country: string;
-      latitude: number;
-      longitude: number;
-    };
-    additionalNotes: string;
-  };
-  
-  // Site Study data
-  siteStudy?: {
-    contactInfo: {
-      primaryContact: {
-        name: string;
-        jobTitle: string;
-        email: string;
-        mobile: string;
-      };
-      additionalContact: {
-        name: string;
-        email: string;
-      };
-    };
-    infrastructure: {
-      siteAddress: string;
-      postcode: string;
-      region: string;
-      country: string;
-      numberOfCounters: number;
-      floorPlanAvailable: boolean;
-      mealSessions: string[];
-      floor: string;
-      liftAccess: string;
-      securityRestrictions: string;
-      deliveryWindow: string;
-    };
-    staffCapacity: {
-      employeeStrength: number;
-      operatingHours: string;
-      expectedFootfall: number;
-      peakHours: string;
-      seatingCapacity: number;
-      kitchenStaff: number;
-      operatingDays: string;
-      serviceStaff: number;
-      management: number;
-    };
-    itInfrastructure: {
-      lanPoints: number;
-      upsPowerPos: string;
-      wifiAvailable: string;
-      upsPowerCeiling: string;
-      bandwidth: string;
-      staticIp: string;
-    };
-    softwareScoping: {
-      selectedSolutions: string[];
-    };
-  };
-  
-  // Scoping data
-  scoping?: {
-    selectedSoftware: string[];
-    selectedHardware: { id: string; quantity: number; customizations?: string }[];
-    status: 'pending' | 'submitted' | 'approved' | 'rejected' | 'changes_requested';
-    submittedAt?: string;
-    approvedAt?: string;
-    approvedBy?: string;
-    costSummary: {
-      hardwareCost: number;
-      softwareSetupCost: number;
-      installationCost: number;
-      contingencyCost: number;
-      totalCapex: number;
-      monthlySoftwareFees: number;
-      maintenanceCost: number;
-      totalMonthlyOpex: number;
-      totalInvestment: number;
-    };
-  };
-  
-  // Approval data
-  approval?: {
-    status: 'pending' | 'approved' | 'rejected' | 'changes_requested';
-    requestedAt?: string;
-    approvedAt?: string;
-    approvedBy?: string;
-    comments?: string;
-    approverDetails: {
-      name: string;
-      role: string;
-      department: string;
-    };
-  };
-  
-  // Procurement data
-  procurement?: {
-    status: 'pending' | 'ordered' | 'delivered' | 'partially_delivered';
-    lastUpdated?: string;
-    softwareModules: {
-      name: string;
-      status: 'pending' | 'ordered' | 'delivered';
-      orderDate?: string;
-      deliveryDate?: string;
-      licenseKey?: string;
-    }[];
-    hardwareItems: {
-      name: string;
-      quantity: number;
-      status: 'pending' | 'ordered' | 'delivered';
-      orderDate?: string;
-      deliveryDate?: string;
-      trackingNumber?: string;
-    }[];
-    summary: {
-      totalSoftwareModules: number;
-      totalHardwareItems: number;
-      inProgress: number;
-      completed: number;
-    };
-  };
-  
-  // Deployment data
-  deployment?: {
-    status: 'scheduled' | 'in_progress' | 'completed' | 'on_hold';
-    startDate?: string;
-    endDate?: string;
-    assignedEngineer?: string;
-    notes?: string;
-    progress: {
-      overallProgress: number;
-      hardwareDelivered: 'completed' | 'in_progress' | 'pending';
-      installation: 'completed' | 'in_progress' | 'pending';
-      testing: 'completed' | 'in_progress' | 'pending';
-    };
-    timeline: {
-      hardwareDelivery: string;
-      installationStart: string;
-      installationEnd: string;
-      testingStart: string;
-      testingEnd: string;
-      goLiveDate: string;
-    };
-  };
-  
-  // Go Live data
-  goLive?: {
-    status: 'pending' | 'live' | 'postponed';
-    date?: string;
-    signedOffBy?: string;
-    notes?: string;
-    checklist: {
-      hardwareInstallationComplete: 'completed' | 'in_progress' | 'pending';
-      softwareConfigurationComplete: 'completed' | 'in_progress' | 'pending';
-      staffTraining: 'completed' | 'in_progress' | 'pending';
-      finalTesting: 'completed' | 'in_progress' | 'pending';
-    };
-    timeline: {
-      targetGoLiveDate: string;
-      finalTesting: string;
-      staffTraining: string;
-      systemHandover: string;
-    };
-  };
-}
-
-// Missing interfaces
-interface Stakeholder {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  organization: string;
-}
+// Import the Site interface from types
+import { Site, UnifiedSiteStatus, Stakeholder } from '@/types/siteTypes';
 
 interface Organisation {
   id: string;
@@ -574,7 +367,12 @@ const createMockSiteWithStatus = (id: string, status: UnifiedSiteStatus, siteDat
   // Scoping data (available for scoping_done and beyond)
   if (['scoping_done', 'approved', 'procurement_done', 'deployed', 'live'].includes(status)) {
     baseSite.scoping = {
-      selectedSoftware: ['pos-system', 'kiosk-software', 'kitchen-display', 'inventory-management'],
+      selectedSoftware: [
+        { id: 'pos-system', quantity: 1 },
+        { id: 'kiosk-software', quantity: 1 },
+        { id: 'kitchen-display', quantity: 1 },
+        { id: 'inventory-management', quantity: 1 }
+      ],
       selectedHardware: [
         { id: 'pos-terminal', quantity: 4 },
         { id: 'kiosk-display', quantity: 2 },
@@ -1045,7 +843,9 @@ const SiteDetail = () => {
               } : undefined,
               
               scoping: workflowData.scoping ? {
-                selectedSoftware: workflowData.scoping.selected_software,
+                selectedSoftware: Array.isArray(workflowData.scoping.selected_software) && workflowData.scoping.selected_software.length > 0 && typeof workflowData.scoping.selected_software[0] === 'string' 
+                  ? workflowData.scoping.selected_software.map((id: string) => ({ id, quantity: 1 }))
+                  : (workflowData.scoping.selected_software as unknown as Array<{ id: string; quantity: number }>) || [],
                 selectedHardware: workflowData.scoping.selected_hardware,
                 status: workflowData.scoping.status,
                 submittedAt: workflowData.scoping.submitted_at,
@@ -1325,10 +1125,10 @@ const SiteDetail = () => {
 
   const calculateSoftwareSetupCosts = () => {
     let totalCost = 0;
-    site?.scoping?.selectedSoftware?.forEach(softwareId => {
-      const software = softwareModules.find(s => s.id === softwareId);
-      if (software) {
-        totalCost += software.setupFee;
+    site?.scoping?.selectedSoftware?.forEach(software => {
+      const softwareModule = softwareModules.find(s => s.id === software.id);
+      if (softwareModule) {
+        totalCost += softwareModule.setupFee;
       }
     });
     return totalCost;

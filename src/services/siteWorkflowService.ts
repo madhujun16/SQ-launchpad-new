@@ -51,9 +51,21 @@ export interface SiteCreationData {
   updated_at: string;
   locationInfo?: {
     location: string;
+    postcode?: string;
+    region?: string;
+    country?: string;
     latitude: number;
     longitude: number;
   };
+  contactInfo?: {
+    unitManagerName: string;
+    jobTitle: string;
+    unitManagerEmail: string;
+    unitManagerMobile: string;
+    additionalContactName: string;
+    additionalContactEmail: string;
+  };
+  additionalNotes?: string;
   assigned_ops_manager?: string;
   assigned_deployment_engineer?: string;
 }
@@ -96,6 +108,75 @@ export interface SiteStudyData {
   selected_solutions: string[];
   created_at: string;
   updated_at: string;
+  
+  // Additional fields for frontend mapping
+  space_type?: string;
+  footfall_pattern?: string;
+  peak_times?: string;
+  constraints?: string[];
+  layout_photos?: string[];
+  mount_type?: string;
+  surface_material?: string;
+  drilling_required?: boolean;
+  clearance_available?: string;
+  distance_to_nearest?: string;
+  accessible_height?: boolean;
+  primary_purpose?: string;
+  expected_transactions?: string;
+  payment_methods?: string[];
+  special_requirements?: string[];
+  software_categories?: string[];
+  category_requirements?: any;
+  power_available?: boolean;
+  network_available?: boolean;
+  wifi_quality?: string;
+  physical_constraints?: string[];
+  study_date?: string;
+  proposed_go_live?: string;
+  urgency?: string;
+  stakeholders?: string[];
+  findings?: string;
+  recommendations?: string;
+  
+  // Frontend-specific nested structures
+  spaceAssessment?: {
+    spaceType: string;
+    footfallPattern: string;
+    operatingHours: string;
+    peakTimes: string;
+    constraints: string[];
+    layoutPhotos: string[];
+    mounting: {
+      mountType: string;
+      surfaceMaterial: string;
+      drillingRequired: boolean;
+      clearanceAvailable: string;
+      distanceToNearest: string;
+      accessibleHeight: boolean;
+    };
+  };
+  requirements?: {
+    primaryPurpose: string;
+    expectedTransactions: string;
+    paymentMethods: string[];
+    specialRequirements: string[];
+    softwareCategories: string[];
+    categoryRequirements: any;
+  };
+  infrastructure?: {
+    powerAvailable: boolean;
+    networkAvailable: boolean;
+    wifiQuality: string;
+    physicalConstraints: string[];
+  };
+  timeline?: {
+    studyDate: string;
+    proposedGoLive: string;
+    urgency: string;
+  };
+  stakeholders?: string[];
+  findings?: string;
+  recommendations?: string;
 }
 
 export interface ScopingData {
@@ -269,7 +350,6 @@ export class SiteWorkflowService {
         .eq('site_id', siteId)
         .single();
 
-      let opsManager = null;
       let opsManager = null;
       let deploymentEngineer = null;
 

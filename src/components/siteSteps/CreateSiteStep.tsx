@@ -57,6 +57,20 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
     setIsEditing(!isStepCompleted);
   }, [isStepCompleted]);
 
+  // Debug team assignment data
+  useEffect(() => {
+    console.log('🔍 CreateSiteStep team assignment debug:', {
+      siteId: site?.id,
+      assignedOpsManager: site?.assignedOpsManager,
+      assignedOpsManagerId: site?.assignedOpsManagerId,
+      assignedDeploymentEngineer: site?.assignedDeploymentEngineer,
+      assignedDeploymentEngineerId: site?.assignedDeploymentEngineerId,
+      opsManagersCount: opsManagers.length,
+      deploymentEngineersCount: deploymentEngineers.length,
+      isStepCompleted
+    });
+  }, [site, opsManagers, deploymentEngineers, isStepCompleted]);
+
 
 
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
@@ -274,7 +288,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                     </div>
                   ) : (
                     <Select
-                      value={opsManagers.find(user => user.full_name === site.assignedOpsManager)?.id || ''}
+                      value={site.assignedOpsManagerId || ''}
                       onValueChange={handleOpsManagerSelect}
                       disabled={!isEditing}
                     >
@@ -306,7 +320,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                     </div>
                   ) : (
                     <Select
-                      value={deploymentEngineers.find(user => user.full_name === site.assignedDeploymentEngineer)?.id || ''}
+                      value={site.assignedDeploymentEngineerId || ''}
                       onValueChange={handleDeploymentEngineerSelect}
                       disabled={!isEditing}
                     >
