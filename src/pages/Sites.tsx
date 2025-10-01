@@ -49,7 +49,9 @@ import {
   Archive,
   Clock,
   CheckCircle,
-  Activity
+  Activity,
+  Users,
+  Wrench
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -135,12 +137,16 @@ const Sites = () => {
                   id: site.id,
                   name: site.name,
                   organization_name: site.organization_name,
-                  organization: site.organization
+                  organization: site.organization,
+                  assigned_ops_manager: site.assigned_ops_manager,
+                  assigned_deployment_engineer: site.assigned_deployment_engineer
                 },
                 transformed: {
                   id: transformed.id,
                   name: transformed.name,
-                  organization: transformed.organization
+                  organization: transformed.organization,
+                  assignedOpsManager: transformed.assignedOpsManager,
+                  assignedDeploymentEngineer: transformed.assignedDeploymentEngineer
                 }
               });
             }
@@ -522,14 +528,26 @@ const Sites = () => {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm space-y-1">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full" title="Ops Manager"></div>
-                              <span className="font-medium">{site.assigned_ops_manager || 'Unassigned'}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full" title="Deployment Engineer"></div>
-                              <span className="text-gray-500">{site.assigned_deployment_engineer || 'Unassigned'}</span>
-                            </div>
+                            {site.assigned_ops_manager && site.assigned_ops_manager !== 'Unassigned' && (
+                              <div className="flex items-center gap-2">
+                                <div title="Operations Manager">
+                                  <Users className="h-4 w-4 text-blue-500" />
+                                </div>
+                                <span className="font-medium">{site.assigned_ops_manager}</span>
+                              </div>
+                            )}
+                            {site.assigned_deployment_engineer && site.assigned_deployment_engineer !== 'Unassigned' && (
+                              <div className="flex items-center gap-2">
+                                <div title="Deployment Engineer">
+                                  <Wrench className="h-4 w-4 text-green-500" />
+                                </div>
+                                <span className="text-gray-500">{site.assigned_deployment_engineer}</span>
+                              </div>
+                            )}
+                            {(!site.assigned_ops_manager || site.assigned_ops_manager === 'Unassigned') && 
+                             (!site.assigned_deployment_engineer || site.assigned_deployment_engineer === 'Unassigned') && (
+                              <span className="text-gray-400 text-xs">No assignments</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

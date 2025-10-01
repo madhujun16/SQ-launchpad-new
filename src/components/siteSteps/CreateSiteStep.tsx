@@ -47,7 +47,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
 
 
 
-  const handleLocationSelect = async (location: { address: string; lat: number; lng: number }) => {
+  const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
     const updatedSite = {
       ...site,
       siteCreation: {
@@ -61,13 +61,41 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       }
     };
     
-    // Update local state
+    // Update local state only - don't save to backend yet
     onSiteUpdate(updatedSite);
-    
-    // Save to backend
-    await saveSiteCreationData(updatedSite);
-    
     setShowLocationEditor(false);
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      setSaving(true);
+      await saveSiteCreationData(site);
+      toast.success('Draft saved successfully');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast.error('Failed to save draft');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    try {
+      setSaving(true);
+      const updatedSite = {
+        ...site,
+        status: 'Created' as const
+      };
+      
+      await saveSiteCreationData(updatedSite);
+      onSiteUpdate(updatedSite);
+      toast.success('Site creation marked as complete');
+    } catch (error) {
+      console.error('Error marking complete:', error);
+      toast.error('Failed to mark as complete');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Save site creation data to backend
@@ -76,8 +104,8 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       setSaving(true);
       const success = await SiteWorkflowService.saveSiteCreationData(site.id, {
         locationInfo: siteData.siteCreation?.locationInfo,
-        assignedOpsManager: siteData.assignedOpsManager,
-        assignedDeploymentEngineer: siteData.assignedDeploymentEngineer
+        assigned_ops_manager: siteData.assignedOpsManagerId,
+        assigned_deployment_engineer: siteData.assignedDeploymentEngineerId
       });
       
       if (success) {
@@ -94,11 +122,12 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
   };
 
   // Handle Operations Manager selection
-  const handleOpsManagerSelect = async (userId: string) => {
-    const selectedUser = opsManagers.find(user => user.user_id === userId);
+  const handleOpsManagerSelect = async (profileId: string) => {
+    const selectedUser = opsManagers.find(user => user.id === profileId);
     const updatedSite = {
       ...site,
-      assignedOpsManager: selectedUser?.full_name || ''
+      assignedOpsManager: selectedUser?.full_name || '',
+      assignedOpsManagerId: profileId
     };
     
     // Update local state
@@ -109,11 +138,12 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
   };
 
   // Handle Deployment Engineer selection
-  const handleDeploymentEngineerSelect = async (userId: string) => {
-    const selectedUser = deploymentEngineers.find(user => user.user_id === userId);
+  const handleDeploymentEngineerSelect = async (profileId: string) => {
+    const selectedUser = deploymentEngineers.find(user => user.id === profileId);
     const updatedSite = {
       ...site,
-      assignedDeploymentEngineer: selectedUser?.full_name || ''
+      assignedDeploymentEngineer: selectedUser?.full_name || '',
+      assignedDeploymentEngineerId: profileId
     };
     
     // Update local state
@@ -204,7 +234,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                     </div>
                   ) : (
                     <Select
-                      value={opsManagers.find(user => user.full_name === site.assignedOpsManager)?.user_id || ''}
+                      value={opsManagers.find(user => user.full_name === site.assignedOpsManager)?.id || ''}
                       onValueChange={handleOpsManagerSelect}
                     >
                       <SelectTrigger className="w-full">
@@ -212,7 +242,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                       </SelectTrigger>
                       <SelectContent>
                         {opsManagers.map((user) => (
-                          <SelectItem key={user.user_id} value={user.user_id}>
+                          <SelectItem key={user.id} value={user.id}>
                             <div className="flex items-center space-x-2">
                               <User className="h-4 w-4 text-gray-400" />
                               <div>
@@ -235,7 +265,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                     </div>
                   ) : (
                     <Select
-                      value={deploymentEngineers.find(user => user.full_name === site.assignedDeploymentEngineer)?.user_id || ''}
+                      value={deploymentEngineers.find(user => user.full_name === site.assignedDeploymentEngineer)?.id || ''}
                       onValueChange={handleDeploymentEngineerSelect}
                     >
                       <SelectTrigger className="w-full">
@@ -243,7 +273,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                       </SelectTrigger>
                       <SelectContent>
                         {deploymentEngineers.map((user) => (
-                          <SelectItem key={user.user_id} value={user.user_id}>
+                          <SelectItem key={user.id} value={user.id}>
                             <div className="flex items-center space-x-2">
                               <Users className="h-4 w-4 text-gray-400" />
                               <div>
@@ -332,10 +362,32 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                   </div>
                 </div>
               )}
+
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Site Creation Step Action Buttons */}
+      {isLocationEditable && (
+        <div className="mt-6 flex gap-3">
+          <Button
+            onClick={handleSaveDraft}
+            disabled={saving}
+            variant="outline"
+            className="flex-1"
+          >
+            {saving ? 'Saving...' : 'Save Draft'}
+          </Button>
+          <Button
+            onClick={handleMarkComplete}
+            disabled={saving}
+            className="flex-1 bg-green-600 hover:bg-green-700"
+          >
+            {saving ? 'Saving...' : 'Mark Complete'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -44,8 +44,8 @@ export class UserService {
         if (user.user_roles && user.user_roles.length > 0) {
           user.user_roles.forEach((roleData: any) => {
             usersWithRoles.push({
-              id: user.id,
-              user_id: user.user_id,
+              id: user.id, // This is profiles.id - use this for foreign key references
+              user_id: user.user_id, // This is auth.users.id - keep for compatibility
               email: user.email,
               full_name: user.full_name || user.email,
               role: roleData.role,
@@ -92,8 +92,8 @@ export class UserService {
 
       // Transform the data to match the expected format
       const usersWithRole: UserWithRole[] = usersData.map((user: any) => ({
-        id: user.id,
-        user_id: user.user_id,
+        id: user.id, // This is profiles.id - use this for foreign key references
+        user_id: user.user_id, // This is auth.users.id - keep for compatibility
         email: user.email,
         full_name: user.full_name || user.email,
         role: role, // We know the role since we filtered by it

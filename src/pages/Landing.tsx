@@ -43,33 +43,34 @@ const Landing = () => {
       <div className="h-12" aria-hidden="true" />
 
       {/* Hero Section */}
-      <section className="relative py-4 sm:py-6 px-4 sm:px-6 min-h-screen flex items-start pt-16">
+      <section className="relative py-4 sm:py-6 px-4 sm:px-6 min-h-screen flex items-center justify-center">
         {/* Lottie Animation Background */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
           <div className="relative">
             {/* Glow effect wrapper */}
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 30%, rgba(34, 197, 94, 0.04) 60%, transparent 100%)',
-                filter: 'blur(30px)',
-                width: 'min(800px, 80vw)',
-                height: 'min(600px, 70vh)',
+                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.04) 30%, rgba(34, 197, 94, 0.02) 60%, transparent 100%)',
+                filter: 'blur(50px)',
+                width: 'min(1000px, 90vw)',
+                height: 'min(800px, 80vh)',
                 transform: 'translate(-50%, -50%)',
                 top: '50%',
                 left: '50%',
-                animation: 'rocketGlow 3s ease-in-out infinite alternate'
+                animation: 'rocketGlow 4s ease-in-out infinite alternate'
               }}
             />
             <DotLottieReact
               src="/hero-animation.lottie"
               loop
               autoplay
+              className="hero-animation"
               style={{ 
-                width: 'min(900px, 70vw)', 
-                height: 'min(750px, 60vh)', 
-                opacity: 0.3,
-                filter: 'drop-shadow(0 0 20px rgba(34, 197, 94, 0.3)) brightness(1.1) contrast(1.05)',
+                width: 'min(1000px, 80vw)', 
+                height: 'min(800px, 70vh)', 
+                opacity: 0.15,
+                filter: 'drop-shadow(0 0 20px rgba(34, 197, 94, 0.2)) brightness(0.8) contrast(0.9)',
                 position: 'relative',
                 zIndex: 1
               }}
@@ -80,9 +81,10 @@ const Landing = () => {
           </div>
         </div>
         
-        <div className="container mx-auto text-center relative z-20 pt-16">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-12">
+        {/* Hero Content */}
+        <div className="container mx-auto text-center relative z-10 max-w-6xl px-4 hero-content">
+          <div className="space-y-8">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-white">
               Deploy Sites Faster.
               <br />
               <span className="bg-gradient-to-r from-green-400 via-green-300 to-emerald-400 bg-clip-text text-transparent font-black text-glow-green hero-glow-text">
@@ -90,25 +92,19 @@ const Landing = () => {
               </span>
             </h1>
             
-            {/* Increased spacing to prevent text overlap with animation */}
-            <div className="h-32 md:h-40 lg:h-48"></div>
-            
-            {/* Additional spacing before subtitle */}
-            <div className="h-8 md:h-12 lg:h-16"></div>
-            
-            <p className="text-xl md:text-2xl text-white/95 mb-12 max-w-4xl mx-auto leading-relaxed font-light">
+            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl mx-auto leading-relaxed font-light px-4">
               Streamline site studies, hardware procurement, and inventory management with real-time progress tracking.
             </p>
 
-            <div className="flex justify-center mb-16 sm:mb-20">
+            <div className="flex justify-center pt-8">
               <Button 
                 size="lg"
                 onClick={handleLoginClick}
-                className="group px-10 py-6 text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-green-500/25 active:scale-95 transition-all duration-300 border border-green-400/20 hover:border-green-300/40 hero-button-glow"
+                className="group px-8 sm:px-10 py-4 sm:py-6 text-base sm:text-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-bold rounded-xl shadow-2xl hover:shadow-green-500/25 active:scale-95 transition-all duration-300 border border-green-400/20 hover:border-green-300/40 hero-button-glow"
               >
                 <span className="flex items-center space-x-2">
                   <span>Get Started</span>
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </span>
               </Button>
             </div>

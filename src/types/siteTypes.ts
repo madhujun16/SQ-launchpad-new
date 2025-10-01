@@ -23,6 +23,8 @@ export interface Site {
   status: UnifiedSiteStatus;
   assignedOpsManager?: string;
   assignedDeploymentEngineer?: string;
+  assignedOpsManagerId?: string;
+  assignedDeploymentEngineerId?: string;
   stakeholders?: Stakeholder[];
   notes?: string;
   lastUpdated?: string;

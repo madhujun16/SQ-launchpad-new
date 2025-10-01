@@ -391,18 +391,10 @@ export class SiteWorkflowService {
     try {
       const { assigned_ops_manager, assigned_deployment_engineer, ...siteCreationFields } = data;
 
-      // Update the main sites table for assigned managers and location data
+      // Update the main sites table for location data only
       const siteUpdateData: any = {
         updated_at: new Date().toISOString()
       };
-
-      // Add assigned managers if provided
-      if (assigned_ops_manager !== undefined) {
-        siteUpdateData.assigned_ops_manager_id = assigned_ops_manager;
-      }
-      if (assigned_deployment_engineer !== undefined) {
-        siteUpdateData.assigned_deployment_engineer_id = assigned_deployment_engineer;
-      }
 
       // Add location data if provided
       if (siteCreationFields.locationInfo) {
@@ -427,6 +419,74 @@ export class SiteWorkflowService {
         if (siteUpdateError) {
           console.error('❌ Error updating site data:', siteUpdateError);
           return false;
+        }
+      }
+
+      // Save team assignments to site_assignments table
+      if (assigned_ops_manager !== undefined || assigned_deployment_engineer !== undefined) {
+        // Get current user's profile for assigned_by
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.error('❌ No authenticated user found');
+          return false;
+        }
+
+        // Get the profile record for the current user
+        const { data: currentUserProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, user_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError || !currentUserProfile) {
+          console.error('❌ Current user profile not found:', profileError);
+          return false;
+        }
+
+        // Check if assignment already exists
+        const { data: existingAssignment } = await supabase
+          .from('site_assignments')
+          .select('id')
+          .eq('site_id', siteId)
+          .single();
+
+        const assignmentData: any = {
+          site_id: siteId,
+          assigned_by: currentUserProfile.id, // Use profiles.id for foreign key
+          updated_at: new Date().toISOString()
+        };
+
+        if (assigned_ops_manager !== undefined) {
+          assignmentData.ops_manager_id = assigned_ops_manager;
+        }
+        if (assigned_deployment_engineer !== undefined) {
+          assignmentData.deployment_engineer_id = assigned_deployment_engineer;
+        }
+
+        if (existingAssignment) {
+          // Update existing assignment
+          const { error: assignmentError } = await supabase
+            .from('site_assignments')
+            .update(assignmentData)
+            .eq('site_id', siteId);
+
+          if (assignmentError) {
+            console.error('❌ Error updating site assignment:', assignmentError);
+            return false;
+          }
+        } else {
+          // Create new assignment
+          assignmentData.assigned_at = new Date().toISOString();
+          assignmentData.created_at = new Date().toISOString();
+
+          const { error: assignmentError } = await supabase
+            .from('site_assignments')
+            .insert(assignmentData);
+
+          if (assignmentError) {
+            console.error('❌ Error creating site assignment:', assignmentError);
+            return false;
+          }
         }
       }
 

@@ -72,6 +72,12 @@ export class SitesService {
   private static sitesCache: { data: Site[]; timestamp: number } | null = null;
   private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+  // Helper method to validate UUID format
+  private static isValidUUID(str: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  }
+
 
 
   // Get all sites with user assignments
@@ -172,15 +178,13 @@ export class SitesService {
       
       console.log('🔍 Making Supabase query with organization join...');
       
-      // Query to get sites with organization data and user assignments - only non-archived sites
-      // Add timeout to the query itself
+      // Query to get sites with organization data - only non-archived sites
+      // We'll fetch team assignments separately to avoid foreign key constraint issues
       const queryPromise = supabase
         .from('sites')
         .select(`
           *,
-          organization:organizations(id, name, logo_url, sector, unit_code),
-          ops_manager:profiles!assigned_ops_manager_id(user_id, full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer_id(user_id, full_name, email)
+          organizations!sites_organization_id_fkey(id, name, logo_url, sector, unit_code)
         `)
         .eq('is_archived', false)
         .order('name');
@@ -213,9 +217,13 @@ export class SitesService {
       console.log('🔍 Raw data sample:', data?.[0] ? {
         id: data[0].id,
         name: data[0].name,
-        organization: data[0].organization,
+        organizations: data[0].organizations,
         status: data[0].status,
-        address: data[0].address
+        address: data[0].address,
+        assigned_ops_manager_id: data[0].assigned_ops_manager_id,
+        assigned_deployment_engineer_id: data[0].assigned_deployment_engineer_id,
+        assigned_ops_manager: data[0].assigned_ops_manager,
+        assigned_deployment_engineer: data[0].assigned_deployment_engineer
       } : 'No data');
 
       if (!data || data.length === 0) {
@@ -223,22 +231,124 @@ export class SitesService {
         return [];
       }
 
+      // Get unique user IDs from all sites
+      const userIds = new Set<string>();
+      data.forEach((site: any) => {
+        // Check sites table columns
+        if (site.assigned_ops_manager_id) userIds.add(site.assigned_ops_manager_id);
+        if (site.assigned_deployment_engineer_id) userIds.add(site.assigned_deployment_engineer_id);
+        
+        // Only add if it looks like a UUID (not a name)
+        if (site.assigned_ops_manager && typeof site.assigned_ops_manager === 'string' && this.isValidUUID(site.assigned_ops_manager)) {
+          userIds.add(site.assigned_ops_manager);
+        }
+        if (site.assigned_deployment_engineer && typeof site.assigned_deployment_engineer === 'string' && this.isValidUUID(site.assigned_deployment_engineer)) {
+          userIds.add(site.assigned_deployment_engineer);
+        }
+      });
+
+      // Fetch team assignments separately
+      let siteAssignments: { [key: string]: any } = {};
+      if (data.length > 0) {
+        const siteIds = data.map((site: any) => site.id);
+        console.log('🔍 Fetching site assignments for site IDs:', siteIds);
+        
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from('site_assignments')
+          .select('site_id, ops_manager_id, deployment_engineer_id')
+          .in('site_id', siteIds);
+
+        if (assignmentsError) {
+          console.error('❌ Error fetching site assignments:', assignmentsError);
+        } else if (assignments) {
+          console.log('🔍 Site assignments fetched:', assignments);
+          assignments.forEach((assignment: any) => {
+            siteAssignments[assignment.site_id] = assignment;
+            if (assignment.ops_manager_id) userIds.add(assignment.ops_manager_id);
+            if (assignment.deployment_engineer_id) userIds.add(assignment.deployment_engineer_id);
+          });
+        } else {
+          console.log('⚠️ No site assignments found for sites:', siteIds);
+        }
+      }
+
+      // Fetch user details for all unique user IDs
+      let userDetails: { [key: string]: any } = {};
+      if (userIds.size > 0) {
+        console.log('🔍 Fetching user details for user IDs:', Array.from(userIds));
+        
+        const { data: users, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, user_id, full_name, email')
+          .in('id', Array.from(userIds));
+
+        if (usersError) {
+          console.error('❌ Error fetching user details:', usersError);
+        } else if (users) {
+          console.log('🔍 User details fetched:', users);
+          userDetails = users.reduce((acc: any, user: any) => {
+            acc[user.id] = user;
+            return acc;
+          }, {});
+        } else {
+          console.log('⚠️ No user details found for user IDs:', Array.from(userIds));
+        }
+      } else {
+        console.log('⚠️ No user IDs to fetch details for');
+      }
+
       // Transform the data to match our Site interface
       const transformedSites = data.map((site: any) => {
+        // Handle nested organization object
+        const organization = site.organizations || null;
+        
+        // Get user details from our fetched data
+        // Check site_assignments table first (primary source)
+        let opsManagerId = null;
+        let deploymentEngineerId = null;
+        
+        const assignment = siteAssignments[site.id];
+        if (assignment) {
+          opsManagerId = assignment.ops_manager_id;
+          deploymentEngineerId = assignment.deployment_engineer_id;
+        }
+        
+        // Fallback to sites table columns
+        if (!opsManagerId) {
+          opsManagerId = site.assigned_ops_manager_id || (site.assigned_ops_manager && typeof site.assigned_ops_manager === 'string' && this.isValidUUID(site.assigned_ops_manager) ? site.assigned_ops_manager : null);
+        }
+        if (!deploymentEngineerId) {
+          deploymentEngineerId = site.assigned_deployment_engineer_id || (site.assigned_deployment_engineer && typeof site.assigned_deployment_engineer === 'string' && this.isValidUUID(site.assigned_deployment_engineer) ? site.assigned_deployment_engineer : null);
+        }
+        
+        const opsManager = opsManagerId ? userDetails[opsManagerId] : null;
+        const deploymentEngineer = deploymentEngineerId ? userDetails[deploymentEngineerId] : null;
+        
+        // Debug logging for team assignments
+        console.log(`🔍 Site ${site.name} team assignment debug:`, {
+          siteId: site.id,
+          assignment: siteAssignments[site.id],
+          opsManagerId,
+          deploymentEngineerId,
+          opsManager: opsManager?.full_name,
+          deploymentEngineer: deploymentEngineer?.full_name,
+          userDetailsKeys: Object.keys(userDetails)
+        });
+        
         return {
           id: site.id,
           name: site.name || 'Unnamed Site',
           organization_id: site.organization_id || '',
-          organization_name: site.organization?.name || site.organization_name || 'Unknown Organization',
-          organization_logo: site.organization?.logo_url || site.organization_logo || null,
+          organization_name: organization?.name || 'Unknown Organization',
+          organization_logo: organization?.logo_url || null,
           location: site.address || site.location || 'Location not specified',
           status: site.status || 'Unknown',
           target_live_date: site.target_live_date || '',
           suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
-          assigned_ops_manager: site.ops_manager?.full_name || site.assigned_ops_manager || 'Unassigned',
-          assigned_deployment_engineer: site.deployment_engineer?.full_name || site.assigned_deployment_engineer || 'Unassigned',
-          sector: site.organization?.sector || site.sector || 'Unknown Sector',
-          unit_code: site.organization?.unit_code || site.unit_code || site.food_court_unit || '',
+          assigned_ops_manager: opsManager?.full_name || (site.assigned_ops_manager && !this.isValidUUID(site.assigned_ops_manager) ? site.assigned_ops_manager : null),
+          assigned_deployment_engineer: deploymentEngineer?.full_name || (site.assigned_deployment_engineer && !this.isValidUUID(site.assigned_deployment_engineer) ? site.assigned_deployment_engineer : null),
+          sector: organization?.sector || 'Unknown Sector',
+          unit_code: organization?.unit_code || site.unit_code || '',
           criticality_level: site.criticality_level || 'medium',
           team_assignment: site.team_assignment || '',
           stakeholders: site.stakeholders || [],
