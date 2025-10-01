@@ -49,6 +49,13 @@ export interface SiteCreationData {
   additional_notes: string;
   created_at: string;
   updated_at: string;
+  locationInfo?: {
+    location: string;
+    latitude: number;
+    longitude: number;
+  };
+  assigned_ops_manager?: string;
+  assigned_deployment_engineer?: string;
 }
 
 export interface SiteStudyData {
@@ -222,14 +229,12 @@ export class SiteWorkflowService {
     try {
       console.log('🔍 Fetching complete site workflow data for:', siteId);
 
-      // Get site basic data with organization and user assignments
+      // Get site basic data with organization
       const { data: siteData, error: siteError } = await supabase
         .from('sites')
         .select(`
           *,
-          organization:organizations(id, name, sector, unit_code),
-          ops_manager:profiles!assigned_ops_manager_id(user_id, full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer_id(user_id, full_name, email)
+          organization:organizations(id, name, sector, unit_code)
         `)
         .eq('id', siteId)
         .eq('is_archived', false)
@@ -250,6 +255,38 @@ export class SiteWorkflowService {
         name: siteData.name,
         organization: siteData.organization?.name,
         status: siteData.status
+      });
+
+      // Fetch team assignments from site_assignments table
+      const { data: assignmentData, error: assignmentError } = await supabase
+        .from('site_assignments')
+        .select(`
+          ops_manager_id,
+          deployment_engineer_id,
+          profiles!ops_manager_id(id, user_id, full_name, email),
+          profiles!deployment_engineer_id(id, user_id, full_name, email)
+        `)
+        .eq('site_id', siteId)
+        .single();
+
+      let opsManager = null;
+      let deploymentEngineer = null;
+
+      if (assignmentData && !assignmentError) {
+        // Extract user details from the assignment data
+        if (assignmentData.profiles && Array.isArray(assignmentData.profiles)) {
+          const opsManagerProfile = assignmentData.profiles.find(p => p.id === assignmentData.ops_manager_id);
+          const deploymentEngineerProfile = assignmentData.profiles.find(p => p.id === assignmentData.deployment_engineer_id);
+          
+          opsManager = opsManagerProfile;
+          deploymentEngineer = deploymentEngineerProfile;
+        }
+      }
+
+      console.log('🔍 Team assignments fetched:', {
+        assignmentData,
+        opsManager: opsManager?.full_name,
+        deploymentEngineer: deploymentEngineer?.full_name
       });
 
       // Get all workflow step data in parallel
@@ -285,8 +322,8 @@ export class SiteWorkflowService {
         criticality_level: siteData.criticality_level,
         status: siteData.status,
         target_live_date: siteData.target_live_date,
-        assigned_ops_manager: siteData.ops_manager?.full_name || siteData.assigned_ops_manager,
-        assigned_deployment_engineer: siteData.deployment_engineer?.full_name || siteData.assigned_deployment_engineer,
+        assigned_ops_manager: opsManager?.full_name || siteData.assigned_ops_manager,
+        assigned_deployment_engineer: deploymentEngineer?.full_name || siteData.assigned_deployment_engineer,
         latitude: siteData.latitude,
         longitude: siteData.longitude,
         created_at: siteData.created_at,
@@ -327,6 +364,14 @@ export class SiteWorkflowService {
       if (goLiveResult.data) {
         workflowData.goLive = goLiveResult.data;
         console.log('✅ Go live data found');
+      }
+
+      // Add team assignment IDs for the frontend
+      if (opsManager) {
+        (workflowData as any).assignedOpsManagerId = opsManager.id;
+      }
+      if (deploymentEngineer) {
+        (workflowData as any).assignedDeploymentEngineerId = deploymentEngineer.id;
       }
 
       console.log('✅ Complete workflow data assembled for site:', siteId);

@@ -22,6 +22,13 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
   const [deploymentEngineers, setDeploymentEngineers] = useState<UserWithRole[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Check if site creation step is completed
+  const isStepCompleted = site?.siteCreation?.locationInfo?.latitude && 
+                         site?.siteCreation?.locationInfo?.longitude &&
+                         site?.assignedOpsManager && 
+                         site?.assignedDeploymentEngineer;
 
   // Fetch users by role
   useEffect(() => {
@@ -45,9 +52,16 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
     fetchUsers();
   }, []);
 
+  // Initialize editing state based on step completion
+  useEffect(() => {
+    setIsEditing(!isStepCompleted);
+  }, [isStepCompleted]);
+
 
 
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
+    if (!isEditing) return; // Don't allow changes in read-only mode
+    
     const updatedSite = {
       ...site,
       siteCreation: {
@@ -89,6 +103,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       
       await saveSiteCreationData(updatedSite);
       onSiteUpdate(updatedSite);
+      setIsEditing(false); // Set to read-only mode after completion
       toast.success('Site creation marked as complete');
     } catch (error) {
       console.error('Error marking complete:', error);
@@ -123,6 +138,8 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
 
   // Handle Operations Manager selection
   const handleOpsManagerSelect = async (profileId: string) => {
+    if (!isEditing) return; // Don't allow changes in read-only mode
+    
     const selectedUser = opsManagers.find(user => user.id === profileId);
     const updatedSite = {
       ...site,
@@ -139,6 +156,8 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
 
   // Handle Deployment Engineer selection
   const handleDeploymentEngineerSelect = async (profileId: string) => {
+    if (!isEditing) return; // Don't allow changes in read-only mode
+    
     const selectedUser = deploymentEngineers.find(user => user.id === profileId);
     const updatedSite = {
       ...site,
@@ -167,16 +186,37 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
-          <p className="text-gray-600 mt-1">Basic site information and configuration</p>
-        </div>
-        {saving && (
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-            <span>Saving...</span>
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Site Creation</h2>
+            <p className="text-gray-600 mt-1">Basic site information and configuration</p>
           </div>
-        )}
+          {isStepCompleted && !isEditing && (
+            <div className="flex items-center gap-1 text-green-600">
+              <Lock className="h-4 w-4" />
+              <span className="text-sm font-medium">Completed</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {isStepCompleted && !isEditing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2"
+            >
+              <EditIcon className="h-4 w-4" />
+              Edit
+            </Button>
+          )}
+          {saving && (
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+              <span>Saving...</span>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* General Information Section */}
@@ -236,8 +276,9 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                     <Select
                       value={opsManagers.find(user => user.full_name === site.assignedOpsManager)?.id || ''}
                       onValueChange={handleOpsManagerSelect}
+                      disabled={!isEditing}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className={`w-full ${!isEditing ? 'bg-gray-50' : ''}`}>
                         <SelectValue placeholder="Select Operations Manager" />
                       </SelectTrigger>
                       <SelectContent>
@@ -267,8 +308,9 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
                     <Select
                       value={deploymentEngineers.find(user => user.full_name === site.assignedDeploymentEngineer)?.id || ''}
                       onValueChange={handleDeploymentEngineerSelect}
+                      disabled={!isEditing}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className={`w-full ${!isEditing ? 'bg-gray-50' : ''}`}>
                         <SelectValue placeholder="Select Deployment Engineer" />
                       </SelectTrigger>
                       <SelectContent>
@@ -302,7 +344,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
               <MapPin className="mr-2 h-5 w-5 text-green-600" />
               Location Information
             </div>
-            {isLocationEditable && (
+            {isLocationEditable && isEditing && (
               !showLocationEditor
                 ? (
                   (site?.siteCreation?.locationInfo?.latitude && site?.siteCreation?.locationInfo?.longitude) && (
@@ -369,7 +411,7 @@ const CreateSiteStep: React.FC<CreateSiteStepProps> = ({ site, onSiteUpdate }) =
       </Card>
 
       {/* Site Creation Step Action Buttons */}
-      {isLocationEditable && (
+      {isLocationEditable && isEditing && (
         <div className="mt-6 flex gap-3">
           <Button
             onClick={handleSaveDraft}
