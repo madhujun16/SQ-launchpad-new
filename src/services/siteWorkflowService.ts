@@ -270,6 +270,7 @@ export class SiteWorkflowService {
         .single();
 
       let opsManager = null;
+      let opsManager = null;
       let deploymentEngineer = null;
 
       if (assignmentData && !assignmentError) {

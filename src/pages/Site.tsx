@@ -263,6 +263,8 @@ interface Site {
   status: UnifiedSiteStatus;
   assignedOpsManager?: string;
   assignedDeploymentEngineer?: string;
+  assignedOpsManagerId?: string;
+  assignedDeploymentEngineerId?: string;
   stakeholders?: Stakeholder[];
   notes?: string;
   lastUpdated?: string;
@@ -972,6 +974,8 @@ const SiteDetail = () => {
               status: workflowData.status as UnifiedSiteStatus,
               assignedOpsManager: workflowData.assigned_ops_manager,
               assignedDeploymentEngineer: workflowData.assigned_deployment_engineer,
+              assignedOpsManagerId: (workflowData as any).assignedOpsManagerId,
+              assignedDeploymentEngineerId: (workflowData as any).assignedDeploymentEngineerId,
               stakeholders: [],
               notes: '',
               description: '',
