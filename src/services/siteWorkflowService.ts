@@ -174,9 +174,6 @@ export interface SiteStudyData {
     proposedGoLive: string;
     urgency: string;
   };
-  stakeholders?: string[];
-  findings?: string;
-  recommendations?: string;
 }
 
 export interface ScopingData {
