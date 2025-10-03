@@ -3,13 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { 
   Building, 
-  Car,
   Heart,
   GraduationCap,
   Shield,
-  ShoppingCart,
   Zap,
-  Utensils,
   Home
 } from 'lucide-react';
 
@@ -36,28 +33,22 @@ interface TimelineGanttViewProps {
 }
 
 const SECTOR_MAPPING = {
-  'Banking & Finance': ['HSBC Canary Wharf', 'Morgan Stanley London'],
-  'Automotive': ['JLR Whitley Campus', 'Ford Dunton'],
-  'Healthcare': ['Baxter Health'],
-  'Higher Education': ['Marjon University'],
-  'Government & Defense': ['Minley Station'],
-  'Retail & Consumer': ['NEXT Retail'],
-  'Energy & Utilities': ['Offshore Platform Alpha'],
-  'Hospitality & Food': ['Levy Restaurants', 'RA Restaurants', 'Chartswell Group', 'Compass One', 'B&I Corporate'],
-  'Real Estate & Property': ['Peabody Housing']
+  'Business & Industry': ['HSBC Canary Wharf', 'Morgan Stanley London', 'JLR Whitley Campus', 'Ford Dunton', 'Chartswell Group', 'Compass One', 'B&I Corporate'],
+  'Healthcare & Senior Living': ['Baxter Health'],
+  'Education': ['Marjon University'],
+  'Sports & Leisure': ['Levy Restaurants', 'RA Restaurants'],
+  'Defence': ['Minley Station'],
+  'Offshore & Remote': ['Offshore Platform Alpha']
 };
 
 // Sector icons mapping
 const SECTOR_ICONS = {
-  'Banking & Finance': Building,
-  'Automotive': Car,
-  'Healthcare': Heart,
-  'Higher Education': GraduationCap,
-  'Government & Defense': Shield,
-  'Retail & Consumer': ShoppingCart,
-  'Energy & Utilities': Zap,
-  'Hospitality & Food': Utensils,
-  'Real Estate & Property': Home,
+  'Business & Industry': Building,
+  'Healthcare & Senior Living': Heart,
+  'Education': GraduationCap,
+  'Sports & Leisure': Zap,
+  'Defence': Shield,
+  'Offshore & Remote': Home,
   'Other': Building
 };
 
