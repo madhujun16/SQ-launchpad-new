@@ -113,17 +113,13 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Hardware & Software Approval</h2>
-          <p className="text-gray-600 mt-1">Ops Manager approval for scoped hardware and software to proceed with procurement</p>
+          <p className="text-gray-600 mt-1">Review Ops Manager's approval decision and approved specifications before proceeding with deployment</p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-1" />
-            Export Approval
-          </Button>
-          <Button variant="outline" size="sm">
-            <MessageSquare className="h-4 w-4 mr-1" />
-            Send Notification
-          </Button>
+          <Badge variant="outline" className="text-sm text-gray-600">
+            <Handshake className="h-4 w-4 mr-1" />
+            Read-Only Approval Review
+          </Badge>
         </div>
       </div>
       
@@ -224,16 +220,6 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                       {nextAction.icon}
                       <span className="text-sm text-gray-900">{nextAction.text}</span>
                     </div>
-                    {nextAction.action && (
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={nextAction.action}
-                        className="mt-2 w-full"
-                      >
-                        {nextAction.text}
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -372,12 +358,24 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
                 <div>
                   <h4 className="font-medium text-gray-900 border-b pb-2 mb-3">Software Modules</h4>
                   <div className="space-y-2">
-                    {site?.scoping?.selectedSoftware?.map((softwareId, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span className="text-sm text-gray-700">{softwareId}</span>
-                        <Badge variant="outline" className="text-xs">Approved</Badge>
-                      </div>
-                    )) || (
+                    {site?.scoping?.selectedSoftware?.map((softwareItem, index) => {
+                      // Handle both old format (string) and new format (object with {id, quantity})
+                      const softwareName = typeof softwareItem === 'string' 
+                        ? softwareItem 
+                        : softwareItem?.id || 'Unknown Software';
+                      const softwareQuantity = typeof softwareItem === 'object' && softwareItem?.quantity 
+                        ? softwareItem.quantity 
+                        : 1;
+                      
+                      return (
+                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm text-gray-700">{softwareName}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {softwareQuantity > 1 ? `Qty: ${softwareQuantity}` : 'Approved'}
+                          </Badge>
+                        </div>
+                      );
+                    }) || (
                       <p className="text-sm text-gray-500">No software modules selected</p>
                     )}
                   </div>
