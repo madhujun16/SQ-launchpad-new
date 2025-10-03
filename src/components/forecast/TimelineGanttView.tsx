@@ -150,27 +150,6 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Timeline Header - Weeks */}
-        <div className="mb-6">
-          <div className="overflow-x-auto bg-gray-50 rounded-lg p-2">
-            <div className="flex text-xs text-gray-600 mb-2 min-w-full">
-              {weeks.map((week, index) => (
-                <div key={index} className="flex-1 min-w-20 md:min-w-16 text-center font-medium border-r border-gray-200 last:border-r-0 px-2">
-                  {week.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                </div>
-              ))}
-            </div>
-            <div className="flex text-xs text-gray-500 border-b border-gray-300 pb-2 min-w-full">
-              {weeks.map((week, index) => (
-                <div key={index} className="flex-1 min-w-20 md:min-w-16 text-center border-r border-gray-200 last:border-r-0 px-2">
-                  Week {index + 1}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Organizations and Sites */}
         <div className="space-y-6">
           {Object.entries(groupedSites).map(([orgName, sites]) => (
             <div key={orgName} className="border rounded-lg p-4">
@@ -179,10 +158,31 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
                 <Badge variant="outline">{sites.length} sites</Badge>
               </div>
               
+              {/* Synchronized Scrollable Container */}
               <div className="overflow-x-auto bg-white rounded border">
-                <div className="min-w-full p-2">
-                  <div className="space-y-4">
-                    {sites.map((site) => {
+                <div className="min-w-full">
+                  {/* Timeline Header - Synchronized with bars */}
+                  <div className="sticky top-0 bg-gray-50 p-2 mb-2 z-10">
+                    <div className="flex text-xs text-gray-600 mb-2">
+                      {weeks.map((week, index) => (
+                        <div key={index} className="flex-1 min-w-20 md:min-w-16 text-center font-medium border-r border-gray-200 last:border-r-0 px-2 whitespace-nowrap">
+                          {week.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex text-xs text-gray-500 border-b border-gray-300 pb-2">
+                      {weeks.map((week, index) => (
+                        <div key={index} className="flex-1 min-w-20 md:min-w-16 text-center border-r border-gray-200 last:border-r-0 px-2">
+                          Week {index + 1}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Timeline Bars */}
+                  <div className="p-2">
+                    <div className="space-y-4">
+                      {sites.map((site) => {
                       const position = getSitePosition(site);
                       
                       return (
@@ -255,7 +255,8 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
                           </div>
                         </div>
                       );
-                    })}
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
