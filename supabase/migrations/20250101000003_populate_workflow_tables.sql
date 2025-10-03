@@ -234,11 +234,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_approvals TO authenticated;
 GRANT SELECT ON public.site_approvals TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_scoping_data TO authenticated;
 GRANT SELECT ON public.site_scoping_data TO anon;
-GRANT VIEW SELECT ON public.site_procurement_items TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_procurement_items TO authenticated;
 GRANT SELECT ON public.site_procurement_items TO anon;
-GRANT VIEW SELECT ON self_deployment_status TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_deployment_status TO authenticated;
 GRANT SELECT ON public.site_deployment_status TO anon;
-GRANT VIEW SELECT ON public.site_golive_status TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_golive_status TO authenticated;
 GRANT SELECT ON public.site_golive_status TO anon;
 
 -- Populate data based on site statuses
