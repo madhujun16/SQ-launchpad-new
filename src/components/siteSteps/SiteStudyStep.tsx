@@ -80,7 +80,10 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
       // Category-specific requirements
       categoryRequirements: {
         foodOrderingApp: {
-          brandAssetsAvailable: false
+          brandAssetsAvailable: false,
+          serviceTypes: {},
+          features: {},
+          customizationRequirements: ''
         },
         kiosk: {
           numberOfKiosks: 0,
@@ -943,18 +946,158 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
                         <CardHeader className="pb-3">
                           <CardTitle className="flex items-center text-lg">
                             <Smartphone className="mr-2 h-5 w-5 text-blue-600" />
-                            Food Ordering App
+                            Food Ordering App Configuration
                           </CardTitle>
+                          <CardDescription>
+                            Configure comprehensive features and requirements for your food ordering application
+                          </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="brand-assets"
-                              checked={getValue('requirements.categoryRequirements.foodOrderingApp.brandAssetsAvailable')}
-                              onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.foodOrderingApp.brandAssetsAvailable', checked)}
+                        <CardContent className="space-y-6">
+                          {/* Service Types Section */}
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                              <Monitor className="mr-2 h-4 w-4 text-blue-600" />
+                              Service Types & Ordering Channels
+                            </h4>
+                            <p className="text-sm text-gray-600 mb-4">
+                              Select how customers will interact with your restaurants through digital channels
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-3">
+                                {[
+                                  { id: 'clickAndCollect', label: 'Click and Collect', description: 'Orders collected from specified location' },
+                                  { id: 'delivery', label: 'Delivery', description: 'Direct delivery to customer address' },
+                                  { id: 'orderNow', label: 'Order Now', description: 'Traditional dine-in ordering' },
+                                  { id: 'externalWeb', label: 'External Resource (Web)', description: 'Integration with external web platform' }
+                                ].map((service) => (
+                                  <div key={service.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                                    <Checkbox
+                                      id={`service-${service.id}`}
+                                      checked={getValue(`requirements.categoryRequirements.foodOrderingApp.serviceTypes.${service.id}`) || false}
+                                      onCheckedChange={(checked) => handleInputChange(`requirements.categoryRequirements.foodOrderingApp.serviceTypes.${service.id}`, checked)}
+                                      disabled={!isEditing}
+                                    />
+                                    <div className="flex-1">
+                                      <Label htmlFor={`service-${service.id}`} className="font-medium">
+                                        {service.label}
+                                      </Label>
+                                      <p className="text-xs text-gray-500">{service.description}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="space-y-3">
+                                {[
+                                  { id: 'scanAndGo', label: 'Scan & Go', description: 'Self-service ordering via scanning' },
+                                  { id: 'viewMenu', label: 'View Menu', description: 'Digital menu viewing only' },
+                                  { id: 'loyaltyJourney', label: 'Loyalty Only Journey', description: 'Customer loyalty program integration' },
+                                  { id: 'tableService', label: 'Table Service', description: 'Modern table ordering service' }
+                                ].map((service) => (
+                                  <div key={service.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                                    <Checkbox
+                                      id={`service-${service.id}`}
+                                      checked={getValue(`requirements.categoryRequirements.foodOrderingApp.serviceTypes.${service.id}`) || false}
+                                      onCheckedChange={(checked) => handleInputChange(`requirements.categoryRequirements.foodOrderingApp.serviceTypes.${service.id}`, checked)}
+                                      disabled={!isEditing}
+                                    />
+                                    <div className="flex-1">
+                                      <Label htmlFor={`service-${service.id}`} className="font-medium">
+                                        {service.label}
+                                      </Label>
+                                      <p className="text-xs text-gray-500">{service.description}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* App Features Section */}
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                              <Zap className="mr-2 h-4 w-4 text-green-600" />
+                              App Features Required
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-3">
+                                <h5 className="text-sm font-medium text-gray-700">Core Features</h5>
+                                {[
+                                  { id: 'multiLanguage', label: 'Multi-language Support' },
+                                  { id: 'pushNotifications', label: 'Push Notifications' },
+                                  { id: 'orderTracking', label: 'Real-time Order Tracking' },
+                                  { id: 'qrCodeOrdering', label: 'QR Code Ordering' },
+                                  { id: 'voiceOrdering', label: 'Voice Ordering' },
+                                  { id: 'aiRecommendations', label: 'AI-powered Recommendations' }
+                                ].map((feature) => (
+                                  <div key={feature.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`feature-${feature.id}`}
+                                      checked={getValue(`requirements.categoryRequirements.foodOrderingApp.features.${feature.id}`) || false}
+                                      onCheckedChange={(checked) => handleInputChange(`requirements.categoryRequirements.foodOrderingApp.features.${feature.id}`, checked)}
+                                      disabled={!isEditing}
+                                    />
+                                    <Label htmlFor={`feature-${feature.id}`} className="text-sm">
+                                      {feature.label}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="space-y-3">
+                                <h5 className="text-sm font-medium text-gray-700">Customer Experience</h5>
+                                {[
+                                  { id: 'customerReviews', label: 'Customer Reviews & Ratings' },
+                                  { id: 'wishlist', label: 'Favorites/Wishlist' },
+                                  { id: 'orderHistory', label: 'Order History & Reorder' },
+                                  { id: 'liveChat', label: 'Live Chat Support' },
+                                  { id: 'nutritionalInfo', label: 'Nutritional Information' },
+                                  { id: 'allergenInfo', label: 'Allergen Information' }
+                                ].map((feature) => (
+                                  <div key={feature.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`feature-${feature.id}`}
+                                      checked={getValue(`requirements.categoryRequirements.foodOrderingApp.features.${feature.id}`) || false}
+                                      onCheckedChange={(checked) => handleInputChange(`requirements.categoryRequirements.foodOrderingApp.features.${feature.id}`, checked)}
+                                      disabled={!isEditing}
+                                    />
+                                    <Label htmlFor={`feature-${feature.id}`} className="text-sm">
+                                      {feature.label}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Brand Assets Section */}
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                              <Camera className="mr-2 h-4 w-4 text-indigo-600" />
+                              Brand Assets & Customization
+                            </h4>
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="brand-assets"
+                                  checked={getValue('requirements.categoryRequirements.foodOrderingApp.brandAssetsAvailable')}
+                                  onCheckedChange={(checked) => handleInputChange('requirements.categoryRequirements.foodOrderingApp.brandAssetsAvailable', checked)}
+                                  disabled={!isEditing}
+                                />
+                                <Label htmlFor="brand-assets">Brand assets available (logo, fonts, colour codes)</Label>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Customization Requirements */}
+                          <div>
+                            <Label htmlFor="customization-requirements">Customization Requirements</Label>
+                            <Textarea
+                              id="customization-requirements"
+                              placeholder="Describe any specific customization requirements for the Food Ordering App (UI/UX preferences, special integrations, unique features, branding requirements, etc.)..."
+                              value={getValue('requirements.categoryRequirements.foodOrderingApp.customizationRequirements') || ''}
+                              onChange={(e) => handleInputChange('requirements.categoryRequirements.foodOrderingApp.customizationRequirements', e.target.value)}
                               disabled={!isEditing}
+                              rows={4}
                             />
-                            <Label htmlFor="brand-assets">Brand assets available (logo, fonts, colour codes)?</Label>
                           </div>
                         </CardContent>
                       </Card>

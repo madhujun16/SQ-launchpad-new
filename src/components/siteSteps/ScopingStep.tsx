@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock } from 'lucide-react';
+import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock, Calculator, DollarSign } from 'lucide-react';
 import { PlatformConfigService, SoftwareModule, HardwareItem } from '@/services/platformConfigService';
 import { Site } from '@/types/siteTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -318,140 +318,189 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Software Selection */}
-      <Card>
+  // Cost Summary Component
+  const CostSummarySection = () => {
+    const costSummary = calculateCostSummary();
+    
+    return (
+      <Card className="sticky top-4">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Monitor className="mr-2 h-5 w-5 text-blue-600" />
-            Software Selection
+            <Calculator className="mr-2 h-5 w-5 text-green-600" />
+            Cost Summary
           </CardTitle>
           <CardDescription>
-            Select the software modules you need for this site. Hardware recommendations will appear based on your selections.
+            Real-time cost calculation based on your selections
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {Object.entries(groupedSoftwareModules).map(([categoryName, softwareModules]) => (
-              <div key={categoryName}>
-                <h4 className="font-medium text-gray-900 mb-3">{categoryName}</h4>
-                <div className="space-y-3">
-                  {softwareModules.map((software) => {
-                    const isSelected = selectedSoftwareIds.includes(software.id);
-                    const quantity = softwareQuantities[software.id] || 1;
-                    
-                    return (
-                      <div key={software.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          id={software.id}
-                          checked={isSelected}
-                          onCheckedChange={() => handleSoftwareToggle(software.id)}
-                          disabled={!isEditing}
-                        />
-                        <div className="flex-1">
-                          <Label htmlFor={software.id} className="font-medium cursor-pointer">
-                            {software.name}
-                          </Label>
-                          {software.description && (
-                            <p className="text-sm text-gray-600 mt-1">{software.description}</p>
-                          )}
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>License Fee: £{software.license_fee?.toLocaleString() || 0}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Quantity Controls - Only show if software is selected */}
-                        {isSelected && isEditing && (
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSoftwareQuantityChange(software.id, Math.max(1, quantity - 1))}
-                              disabled={quantity <= 1}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-8 text-center font-medium">{quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleSoftwareQuantityChange(software.id, quantity + 1)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {/* Show quantity if selected but not editing */}
-                        {isSelected && !isEditing && (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-600">Qty: {quantity}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+        <CardContent className="space-y-4">
+          {/* CAPEX Section */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+              <DollarSign className="h-4 w-4 mr-1 text-blue-600" />
+              CAPEX (One-time Costs)
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Hardware:</span>
+                <span>£{costSummary.hardwareCost.toLocaleString()}</span>
               </div>
-            ))}
+              <div className="flex justify-between">
+                <span className="text-gray-600">Software Setup:</span>
+                <span>£{costSummary.softwareSetupCost.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Installation:</span>
+                <span>£{costSummary.installationCost.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Contingency (15%):</span>
+                <span>£{costSummary.contingencyCost.toLocaleString()}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-medium">
+                <span>Total CAPEX:</span>
+                <span className="text-blue-600">£{costSummary.totalCapex.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
+
+          {/* OPEX Section */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+              <DollarSign className="h-4 w-4 mr-1 text-green-600" />
+              OPEX (Monthly Costs)
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Software Licenses:</span>
+                <span>£{costSummary.monthlySoftwareFees.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Maintenance:</span>
+                <span>£{costSummary.maintenanceCost.toLocaleString()}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-medium">
+                <span>Total OPEX (Monthly):</span>
+                <span className="text-green-600">£{costSummary.totalMonthlyOpex.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>Total OPEX (Annual):</span>
+                <span className="text-green-600">£{(costSummary.totalMonthlyOpex * 12).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Investment */}
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-900">Total Investment (Year 1):</span>
+              <span className="text-lg font-bold text-gray-900">£{costSummary.totalInvestment.toLocaleString()}</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Includes CAPEX + 12 months OPEX
+            </p>
+          </div>
+
+          {/* Submit Button in Cost Summary */}
+          {isEditing && selectedSoftwareIds.length > 0 && (
+            <Button 
+              onClick={handleSubmitScoping}
+              disabled={submitting}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Submit for Approval
+                </>
+              )}
+            </Button>
+          )}
         </CardContent>
       </Card>
+    );
+  };
 
-      {/* Hardware Selection - Only show if software is selected */}
-      {selectedSoftwareIds.length > 0 && (
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Left Column - Software and Hardware Selection (67%) */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* Software Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Package className="mr-2 h-5 w-5 text-green-600" />
-              Hardware Selection
+              <Monitor className="mr-2 h-5 w-5 text-blue-600" />
+              Software Selection
             </CardTitle>
             <CardDescription>
-              Hardware items recommended based on your software selection. Adjust quantities as needed.
+              Select the software modules you need for this site. Hardware recommendations will appear based on your selections.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {Object.entries(groupedHardwareItems).map(([categoryName, hardwareItems]) => (
+              {Object.entries(groupedSoftwareModules).map(([categoryName, softwareModules]) => (
                 <div key={categoryName}>
                   <h4 className="font-medium text-gray-900 mb-3">{categoryName}</h4>
                   <div className="space-y-3">
-                    {hardwareItems.map((hardware) => {
-                      const selectedHardwareItem = selectedHardware.find(h => h.id === hardware.id);
-                      const quantity = selectedHardwareItem?.quantity || 0;
+                    {softwareModules.map((software) => {
+                      const isSelected = selectedSoftwareIds.includes(software.id);
+                      const quantity = softwareQuantities[software.id] || 1;
                       
                       return (
-                        <div key={hardware.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                        <div key={software.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                          <Checkbox
+                            id={software.id}
+                            checked={isSelected}
+                            onCheckedChange={() => handleSoftwareToggle(software.id)}
+                            disabled={!isEditing}
+                          />
                           <div className="flex-1">
-                            <div className="font-medium">{hardware.name}</div>
-                            {hardware.description && (
-                              <p className="text-sm text-gray-600 mt-1">{hardware.description}</p>
+                            <Label htmlFor={software.id} className="font-medium cursor-pointer">
+                              {software.name}
+                            </Label>
+                            {software.description && (
+                              <p className="text-sm text-gray-600 mt-1">{software.description}</p>
                             )}
                             <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                              <span>Cost: £{hardware.unit_cost?.toLocaleString() || 0}</span>
-                              {hardware.manufacturer && <span>Manufacturer: {hardware.manufacturer}</span>}
+                              <span>License Fee: £{software.license_fee?.toLocaleString() || 0}</span>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleHardwareQuantityChange(hardware.id, Math.max(0, quantity - 1))}
-                              disabled={!isEditing || quantity <= 0}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-8 text-center">{quantity}</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleHardwareQuantityChange(hardware.id, quantity + 1)}
-                              disabled={!isEditing}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          
+                          {/* Quantity Controls - Only show if software is selected */}
+                          {isSelected && isEditing && (
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSoftwareQuantityChange(software.id, Math.max(1, quantity - 1))}
+                                disabled={quantity <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center font-medium">{quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSoftwareQuantityChange(software.id, quantity + 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Show quantity if selected but not editing */}
+                          {isSelected && !isEditing && (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-600">Qty: {quantity}</span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -461,45 +510,91 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Submit Button */}
-      {isEditing && selectedSoftwareIds.length > 0 && (
-        <div className="flex justify-end">
-          <Button 
-            onClick={handleSubmitScoping}
-            disabled={submitting}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Submit for Approval
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+        {/* Hardware Selection - Only show if software is selected */}
+        {selectedSoftwareIds.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Package className="mr-2 h-5 w-5 text-green-600" />
+                Hardware Selection
+              </CardTitle>
+              <CardDescription>
+                Hardware items recommended based on your software selection. Adjust quantities as needed.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {Object.entries(groupedHardwareItems).map(([categoryName, hardwareItems]) => (
+                  <div key={categoryName}>
+                    <h4 className="font-medium text-gray-900 mb-3">{categoryName}</h4>
+                    <div className="space-y-3">
+                      {hardwareItems.map((hardware) => {
+                        const selectedHardwareItem = selectedHardware.find(h => h.id === hardware.id);
+                        const quantity = selectedHardwareItem?.quantity || 0;
+                        
+                        return (
+                          <div key={hardware.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="font-medium">{hardware.name}</div>
+                              {hardware.description && (
+                                <p className="text-sm text-gray-600 mt-1">{hardware.description}</p>
+                              )}
+                              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                <span>Cost: £{hardware.unit_cost?.toLocaleString() || 0}</span>
+                                {hardware.manufacturer && <span>Manufacturer: {hardware.manufacturer}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleHardwareQuantityChange(hardware.id, Math.max(0, quantity - 1))}
+                                disabled={!isEditing || quantity <= 0}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center">{quantity}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleHardwareQuantityChange(hardware.id, quantity + 1)}
+                                disabled={!isEditing}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Status Display */}
-      {site?.scoping?.status === 'submitted' && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <span className="text-blue-800 font-medium">Scoping submitted for approval</span>
-            </div>
-            <p className="text-blue-700 text-sm mt-1">
-              Submitted on {site.scoping.submittedAt ? new Date(site.scoping.submittedAt).toLocaleDateString() : 'Unknown date'}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        {/* Status Display */}
+        {site?.scoping?.status === 'submitted' && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <span className="text-blue-800 font-medium">Scoping submitted for approval</span>
+              </div>
+              <p className="text-blue-700 text-sm mt-1">
+                Submitted on {site.scoping.submittedAt ? new Date(site.scoping.submittedAt).toLocaleDateString() : 'Unknown date'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Right Column - Cost Summary (33%) */}
+      <div className="lg:col-span-1">
+        <CostSummarySection />
+      </div>
     </div>
   );
 }

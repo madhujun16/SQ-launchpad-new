@@ -46,8 +46,8 @@ const NAVIGATION_ITEMS = [
   { path: '/sites', label: 'Sites', icon: Building },
   { path: '/approvals-procurement', label: 'Approvals', icon: FileText },
   { path: '/deployment', label: 'Deployment', icon: Truck },
-  { path: '/forecast', label: 'Forecast', icon: BarChart3 },
-  { path: '/assets', label: 'Assets', icon: Package }
+  { path: '/assets', label: 'Assets', icon: Package },
+  { path: '/forecast', label: 'Forecast', icon: BarChart3 }
 ] as const;
 
 // Logo Component
