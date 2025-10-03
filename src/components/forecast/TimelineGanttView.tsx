@@ -1,7 +1,17 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building } from 'lucide-react';
+import { 
+  Building, 
+  Car,
+  Heart,
+  GraduationCap,
+  Shield,
+  ShoppingCart,
+  Zap,
+  Utensils,
+  Home
+} from 'lucide-react';
 
 interface ForecastData {
   id: string;
@@ -25,18 +35,34 @@ interface TimelineGanttViewProps {
   forecastData: ForecastData[];
 }
 
-const ORGANIZATIONS = {
-  'HSBC': ['HSBC Canary Wharf'],
-  'Jaguar Land Rover': ['JLR Whitley Campus', 'Ford Dunton'],
-  'Morgan Stanley': ['Morgan Stanley London'],
-  'Restaurant Groups': ['Levy Restaurants', 'RA Restaurants'],
+const SECTOR_MAPPING = {
+  'Banking & Finance': ['HSBC Canary Wharf', 'Morgan Stanley London'],
+  'Automotive': ['JLR Whitley Campus', 'Ford Dunton'],
   'Healthcare': ['Baxter Health'],
-  'Universities': ['Marjon University'],
-  'Government': ['Minley Station'],
-  'Corporate Catering': ['Chartswell Group', 'Compass One', 'B&I Corporate'],
-  'Housing': ['Peabody Housing'],
-  'Retail': ['NEXT Retail'],
-  'Energy': ['Offshore Platform Alpha']
+  'Higher Education': ['Marjon University'],
+  'Government & Defense': ['Minley Station'],
+  'Retail & Consumer': ['NEXT Retail'],
+  'Energy & Utilities': ['Offshore Platform Alpha'],
+  'Hospitality & Food': ['Levy Restaurants', 'RA Restaurants', 'Chartswell Group', 'Compass One', 'B&I Corporate'],
+  'Real Estate & Property': ['Peabody Housing']
+};
+
+// Sector icons mapping
+const SECTOR_ICONS = {
+  'Banking & Finance': Building,
+  'Automotive': Car,
+  'Healthcare': Heart,
+  'Higher Education': GraduationCap,
+  'Government & Defense': Shield,
+  'Retail & Consumer': ShoppingCart,
+  'Energy & Utilities': Zap,
+  'Hospitality & Food': Utensils,
+  'Real Estate & Property': Home,
+  'Other': Building
+};
+
+const getSectorIcon = (sectorName: string) => {
+  return SECTOR_ICONS[sectorName as keyof typeof SECTOR_ICONS] || SECTOR_ICONS.Other;
 };
 
 const getStatusColor = (status: string) => {
@@ -92,25 +118,25 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
     return weeksArray;
   }, [timelineStart, timelineEnd]);
 
-  // Group sites by organizations
+  // Group sites by sectors
   const groupedSites = useMemo(() => {
     const grouped: Record<string, ForecastData[]> = {};
     
     forecastData.forEach(site => {
-      let orgName = 'Other';
+      let sectorName = 'Other';
       
-      // Find which organization this site belongs to
-      for (const [org, siteNames] of Object.entries(ORGANIZATIONS)) {
+      // Find which sector this site belongs to
+      for (const [sector, siteNames] of Object.entries(SECTOR_MAPPING)) {
         if (siteNames.includes(site.siteName)) {
-          orgName = org;
+          sectorName = sector;
           break;
         }
       }
       
-      if (!grouped[orgName]) {
-        grouped[orgName] = [];
+      if (!grouped[sectorName]) {
+        grouped[sectorName] = [];
       }
-      grouped[orgName].push({ ...site, organization: orgName });
+      grouped[sectorName].push({ ...site, organization: sectorName });
     });
     
     return grouped;
@@ -142,19 +168,24 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Building className="h-5 w-5 text-blue-600" />
-          <span>Timeline Gantt View - By Organization</span>
+          <span>Timeline Gantt View - By Sector</span>
         </CardTitle>
         <CardDescription>
-          Sites grouped by organization showing status transitions from Sept 1st to today, with remaining timeline to target dates.
+          Sites grouped by industry sector showing status transitions from Sept 1st to today, with remaining timeline to target dates.
           <span className="block mt-1 text-xs text-blue-600 font-medium">← Scroll horizontally to view full timeline →</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {Object.entries(groupedSites).map(([orgName, sites]) => (
-            <div key={orgName} className="border rounded-lg p-4">
+          {Object.entries(groupedSites).map(([sectorName, sites]) => (
+            <div key={sectorName} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{orgName}</h3>
+                <div className="flex items-center space-x-2">
+                  {React.createElement(getSectorIcon(sectorName), {
+                    className: "h-5 w-5 text-blue-600"
+                  })}
+                  <h3 className="text-lg font-semibold text-gray-900">{sectorName}</h3>
+                </div>
                 <Badge variant="outline">{sites.length} sites</Badge>
               </div>
               
