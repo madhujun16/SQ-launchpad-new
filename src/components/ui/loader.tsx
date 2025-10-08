@@ -84,6 +84,16 @@ export const PageLoader: React.FC<{ message?: string }> = ({ message = "Loading.
   );
 };
 
+export const ContentLoader: React.FC<{ message?: string }> = ({ message }) => {
+  return (
+    <div className="flex items-center justify-center h-64 bg-gray-50">
+      <div className="text-center">
+        <Loader size="md" message={message} />
+      </div>
+    </div>
+  );
+};
+
 export const AuthLoader: React.FC<{ 
   message?: string; 
   subMessage?: string; 
