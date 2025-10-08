@@ -84,11 +84,46 @@ export const PageLoader: React.FC<{ message?: string }> = ({ message = "Loading.
   );
 };
 
-export const ContentLoader: React.FC<{ message?: string }> = ({ message }) => {
+export const AuthLoader: React.FC<{ 
+  message?: string; 
+  subMessage?: string; 
+  showProgress?: boolean;
+}> = ({ 
+  message = "Authenticating...", 
+  subMessage = "Please wait while we verify your session",
+  showProgress = false 
+}) => {
+  const [dots, setDots] = useState('');
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="flex items-center justify-center h-64 bg-gray-50">
-      <div className="text-center">
-        <Loader size="md" message={message} />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="text-center max-w-md mx-auto px-4">
+        <div className="mb-6">
+          <Loader size="lg" />
+        </div>
+        <div className="space-y-3">
+          <h2 className="text-xl font-semibold text-gray-800">
+            {message}{dots}
+          </h2>
+          <p className="text-gray-600">
+            {subMessage}
+          </p>
+          {showProgress && (
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

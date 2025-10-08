@@ -8,12 +8,12 @@ export interface TabAccess {
 }
 
 export const useRoleAccess = () => {
-  const { currentRole, profile, loading } = useAuth();
+  const { currentRole, profile, loading, refreshing } = useAuth();
   
-  // Return early if still loading
-  if (loading) {
+  // Return early if still loading or refreshing
+  if (loading || refreshing) {
     return {
-      getTabAccess: () => ({ canAccess: false, accessLevel: 'none', message: 'Loading...' })
+      getTabAccess: () => ({ canAccess: false, accessLevel: 'none', message: refreshing ? 'Refreshing session...' : 'Loading...' })
     };
   }
 

@@ -11,7 +11,7 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [browserInfo, setBrowserInfo] = useState<string>('');
   
   // Call useAuth hook at the top level (Rules of Hooks requirement)
-  const { user, loading, currentRole } = useAuth();
+  const { user, loading, refreshing, currentRole } = useAuth();
 
   // Detect browser and log info
   useEffect(() => {
@@ -48,23 +48,23 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     // Set a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      if (loading) {
+      if (loading && !refreshing) {
         console.warn('⚠️ Auth loading timeout - proceeding with fallback');
         setAuthTimeout(true);
       }
     }, 8000); // Reduced to 8 seconds for faster response
 
     return () => clearTimeout(timeoutId);
-  }, [loading]);
+  }, [loading, refreshing]);
 
   // Handle redirect to auth page when no user is found
   useEffect(() => {
-    if (!loading && !user && location.pathname !== '/auth' && !hasRedirected) {
+    if (!loading && !refreshing && !user && location.pathname !== '/auth' && !hasRedirected) {
       console.log('🔄 No user found, redirecting to auth page');
       setHasRedirected(true);
       navigate('/auth', { replace: true });
     }
-  }, [user, loading, navigate, location.pathname, hasRedirected]);
+  }, [user, loading, refreshing, navigate, location.pathname, hasRedirected]);
 
   // Reset redirect flag when user changes
   useEffect(() => {
@@ -74,17 +74,20 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [user]);
 
   // If we're not loading and there's no user, show nothing while redirecting
-  if (!loading && !user && location.pathname !== '/auth') {
+  if (!loading && !refreshing && !user && location.pathname !== '/auth') {
     return null;
   }
 
-  // Show loading state while auth is initializing (but with timeout)
-  if (loading && !authTimeout) {
+  // Show loading state while auth is initializing or refreshing (but with timeout)
+  if ((loading || refreshing) && !authTimeout) {
+    const message = refreshing ? "Refreshing session..." : "Authenticating...";
+    const subMessage = refreshing ? "Updating your authentication" : "Setting up your secure session";
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
-          <Loader size="lg" message="Authenticating..." />
-          <p className="text-gray-500 mt-4">Setting up your secure session</p>
+          <Loader size="lg" message={message} />
+          <p className="text-gray-500 mt-4">{subMessage}</p>
           <p className="text-gray-400 mt-2 text-sm">This may take a few moments</p>
         </div>
       </div>
@@ -175,8 +178,8 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
   }
 
-  // Don't render children if user is not authenticated (unless on auth page)
-  if (!user && location.pathname !== '/auth') {
+  // Don't render children if user is not authenticated (unless on auth page or refreshing)
+  if (!user && location.pathname !== '/auth' && !refreshing) {
     return null;
   }
 

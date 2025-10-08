@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { canAccessPage } from '@/lib/roles';
 import { AccessDenied } from './AccessDenied';
-import { Loader } from './ui/loader';
+import { Loader, AuthLoader } from './ui/loader';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -15,26 +15,41 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   children, 
   requiredRole 
 }) => {
-  const { currentRole, loading, availableRoles } = useAuth();
+  const { currentRole, loading, refreshing, availableRoles } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAccess, setHasCheckedAccess] = useState(false);
   const [accessTimeout, setAccessTimeout] = useState(false);
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
   useEffect(() => {
     // Set a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
-      if (loading) {
+      if (loading && !refreshing) {
         console.warn('RoleBasedRoute loading timeout - proceeding with fallback');
         setAccessTimeout(true);
       }
     }, 15000); // Increased to 15 seconds for better UX
 
     return () => clearTimeout(timeoutId);
-  }, [loading]);
+  }, [loading, refreshing]);
+
+  // Track refresh token operations
+  useEffect(() => {
+    if (refreshing) {
+      setIsRefreshingToken(true);
+      console.log('🔄 Token refresh detected, showing loader...');
+    } else {
+      // Add a small delay before hiding refresh indicator to prevent flash
+      const timer = setTimeout(() => {
+        setIsRefreshingToken(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshing]);
 
   useEffect(() => {
-    if ((!loading || accessTimeout) && currentRole && !hasCheckedAccess) {
+    if ((!loading || accessTimeout) && currentRole && !hasCheckedAccess && !refreshing) {
       console.log('🔍 RoleBasedRoute access check:', {
         currentRole,
         pathname: location.pathname,
@@ -52,7 +67,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
       
       setHasCheckedAccess(true);
     }
-  }, [currentRole, loading, location.pathname, navigate, availableRoles, hasCheckedAccess, accessTimeout]);
+  }, [currentRole, loading, refreshing, location.pathname, navigate, availableRoles, hasCheckedAccess, accessTimeout]);
 
   // Reset access check when location changes
   useEffect(() => {
@@ -60,21 +75,26 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     setAccessTimeout(false);
   }, [location.pathname]);
 
-  // Show loading state if still loading
-  if (loading) {
+  // Show loading state if still loading or refreshing token
+  if (loading || isRefreshingToken) {
+    const message = isRefreshingToken 
+      ? "Refreshing your session" 
+      : "Setting up your workspace";
+    const subMessage = isRefreshingToken 
+      ? "Please wait while we update your authentication" 
+      : "Loading your role and permissions";
+    
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <Loader size="lg" message="Setting up your workspace..." />
-          <p className="text-gray-500 mt-4">Loading your role and permissions</p>
-          <p className="text-gray-400 mt-2 text-sm">This may take a moment</p>
-        </div>
-      </div>
+      <AuthLoader 
+        message={message}
+        subMessage={subMessage}
+        showProgress={isRefreshingToken}
+      />
     );
   }
 
-  // Only show access denied if we're done loading and still no role
-  if (!currentRole && !loading && !accessTimeout) {
+  // Only show access denied if we're done loading and still no role (and not refreshing)
+  if (!currentRole && !loading && !accessTimeout && !refreshing) {
     console.error('❌ No current role found for user');
     return (
       <AccessDenied 
@@ -84,16 +104,14 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
-  // If no currentRole but not done loading, show loading
-  if (!currentRole) {
+  // If no currentRole but still loading or refreshing, show loading
+  if (!currentRole && (loading || refreshing)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center">
-          <Loader size="lg" message="Setting up your role..." />
-          <p className="text-gray-500 mt-4">Loading user permissions</p>
-          <p className="text-gray-400 mt-2 text-sm">This may take a moment</p>
-        </div>
-      </div>
+      <AuthLoader 
+        message="Setting up your role"
+        subMessage="Loading user permissions"
+        showProgress={refreshing}
+      />
     );
   }
 

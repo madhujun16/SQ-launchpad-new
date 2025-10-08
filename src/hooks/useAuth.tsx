@@ -24,6 +24,7 @@ interface AuthContextType {
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: string | null }>;
   loading: boolean;
+  refreshing: boolean;
   forceRefresh: () => Promise<void>;
 }
 
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [profileCache, setProfileCache] = useState<Map<string, { profile: Profile; timestamp: number }>>(new Map());
 
   const fetchProfile = async (userId: string) => {
@@ -255,7 +257,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const forceRefresh = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      setRefreshing(true);
+      try {
+        await fetchProfile(user.id);
+      } finally {
+        setRefreshing(false);
+      }
     }
   };
 
@@ -311,6 +318,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           async (event, session) => {
             console.log('🔍 Auth state change:', event, session ? 'Session exists' : 'No session');
             
+            // Handle refresh token events
+            if (event === 'TOKEN_REFRESHED') {
+              console.log('🔄 Token refreshed, updating session...');
+              setRefreshing(true);
+              setSession(session);
+              setUser(session?.user ?? null);
+              setRefreshing(false);
+              return;
+            }
+            
             setSession(session);
             setUser(session?.user ?? null);
 
@@ -354,6 +371,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     verifyOtp,
     createUserAsAdmin,
     loading,
+    refreshing,
     forceRefresh
   };
 
@@ -383,6 +401,7 @@ export const useAuth = () => {
       verifyOtp: async () => ({ error: 'Context not ready' }),
       createUserAsAdmin: async () => ({ error: 'Context not ready' }),
       loading: true,
+      refreshing: false,
       forceRefresh: async () => {}
     };
   }
