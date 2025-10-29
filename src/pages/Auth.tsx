@@ -30,7 +30,15 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      // Check if there's a stored redirect path from before authentication
+      const redirectPath = sessionStorage.getItem('redirectAfterAuth');
+      if (redirectPath && redirectPath !== '/auth') {
+        console.log('🔄 Redirecting back to original route:', redirectPath);
+        sessionStorage.removeItem('redirectAfterAuth');
+        navigate(redirectPath, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
   }, [user, navigate]);
 

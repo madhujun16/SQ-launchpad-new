@@ -52,19 +52,59 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         console.warn('⚠️ Auth loading timeout - proceeding with fallback');
         setAuthTimeout(true);
       }
-    }, 8000); // Reduced to 8 seconds for faster response
+    }, 10000); // Increased to 10 seconds to allow more time for session restoration
 
     return () => clearTimeout(timeoutId);
   }, [loading, refreshing]);
 
   // Handle redirect to auth page when no user is found
   useEffect(() => {
-    if (!loading && !refreshing && !user && location.pathname !== '/auth' && !hasRedirected) {
-      console.log('🔄 No user found, redirecting to auth page');
-      setHasRedirected(true);
-      navigate('/auth', { replace: true });
-    }
-  }, [user, loading, refreshing, navigate, location.pathname, hasRedirected]);
+    // Give session restoration more time by checking for localStorage session indicators
+    const hasSessionIndicator = () => {
+      try {
+        // Check for various Supabase session storage patterns
+        const supabaseKeys = Object.keys(localStorage).filter(key => 
+          key.startsWith('sb-') && key.includes('auth-token')
+        );
+        const smartqAuth = localStorage.getItem('smartq-launchpad-auth');
+        
+        // Also check for any auth-related localStorage keys
+        const hasAnyAuthData = supabaseKeys.length > 0 || !!smartqAuth;
+        
+        if (hasAnyAuthData) {
+          console.log('✅ Session indicator found in localStorage');
+        }
+        
+        return hasAnyAuthData;
+      } catch (e) {
+        console.warn('⚠️ Error checking session indicator:', e);
+        return false;
+      }
+    };
+
+    // Only redirect if we're truly not loading/refreshing AND there's no session indicator
+    // Add a delay to allow session restoration to complete, especially on page refresh
+    const redirectTimer = setTimeout(() => {
+      if (!loading && !refreshing && !user && location.pathname !== '/auth' && !hasRedirected) {
+        // Double-check session indicator before redirecting
+        const hasSession = hasSessionIndicator();
+        
+        if (!hasSession) {
+          console.log('🔄 No user found and no session indicator, redirecting to auth page');
+          setHasRedirected(true);
+          // Store the current path to redirect back after login
+          sessionStorage.setItem('redirectAfterAuth', location.pathname + location.search);
+          navigate('/auth', { replace: true });
+        } else {
+          console.log('⏳ Session indicator found, waiting longer for session restoration...');
+          // If session indicator exists but no user yet, give it more time
+          // Don't redirect - let it try to restore
+        }
+      }
+    }, 2000); // Give 2 seconds for session to restore on refresh
+
+    return () => clearTimeout(redirectTimer);
+  }, [user, loading, refreshing, navigate, location.pathname, location.search, hasRedirected]);
 
   // Reset redirect flag when user changes
   useEffect(() => {
@@ -73,8 +113,35 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [user]);
 
-  // If we're not loading and there's no user, show nothing while redirecting
+  // If we're not loading and there's no user, check for session indicator before showing nothing
+  // Give session restoration a chance to complete
+  const hasSessionIndicator = () => {
+    try {
+      // Check for various Supabase session storage patterns
+      const supabaseKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('sb-') && key.includes('auth-token')
+      );
+      const smartqAuth = localStorage.getItem('smartq-launchpad-auth');
+      return supabaseKeys.length > 0 || !!smartqAuth;
+    } catch {
+      return false;
+    }
+  };
+
+  // Don't render null (which might cause redirect) if we have a session indicator
+  // This gives time for session restoration to complete
   if (!loading && !refreshing && !user && location.pathname !== '/auth') {
+    if (hasSessionIndicator()) {
+      // Session indicator exists, show loading to wait for restoration
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="text-center">
+            <Loader size="lg" message="Restoring session..." />
+            <p className="text-gray-500 mt-4">Please wait while we restore your session</p>
+          </div>
+        </div>
+      );
+    }
     return null;
   }
 
