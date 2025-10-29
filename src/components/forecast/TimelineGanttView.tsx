@@ -83,9 +83,10 @@ const getStatusDisplayName = (status: string) => {
 };
 
 export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastData }) => {
-  // Generate timeline from current month start to furthest target date
-  const today = new Date('2025-09-20');
-  const timelineStart = new Date('2025-09-01'); // Start of current month
+  // Generate timeline from current date to furthest target date
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of day for consistent comparison
+  const timelineStart = new Date(today); // Start from current date
   
   // Find the furthest target date among all sites
   const furthestDate = forecastData.reduce((latest, site) => {
@@ -135,22 +136,26 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
 
   // Calculate position and width for each site on timeline
   const getSitePosition = (site: ForecastData) => {
-    const today = new Date('2025-09-20');
+    const currentDate = new Date(today);
+    currentDate.setHours(0, 0, 0, 0); // Set to start of day for consistent comparison
     const targetDate = new Date(site.targetDate);
+    targetDate.setHours(0, 0, 0, 0);
+    
     const totalTimelineMs = timelineEnd.getTime() - timelineStart.getTime();
     
-    // Calculate progress period (from timeline start to today)
-    const progressMs = today.getTime() - timelineStart.getTime();
-    const progressWidth = Math.max(0, (progressMs / totalTimelineMs) * 100);
-    
-    // Calculate total period (from timeline start to target date)
-    const totalPeriodMs = targetDate.getTime() - timelineStart.getTime();
+    // Calculate total period (from today to target date)
+    const totalPeriodMs = Math.max(0, targetDate.getTime() - timelineStart.getTime());
     const totalWidth = Math.min(100, Math.max(8, (totalPeriodMs / totalTimelineMs) * 100));
+    
+    // Since timeline starts from today, all visible sites show from today
+    // The progress width represents the status portion (which is the full bar for active sites)
+    // For sites that haven't reached target yet, show full width up to target
+    const progressWidth = totalWidth;
     
     return { 
       progressWidth, // Width showing actual progress/status
       totalWidth,    // Total width to target date
-      futureWidth: Math.max(0, totalWidth - progressWidth) // Remaining width in light grey
+      futureWidth: 0 // No future width when timeline starts from today
     };
   };
 
@@ -162,7 +167,7 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
           <span>Timeline Gantt View - By Sector</span>
         </CardTitle>
         <CardDescription>
-          Sites grouped by industry sector showing status transitions from Sept 1st to today, with remaining timeline to target dates.
+          Sites grouped by industry sector showing status transitions from today onwards, with remaining timeline to target dates.
           <span className="block mt-1 text-xs text-blue-600 font-medium">← Scroll horizontally to view full timeline →</span>
         </CardDescription>
       </CardHeader>
@@ -245,11 +250,11 @@ export const TimelineGanttView: React.FC<TimelineGanttViewProps> = ({ forecastDa
                                />
                              )}
                              
-                             {/* Today indicator line */}
+                             {/* Today indicator line - at the start since timeline starts from today */}
                              <div
                                className="absolute top-0 bottom-0 w-1 bg-red-500 z-10 rounded-full shadow-sm"
                                style={{
-                                 left: `calc(${position.progressWidth}% + 4px)`,
+                                 left: '2px',
                                  boxShadow: '0 0 4px rgba(239, 68, 68, 0.5)'
                                }}
                              />
