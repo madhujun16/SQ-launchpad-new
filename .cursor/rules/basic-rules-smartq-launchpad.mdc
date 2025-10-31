@@ -1,0 +1,80 @@
+Cursor/UX Rules for SmartQ Launchpad
+1. Contextual Interactivity: Edit vs. View State
+description:
+Cursor should change to pointer over actionable elements (buttons, editable fields, icons). Show text cursor over editable fields only when in Edit mode; default to arrow cursor for read-only fields.
+globs:
+*.btn, *.icon-edit, *.editable, [role='button'], .form-field.editable
+alwaysApply: True
+
+2. Visual Feedback on Save/Transition
+description:
+Show a progress spinner or subtle animation on Save actions, with a temporary cursor change to indicate action in progress. After save, revert to default and show a success indicator for updated fields.
+globs:
+*.btn-save, *.btn-complete
+alwaysApply: True
+
+3. Mobile Responsiveness
+description:
+Ensure all cursor states work seamlessly for mobile/touch—replace cursor changes with touch states (highlight, elevation, shadow, tap feedback) for inputs, buttons, and cards.
+globs:
+body, .form-container, .btn, .card, .modal
+alwaysApply: True
+
+4. Accessibility & Feedback
+description:
+Cursor should always indicate disabled/non-actionable states for role-restricted or inactive elements. Use “not-allowed” cursor for disabled fields, off buttons, or steps blocked by workflow.
+globs:
+*.disabled, *.locked, .role-restricted, [aria-disabled='true']
+alwaysApply: True
+
+5. Navigation & Step Progress
+description:
+Navigation buttons (“Previous”, “Next”, phase selectors, dashboards) use pointer cursor and mild hover animation. Progress bars/steppers show pointer if clickable, else default.
+globs:
+*.btn-nav, *.progress-stepper
+alwaysApply: True
+
+6. Notes & Collaborative Features
+description:
+Interactive site notes icons/popups trigger pointer cursor and tap animation; editable notes use text cursor in mobile and desktop.
+globs:
+*.site-notes, *.popup-edit-note
+alwaysApply: True
+
+7. Table & Dashboard Actions
+description:
+All actions/icons in dashboard cards, tables, and lists use pointer cursor. Editable table cells switch to text cursor on activation.
+globs:
+*.dashboard-actions, .table-action, .list-action
+alwaysApply: True
+
+8. Animation for Edit, Save, and Transitions
+description:
+Editable form sections transition with a slide/fade animation and mild elevation effect on cursor hover or activation, supporting microinteractions. Show “Done” pulse after save.
+globs:
+.form-edit-section, *.btn-save, *.edit-transition
+alwaysApply: True
+
+9. Theme Consistency
+description:
+Cursor color/effects, if used, should harmonize with SmartQ’s current gradient (black-to-green pre-login and inverted green post-login) and light palette, respecting high contrast for accessibility.
+globs:
+body, header, nav, .card, .btn
+alwaysApply: True
+
+10. Tooltip/Info Elements
+description:
+Cursor for tooltips, info icons, audit trail views use pointer and gentle hover effect for clarity.
+globs:
+*.tooltip, *.info, *.audit-trail
+alwaysApply: True
+
+UX Extras:
+
+Be sure every clickable element is visually distinct—add subtle shadow/elevation or opacity change on hover/click.
+
+On mobile, clickable elements should expand slightly on tap.
+
+Success/failure toasts use color and mild vibration (if supported on device).
+
+If a step is completed, add a checkmark pulse or glow to the progress indicator.

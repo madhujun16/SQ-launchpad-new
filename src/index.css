@@ -1,0 +1,618 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* SmartQ Launchpad Design System - Light Theme with Green Accents */
+    --background: 120 10% 98%; /* Soft light green background */
+    --foreground: 220 15% 20%; /* Dark gray for high readability */
+
+    --card: 120 5% 99%; /* Very soft green card background */
+    --card-foreground: 220 15% 20%;
+
+    --popover: 120 5% 99%; /* Very soft green popover background */
+    --popover-foreground: 220 15% 20%;
+
+    /* Primary: Professional emerald green hierarchy */
+    --primary: 142 76% 36%; /* #059669 - vibrant emerald */
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 142 76% 46%; /* #10B981 - lighter emerald */
+    --primary-dark: 142 76% 26%; /* #047857 - darker emerald */
+
+    /* Secondary: Professional green tints */
+    --secondary: 142 50% 92%; /* #ECFDF5 - light green surface */
+    --secondary-foreground: 142 76% 36%;
+    --secondary-hover: 142 50% 88%; /* #D1FAE5 - darker green on hover */
+
+    /* Muted: Soft green grays */
+    --muted: 120 10% 96%; /* #F0FDF4 equivalent */
+    --muted-foreground: 220 15% 45%; /* Medium gray for subtexts */
+
+    /* Accent: Soft green accent */
+    --accent: 120 15% 94%; /* #EDFDF4 equivalent */
+    --accent-foreground: 220 15% 20%;
+
+    /* Green-Focused Status Colors */
+    --success: 142 76% 36%; /* Perfect green for success states */
+    --success-foreground: 0 0% 98%;
+    
+    --warning: 162 84% 44%; /* Green-yellow for warnings - softer than amber */
+    --warning-foreground: 0 0% 98%;
+    
+    --info: 168 76% 42%; /* Emerald blue-green for info */
+    --info-foreground: 0 0% 98%;
+
+    --destructive: 0 74% 42%; /* Softened red for destructive actions */
+    --destructive-foreground: 0 0% 98%;
+
+    /* UI Elements */
+    --border: 142 30% 85%; /* Professional green border */
+    --input: 142 30% 85%;
+    --ring: 142 76% 36%; /* Primary emerald for focus rings */
+
+    --radius: 0.5rem;
+
+    /* Simplified shadows */
+    --shadow-elegant: 0 4px 12px hsl(var(--primary) / 0.1);
+    --shadow-soft: 0 2px 8px hsl(var(--primary) / 0.08);
+
+    --sidebar-background: 120 10% 97%; /* Slightly darker than main background */
+    --sidebar-foreground: 220 15% 20%;
+    --sidebar-primary: 150 40% 35%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 120 15% 95%;
+    --sidebar-accent-foreground: 220 15% 20%;
+    --sidebar-border: 120 10% 90%;
+    --sidebar-ring: 150 40% 35%;
+  }
+
+  .dark {
+    /* Dark mode with sage green accents */
+    --background: 220 15% 8%;
+    --foreground: 150 10% 90%;
+
+    --card: 220 15% 10%;
+    --card-foreground: 150 10% 90%;
+
+    --popover: 220 15% 10%;
+    --popover-foreground: 150 10% 90%;
+
+    --primary: 150 25% 45%;
+    --primary-foreground: 220 15% 8%;
+    --primary-light: 150 20% 55%;
+    --primary-dark: 150 30% 35%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 150 25% 45%;
+
+    --sidebar-background: 220 15% 12%;
+    --sidebar-foreground: 150 10% 90%;
+    --sidebar-primary: 150 25% 45%;
+    --sidebar-primary-foreground: 220 15% 8%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 150 25% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Mobile-first responsive typography */
+  html {
+    font-size: 16px;
+    /* Ensure text is readable on mobile */
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Touch-friendly button and input sizing */
+  button, input, select, textarea {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improved focus states for mobile */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Mobile-optimized scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch-friendly spacing for mobile */
+  @media (max-width: 768px) {
+    .touch-spacing {
+      padding: 1rem;
+    }
+    
+    .touch-spacing > * + * {
+      margin-top: 1rem;
+    }
+  }
+
+  /* Mobile-optimized card layouts */
+  @media (max-width: 640px) {
+    .mobile-card {
+      margin: 0.5rem;
+      border-radius: 0.75rem;
+    }
+  }
+
+  /* Improved mobile navigation */
+  @media (max-width: 768px) {
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: hsl(var(--background));
+      border-top: 1px solid hsl(var(--border));
+      padding: 0.5rem;
+    }
+  }
+
+  /* Mobile-optimized forms */
+  @media (max-width: 640px) {
+    .mobile-form input,
+    .mobile-form select,
+    .mobile-form textarea {
+      font-size: 16px; /* Prevents zoom on iOS */
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+    }
+  }
+
+  /* Mobile-optimized tables */
+  @media (max-width: 768px) {
+    .mobile-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    
+    .mobile-table td,
+    .mobile-table th {
+      padding: 0.5rem;
+      min-width: 120px;
+    }
+  }
+
+  /* Mobile-optimized modals and dialogs */
+  @media (max-width: 640px) {
+    .mobile-modal {
+      margin: 1rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+    }
+  }
+
+  /* Mobile-optimized buttons */
+  @media (max-width: 640px) {
+    .mobile-button {
+      min-height: 44px;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+    }
+  }
+
+  /* Mobile-optimized spacing */
+  @media (max-width: 640px) {
+    .mobile-spacing {
+      gap: 0.75rem;
+    }
+    
+    .mobile-spacing > * + * {
+      margin-top: 0.75rem;
+    }
+  }
+
+  /* Mobile-optimized grid layouts */
+  @media (max-width: 640px) {
+    .mobile-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .mobile-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  /* Mobile-optimized text sizing */
+  @media (max-width: 640px) {
+    .mobile-text-sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    
+    .mobile-text-base {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+    
+    .mobile-text-lg {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+  }
+
+  /* Mobile-optimized shadows */
+  @media (max-width: 640px) {
+    .mobile-shadow {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* Mobile-optimized transitions */
+  @media (max-width: 640px) {
+    .mobile-transition {
+      transition: all 0.2s ease-in-out;
+    }
+  }
+
+  /* Mobile-optimized hover states */
+  @media (hover: none) and (pointer: coarse) {
+    .mobile-hover:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  /* Mobile-optimized focus states */
+  @media (max-width: 640px) {
+    .mobile-focus:focus {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: 2px;
+    }
+  }
+
+  /* Mobile-optimized animations */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-animate {
+      animation: none;
+      transition: none;
+    }
+  }
+
+  /* Mobile-optimized loading states */
+  @media (max-width: 640px) {
+    .mobile-loading {
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  /* Mobile-optimized error states */
+  @media (max-width: 640px) {
+    .mobile-error {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: hsl(var(--destructive) / 0.1);
+      border: 1px solid hsl(var(--destructive) / 0.2);
+      color: hsl(var(--destructive));
+    }
+  }
+
+  /* Mobile-optimized success states */
+  @media (max-width: 640px) {
+    .mobile-success {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: hsl(var(--success) / 0.1);
+      border: 1px solid hsl(var(--success) / 0.2);
+      color: hsl(var(--success));
+    }
+  }
+}
+
+/* Professional green utilities and design system */
+@layer utilities {
+  /* Typography Colors - Professional Hierarchy */
+  .text-gradient-green {
+    background: linear-gradient(135deg, #059669, #047857);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-green-primary { color: hsl(142 76% 36%); }
+  .text-green-secondary { color: hsl(142 50% 30%); }
+  .text-green-tertiary { color: hsl(142 30% 50%); }
+  .text-green-muted { color: hsl(142 20% 60%); }
+  
+  /* Background Colors - Professional Surfaces */
+  .bg-green-primary { background-color: hsl(142 76% 36%); }
+  .bg-green-secondary { background-color: hsl(142 50% 92%); }
+  .bg-green-tertiary { background-color: hsl(142 30% 95%); }
+  .bg-green-subtle { background-color: hsl(142 15% 98%); }
+  
+  /* Border Colors - Professional Boundaries */
+  .border-green-primary { border-color: hsl(142 76% 36%); }
+  .border-green-secondary { border-color: hsl(142 30% 85%); }
+  .border-green-subtle { border-color: hsl(142 20% 90%); }
+  
+  /* Button Gradient Utilities */
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #059669, #047857);
+    @apply text-white shadow-md hover:shadow-lg transition-all duration-200;
+  }
+  .btn-gradient-primary:hover {
+    background: linear-gradient(135deg, #10B981, #059669);
+  }
+  
+  /* Semantic Status & Action Colors - Professional Design System */
+  
+  /* Positive/Success States (Green) */
+  .status-active { background-color: #059669; color: white; }
+  .status-completed { background-color: #059669; color: white; }
+  .status-approved { background-color: #059669; color: white; }
+  .status-live { background-color: #047857; color: white; }
+  .status-deployed { background-color: #059669; color: white; }
+  
+  /* Warning/Waiting States (Amber) */
+  .status-pending { background-color: #F59E0B; color: white; }
+  .status-waiting { background-color: #F59E0B; color: white; }
+  .status-overdue { background-color: #F97316; color: white; }
+  
+  /* Information/In-Progress States (Blue) */
+  .status-in-progress { background-color: #3B82F6; color: white; }
+  .status-processing { background-color: #06B6D4; color: white; }
+  .status-info { background-color: #3B82F6; color: white; }
+  
+  /* Destructive/Critical States (Red) */
+  .status-error { background-color: #DC2626; color: white; }
+  .status-failed { background-color: #DC2626; color: white; }
+  .status-rejected { background-color: #DC2626; color: white; }
+  .status-cancelled { background-color: #DC2626; color: white; }
+  .status-deleted { background-color: #B91C1C; color: white; }
+  
+  /* Neutral States (Gray) */
+  .status-draft { background-color: #6B7280; color: white; }
+  .status-created { background-color: #6B7280; color: white; }
+  .status-disabled { background-color: #9CA3AF; color: white; }
+}
+
+@layer components {
+  /* Optimized gradients - simplified for better performance */
+  .page-green-black {
+    background: linear-gradient(180deg, #052E1A 0%, #052E1A 15%, #000000 50%, #000000 100%);
+    background-color: #000000; /* Fallback */
+  }
+
+  .header-black-green {
+    background: linear-gradient(180deg, #0A1812 0%, #052E1A 100%);
+    background-color: #0A1812; /* Fallback */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Login page background - same as landing page */
+  .auth-page-background {
+    background: linear-gradient(180deg, #052E1A 0%, #052E1A 15%, #000000 50%, #000000 100%);
+    background-color: #000000; /* Fallback */
+    min-height: 100vh;
+  }
+
+  /* Mobile sidebar background - same as landing page */
+  .mobile-sidebar-background {
+    background: linear-gradient(180deg, #052E1A 0%, #052E1A 15%, #000000 50%, #000000 100%);
+    background-color: #000000; /* Fallback */
+  }
+
+  /* Authentication loading screen background - same as landing page */
+  .auth-loading-background {
+    background: linear-gradient(180deg, #052E1A 0%, #052E1A 15%, #000000 50%, #000000 100%);
+    background-color: #000000; /* Fallback */
+  }
+
+  /* Simplified card styles */
+  .card-surface {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  
+  .card-surface:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    background: transparent !important;
+  }
+
+  /* Override any default card styling */
+  .card-surface .card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+  }
+
+  .card-surface .card-header {
+    background: transparent !important;
+    text-align: center;
+  }
+
+  .card-surface .card-content {
+    background: transparent !important;
+    text-align: center;
+  }
+
+  /* Center align all content within cards */
+  .card-surface {
+    text-align: center;
+  }
+
+  .card-surface * {
+    text-align: center;
+  }
+
+  /* Ensure icons are centered */
+  .card-surface .icon-badge-green {
+    margin: 0 auto;
+  }
+
+  /* Simplified icon badges */
+  .icon-badge-green {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+    background: transparent;
+  }
+
+  /* Simplified text glow */
+  .text-glow-green {
+    text-shadow: 0 0 10px rgba(28, 178, 85, 0.3);
+  }
+
+  /* Rocket glow animation */
+  @keyframes rocketGlow {
+    0% {
+      opacity: 0.08;
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    100% {
+      opacity: 0.12;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+  }
+
+  /* Enhanced text glow for hero content */
+  .text-glow-green {
+    text-shadow: 0 0 20px rgba(67, 160, 71, 0.4), 0 0 40px rgba(67, 160, 71, 0.2);
+  }
+
+  /* Hero text animation */
+  @keyframes heroTextGlow {
+    0%, 100% {
+      text-shadow: 0 0 20px rgba(67, 160, 71, 0.4), 0 0 40px rgba(67, 160, 71, 0.2);
+    }
+    50% {
+      text-shadow: 0 0 30px rgba(67, 160, 71, 0.6), 0 0 60px rgba(67, 160, 71, 0.3);
+    }
+  }
+
+  /* Apply hero text glow animation */
+  .hero-glow-text {
+    animation: heroTextGlow 4s ease-in-out infinite;
+  }
+
+  /* Enhanced button glow */
+  .hero-button-glow {
+    box-shadow: 0 10px 30px rgba(67, 160, 71, 0.3), 0 0 0 1px rgba(67, 160, 71, 0.1);
+  }
+
+  .hero-button-glow:hover {
+    box-shadow: 0 15px 40px rgba(67, 160, 71, 0.4), 0 0 0 1px rgba(67, 160, 71, 0.2);
+  }
+}
+
+
+
+/* Mobile-specific utility classes */
+@layer utilities {
+  .mobile-container {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Hero section responsive improvements */
+@layer components {
+  /* Ensure hero content is always readable */
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Better text contrast on mobile */
+  @media (max-width: 768px) {
+    .hero-content h1 {
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .hero-content p {
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+  }
+  
+  /* Enhanced text contrast for all screen sizes */
+  .hero-content h1 {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .hero-content p {
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Animation positioning for different screen sizes */
+  @media (max-width: 640px) {
+    .hero-animation {
+      width: 90vw !important;
+      height: 60vh !important;
+      opacity: 0.1 !important;
+    }
+  }
+  
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .hero-animation {
+      width: 80vw !important;
+      height: 65vh !important;
+      opacity: 0.12 !important;
+    }
+  }
+  
+  @media (min-width: 1025px) {
+    .hero-animation {
+      width: 70vw !important;
+      height: 70vh !important;
+      opacity: 0.15 !important;
+    }
+  }
+}
+
+
