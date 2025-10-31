@@ -215,16 +215,18 @@ export default function UserManagement() {
         // Get the primary role for auth user creation
         const primaryRole = editingUser.user_roles[0]?.role || 'admin';
         
-        // Create authentication user first (without password for OTP-based login)
+        // Create user via edge function (handles auth user, profile, and roles)
         const { data: createdAuthUser, error: authError } = await createUserAsAdmin(
           editingUser.email,
           undefined, // No password - OTP based login
-          primaryRole
+          primaryRole,
+          editingUser.full_name,
+          editingUser.user_roles
         );
         
         if (authError) {
-          console.error('Error creating auth user:', authError);
-          toast.error(`Failed to create authentication user: ${authError}`);
+          console.error('Error creating user:', authError);
+          toast.error(`Failed to create user: ${authError}`);
           setSaving(false);
           return;
         }
@@ -238,30 +240,21 @@ export default function UserManagement() {
         
         const newUserId = createdAuthUser.user.id;
         
-        // Create new user profile
-        const { data: newProfile, error: profileError } = await supabase
+        // Reload users to get the newly created profile data
+        await loadUsers();
+        
+        // Find the newly created user to get the profile ID
+        const { data: usersData } = await supabase
           .from('profiles')
-          .insert({
-            user_id: newUserId,
-            email: editingUser.email,
-            full_name: editingUser.full_name,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          } as any)
-          .select()
+          .select('id')
+          .eq('user_id', newUserId)
           .single();
         
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          toast.error('Failed to create user profile');
-          setSaving(false);
-          return;
+        if (usersData) {
+          profileId = (usersData as any)?.id || '';
+          editingUser.id = profileId;
+          editingUser.user_id = newUserId;
         }
-        
-        profileId = (newProfile as any)?.id || '';
-        editingUser.id = profileId;
-        editingUser.user_id = newUserId;
       } else {
         // Update existing user profile
         const { error: profileError } = await supabase
@@ -280,18 +273,16 @@ export default function UserManagement() {
         }
       }
       
-      // Update user roles
-      if (editingUser.user_roles.length > 0) {
+      // Update user roles (only for existing users - new users have roles created by edge function)
+      if (!isNewUser && editingUser.user_roles.length > 0) {
         // Get the current admin user's ID for assigned_by
         const assignedByUserId = currentUser?.id || editingUser.user_id;
         
-        // First, delete existing roles (only for existing users, skip for new users)
-        if (!isNewUser) {
-          await supabase
-            .from('user_roles')
-            .delete()
-            .eq('user_id', editingUser.user_id as any);
-        }
+        // First, delete existing roles
+        await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', editingUser.user_id as any);
         
         // Then insert new roles
         const rolesToInsert = editingUser.user_roles.map(role => ({
