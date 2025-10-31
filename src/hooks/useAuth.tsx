@@ -22,7 +22,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithOtp: (email: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
-  createUserAsAdmin: (email: string, password: string, role: UserRole) => Promise<{ error: string | null }>;
+  createUserAsAdmin: (email: string, password: string | undefined, role: UserRole) => Promise<{ data?: { user: User } | null; error: string | null }>;
   loading: boolean;
   refreshing: boolean;
   forceRefresh: () => Promise<void>;
@@ -241,17 +241,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const createUserAsAdmin = async (email: string, password: string, role: UserRole) => {
+  const createUserAsAdmin = async (email: string, password: string | undefined, role: UserRole) => {
     try {
-      const { error } = await supabase.auth.admin.createUser({
+      // For OTP-based login, we can create users without a password
+      const createOptions: any = {
         email,
-        password,
         email_confirm: true,
         user_metadata: { role }
-      });
-      return { error: error?.message || null };
-    } catch (error) {
-      return { error: 'An unexpected error occurred' };
+      };
+      
+      // Only include password if provided (for backward compatibility or special cases)
+      if (password) {
+        createOptions.password = password;
+      }
+      
+      const { data, error } = await supabase.auth.admin.createUser(createOptions);
+      
+      if (error) {
+        return { error: error.message || null, data: null };
+      }
+      
+      return { data: data ? { user: data.user } : null, error: null };
+    } catch (error: any) {
+      return { error: error?.message || 'An unexpected error occurred', data: null };
     }
   };
 
@@ -399,7 +411,7 @@ export const useAuth = () => {
       signOut: async () => {},
       signInWithOtp: async () => ({ error: 'Context not ready' }),
       verifyOtp: async () => ({ error: 'Context not ready' }),
-      createUserAsAdmin: async () => ({ error: 'Context not ready' }),
+      createUserAsAdmin: async () => ({ error: 'Context not ready', data: null }),
       loading: true,
       refreshing: false,
       forceRefresh: async () => {}

@@ -45,7 +45,7 @@ interface User {
 }
 
 export default function UserManagement() {
-  const { currentRole, createUserAsAdmin } = useAuth();
+  const { currentRole, createUserAsAdmin, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,46 +188,55 @@ export default function UserManagement() {
     
     setSaving(true);
     try {
+      const isNewUser = editingUser.id === 'new';
       let profileId = editingUser.id;
       
       // Check if this is a new user (id === 'new')
-      if (editingUser.id === 'new') {
-        // Use custom password if provided, otherwise generate a temporary password
-        const tempPassword = (editingUser as any).tempPassword || crypto.randomUUID().replace(/-/g, '') + '!';
+      if (isNewUser) {
+        // Validate required fields
+        if (!editingUser.email || !editingUser.email.trim()) {
+          toast.error('Email is required');
+          setSaving(false);
+          return;
+        }
+        
+        if (!editingUser.full_name || !editingUser.full_name.trim()) {
+          toast.error('Full name is required');
+          setSaving(false);
+          return;
+        }
+        
+        if (editingUser.user_roles.length === 0) {
+          toast.error('At least one role is required');
+          setSaving(false);
+          return;
+        }
         
         // Get the primary role for auth user creation
         const primaryRole = editingUser.user_roles[0]?.role || 'admin';
         
-        // Create authentication user first
-        const { error: authError } = await createUserAsAdmin(
+        // Create authentication user first (without password for OTP-based login)
+        const { data: createdAuthUser, error: authError } = await createUserAsAdmin(
           editingUser.email,
-          tempPassword,
+          undefined, // No password - OTP based login
           primaryRole
         );
         
         if (authError) {
           console.error('Error creating auth user:', authError);
           toast.error(`Failed to create authentication user: ${authError}`);
+          setSaving(false);
           return;
         }
         
-        // Get the created auth user ID
-        const { data: authUser, error: authUserError } = await supabase.auth.admin.listUsers();
-        
-        if (authUserError) {
-          console.error('Error fetching auth user:', authUserError);
-          toast.error('Failed to fetch created user');
+        if (!createdAuthUser?.user?.id) {
+          console.error('Created user ID not found');
+          toast.error('Failed to get created user ID');
+          setSaving(false);
           return;
         }
         
-        const createdUser = authUser.users.find((u: any) => u.email === editingUser.email);
-        if (!createdUser) {
-          console.error('Created user not found');
-          toast.error('Failed to find created user');
-          return;
-        }
-        
-        const newUserId = createdUser.id;
+        const newUserId = createdAuthUser.user.id;
         
         // Create new user profile
         const { data: newProfile, error: profileError } = await supabase
@@ -246,19 +255,13 @@ export default function UserManagement() {
         if (profileError) {
           console.error('Error creating profile:', profileError);
           toast.error('Failed to create user profile');
+          setSaving(false);
           return;
         }
         
         profileId = (newProfile as any)?.id || '';
         editingUser.id = profileId;
         editingUser.user_id = newUserId;
-        
-        // Show success message with password info
-        if (!(editingUser as any).tempPassword) {
-          toast.success(`User created successfully! Password: ${tempPassword}`);
-        } else {
-          toast.success('User created successfully!');
-        }
       } else {
         // Update existing user profile
         const { error: profileError } = await supabase
@@ -272,23 +275,29 @@ export default function UserManagement() {
         if (profileError) {
           console.error('Error updating profile:', profileError);
           toast.error('Failed to update user profile');
+          setSaving(false);
           return;
         }
       }
       
       // Update user roles
       if (editingUser.user_roles.length > 0) {
-        // First, delete existing roles
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', editingUser.user_id as any);
+        // Get the current admin user's ID for assigned_by
+        const assignedByUserId = currentUser?.id || editingUser.user_id;
+        
+        // First, delete existing roles (only for existing users, skip for new users)
+        if (!isNewUser) {
+          await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', editingUser.user_id as any);
+        }
         
         // Then insert new roles
         const rolesToInsert = editingUser.user_roles.map(role => ({
           user_id: editingUser.user_id,
           role: role.role as Database["public"]["Enums"]["app_role"],
-          assigned_by: editingUser.user_id,
+          assigned_by: assignedByUserId,
           assigned_at: new Date().toISOString(),
           created_at: new Date().toISOString()
         }));
@@ -300,21 +309,16 @@ export default function UserManagement() {
         if (rolesError) {
           console.error('Error updating roles:', rolesError);
           toast.error('Failed to update user roles');
+          setSaving(false);
           return;
         }
       }
       
-      // Update local state
-      if (editingUser.id === 'new') {
-        // Add new user to the list
-        setUsers(prev => [...prev, editingUser]);
-      } else {
-        // Update existing user
-        setUsers(prev => prev.map(u => u.id === editingUser.id ? editingUser : u));
-      }
-      
       setEditingUser(null);
-      if (editingUser.id !== 'new') {
+      
+      if (isNewUser) {
+        toast.success('User created successfully! They can now log in using OTP.');
+      } else {
         toast.success('User updated successfully');
       }
       
@@ -712,23 +716,6 @@ export default function UserManagement() {
                   disabled={editingUser.id !== 'new'} // Disable email editing for existing users
                 />
               </div>
-              {editingUser.id === 'new' && (
-                <div>
-                  <Label htmlFor="userPassword">Password (Optional)</Label>
-                  <Input
-                    id="userPassword"
-                    type="password"
-                    placeholder="Leave empty for auto-generated password"
-                    onChange={(e) => {
-                      // Store password in a temporary field
-                      (editingUser as any).tempPassword = e.target.value;
-                    }}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    If left empty, a secure password will be auto-generated
-                  </p>
-                </div>
-              )}
               <div>
                 <Label htmlFor="userRoles">Roles</Label>
                 <div className="space-y-2">
