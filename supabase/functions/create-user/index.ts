@@ -93,13 +93,50 @@ const handler = async (req) => {
     }
 
     // Parse request body - updated for OTP-based login (no password) and multiple roles
-    const { email, full_name, roles } = await req.json();
-
-    // Validate input
-    if (!email || !full_name || !roles || !Array.isArray(roles) || roles.length === 0) {
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log("Received request body:", JSON.stringify(requestBody, null, 2));
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
       return new Response(
         JSON.stringify({
-          error: "Missing required fields: email, full_name, and roles (array) are required"
+          error: "Invalid JSON in request body"
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
+
+    const { email, full_name, roles } = requestBody;
+
+    // Validate input
+    if (!email || !full_name) {
+      console.error("Missing required fields:", { email: !!email, full_name: !!full_name, roles });
+      return new Response(
+        JSON.stringify({
+          error: "Missing required fields: email and full_name are required"
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
+
+    if (!roles || !Array.isArray(roles) || roles.length === 0) {
+      console.error("Invalid roles:", roles);
+      return new Response(
+        JSON.stringify({
+          error: "Missing or invalid roles: roles must be a non-empty array"
         }),
         {
           status: 400,
@@ -192,13 +229,20 @@ const handler = async (req) => {
     }
 
     // Assign all roles to the new user (support multiple roles)
-    const rolesToInsert = roles.map((roleObj) => ({
-      user_id: newUserId,
-      role: roleObj.role,
-      assigned_by: user.id,
-      assigned_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    }));
+    // Handle both { role: 'admin' } format and direct string format
+    const rolesToInsert = roles.map((roleObj) => {
+      const roleValue = typeof roleObj === 'string' ? roleObj : roleObj.role;
+      if (!roleValue) {
+        throw new Error(`Invalid role format: ${JSON.stringify(roleObj)}`);
+      }
+      return {
+        user_id: newUserId,
+        role: roleValue,
+        assigned_by: user.id,
+        assigned_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      };
+    });
 
     const { error: roleAssignError } = await supabaseAdmin
       .from("user_roles")
@@ -223,7 +267,8 @@ const handler = async (req) => {
       );
     }
 
-    console.log(`Successfully created user: ${email} with roles: ${roles.map(r => r.role).join(", ")}`);
+    const roleNames = roles.map((r) => (typeof r === 'string' ? r : r.role)).join(", ");
+    console.log(`Successfully created user: ${email} with roles: ${roleNames}`);
 
     return new Response(
       JSON.stringify({

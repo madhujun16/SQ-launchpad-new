@@ -259,11 +259,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
 
+      // Log for debugging
+      console.log('Edge function response:', { data, error });
+
       if (error) {
-        return { error: error.message || null, data: null };
+        console.error('Edge function invoke error:', error);
+        // Try to extract error message from data if available
+        const errorMessage = error.message || (data?.error) || 'Failed to invoke edge function';
+        return { error: errorMessage, data: null };
       }
 
+      // Check for error in response data (even if status is 200)
       if (data?.error) {
+        console.error('Edge function returned error:', data.error);
         return { error: data.error, data: null };
       }
 
