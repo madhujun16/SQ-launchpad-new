@@ -117,7 +117,11 @@ const handler = async (req) => {
 
     // Validate input
     if (!email || !full_name) {
-      console.error("Missing required fields:", { email: !!email, full_name: !!full_name, roles });
+      console.error("Missing required fields:", {
+        email: !!email,
+        full_name: !!full_name,
+        roles
+      });
       return new Response(
         JSON.stringify({
           error: "Missing required fields: email and full_name are required"
@@ -196,42 +200,85 @@ const handler = async (req) => {
 
     const newUserId = newUser.user.id;
 
-    // Create user profile
-    const { data: profile, error: profileError } = await supabaseAdmin
+    // Check if profile was auto-created by trigger, if so update it, otherwise create it
+    let profile;
+    const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
-      .insert({
-        user_id: newUserId,
-        email: email.toLowerCase(),
-        full_name: full_name,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+      .select("*")
+      .eq("user_id", newUserId)
+      .maybeSingle();
 
-    if (profileError) {
-      console.error("Profile creation error:", profileError);
-      // Clean up: delete the auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(newUserId);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to create user profile"
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders
+    if (existingProfile) {
+      // Profile was auto-created by trigger, update it with our data
+      console.log("Profile already exists (created by trigger), updating...");
+      const { data: updatedProfile, error: updateError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          email: email.toLowerCase(),
+          full_name: full_name,
+          is_active: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", newUserId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Profile update error:", updateError);
+        await supabaseAdmin.auth.admin.deleteUser(newUserId);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to update user profile: " + updateError.message
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders
+            }
           }
-        }
-      );
+        );
+      }
+      profile = updatedProfile;
+    } else {
+      // Create user profile (if trigger didn't create it)
+      const { data: newProfile, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .insert({
+          user_id: newUserId,
+          email: email.toLowerCase(),
+          full_name: full_name,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        // Clean up: delete the auth user if profile creation fails
+        await supabaseAdmin.auth.admin.deleteUser(newUserId);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to create user profile: " + profileError.message
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders
+            }
+          }
+        );
+      }
+      profile = newProfile;
     }
 
     // Assign all roles to the new user (support multiple roles)
     // Handle both { role: 'admin' } format and direct string format
     const rolesToInsert = roles.map((roleObj) => {
-      const roleValue = typeof roleObj === 'string' ? roleObj : roleObj.role;
+      const roleValue = typeof roleObj === "string" ? roleObj : roleObj.role;
       if (!roleValue) {
         throw new Error(`Invalid role format: ${JSON.stringify(roleObj)}`);
       }
@@ -255,7 +302,7 @@ const handler = async (req) => {
       await supabaseAdmin.auth.admin.deleteUser(newUserId);
       return new Response(
         JSON.stringify({
-          error: "Failed to assign roles to user"
+          error: "Failed to assign roles to user: " + roleAssignError.message
         }),
         {
           status: 500,
@@ -267,7 +314,7 @@ const handler = async (req) => {
       );
     }
 
-    const roleNames = roles.map((r) => (typeof r === 'string' ? r : r.role)).join(", ");
+    const roleNames = roles.map((r) => (typeof r === "string" ? r : r.role)).join(", ");
     console.log(`Successfully created user: ${email} with roles: ${roleNames}`);
 
     return new Response(

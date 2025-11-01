@@ -226,7 +226,9 @@ export default function UserManagement() {
         
         if (authError) {
           console.error('Error creating user:', authError);
-          toast.error(`Failed to create user: ${authError}`);
+          // Show more detailed error message
+          const errorMsg = typeof authError === 'string' ? authError : authError.message || 'Failed to create user';
+          toast.error(`Failed to create user: ${errorMsg}`);
           setSaving(false);
           return;
         }

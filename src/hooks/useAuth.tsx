@@ -250,39 +250,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error: 'Not authenticated', data: null };
       }
 
-      // Call the edge function instead of using admin API directly
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email,
-          full_name: fullName,
-          roles: roles
+      // Get the Supabase URL and anon key for direct fetch
+      // Import from client file or use env vars
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ngzvoekvwgjinagdvdhf.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nenZvZWt2d2dqaW5hZ2R2ZGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NzE1MzksImV4cCI6MjA2OTM0NzUzOX0.uYNZPJvpIRVBQYrP1JilauuF2evR-vgvSNp3RnnWHGw';
+      const functionUrl = `${supabaseUrl}/functions/v1/create-user`;
+
+      // Use fetch directly to get better error handling
+      try {
+        const response = await fetch(functionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': anonKey
+          },
+          body: JSON.stringify({
+            email,
+            full_name: fullName,
+            roles: roles
+          })
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+          // Extract error message from response
+          const errorMessage = responseData?.error || `Request failed with status ${response.status}`;
+          console.error('Edge function error:', errorMessage);
+          return { error: errorMessage, data: null };
         }
-      });
 
-      // Log for debugging
-      console.log('Edge function response:', { data, error });
+        if (responseData?.error) {
+          console.error('Edge function returned error:', responseData.error);
+          return { error: responseData.error, data: null };
+        }
 
-      if (error) {
-        console.error('Edge function invoke error:', error);
-        // Try to extract error message from data if available
-        const errorMessage = error.message || (data?.error) || 'Failed to invoke edge function';
-        return { error: errorMessage, data: null };
+        if (responseData?.success && responseData?.user) {
+          return { 
+            data: { user: { id: responseData.user.user_id } as User }, 
+            error: null 
+          };
+        }
+
+        return { error: 'Unexpected response from server', data: null };
+      } catch (fetchError: any) {
+        console.error('Fetch error:', fetchError);
+        return { error: fetchError?.message || 'Network error occurred', data: null };
       }
-
-      // Check for error in response data (even if status is 200)
-      if (data?.error) {
-        console.error('Edge function returned error:', data.error);
-        return { error: data.error, data: null };
-      }
-
-      if (data?.success && data?.user) {
-        return { 
-          data: { user: { id: data.user.user_id } as User }, 
-          error: null 
-        };
-      }
-
-      return { error: 'Unexpected response from server', data: null };
     } catch (error: any) {
       return { error: error?.message || 'An unexpected error occurred', data: null };
     }
