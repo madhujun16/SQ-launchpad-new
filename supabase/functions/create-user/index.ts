@@ -200,64 +200,92 @@ const handler = async (req) => {
 
     const newUserId = newUser.user.id;
 
-    // Check if profile was auto-created by trigger, if so update it, otherwise create it
+    // Wait a brief moment for trigger to potentially create profile (if it does)
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Use upsert to handle both cases: profile created by trigger or not
+    // This will insert if doesn't exist, or update if it does (by user_id)
     let profile;
-    const { data: existingProfile } = await supabaseAdmin
+    const { data: upsertedProfile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("*")
-      .eq("user_id", newUserId)
-      .maybeSingle();
+      .upsert({
+        user_id: newUserId,
+        email: email.toLowerCase(),
+        full_name: full_name,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
 
-    if (existingProfile) {
-      // Profile was auto-created by trigger, update it with our data
-      console.log("Profile already exists (created by trigger), updating...");
-      const { data: updatedProfile, error: updateError } = await supabaseAdmin
-        .from("profiles")
-        .update({
-          email: email.toLowerCase(),
-          full_name: full_name,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", newUserId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error("Profile update error:", updateError);
-        await supabaseAdmin.auth.admin.deleteUser(newUserId);
-        return new Response(
-          JSON.stringify({
-            error: "Failed to update user profile: " + updateError.message
-          }),
-          {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json",
-              ...corsHeaders
-            }
+    // If upsert succeeded, use the returned profile
+    if (upsertedProfile && !profileError) {
+      profile = upsertedProfile;
+    } else if (profileError) {
+      console.error("Profile upsert error:", profileError);
+      
+      // If it's a duplicate email error, try to find and update by email instead
+      if (profileError.message?.includes('profiles_email_key')) {
+        console.log("Email already exists, attempting to update by email...");
+        const { data: existingByEmail, error: findError } = await supabaseAdmin
+          .from("profiles")
+          .select("*")
+          .eq("email", email.toLowerCase())
+          .maybeSingle();
+        
+        if (existingByEmail && existingByEmail.user_id === newUserId) {
+          // Same user, just update it
+          const { data: updatedProfile, error: updateError } = await supabaseAdmin
+            .from("profiles")
+            .update({
+              user_id: newUserId,
+              full_name: full_name,
+              is_active: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", newUserId)
+            .select()
+            .single();
+          
+          if (updateError) {
+            console.error("Profile update error:", updateError);
+            await supabaseAdmin.auth.admin.deleteUser(newUserId);
+            return new Response(
+              JSON.stringify({
+                error: "Failed to update user profile: " + updateError.message
+              }),
+              {
+                status: 400,
+                headers: {
+                  "Content-Type": "application/json",
+                  ...corsHeaders
+                }
+              }
+            );
           }
-        );
-      }
-      profile = updatedProfile;
-    } else {
-      // Create user profile (if trigger didn't create it)
-      const { data: newProfile, error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .insert({
-          user_id: newUserId,
-          email: email.toLowerCase(),
-          full_name: full_name,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (profileError) {
-        console.error("Profile creation error:", profileError);
-        // Clean up: delete the auth user if profile creation fails
+          profile = updatedProfile;
+        } else {
+          // Email exists for a different user
+          await supabaseAdmin.auth.admin.deleteUser(newUserId);
+          return new Response(
+            JSON.stringify({
+              error: "Email already exists for another user"
+            }),
+            {
+              status: 400,
+              headers: {
+                "Content-Type": "application/json",
+                ...corsHeaders
+              }
+            }
+          );
+        }
+      } else {
+        // Other error, clean up
         await supabaseAdmin.auth.admin.deleteUser(newUserId);
         return new Response(
           JSON.stringify({
@@ -272,7 +300,6 @@ const handler = async (req) => {
           }
         );
       }
-      profile = newProfile;
     }
 
     // Assign all roles to the new user (support multiple roles)
