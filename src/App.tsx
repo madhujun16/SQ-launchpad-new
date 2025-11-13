@@ -71,7 +71,9 @@ const SoftwareHardwareManagement = createLazyComponent(() => import("./pages/Sof
 const GeneralSettings = createLazyComponent(() => import("./pages/GeneralSettings"), "GeneralSettings");
 const AuditLogs = createLazyComponent(() => import("./pages/AuditLogs"), "AuditLogs");
 
+const Insights = createLazyComponent(() => import("./pages/Insights"), "Insights");
 const Forecast = createLazyComponent(() => import("./pages/Forecast"), "Forecast");
+const Financials = createLazyComponent(() => import("./pages/Financials"), "Financials");
 
 // Sites-related pages
 const Site = createLazyComponent(() => import("./pages/Site"), "Site");
@@ -515,9 +517,29 @@ function App() {
                 }
               />
 
-              {/* Forecast */}
+              {/* Insights */}
               <Route
-                path="/forecast"
+                path="/insights"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <Insights />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Forecast (under Insights) */}
+              <Route
+                path="/insights/forecast"
                 element={
                   <AuthProvider>
                     <SiteProvider>
@@ -534,6 +556,29 @@ function App() {
                   </AuthProvider>
                 }
               />
+
+              {/* Financials (under Insights) */}
+              <Route
+                path="/insights/financials"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <Financials />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Legacy Forecast route - redirect to Insights */}
+              <Route path="/forecast" element={<Navigate to="/insights/forecast" replace />} />
 
               {/* Legacy route redirects */}
               <Route path="/site-study" element={<Navigate to="/sites" replace />} />

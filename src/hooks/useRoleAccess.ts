@@ -93,6 +93,16 @@ export const useRoleAccess = () => {
         }
         return { canAccess: false, accessLevel: 'none', message: 'Admin or Ops Manager access required' };
 
+      case '/insights':
+      case '/insights/forecast':
+      case '/insights/financials':
+        if (currentRole === 'admin') {
+          return { canAccess: true, accessLevel: 'full' };
+        } else if (currentRole === 'ops_manager') {
+          return { canAccess: true, accessLevel: 'assigned', message: 'Viewing assigned sites insights only' };
+        }
+        return { canAccess: false, accessLevel: 'none', message: 'Admin or Ops Manager access required' };
+
       default:
         // Check if the path starts with any of the known tab paths
         if (tabPath.startsWith('/sites')) {
@@ -126,6 +136,14 @@ export const useRoleAccess = () => {
         if (tabPath.startsWith('/platform-configuration')) {
           if (currentRole === 'admin') {
             return { canAccess: true, accessLevel: 'full' };
+          }
+        }
+        
+        if (tabPath.startsWith('/insights')) {
+          if (currentRole === 'admin') {
+            return { canAccess: true, accessLevel: 'full' };
+          } else if (currentRole === 'ops_manager') {
+            return { canAccess: true, accessLevel: 'assigned', message: 'Viewing assigned sites insights only' };
           }
         }
         
