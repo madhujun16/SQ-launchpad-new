@@ -71,7 +71,9 @@ const SoftwareHardwareManagement = createLazyComponent(() => import("./pages/Sof
 const GeneralSettings = createLazyComponent(() => import("./pages/GeneralSettings"), "GeneralSettings");
 const AuditLogs = createLazyComponent(() => import("./pages/AuditLogs"), "AuditLogs");
 
+const Insights = createLazyComponent(() => import("./pages/Insights"), "Insights");
 const Forecast = createLazyComponent(() => import("./pages/Forecast"), "Forecast");
+const Financials = createLazyComponent(() => import("./pages/Financials"), "Financials");
 
 // Sites-related pages
 const Site = createLazyComponent(() => import("./pages/Site"), "Site");
@@ -87,6 +89,9 @@ const HardwareMaster = createLazyComponent(() => import("./pages/HardwareMaster"
 // Assets-related pages
 const Inventory = createLazyComponent(() => import("./pages/Inventory"), "Inventory");
 const LicenseManagement = createLazyComponent(() => import("./pages/LicenseManagement"), "LicenseManagement");
+
+// Backend API Test Component
+const BackendApiExample = createLazyComponent(() => import("./components/BackendApiExample"), "BackendApiExample");
 
 // Create a client with optimized settings for Chrome and performance
 const queryClient = new QueryClient({
@@ -515,9 +520,29 @@ function App() {
                 }
               />
 
-              {/* Forecast */}
+              {/* Insights */}
               <Route
-                path="/forecast"
+                path="/insights"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <Insights />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Forecast (under Insights) */}
+              <Route
+                path="/insights/forecast"
                 element={
                   <AuthProvider>
                     <SiteProvider>
@@ -526,6 +551,49 @@ function App() {
                           <Layout>
                             <Suspense fallback={<PageLoader />}>
                               <Forecast />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Financials (under Insights) */}
+              <Route
+                path="/insights/financials"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <Financials />
+                            </Suspense>
+                          </Layout>
+                        </RoleBasedRoute>
+                      </AuthGuard>
+                    </SiteProvider>
+                  </AuthProvider>
+                }
+              />
+
+              {/* Legacy Forecast route - redirect to Insights */}
+              <Route path="/forecast" element={<Navigate to="/insights/forecast" replace />} />
+
+              {/* Backend API Test Route */}
+              <Route
+                path="/api-test"
+                element={
+                  <AuthProvider>
+                    <SiteProvider>
+                      <AuthGuard>
+                        <RoleBasedRoute>
+                          <Layout>
+                            <Suspense fallback={<PageLoader />}>
+                              <BackendApiExample />
                             </Suspense>
                           </Layout>
                         </RoleBasedRoute>

@@ -64,6 +64,9 @@ export const ROLES: Record<UserRole, RoleConfig> = {
       '/platform-configuration/software-hardware',
       '/platform-configuration/general',
       '/platform-configuration/audit-logs',
+      '/insights',
+      '/insights/forecast',
+      '/insights/financials',
   
       // Note: Integrations and Forecast routes removed - not integrated into main navigation
       '/admin', 
@@ -237,6 +240,9 @@ export const canAccessPage = (userRole: UserRole, pagePath: string): boolean => 
     '/license-management',
     '/admin',
     '/forecast',
+    '/insights',
+    '/insights/forecast',
+    '/insights/financials',
     '/deployment'
   ];
   

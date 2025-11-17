@@ -61,9 +61,8 @@ const Forecast: React.FC = () => {
   const roleConfig = getRoleConfig(currentRole || 'admin');
   
   const [forecastData, setForecastData] = useState<ForecastData[]>([]);
-  const [financialData, setFinancialData] = useState<FinancialForecast[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'timeline' | 'financial' | 'summary'>('summary');
+  const [viewMode, setViewMode] = useState<'summary' | 'timeline'>('summary');
   const [showTeamDetailsModal, setShowTeamDetailsModal] = useState(false);
 
   // Mock deployment team data
@@ -83,7 +82,7 @@ const Forecast: React.FC = () => {
   const visibleTeamMembers = deploymentTeam.slice(0, 7);
 
   // Check access permissions
-  const tabAccess = getTabAccess('/forecast');
+  const tabAccess = getTabAccess('/insights/forecast');
   
   if (!tabAccess.canAccess) {
     return (
@@ -329,7 +328,6 @@ const Forecast: React.FC = () => {
     ];
 
     setForecastData(mockForecastData);
-    setFinancialData(mockFinancialData);
     setLoading(false);
   }, [currentRole, profile]);
 
@@ -576,28 +574,6 @@ const Forecast: React.FC = () => {
       <div className="mb-6">
         <div className="flex space-x-1 bg-white p-1 rounded-lg border">
           <button
-            onClick={() => setViewMode('timeline')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'timeline'
-                ? 'bg-green-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <Calendar className="h-4 w-4 mr-2 inline" />
-            Timeline View
-          </button>
-          <button
-            onClick={() => setViewMode('financial')}
-            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              viewMode === 'financial'
-                ? 'bg-green-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <DollarSign className="h-4 w-4 mr-2 inline" />
-            Financial Forecast
-          </button>
-          <button
             onClick={() => setViewMode('summary')}
             className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               viewMode === 'summary'
@@ -608,94 +584,19 @@ const Forecast: React.FC = () => {
             <BarChart3 className="h-4 w-4 mr-2 inline" />
             Summary
           </button>
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'timeline'
+                ? 'bg-green-600 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Calendar className="h-4 w-4 mr-2 inline" />
+            Timeline View
+          </button>
         </div>
       </div>
-
-      {/* Timeline View - Gantt Chart by Organization */}
-      {viewMode === 'timeline' && (
-        <div className="space-y-6">
-          <TimelineGanttView forecastData={forecastData} />
-        </div>
-      )}
-
-             {/* Financial Forecast View */}
-       {viewMode === 'financial' && (
-         <div className="space-y-6">
-           {/* Financial Summary Card */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <Card>
-               <CardContent className="p-4">
-                 <div className="text-center">
-                   <p className="text-sm text-gray-600">Total 3-Month Budget</p>
-                   <p className="text-2xl font-bold text-gray-900">£165,000</p>
-                   <p className="text-xs text-gray-500">Oct-Dec 2025</p>
-                 </div>
-               </CardContent>
-             </Card>
-             <Card>
-               <CardContent className="p-4">
-                 <div className="text-center">
-                   <p className="text-sm text-gray-600">Total Projects</p>
-                   <p className="text-2xl font-bold text-gray-900">15</p>
-                   <p className="text-xs text-gray-500">Across 3 months</p>
-                 </div>
-               </CardContent>
-             </Card>
-           </div>
-
-           <Card>
-             <CardHeader>
-               <CardTitle className="flex items-center space-x-2">
-                 <span>Monthly Cost Insights (Next 3 Months)</span>
-               </CardTitle>
-               <CardDescription>
-                 Hardware, software costs, project timelines, and cost variance analysis for upcoming deployments
-               </CardDescription>
-             </CardHeader>
-             <CardContent>
-               <div className="space-y-4">
-                 {financialData.map((month) => (
-                   <div key={month.month} className="border rounded-lg p-4">
-                     <h3 className="font-medium mb-3">{month.month}</h3>
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                       <div>
-                         <div className="text-sm text-gray-600">Hardware Costs</div>
-                         <div className="text-lg font-semibold text-green-600">
-                           £{month.hardwareCosts.toLocaleString()}
-                         </div>
-                       </div>
-                       <div>
-                         <div className="text-sm text-gray-600">Software Costs</div>
-                         <div className="text-lg font-semibold text-purple-600">
-                           £{month.softwareCosts.toLocaleString()}
-                         </div>
-                       </div>
-                       <div>
-                         <div className="text-sm text-gray-600">Projects Count</div>
-                         <div className="text-lg font-semibold text-green-600">
-                           {month.projectsCount || 0}
-                         </div>
-                         <div className="text-xs text-gray-500">
-                           {month.statusBreakdown || 'Planning phase'}
-                         </div>
-                       </div>
-                       <div>
-                         <div className="text-sm text-gray-600">Cost Variance</div>
-                         <div className={`text-lg font-semibold ${month.costVariancePercentage > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                           {month.costVariancePercentage > 0 ? '+' : ''}{month.costVariancePercentage}%
-                         </div>
-                         <div className="text-xs text-gray-500">
-                           vs Avg: £{month.avgMonthlyCostPerSite.toLocaleString()}
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             </CardContent>
-           </Card>
-         </div>
-       )}
 
       {/* Summary View */}
       {viewMode === 'summary' && (
@@ -708,131 +609,131 @@ const Forecast: React.FC = () => {
                   <span>Project Status Breakdown</span>
                 </CardTitle>
               </CardHeader>
-                             <CardContent>
-                 <div className="space-y-3">
-                                       {/* Live Status */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Live</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full"
-                            style={{ width: `${(summaryMetrics.completed / summaryMetrics.total) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{summaryMetrics.completed}</span>
+              <CardContent>
+                <div className="space-y-3">
+                  {/* Live Status */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Live</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{ width: `${(summaryMetrics.completed / summaryMetrics.total) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{summaryMetrics.completed}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Deployed/Procurement Status */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Deployed/Procurement</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-orange-600 h-2 rounded-full"
+                          style={{ width: `${(summaryMetrics.inProgress / summaryMetrics.total) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{summaryMetrics.inProgress}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Planning Status (Created, Site Study, Scoping, Approved) */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Planning Phase</span>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-gray-600 h-2 rounded-full"
+                          style={{ width: `${(summaryMetrics.planning / summaryMetrics.total) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{summaryMetrics.planning}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Detailed Status Breakdown */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="text-xs text-gray-500 mb-2">Detailed Breakdown:</div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span>Created:</span>
+                        <span>{forecastData.filter(item => item.status === 'Created').length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Site Study Done:</span>
+                        <span>{forecastData.filter(item => item.status === 'site_study_done').length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Scoping Done:</span>
+                        <span>{forecastData.filter(item => item.status === 'scoping_done').length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Approved:</span>
+                        <span>{forecastData.filter(item => item.status === 'approved').length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Procurement Done:</span>
+                        <span>{forecastData.filter(item => item.status === 'procurement_done').length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Deployed:</span>
+                        <span>{forecastData.filter(item => item.status === 'deployed').length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Live:</span>
+                        <span>{forecastData.filter(item => item.status === 'live').length}</span>
                       </div>
                     </div>
-                   
-                   {/* Deployed/Procurement Status */}
-                   <div className="flex items-center justify-between">
-                     <span className="text-sm">Deployed/Procurement</span>
-                     <div className="flex items-center space-x-2">
-                       <div className="w-16 bg-gray-200 rounded-full h-2">
-                         <div 
-                           className="bg-orange-600 h-2 rounded-full"
-                           style={{ width: `${(summaryMetrics.inProgress / summaryMetrics.total) * 100}%` }}
-                         />
-                       </div>
-                       <span className="text-sm font-medium">{summaryMetrics.inProgress}</span>
-                     </div>
-                   </div>
-                   
-                   {/* Planning Status (Created, Site Study, Scoping, Approved) */}
-                   <div className="flex items-center justify-between">
-                     <span className="text-sm">Planning Phase</span>
-                     <div className="flex items-center space-x-2">
-                       <div className="w-16 bg-gray-200 rounded-full h-2">
-                         <div 
-                           className="bg-gray-600 h-2 rounded-full"
-                           style={{ width: `${(summaryMetrics.planning / summaryMetrics.total) * 100}%` }}
-                         />
-                       </div>
-                       <span className="text-sm font-medium">{summaryMetrics.planning}</span>
-                     </div>
-                   </div>
-                   
-                   {/* Detailed Status Breakdown */}
-                   <div className="mt-4 pt-4 border-t">
-                     <div className="text-xs text-gray-500 mb-2">Detailed Breakdown:</div>
-                     <div className="space-y-1 text-xs">
-                       <div className="flex justify-between">
-                         <span>Created:</span>
-                         <span>{forecastData.filter(item => item.status === 'Created').length}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Site Study Done:</span>
-                         <span>{forecastData.filter(item => item.status === 'site_study_done').length}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Scoping Done:</span>
-                         <span>{forecastData.filter(item => item.status === 'scoping_done').length}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Approved:</span>
-                         <span>{forecastData.filter(item => item.status === 'approved').length}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Procurement Done:</span>
-                         <span>{forecastData.filter(item => item.status === 'procurement_done').length}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Deployed:</span>
-                         <span>{forecastData.filter(item => item.status === 'deployed').length}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Live:</span>
-                         <span>{forecastData.filter(item => item.status === 'live').length}</span>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </CardContent>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
 
-                         <Card>
-               <CardHeader>
-                 <CardTitle className="flex items-center space-x-2">
-                   <Users className="h-5 w-5" />
-                   <span>Deployment Team</span>
-                 </CardTitle>
-               </CardHeader>
-               <CardContent>
-                 <div className="space-y-3">
-                   {visibleTeamMembers.map((member) => (
-                     <div key={member.id} className="flex items-center justify-between">
-                       <div className="flex items-center space-x-3">
-                         <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
-                           {member.name.split(' ').map(n => n[0]).join('')}
-                         </div>
-                         <div>
-                           <div className="text-sm font-medium">{member.name}</div>
-                           <div className="text-xs text-gray-500">{member.role}</div>
-                         </div>
-                       </div>
-                       <div className="flex items-center space-x-2">
-                         <span className="text-sm font-medium">{member.projects} Projects</span>
-                         <Badge className={getStatusColor(member.status.toLowerCase())}>
-                           {member.status}
-                         </Badge>
-                       </div>
-                     </div>
-                   ))}
-                   {deploymentTeam.length > 7 && (
-                     <div className="pt-3 border-t">
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         onClick={() => setShowTeamDetailsModal(true)}
-                         className="w-full"
-                       >
-                         View All {deploymentTeam.length} Team Members
-                       </Button>
-                     </div>
-                   )}
-                 </div>
-               </CardContent>
-             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Users className="h-5 w-5" />
+                  <span>Deployment Team</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {visibleTeamMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
+                          {member.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">{member.name}</div>
+                          <div className="text-xs text-gray-500">{member.role}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">{member.projects} Projects</span>
+                        <Badge className={getStatusColor(member.status.toLowerCase())}>
+                          {member.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {deploymentTeam.length > 7 && (
+                    <div className="pt-3 border-t">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowTeamDetailsModal(true)}
+                        className="w-full"
+                      >
+                        View All {deploymentTeam.length} Team Members
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <Card>
@@ -867,9 +768,16 @@ const Forecast: React.FC = () => {
                 </div>
               </div>
             </CardContent>
-                     </Card>
-         </div>
-       )}
+          </Card>
+        </div>
+      )}
+
+      {/* Timeline View - Gantt Chart by Organization */}
+      {viewMode === 'timeline' && (
+        <div className="space-y-6">
+          <TimelineGanttView forecastData={forecastData} />
+        </div>
+      )}
 
        {/* Team Details Modal */}
        <Dialog open={showTeamDetailsModal} onOpenChange={setShowTeamDetailsModal}>

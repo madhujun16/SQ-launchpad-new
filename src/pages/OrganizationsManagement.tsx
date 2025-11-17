@@ -110,22 +110,6 @@ export default function OrganizationsManagement() {
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
-  // Only allow admin access
-  if (currentRole !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            You do not have permission to access Organizations Management. Please contact an administrator.
-          </AlertDescription>
-        </Alert>
-        </div>
-      </div>
-    );
-  }
-
   // Load organizations with caching (similar to Sites page)
   useEffect(() => {
     // Load organizations even if currentRole is not set yet - this prevents the blank page issue
@@ -151,7 +135,8 @@ export default function OrganizationsManagement() {
     };
 
     loadWithRetry();
-  }, []); // Remove currentRole dependency to prevent waiting
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty to load once on mount
 
   const loadOrganizations = async () => {
     try {
@@ -201,7 +186,7 @@ export default function OrganizationsManagement() {
         }
 
         // Transform organizations with their site counts
-        const orgsWithSiteCounts = orgsData.map((org: any) => ({
+        const orgsWithSiteCounts = orgsData.map((org: { id: string; name: string; description: string; sector: string; unit_code: string; logo_url: string | null; created_by: string; created_on: string; created_at: string; updated_at: string; is_archived: boolean; archived_at: string | null; archive_reason: string | null; }) => ({
           id: org.id,
           name: org.name,
           description: org.description || '',
@@ -640,7 +625,7 @@ export default function OrganizationsManagement() {
   };
 
   // Filter and paginate organizations (similar to Sites page)
-  const { filteredOrganizations, totalPages, currentOrganizations } = useMemo(() => {
+  const filteredData = useMemo(() => {
     let filtered = organizations;
 
     // Filter out archived organizations by default
@@ -666,6 +651,24 @@ export default function OrganizationsManagement() {
 
     return { filteredOrganizations: filtered, totalPages, currentOrganizations };
   }, [organizations, searchTerm, sectorFilter, currentPage, itemsPerPage]);
+
+  const { filteredOrganizations, totalPages, currentOrganizations } = filteredData;
+
+  // Only allow admin access (check after all hooks)
+  if (currentRole !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You do not have permission to access Organizations Management. Please contact an administrator.
+          </AlertDescription>
+        </Alert>
+        </div>
+      </div>
+    );
+  }
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -707,7 +710,7 @@ export default function OrganizationsManagement() {
 
       const organizations = dataRows.map((row, index) => {
         const values = row.split(',').map(v => v.trim());
-        const org: any = {};
+        const org: Record<string, string> = {};
         
         headers.forEach((header, i) => {
           org[header] = values[i] || '';

@@ -23,7 +23,10 @@ import {
   UserCheck,
   Monitor,
   FileCheck,
-  ClipboardList
+  ClipboardList,
+  Calendar,
+  DollarSign,
+  ChevronDown
 } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
@@ -47,7 +50,7 @@ const NAVIGATION_ITEMS = [
   { path: '/approvals-procurement', label: 'Approvals', icon: FileText },
   { path: '/deployment', label: 'Deployment', icon: Truck },
   { path: '/assets', label: 'Assets', icon: Package },
-  { path: '/forecast', label: 'Forecast', icon: BarChart3 }
+  { path: '/insights', label: 'Insights', icon: BarChart3 }
 ] as const;
 
 // Logo Component
@@ -74,24 +77,63 @@ const DesktopNavigation = React.memo(({
 }: { 
   navigationItems: NavigationItem[]; 
   currentPath: string; 
-}) => (
-  <nav className="hidden lg:flex items-center space-x-1">
-    {navigationItems.map((item) => (
-      <Link
-        key={item.path}
-        to={item.path}
-        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-          currentPath === item.path
-            ? 'bg-white/10 text-white border border-white/20'
-            : 'text-white/85 hover:bg-white/10 hover:text-white'
-        }`}
-      >
-        <item.icon className="h-4 w-4 inline mr-2" />
-        {item.label}
-      </Link>
-    ))}
-  </nav>
-));
+}) => {
+  const navigate = useNavigate();
+  const isInsightsActive = currentPath.startsWith('/insights');
+  
+  return (
+    <nav className="hidden lg:flex items-center space-x-1">
+      {navigationItems.map((item) => {
+        // Special handling for Insights dropdown
+        if (item.path === '/insights') {
+          return (
+            <DropdownMenu key={item.path}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isInsightsActive
+                      ? 'text-white'
+                      : 'text-white/85 hover:text-white'
+                  }`}
+                >
+                  <item.icon className="h-4 w-4 inline mr-2" />
+                  {item.label}
+                  <ChevronDown className="h-3 w-3 inline ml-1" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => navigate('/insights/forecast')}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>Forecast</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/insights/financials')}>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  <span>Financials</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        }
+        
+        // Regular navigation items
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              currentPath === item.path
+                ? 'bg-white/10 text-white border border-white/20'
+                : 'text-white/85 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <item.icon className="h-4 w-4 inline mr-2" />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+});
 
 // Mobile Menu Button Component
 const MobileMenuButton = React.memo(({ 
@@ -279,26 +321,76 @@ const MobileNavigation = React.memo(({
         
         {/* Navigation Items */}
         <div className="p-4 space-y-2">
-          {navigationItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => handleNavigationClick(item.path)}
-                             className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                 currentPath === item.path
-                   ? 'bg-white/5 text-white border-2 border-green-400'
-                   : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
-               }`}
-             >
-               <div className={`p-2 rounded-lg ${
-                 currentPath === item.path 
-                   ? 'bg-white/10 text-white' 
-                   : 'bg-white/10 text-white/85'
-               }`}>
-                 <item.icon className="h-4 w-4 flex-shrink-0" />
-               </div>
-              <span className="font-semibold">{item.label}</span>
-            </button>
-          ))}
+          {navigationItems.map((item) => {
+            // Special handling for Insights dropdown in mobile
+            if (item.path === '/insights') {
+              const isInsightsActive = currentPath.startsWith('/insights');
+              return (
+                <div key={item.path} className="space-y-1">
+                  <div className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isInsightsActive
+                      ? 'bg-white/5 text-white border-2 border-green-400'
+                      : 'text-white/85 border-2 border-transparent'
+                  }`}>
+                    <div className={`p-2 rounded-lg ${
+                      isInsightsActive 
+                        ? 'bg-white/10 text-white' 
+                        : 'bg-white/10 text-white/85'
+                    }`}>
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                    </div>
+                    <span className="font-semibold">{item.label}</span>
+                  </div>
+                  <div className="pl-4 space-y-1">
+                    <button
+                      onClick={() => handleNavigationClick('/insights/forecast')}
+                      className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
+                        currentPath === '/insights/forecast'
+                          ? 'bg-white/5 text-white border border-green-400'
+                          : 'text-white/70 hover:bg-white/10 hover:text-white border border-transparent'
+                      }`}
+                    >
+                      <Calendar className="h-4 w-4 flex-shrink-0" />
+                      <span>Forecast</span>
+                    </button>
+                    <button
+                      onClick={() => handleNavigationClick('/insights/financials')}
+                      className={`w-full text-left flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
+                        currentPath === '/insights/financials'
+                          ? 'bg-white/5 text-white border border-green-400'
+                          : 'text-white/70 hover:bg-white/10 hover:text-white border border-transparent'
+                      }`}
+                    >
+                      <DollarSign className="h-4 w-4 flex-shrink-0" />
+                      <span>Financials</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Regular navigation items
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigationClick(item.path)}
+                className={`w-full text-left flex items-center space-x-3 px-4 py-3.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
+                  currentPath === item.path
+                    ? 'bg-white/5 text-white border-2 border-green-400'
+                    : 'text-white/85 hover:bg-white/10 hover:text-white border-2 border-transparent hover:border-white/20'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${
+                  currentPath === item.path 
+                    ? 'bg-white/10 text-white' 
+                    : 'bg-white/10 text-white/85'
+                }`}>
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                </div>
+                <span className="font-semibold">{item.label}</span>
+              </button>
+            );
+          })}
           
           {/* Platform Configuration Section - Admin Only */}
           {currentRole === 'admin' && (
