@@ -24,8 +24,9 @@ import {
   Loader2
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+// TODO: Replace with GCP API calls
 
 interface ProcurementStepProps {
   site: Site;
@@ -46,24 +47,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
   const loadApprovedHardware = async () => {
     try {
       setLoading(true);
-      
-      // Load approved scoping data
-      const { data: scopingData, error: scopingError } = await supabase
-        .from('site_scoping')
-        .select('*')
-        .eq('site_id', site.id)
-        .eq('status', 'approved')
-        .single();
-      
-      if (scopingError && scopingError.code !== 'PGRST116') {
-        console.error('Error loading scoping data:', scopingError);
-        toast.error('Failed to load approved scoping');
-        return;
-      }
-
-      if (scopingData && scopingData.selected_hardware) {
-        setApprovedHardware(scopingData.selected_hardware);
-      }
+      // TODO: Replace with GCP API call
+      console.warn('Loading approved hardware not implemented - connect to GCP backend');
+      setApprovedHardware([]);
     } catch (err) {
       console.error('Error loading approved hardware:', err);
       toast.error('Failed to load approved hardware');
@@ -74,20 +60,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
 
   const loadProcurementItems = async () => {
     try {
-      // Load existing procurement items
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('site_procurement_items')
-        .select('*')
-        .eq('site_id', site.id)
-        .order('created_at');
-      
-      if (itemsError) {
-        console.error('Error loading procurement items:', itemsError);
-        toast.error('Failed to load procurement items');
-        return;
-      }
-
-      setProcurementItems(itemsData || []);
+      // TODO: Replace with GCP API call
+      console.warn('Loading procurement items not implemented - connect to GCP backend');
+      setProcurementItems([]);
     } catch (err) {
       console.error('Error loading procurement items:', err);
       toast.error('Failed to load procurement items');
@@ -118,18 +93,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
         notes: `Procurement item for ${hardware.name}`
       }));
 
-      const { error } = await supabase
-        .from('site_procurement_items')
-        .insert(itemsToInsert);
-
-      if (error) {
-        console.error('Error creating procurement items:', error);
-        toast.error('Failed to create procurement items');
-        return;
-      }
-
-      toast.success('Procurement items created successfully');
-      loadProcurementItems();
+      // TODO: Replace with GCP API call
+      console.warn('Creating procurement items not implemented - connect to GCP backend');
+      toast.error('Procurement item creation requires GCP backend connection');
     } catch (err) {
       console.error('Error creating procurement items:', err);
       toast.error('Failed to create procurement items');
@@ -140,22 +106,9 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
 
   const handleUpdateItemStatus = async (itemId: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('site_procurement_items')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', itemId);
-
-      if (error) {
-        console.error('Error updating item status:', error);
-        toast.error('Failed to update item status');
-        return;
-      }
-
-      toast.success('Item status updated successfully');
-      loadProcurementItems();
+      // TODO: Replace with GCP API call
+      console.warn('Updating item status not implemented - connect to GCP backend');
+      toast.error('Item status update requires GCP backend connection');
     } catch (err) {
       console.error('Error updating item status:', err);
       toast.error('Failed to update item status');

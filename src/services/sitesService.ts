@@ -1,4 +1,7 @@
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Connect to GCP backend APIs
+// TODO: All methods need to be reimplemented with GCP APIs
+
+const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
 
 export interface Site {
   id: string;
@@ -18,14 +21,12 @@ export interface Site {
   team_assignment?: string;
   stakeholders?: any[];
   notes?: string;
-  // Contact information fields
   unitManagerName?: string;
   jobTitle?: string;
   unitManagerEmail?: string;
   unitManagerMobile?: string;
   additionalContactName?: string;
   additionalContactEmail?: string;
-  // Location fields
   latitude?: number;
   longitude?: number;
   postcode?: string;
@@ -42,7 +43,7 @@ export interface Organization {
   unit_code?: string;
   logo_url?: string;
   description?: string;
-  sites_count?: number; // Number of sites mapped to this organization
+  sites_count?: number;
   is_archived?: boolean;
   archived_at?: string;
   archive_reason?: string;
@@ -53,7 +54,7 @@ export interface Organization {
 export interface CreateSiteData {
   name: string;
   organization_id: string;
-  organization_name: string; // Required for NOT NULL constraint
+  organization_name: string;
   location: string;
   target_live_date: string;
   assigned_ops_manager: string;
@@ -64,797 +65,82 @@ export interface CreateSiteData {
   criticality_level?: 'low' | 'medium' | 'high';
   team_assignment?: string;
   stakeholders?: any[];
-  description?: string; // Use description field for notes
+  description?: string;
 }
 
 export class SitesService {
-  // Simple in-memory cache for sites
   private static sitesCache: { data: Site[]; timestamp: number } | null = null;
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private static readonly CACHE_DURATION = 5 * 60 * 1000;
 
-  // Helper method to validate UUID format
   private static isValidUUID(str: string): boolean {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(str);
   }
 
-
-
-  // Get all sites with user assignments
   static async getAllSites(): Promise<Site[]> {
-    try {
-      // Check cache first
-      if (this.sitesCache && (Date.now() - this.sitesCache.timestamp) < this.CACHE_DURATION) {
-        console.log('🔍 Returning sites from cache');
-        return this.sitesCache.data;
-      }
-
-      console.log('🔍 Fetching sites from database...');
-      
-      // Check if we have an active session with retry logic
-      let session = null;
-      let sessionError = null;
-      
-      try {
-        // Try to get session with a reasonable timeout
-        const sessionResult = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Session check timeout')), 15000) // Increased to 15 seconds
-          )
-        ]);
-        
-        if (sessionResult && typeof sessionResult === 'object' && 'data' in sessionResult) {
-          session = (sessionResult as any).data.session;
-          sessionError = (sessionResult as any).error;
-        }
-      } catch (error) {
-        console.warn('⚠️ Session check failed, attempting refresh:', error);
-        
-        // Wait a bit before attempting refresh to avoid lock conflicts
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Try to refresh the session with better error handling
-        try {
-          const refreshResult = await Promise.race([
-            supabase.auth.refreshSession(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Session refresh timeout')), 25000) // Increased to 25 seconds
-            )
-          ]);
-          
-          if (refreshResult && typeof refreshResult === 'object' && 'data' in refreshResult) {
-            session = (refreshResult as any).data.session;
-            sessionError = (refreshResult as any).error;
-            console.log('✅ Session refreshed successfully');
-          }
-        } catch (refreshError) {
-          console.error('❌ Session refresh failed:', refreshError);
-          
-          // If we have cached data, return it instead of empty array
-          if (this.sitesCache) {
-            console.log('🔍 Returning stale cache due to session issues');
-            return this.sitesCache.data;
-          }
-          
-          // If no cache, try one more time with a simple session check
-          try {
-            console.log('🔄 Attempting final session check...');
-            const finalSessionResult = await supabase.auth.getSession();
-            if (finalSessionResult.data.session) {
-              session = finalSessionResult.data.session;
-              sessionError = finalSessionResult.error;
-              console.log('✅ Final session check succeeded');
-            } else {
-              console.log('❌ No session available, returning empty array');
-              return [];
-            }
-          } catch (finalError) {
-            console.error('❌ Final session check failed:', finalError);
-            return [];
-          }
-        }
-      }
-      
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError);
-        // Return cached data if available, otherwise empty array
-        if (this.sitesCache) {
-          console.log('🔍 Returning stale cache due to session error');
-          return this.sitesCache.data;
-        }
-        return [];
-      }
-      
-      if (!session) {
-        console.error('❌ No active session');
-        // Return cached data if available, otherwise empty array
-        if (this.sitesCache) {
-          console.log('🔍 Returning stale cache due to no session');
-          return this.sitesCache.data;
-        }
-        return [];
-      }
-      
-      console.log('🔍 Making Supabase query with organization join...');
-      
-      // Query to get sites with organization data - only non-archived sites
-      // We'll fetch team assignments separately to avoid foreign key constraint issues
-      const queryPromise = supabase
-        .from('sites')
-        .select(`
-          *,
-          organizations!sites_organization_id_fkey(id, name, logo_url, sector, unit_code)
-        `)
-        .eq('is_archived', false)
-        .order('name');
-
-      const { data, error } = await Promise.race([
-        queryPromise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database query timeout')), 25000)
-        )
-      ]) as any;
-
-      if (error) {
-        console.error('❌ Error fetching sites:', error);
-        console.error('Error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        
-        // Return cached data if available, otherwise empty array
-        if (this.sitesCache) {
-          console.log('🔍 Returning stale cache due to query error');
-          return this.sitesCache.data;
-        }
-        return [];
-      }
-
-      console.log('🔍 Sites fetched successfully:', data?.length || 0);
-      console.log('🔍 Raw data sample:', data?.[0] ? {
-        id: data[0].id,
-        name: data[0].name,
-        organizations: data[0].organizations,
-        status: data[0].status,
-        address: data[0].address,
-        assigned_ops_manager_id: data[0].assigned_ops_manager_id,
-        assigned_deployment_engineer_id: data[0].assigned_deployment_engineer_id,
-        assigned_ops_manager: data[0].assigned_ops_manager,
-        assigned_deployment_engineer: data[0].assigned_deployment_engineer
-      } : 'No data');
-
-      if (!data || data.length === 0) {
-        console.log('⚠️ No sites found in database');
-        return [];
-      }
-
-      // Get unique user IDs from all sites
-      const userIds = new Set<string>();
-      data.forEach((site: any) => {
-        // Check sites table columns
-        if (site.assigned_ops_manager_id) userIds.add(site.assigned_ops_manager_id);
-        if (site.assigned_deployment_engineer_id) userIds.add(site.assigned_deployment_engineer_id);
-        
-        // Only add if it looks like a UUID (not a name)
-        if (site.assigned_ops_manager && typeof site.assigned_ops_manager === 'string' && this.isValidUUID(site.assigned_ops_manager)) {
-          userIds.add(site.assigned_ops_manager);
-        }
-        if (site.assigned_deployment_engineer && typeof site.assigned_deployment_engineer === 'string' && this.isValidUUID(site.assigned_deployment_engineer)) {
-          userIds.add(site.assigned_deployment_engineer);
-        }
-      });
-
-      // Fetch team assignments separately
-      let siteAssignments: { [key: string]: any } = {};
-      if (data.length > 0) {
-        const siteIds = data.map((site: any) => site.id);
-        console.log('🔍 Fetching site assignments for site IDs:', siteIds);
-        
-        const { data: assignments, error: assignmentsError } = await supabase
-          .from('site_assignments')
-          .select('site_id, ops_manager_id, deployment_engineer_id')
-          .in('site_id', siteIds);
-
-        if (assignmentsError) {
-          console.error('❌ Error fetching site assignments:', assignmentsError);
-        } else if (assignments) {
-          console.log('🔍 Site assignments fetched:', assignments);
-          assignments.forEach((assignment: any) => {
-            siteAssignments[assignment.site_id] = assignment;
-            if (assignment.ops_manager_id) userIds.add(assignment.ops_manager_id);
-            if (assignment.deployment_engineer_id) userIds.add(assignment.deployment_engineer_id);
-          });
-        } else {
-          console.log('⚠️ No site assignments found for sites:', siteIds);
-        }
-      }
-
-      // Fetch user details for all unique user IDs
-      let userDetails: { [key: string]: any } = {};
-      if (userIds.size > 0) {
-        console.log('🔍 Fetching user details for user IDs:', Array.from(userIds));
-        
-        const { data: users, error: usersError } = await supabase
-          .from('profiles')
-          .select('id, user_id, full_name, email')
-          .in('id', Array.from(userIds));
-
-        if (usersError) {
-          console.error('❌ Error fetching user details:', usersError);
-        } else if (users) {
-          console.log('🔍 User details fetched:', users);
-          userDetails = users.reduce((acc: any, user: any) => {
-            acc[user.id] = user;
-            return acc;
-          }, {});
-        } else {
-          console.log('⚠️ No user details found for user IDs:', Array.from(userIds));
-        }
-      } else {
-        console.log('⚠️ No user IDs to fetch details for');
-      }
-
-      // Transform the data to match our Site interface
-      const transformedSites = data.map((site: any) => {
-        // Handle nested organization object
-        const organization = site.organizations || null;
-        
-        // Get user details from our fetched data
-        // Check site_assignments table first (primary source)
-        let opsManagerId = null;
-        let deploymentEngineerId = null;
-        
-        const assignment = siteAssignments[site.id];
-        if (assignment) {
-          opsManagerId = assignment.ops_manager_id;
-          deploymentEngineerId = assignment.deployment_engineer_id;
-        }
-        
-        // Fallback to sites table columns
-        if (!opsManagerId) {
-          opsManagerId = site.assigned_ops_manager_id || (site.assigned_ops_manager && typeof site.assigned_ops_manager === 'string' && this.isValidUUID(site.assigned_ops_manager) ? site.assigned_ops_manager : null);
-        }
-        if (!deploymentEngineerId) {
-          deploymentEngineerId = site.assigned_deployment_engineer_id || (site.assigned_deployment_engineer && typeof site.assigned_deployment_engineer === 'string' && this.isValidUUID(site.assigned_deployment_engineer) ? site.assigned_deployment_engineer : null);
-        }
-        
-        const opsManager = opsManagerId ? userDetails[opsManagerId] : null;
-        const deploymentEngineer = deploymentEngineerId ? userDetails[deploymentEngineerId] : null;
-        
-        // Debug logging for team assignments
-        console.log(`🔍 Site ${site.name} team assignment debug:`, {
-          siteId: site.id,
-          assignment: siteAssignments[site.id],
-          opsManagerId,
-          deploymentEngineerId,
-          opsManager: opsManager?.full_name,
-          deploymentEngineer: deploymentEngineer?.full_name,
-          userDetailsKeys: Object.keys(userDetails)
-        });
-        
-        return {
-          id: site.id,
-          name: site.name || 'Unnamed Site',
-          organization_id: site.organization_id || '',
-          organization_name: organization?.name || 'Unknown Organization',
-          organization_logo: organization?.logo_url || null,
-          location: site.address || site.location || 'Location not specified',
-          status: site.status || 'Unknown',
-          target_live_date: site.target_live_date || '',
-          suggested_go_live: site.target_live_date || '', // Using target_live_date as suggested go-live
-          assigned_ops_manager: opsManager?.full_name || (site.assigned_ops_manager && !this.isValidUUID(site.assigned_ops_manager) ? site.assigned_ops_manager : null),
-          assigned_deployment_engineer: deploymentEngineer?.full_name || (site.assigned_deployment_engineer && !this.isValidUUID(site.assigned_deployment_engineer) ? site.assigned_deployment_engineer : null),
-          sector: organization?.sector || 'Unknown Sector',
-          unit_code: organization?.unit_code || site.unit_code || '',
-          criticality_level: site.criticality_level || 'medium',
-          team_assignment: site.team_assignment || '',
-          stakeholders: site.stakeholders || [],
-          notes: site.description || site.notes || '',
-          // Contact information fields
-          unitManagerName: site.unit_manager_name || '',
-          jobTitle: site.job_title || '',
-          unitManagerEmail: site.unit_manager_email || '',
-          unitManagerMobile: site.unit_manager_mobile || '',
-          additionalContactName: site.additional_contact_name || '',
-          additionalContactEmail: site.additional_contact_email || '',
-          // Location fields
-          latitude: site.latitude || null,
-          longitude: site.longitude || null,
-          postcode: site.postcode || '',
-          region: site.region || '',
-          country: site.country || '',
-          created_at: site.created_at || new Date().toISOString(),
-          updated_at: site.updated_at || new Date().toISOString()
-        } as Site;
-      });
-
-      // Update cache
-      this.sitesCache = {
-        data: transformedSites,
-        timestamp: Date.now()
-      };
-
-      console.log('✅ Sites transformed and cached successfully:', transformedSites.length);
-      return transformedSites;
-    } catch (error) {
-      console.error('❌ Error in getAllSites:', error);
-      
-      // Return cached data if available, otherwise empty array
-      if (this.sitesCache) {
-        console.log('🔍 Returning stale cache due to general error');
-        return this.sitesCache.data;
-      }
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Get site by ID with user assignments
   static async getSiteById(siteId: string): Promise<Site | null> {
-    try {
-      console.log('🔍 Fetching site by ID:', siteId);
-      
-      const { data, error } = await supabase
-        .from('sites')
-        .select('*')
-        .eq('id', siteId)
-        .eq('is_archived', false)
-        .single();
-
-      if (error) {
-        console.error('❌ Error fetching site:', error);
-        return null;
-      }
-
-      if (!data) {
-        console.log('⚠️ No site found with ID:', siteId);
-        return null;
-      }
-
-      console.log('🔍 Raw site data:', data);
-
-      const transformedSite: any = {
-        id: data.id,
-        name: data.name || 'Unnamed Site',
-        organization_id: data.organization_id || '',
-        organization_name: 'Organization', // Would need to join with organizations table
-        organization_logo: null,
-        location: data.address || 'Location not specified',
-        status: data.status || 'Unknown',
-        target_live_date: data.target_live_date || '',
-        suggested_go_live: data.target_live_date || '',
-        assigned_ops_manager: data.assigned_ops_manager || 'Unassigned',
-        assigned_deployment_engineer: data.assigned_deployment_engineer || 'Unassigned',
-        sector: 'Unknown Sector',
-        unit_code: data.unit_code || '',
-        criticality_level: 'medium', // Default value since not in schema
-        team_assignment: '',
-        stakeholders: [],
-        notes: data.description || '',
-        // Contact information fields - not in current schema, using defaults
-        unitManagerName: '',
-        jobTitle: '',
-        unitManagerEmail: '',
-        unitManagerMobile: '',
-        additionalContactName: '',
-        additionalContactEmail: '',
-        // Location fields
-        latitude: null,
-        longitude: null,
-        postcode: data.postcode || '',
-        region: '',
-        country: '',
-        created_at: data.created_at || new Date().toISOString(),
-        updated_at: data.updated_at || new Date().toISOString()
-      };
-      
-      return transformedSite;
-    } catch (error) {
-      console.error('❌ Error in getSiteById:', error);
-      return null;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Get sites by organization
   static async getSitesByOrganization(organizationId: string): Promise<Site[]> {
-    try {
-      const { data, error } = await supabase
-        .from('sites')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .eq('is_archived', false)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching sites by organization:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getSitesByOrganization:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Get sites by status
   static async getSitesByStatus(status: string): Promise<Site[]> {
-    try {
-      const { data, error } = await supabase
-        .from('sites')
-        .select('*')
-        .eq('status', status)
-        .eq('is_archived', false)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching sites by status:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getSitesByStatus:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Search sites by name or location
   static async searchSites(searchTerm: string): Promise<Site[]> {
-    try {
-      const { data, error } = await supabase
-        .from('sites')
-        .select('*')
-        .or(`name.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)
-        .eq('is_archived', false)
-        .order('name');
-
-      if (error) {
-        console.error('Error searching sites:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in searchSites:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Get all organizations with sites count (including archived)
   static async getAllOrganizations(): Promise<Organization[]> {
-    try {
-      // Get all organizations with a single query
-      const { data: organizations, error: orgError } = await supabase
-        .from('organizations')
-        .select('*')
-        .order('name');
-
-      if (orgError) {
-        console.error('Error fetching organizations:', orgError);
-        return [];
-      }
-
-      if (!organizations || organizations.length === 0) {
-        return [];
-      }
-
-      // Get site counts for all organizations in a single aggregated query
-      const { data: siteCounts, error: siteCountsError } = await supabase
-        .from('sites')
-        .select('organization_id')
-        .eq('is_archived', false);
-
-      if (siteCountsError) {
-        console.error('Error fetching site counts:', siteCountsError);
-        // Return organizations without site counts if the query fails
-        return organizations.map(org => ({ ...org, sites_count: 0 }));
-      }
-
-      // Create a map of organization_id -> site count
-      const siteCountMap = new Map<string, number>();
-      if (siteCounts) {
-        siteCounts.forEach(site => {
-          const orgId = site.organization_id;
-          if (orgId) {
-            siteCountMap.set(orgId, (siteCountMap.get(orgId) || 0) + 1);
-          }
-        });
-      }
-
-      // Transform organizations with their site counts
-      const organizationsWithCounts = organizations.map((org: any) => ({
-        id: org.id,
-        name: org.name,
-        sector: org.sector || '',
-        unit_code: org.unit_code || '',
-        logo_url: org.logo_url || null,
-        description: org.description || '',
-        created_at: org.created_at || '',
-        updated_at: org.updated_at || '',
-        is_archived: org.is_archived || false,
-        archived_at: org.archived_at || null,
-        archive_reason: org.archive_reason || null,
-        sites_count: siteCountMap.get(org.id) || 0
-      }));
-
-      return organizationsWithCounts;
-    } catch (error) {
-      console.error('Error in getAllOrganizations:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Get organizations by sector
   static async getOrganizationsBySector(sector: string): Promise<Organization[]> {
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('sector', sector)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching organizations by sector:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getOrganizationsBySector:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Update site status
   static async updateSiteStatus(siteId: string, status: string): Promise<boolean> {
-    try {
-      console.log('Attempting to update site status:', { siteId, status });
-      
-      // First, let's check if the site exists
-      const { data: existingSite, error: fetchError } = await supabase
-        .from('sites')
-        .select('id, status')
-        .eq('id', siteId)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching existing site:', fetchError);
-        return false;
-      }
-
-      if (!existingSite) {
-        console.error('Site not found:', siteId);
-        return false;
-      }
-
-      console.log('Current site status:', existingSite.status);
-
-      // Update the status
-      const { error: updateError } = await supabase
-        .from('sites')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', siteId);
-
-      if (updateError) {
-        console.error('Error updating site status:', updateError);
-        console.error('Error details:', {
-          code: updateError.code,
-          message: updateError.message,
-          details: updateError.details,
-          hint: updateError.hint
-        });
-        return false;
-      }
-
-      console.log('Site status updated successfully');
-      return true;
-    } catch (error) {
-      console.error('Exception in updateSiteStatus:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Create new site
   static async createSite(siteData: CreateSiteData): Promise<Site | null> {
-    try {
-      const { data, error } = await supabase
-        .from('sites')
-        .insert([siteData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating site:', error);
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error in createSite:', error);
-      return null;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Update site
   static async updateSite(siteId: string, siteData: Partial<Site>): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .update({ 
-          ...siteData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', siteId);
-
-      if (error) {
-        console.error('Error updating site:', error);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error in updateSite:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Archive site (soft delete)
   static async archiveSite(siteId: string, reason: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .update({
-          is_archived: true,
-          archived_at: new Date().toISOString(),
-          archive_reason: reason,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', siteId);
-
-      if (error) {
-        console.error('Error archiving site:', error);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error in archiveSite:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Unarchive site
   static async unarchiveSite(siteId: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .update({
-          is_archived: false,
-          archived_at: null,
-          archive_reason: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', siteId);
-
-      if (error) {
-        console.error('Error unarchiving site:', error);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error in unarchiveSite:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Delete site (hard delete - use with caution)
   static async deleteSite(siteId: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .delete()
-        .eq('id', siteId);
-
-      if (error) {
-        console.error('Error deleting site:', error);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error in deleteSite:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Get all users for assignment purposes
   static async getAllUsers(): Promise<Array<{ user_id: string; full_name: string; email: string; role: string }>> {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          user_id,
-          full_name,
-          email,
-          user_roles (
-            role
-          )
-        `)
-        .order('full_name');
-
-      if (error) {
-        console.error('Error fetching users:', error);
-        return [];
-      }
-
-      // Transform the data to flatten the roles
-      return data?.map((user: any) => ({
-        user_id: user.user_id,
-        full_name: user.full_name || user.email,
-        email: user.email,
-        role: user.user_roles?.[0]?.role || 'user'
-      })) || [];
-    } catch (error) {
-      console.error('Error in getAllUsers:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Assign users to a site
   static async assignUsersToSite(
     siteId: string, 
     opsManagerId: string | null, 
     deploymentEngineerId: string | null
   ): Promise<boolean> {
-    try {
-      // First, update the site table
-      const { error: siteError } = await supabase
-        .from('sites')
-        .update({
-          assigned_ops_manager_id: opsManagerId,
-          assigned_deployment_engineer_id: deploymentEngineerId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', siteId);
-
-      if (siteError) {
-        console.error('Error updating site assignments:', siteError);
-        return false;
-      }
-
-      // Then, update or insert into site_assignments table
-      const { error: assignmentError } = await supabase
-        .from('site_assignments')
-        .upsert({
-          site_id: siteId,
-          ops_manager_id: opsManagerId,
-          deployment_engineer_id: deploymentEngineerId,
-          assigned_by: 'system', // This should be the current user's ID in a real app
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'site_id'
-        });
-
-      if (assignmentError) {
-        console.error('Error updating site assignments:', assignmentError);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error in assignUsersToSite:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Clear cache when data is modified
   static clearCache(): void {
     this.sitesCache = null;
     console.log('🔍 Sites cache cleared');

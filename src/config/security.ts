@@ -1,5 +1,6 @@
 // Security Configuration
 // Centralized security settings for the application
+// TODO: Update CSP for GCP endpoints
 
 export const SECURITY_CONFIG = {
   // Debug logging control
@@ -14,13 +15,13 @@ export const SECURITY_CONFIG = {
   MAX_RETRY_ATTEMPTS: 3,
   REQUEST_TIMEOUT: 30000, // 30 seconds
   
-  // Content Security Policy
+  // Content Security Policy - TODO: Update for GCP endpoints
   CSP: {
     'default-src': ["'self'"],
     'script-src': ["'self'", "'unsafe-inline'"],
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", "data:", "https:"],
-    'connect-src': ["'self'", "https://*.supabase.co"],
+    'connect-src': ["'self'", "https://*.googleapis.com", "https://*.google.com"],
     'frame-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
@@ -59,12 +60,6 @@ export const validateUUID = (uuid: string): boolean => {
 export const secureLog = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
   if (SECURITY_CONFIG.ENABLE_DEBUG_LOGS) {
     const timestamp = new Date().toISOString();
-    const logData = {
-      timestamp,
-      level,
-      message,
-      data: data ? JSON.stringify(data) : undefined
-    };
     
     switch (level) {
       case 'info':
@@ -81,7 +76,6 @@ export const secureLog = (level: 'info' | 'warn' | 'error', message: string, dat
   
   // In production, send to secure logging service
   if (SECURITY_CONFIG.ENABLE_AUDIT_LOGS) {
-    // TODO: Implement secure logging service
-    // sendToAuditLog(level, message, data);
+    // TODO: Implement secure logging service for GCP
   }
 };

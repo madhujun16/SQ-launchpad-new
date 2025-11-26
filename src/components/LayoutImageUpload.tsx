@@ -6,7 +6,8 @@ import { Loader } from '@/components/ui/loader';
 import { Upload, Edit, Trash2, Image as ImageIcon, FileText, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUploadService, type UploadedFile } from '@/services/fileUploadService';
-import { supabase } from '@/integrations/supabase/client';
+
+// TODO: Replace with GCP API calls
 
 interface LayoutImageUploadProps {
   siteId: string;
@@ -100,27 +101,8 @@ export const LayoutImageUpload: React.FC<LayoutImageUploadProps> = ({
   };
 
   const updateSiteLayoutImage = async (images: UploadedFile[]) => {
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .update({
-          layout_images: JSON.stringify(images.map(img => img.url)) as any,
-          layout_images_metadata: JSON.stringify(images.map(img => ({
-            id: img.id,
-            name: img.name,
-            size: img.size,
-            type: img.type,
-            uploaded_at: img.uploaded_at
-          }))) as any
-        })
-        .eq('id', siteId as any);
-
-      if (error) {
-        console.error('Error updating site layout image:', error);
-      }
-    } catch (error) {
-      console.error('Database update error:', error);
-    }
+    // TODO: Replace with GCP API call
+    console.warn('Site layout image update not implemented - connect to GCP backend');
   };
 
   const handleDelete = async () => {

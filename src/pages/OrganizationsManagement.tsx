@@ -52,8 +52,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { PageLoader } from '@/components/ui/loader';
+import { FileUploadService } from '@/services/fileUploadService';
+
+// TODO: Replace with GCP API calls
 
 // Interfaces
 interface Organization {
@@ -159,74 +161,13 @@ export default function OrganizationsManagement() {
       setLoading(true);
       setError(null);
       
-      // First, get organizations with site counts
-      console.log('OrganizationsManagement: Fetching organizations from Supabase...');
-      const { data: orgsData, error: orgsError } = await supabase
-        .from('organizations')
-        .select('*')
-        .order('name');
+      // TODO: Replace with GCP API call
+      console.warn('Organization loading not implemented - connect to GCP backend');
+      toast.error('Organization management requires GCP backend connection');
       
-      console.log('OrganizationsManagement: Organizations response:', { orgsData: orgsData?.length, orgsError });
-      
-      if (orgsError) {
-        console.error('Error loading organizations:', orgsError);
-        // Don't show error to user, just set empty array
-        setOrganizations([]);
-        setLoading(false);
-        return;
-      }
-
-      if (orgsData && orgsData.length > 0) {
-        // OPTIMIZED: Get site counts for all organizations in a single aggregated query
-        console.log('OrganizationsManagement: Fetching site counts from Supabase...');
-        const { data: siteCounts, error: siteCountsError } = await supabase
-          .from('sites')
-          .select('organization_id')
-          .not('organization_id', 'is', null)
-          .eq('is_archived', false);
-
-        console.log('OrganizationsManagement: Site counts response:', { siteCounts: siteCounts?.length, siteCountsError });
-
-        if (siteCountsError) {
-          console.error('Error fetching site counts:', siteCountsError);
-        }
-
-        // Create a map of organization_id -> site count
-        const siteCountMap = new Map<string, number>();
-        if (siteCounts) {
-          siteCounts.forEach(site => {
-            const orgId = site.organization_id;
-            siteCountMap.set(orgId, (siteCountMap.get(orgId) || 0) + 1);
-          });
-        }
-
-        // Transform organizations with their site counts
-        const orgsWithSiteCounts = orgsData.map((org: any) => ({
-          id: org.id,
-          name: org.name,
-          description: org.description || '',
-          sector: org.sector || '',
-          unit_code: org.unit_code || '',
-          logo_url: org.logo_url || null,
-          created_by: org.created_by || 'system',
-          created_on: org.created_on || org.created_at || new Date().toISOString(),
-          updated_at: org.updated_at || new Date().toISOString(),
-          is_archived: org.is_archived || false,
-          archived_at: org.archived_at || null,
-          archive_reason: org.archive_reason || null,
-          mapped_sites_count: siteCountMap.get(org.id) || 0
-        }));
-        
-        console.log('OrganizationsManagement: Setting organizations:', orgsWithSiteCounts.length);
-        setOrganizations(orgsWithSiteCounts);
-      } else {
-        // No organizations found, seed defaults silently
-        console.log('OrganizationsManagement: No organizations found, seeding defaults...');
-        await seedDefaultOrganizations();
-      }
+      setOrganizations([]);
     } catch (error) {
       console.error('Error loading organizations:', error);
-      // Don't show error to user, just set empty array
       setOrganizations([]);
     } finally {
       console.log('OrganizationsManagement: Finished loadOrganizations');
@@ -235,125 +176,8 @@ export default function OrganizationsManagement() {
   };
 
   const seedDefaultOrganizations = async () => {
-    const defaults: Organization[] = [
-      {
-        id: 'org-chartwells',
-        name: 'Chartwells',
-        description: 'Leading food service provider for education sector',
-        sector: 'Education',
-        unit_code: 'CHT',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-hsbc',
-        name: 'HSBC',
-        description: 'Global banking and financial services',
-        sector: 'Business & Industry',
-        unit_code: 'HSB',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-levy',
-        name: 'Levy',
-        description: 'Premium sports and entertainment hospitality',
-        sector: 'Sports & Leisure',
-        unit_code: 'LEV',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-bi',
-        name: 'B&I',
-        description: 'Business and Industry food services',
-        sector: 'Business & Industry',
-        unit_code: 'BI',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-compass-one',
-        name: 'Compass One',
-        description: 'Specialized food service solutions',
-        sector: 'Business & Industry',
-        unit_code: 'COM',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-minley-station',
-        name: 'Minley Station',
-        description: 'Defence sector food services',
-        sector: 'Defence',
-        unit_code: 'MIN',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-peabody',
-        name: 'Peabody',
-        description: 'Housing and community services',
-        sector: 'Business & Industry',
-        unit_code: 'PEA',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-ra',
-        name: 'RA',
-        description: 'Restaurant Associates - premium dining',
-        sector: 'Business & Industry',
-        unit_code: 'RA',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-morgan-stanley',
-        name: 'Morgan Stanley',
-        description: 'Global financial services',
-        sector: 'Business & Industry',
-        unit_code: 'MOR',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'org-next',
-        name: 'NEXT',
-        description: 'NEXT Retail',
-        sector: 'Business & Industry',
-        unit_code: 'NEX',
-        created_by: 'admin',
-        created_on: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-    ];
-
-    try {
-      const { error } = await supabase
-        .from('organizations')
-        .insert(defaults);
-      
-      if (error) {
-        console.error('Error seeding organizations:', error);
-        // Don't show error to user, just continue silently
-      } else {
-        // Reload to get the seeded data silently
-        await loadOrganizations();
-      }
-    } catch (error) {
-      console.error('Error seeding organizations:', error);
-      // Don't show error to user, just continue silently
-    }
+    // TODO: Replace with GCP API call
+    console.warn('Organization seeding not implemented - connect to GCP backend');
   };
 
   const addOrganization = () => {
@@ -386,38 +210,9 @@ export default function OrganizationsManagement() {
 
     setArchiving(true);
     try {
-      // 1. Archive the organization only (not sites)
-      const { error: orgError } = await supabase
-        .from('organizations')
-        .update({
-          is_archived: true,
-          archived_at: new Date().toISOString(),
-          archive_reason: archiveReason.trim(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', organizationToArchive.id);
-
-      if (orgError) {
-        console.error('Error archiving organization:', orgError);
-        toast.error('Failed to archive organization');
-        return;
-      }
-
-      // 2. Update local state - keep the site count but mark as archived
-      setOrganizations(prev => 
-        prev.map(o => 
-          o.id === organizationToArchive.id 
-            ? { 
-                ...o, 
-                is_archived: true, 
-                archived_at: new Date().toISOString(), 
-                archive_reason: archiveReason.trim()
-              }
-            : o
-        )
-      );
-
-      toast.success(`Organization "${organizationToArchive.name}" has been archived`);
+      // TODO: Replace with GCP API call
+      console.warn('Organization archiving not implemented - connect to GCP backend');
+      toast.error('Organization archiving requires GCP backend connection');
       
       // Reset modal state
       setArchiveModalOpen(false);
@@ -433,38 +228,9 @@ export default function OrganizationsManagement() {
 
   const unarchiveOrganization = async (org: Organization) => {
     try {
-      // 1. Unarchive the organization only (not sites)
-      const { error: orgError } = await supabase
-        .from('organizations')
-        .update({
-          is_archived: false,
-          archived_at: null,
-          archive_reason: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', org.id);
-
-      if (orgError) {
-        console.error('Error unarchiving organization:', orgError);
-        toast.error('Failed to unarchive organization');
-        return;
-      }
-
-      // 2. Update local state
-      setOrganizations(prev => 
-        prev.map(o => 
-          o.id === org.id 
-            ? { 
-                ...o, 
-                is_archived: false, 
-                archived_at: null, 
-                archive_reason: null
-              }
-            : o
-        )
-      );
-
-      toast.success(`Organization "${org.name}" has been unarchived`);
+      // TODO: Replace with GCP API call
+      console.warn('Organization unarchiving not implemented - connect to GCP backend');
+      toast.error('Organization unarchiving requires GCP backend connection');
     } catch (error) {
       console.error('Error unarchiving organization:', error);
       toast.error('Failed to unarchive organization');
@@ -506,68 +272,9 @@ export default function OrganizationsManagement() {
         }
       }
 
-      if (editingOrganization.id && editingOrganization.id !== 'new') {
-        // Update existing organization
-        const { error } = await supabase
-          .from('organizations')
-          .update({
-            name: editingOrganization.name.trim(),
-            description: editingOrganization.description.trim(),
-            sector: editingOrganization.sector,
-            unit_code: editingOrganization.unit_code.trim(),
-            logo_url: logoUrl,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingOrganization.id);
-        
-        if (error) {
-          console.error('Supabase update error:', error);
-          toast.error(`Failed to update organization: ${error.message}`);
-          return;
-        }
-        
-        const updatedOrg = { ...editingOrganization, logo_url: logoUrl };
-        setOrganizations(prev => 
-          prev.map(o => o.id === editingOrganization.id ? updatedOrg : o)
-        );
-        toast.success('Organization updated successfully');
-      } else {
-        // Add new organization
-        const { data, error } = await supabase
-          .from('organizations')
-          .insert([{
-            name: editingOrganization.name.trim(),
-            description: editingOrganization.description.trim(),
-            sector: editingOrganization.sector,
-            unit_code: editingOrganization.unit_code.trim(),
-            logo_url: logoUrl,
-            created_by: editingOrganization.created_by,
-            created_on: editingOrganization.created_on
-          }])
-          .select()
-          .single();
-        
-        if (error) {
-          console.error('Supabase insert error:', error);
-          toast.error(`Failed to create organization: ${error.message}`);
-          return;
-        }
-        
-        const newOrg: Organization = {
-          id: data.id,
-          name: data.name,
-          description: data.description,
-          sector: data.sector || '',
-          unit_code: data.unit_code || '',
-          logo_url: data.logo_url || logoUrl || null,
-          created_by: data.created_by || '',
-          created_on: data.created_on || '',
-          updated_at: data.updated_at
-        };
-        
-        setOrganizations(prev => [...prev, newOrg]);
-        toast.success('Organization created successfully');
-      }
+      // TODO: Replace with GCP API call
+      console.warn('Organization saving not implemented - connect to GCP backend');
+      toast.error('Organization saving requires GCP backend connection');
       
       // Clear logo upload state
       clearLogoUpload();
@@ -610,31 +317,19 @@ export default function OrganizationsManagement() {
 
   const uploadLogoToStorage = async (file: File, organizationId: string): Promise<string | null> => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${organizationId}-${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('organization-logos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) {
-        console.error('Error uploading logo:', error);
-        toast.error(`Failed to upload logo: ${error.message}`);
+      // Use FileUploadService to upload org logo
+      const result = await FileUploadService.uploadOrgLogo(file, organizationId);
+      
+      if (result.success && result.publicUrl) {
+        return result.publicUrl;
+      } else {
+        console.error('Logo upload failed:', result.error);
+        toast.error(result.error || 'Failed to upload logo');
         return null;
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('organization-logos')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
     } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast.error(`Failed to upload logo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Logo upload error:', error);
+      toast.error('Failed to upload logo');
       return null;
     }
   };
@@ -730,20 +425,11 @@ export default function OrganizationsManagement() {
         return;
       }
 
-      // Insert organizations into database
-      const { error } = await supabase
-        .from('organizations')
-        .insert(organizations);
-
-      if (error) {
-        console.error('Error importing organizations:', error);
-        toast.error('Failed to import organizations');
-      } else {
-        toast.success(`Successfully imported ${organizations.length} organizations`);
-        setImportModalOpen(false);
-        setImportFile(null);
-        loadOrganizations(); // Reload to show new data
-      }
+      // TODO: Replace with GCP API call
+      console.warn('Organization import not implemented - connect to GCP backend');
+      toast.error('Organization import requires GCP backend connection');
+      setImportModalOpen(false);
+      setImportFile(null);
     } catch (error) {
       console.error('Error processing CSV:', error);
       toast.error('Failed to process CSV file');

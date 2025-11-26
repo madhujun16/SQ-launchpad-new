@@ -17,8 +17,9 @@ import {
   Package
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+// TODO: Replace with GCP API calls
 
 interface DeploymentStepProps {
   site: Site;
@@ -89,33 +90,9 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
     try {
       setLoading(true);
       
-      // Load procured hardware items (status = 'delivered' or 'installed')
-      const { data: hardwareData, error: hardwareError } = await supabase
-        .from('site_procurement_items')
-        .select(`
-          *,
-          hardware_item:hardware_items(
-            id,
-            name,
-            description,
-            manufacturer,
-            unit_cost,
-            type,
-            category:categories(id, name, description)
-          )
-        `)
-        .eq('site_id', site.id)
-        .eq('item_type', 'hardware')
-        .in('status', ['delivered', 'installed'])
-        .order('created_at');
-      
-      if (hardwareError) {
-        console.error('Error loading procured hardware:', hardwareError);
-        toast.error('Failed to load procured hardware');
-        setProcuredHardware([]);
-      } else {
-        setProcuredHardware((hardwareData || []) as any);
-      }
+      // TODO: Replace with GCP API call
+      console.warn('Loading procured hardware not implemented - connect to GCP backend');
+      setProcuredHardware([]);
     } catch (err) {
       console.error('Error loading procured hardware:', err);
       toast.error('Failed to load procured hardware');
@@ -126,19 +103,9 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
 
   const loadSiteAssets = async () => {
     try {
-      // Load existing assets for this site
-      const { data: assetsData, error: assetsError } = await supabase
-        .from('assets')
-        .select('*')
-        .eq('site_id', site.id);
-      
-      if (assetsError) {
-        console.error('Error loading site assets:', assetsError);
-        toast.error('Failed to load site assets');
-        setSiteAssets([]);
-      } else {
-        setSiteAssets(assetsData || []);
-      }
+      // TODO: Replace with GCP API call
+      console.warn('Loading site assets not implemented - connect to GCP backend');
+      setSiteAssets([]);
     } catch (err) {
       console.error('Error loading site assets:', err);
       toast.error('Failed to load site assets');
@@ -179,36 +146,10 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
       }
 
       // Create assets based on quantity
-      const assetsToInsert = Array.from({ length: procurementItem.quantity }, (_, index) => ({
-        name: selectedHardware.name,
-        type: selectedHardware.type || 'Hardware',
-        serial_number: `SN-${String(index + 1).padStart(6, '0')}`,
-        site_id: site.id,
-        site_name: site.name,
-        status: 'pending' as const,
-        location: site.name,
-        cost: selectedHardware.unit_cost || 0,
-        manufacturer: selectedHardware.manufacturer,
-        model: selectedHardware.name,
-        model_number: `${assetForm.model_number}-${String(index + 1).padStart(3, '0')}`,
-        service_cycle_months: assetForm.service_cycle_months,
-        hardware_item_id: selectedHardware.id
-      }));
-
-      const { error } = await supabase
-        .from('assets')
-        .insert(assetsToInsert);
-
-      if (error) {
-        console.error('Error saving assets:', error);
-        toast.error('Failed to save assets');
-        return;
-      }
-
-      toast.success(`${procurementItem.quantity} assets added successfully`);
-      setShowAssetModal(false);
-      setSelectedHardware(null);
-      loadSiteAssets();
+      // TODO: Replace with GCP API call
+      console.warn('Saving assets not implemented - connect to GCP backend');
+      toast.error('Asset creation requires GCP backend connection');
+      return;
     } catch (err) {
       console.error('Error saving assets:', err);
       toast.error('Failed to save assets');

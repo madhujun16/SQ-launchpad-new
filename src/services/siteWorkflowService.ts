@@ -1,4 +1,7 @@
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Connect to GCP backend APIs
+// TODO: All methods need to be reimplemented with GCP APIs
+
+const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
 
 export interface SiteWorkflowData {
   id: string;
@@ -17,8 +20,6 @@ export interface SiteWorkflowData {
   assigned_deployment_engineer: string;
   latitude?: number;
   longitude?: number;
-  
-  // Workflow step data
   siteCreation?: SiteCreationData;
   siteStudy?: SiteStudyData;
   scoping?: ScopingData;
@@ -26,7 +27,6 @@ export interface SiteWorkflowData {
   procurement?: ProcurementData;
   deployment?: DeploymentData;
   goLive?: GoLiveData;
-  
   created_at: string;
   updated_at: string;
 }
@@ -108,8 +108,6 @@ export interface SiteStudyData {
   selected_solutions: string[];
   created_at: string;
   updated_at: string;
-  
-  // Additional fields for frontend mapping
   space_type?: string;
   footfall_pattern?: string;
   peak_times?: string;
@@ -137,53 +135,17 @@ export interface SiteStudyData {
   stakeholders?: string[];
   findings?: string;
   recommendations?: string;
-  
-  // Frontend-specific nested structures
-  spaceAssessment?: {
-    spaceType: string;
-    footfallPattern: string;
-    operatingHours: string;
-    peakTimes: string;
-    constraints: string[];
-    layoutPhotos: string[];
-    mounting: {
-      mountType: string;
-      surfaceMaterial: string;
-      drillingRequired: boolean;
-      clearanceAvailable: string;
-      distanceToNearest: string;
-      accessibleHeight: boolean;
-    };
-  };
-  requirements?: {
-    primaryPurpose: string;
-    expectedTransactions: string;
-    paymentMethods: string[];
-    specialRequirements: string[];
-    softwareCategories: string[];
-    categoryRequirements: any;
-  };
-  infrastructure?: {
-    powerAvailable: boolean;
-    networkAvailable: boolean;
-    wifiQuality: string;
-    physicalConstraints: string[];
-  };
-  timeline?: {
-    studyDate: string;
-    proposedGoLive: string;
-    urgency: string;
-  };
+  spaceAssessment?: any;
+  requirements?: any;
+  infrastructure?: any;
+  timeline?: any;
 }
 
 export interface ScopingData {
   id: string;
   site_id: string;
   selected_software: string[];
-  selected_hardware: Array<{
-    id: string;
-    quantity: number;
-  }>;
+  selected_hardware: Array<{ id: string; quantity: number; }>;
   status: 'pending' | 'submitted' | 'approved' | 'rejected' | 'changes_requested';
   submitted_at: string;
   approved_at: string;
@@ -211,11 +173,7 @@ export interface ApprovalData {
   approved_at: string;
   approved_by: string;
   comments: string;
-  approver_details: {
-    name: string;
-    role: string;
-    department: string;
-  };
+  approver_details: { name: string; role: string; department: string; };
   created_at: string;
   updated_at: string;
 }
@@ -224,27 +182,9 @@ export interface ProcurementData {
   id: string;
   site_id: string;
   status: 'pending' | 'ordered' | 'delivered' | 'partially_delivered';
-  software_modules: Array<{
-    name: string;
-    status: 'pending' | 'ordered' | 'delivered';
-    orderDate?: string;
-    deliveryDate?: string;
-    licenseKey?: string;
-  }>;
-  hardware_items: Array<{
-    name: string;
-    quantity: number;
-    status: 'pending' | 'ordered' | 'delivered';
-    orderDate?: string;
-    deliveryDate?: string;
-    trackingNumber?: string;
-  }>;
-  summary: {
-    totalSoftwareModules: number;
-    totalHardwareItems: number;
-    inProgress: number;
-    completed: number;
-  };
+  software_modules: Array<any>;
+  hardware_items: Array<any>;
+  summary: { totalSoftwareModules: number; totalHardwareItems: number; inProgress: number; completed: number; };
   last_updated: string;
   created_at: string;
   updated_at: string;
@@ -258,20 +198,8 @@ export interface DeploymentData {
   end_date: string;
   assigned_engineer: string;
   notes: string;
-  progress: {
-    overallProgress: number;
-    hardwareDelivered: 'completed' | 'in_progress' | 'pending';
-    installation: 'completed' | 'in_progress' | 'pending';
-    testing: 'completed' | 'in_progress' | 'pending';
-  };
-  timeline: {
-    hardwareDelivery: string;
-    installationStart: string;
-    installationEnd: string;
-    testingStart: string;
-    testingEnd: string;
-    goLiveDate: string;
-  };
+  progress: any;
+  timeline: any;
   created_at: string;
   updated_at: string;
 }
@@ -283,518 +211,38 @@ export interface GoLiveData {
   date: string;
   signed_off_by: string;
   notes: string;
-  checklist: {
-    hardwareInstallationComplete: 'completed' | 'in_progress' | 'pending';
-    softwareConfigurationComplete: 'completed' | 'in_progress' | 'pending';
-    staffTraining: 'completed' | 'in_progress' | 'pending';
-    finalTesting: 'completed' | 'in_progress' | 'pending';
-  };
-  timeline: {
-    targetGoLiveDate: string;
-    finalTesting: string;
-    staffTraining: string;
-    systemHandover: string;
-  };
+  checklist: any;
+  timeline: any;
   created_at: string;
   updated_at: string;
 }
 
 export class SiteWorkflowService {
-  /**
-   * Get complete site workflow data including all step data
-   */
   static async getSiteWorkflowData(siteId: string): Promise<SiteWorkflowData | null> {
-    try {
-      console.log('🔍 Fetching complete site workflow data for:', siteId);
-
-      // Get site basic data with organization
-      const { data: siteData, error: siteError } = await supabase
-        .from('sites')
-        .select(`
-          *,
-          organization:organizations(id, name, sector, unit_code)
-        `)
-        .eq('id', siteId)
-        .eq('is_archived', false)
-        .single();
-
-      if (siteError) {
-        console.error('❌ Error fetching site data:', siteError);
-        return null;
-      }
-
-      if (!siteData) {
-        console.log('⚠️ Site not found:', siteId);
-        return null;
-      }
-
-      console.log('✅ Site data fetched:', {
-        id: siteData.id,
-        name: siteData.name,
-        organization: siteData.organization?.name,
-        status: siteData.status
-      });
-
-      // Fetch team assignments from site_assignments table
-      const { data: assignmentData, error: assignmentError } = await supabase
-        .from('site_assignments')
-        .select(`
-          ops_manager_id,
-          deployment_engineer_id,
-          profiles!ops_manager_id(id, user_id, full_name, email),
-          profiles!deployment_engineer_id(id, user_id, full_name, email)
-        `)
-        .eq('site_id', siteId)
-        .single();
-
-      let opsManager = null;
-      let deploymentEngineer = null;
-
-      if (assignmentData && !assignmentError) {
-        // Extract user details from the assignment data
-        if (assignmentData.profiles && Array.isArray(assignmentData.profiles)) {
-          const opsManagerProfile = assignmentData.profiles.find(p => p.id === assignmentData.ops_manager_id);
-          const deploymentEngineerProfile = assignmentData.profiles.find(p => p.id === assignmentData.deployment_engineer_id);
-          
-          opsManager = opsManagerProfile;
-          deploymentEngineer = deploymentEngineerProfile;
-        }
-      }
-
-      console.log('🔍 Team assignments fetched:', {
-        assignmentData,
-        opsManager: opsManager?.full_name,
-        deploymentEngineer: deploymentEngineer?.full_name
-      });
-
-      // Get all workflow step data in parallel
-      const [
-        siteCreationResult,
-        siteStudyResult,
-        scopingResult,
-        approvalResult,
-        procurementResult,
-        deploymentResult,
-        goLiveResult
-      ] = await Promise.all([
-        supabase.from('site_creation_data').select('*').eq('site_id', siteId).single(),
-        supabase.from('site_study_data').select('*').eq('site_id', siteId).single(),
-        supabase.from('site_scoping_data').select('*').eq('site_id', siteId).single(),
-        supabase.from('site_approvals').select('*').eq('site_id', siteId).single(),
-        supabase.from('site_procurement').select('*').eq('site_id', siteId).single(),
-        supabase.from('site_deployments').select('*').eq('site_id', siteId).single(),
-        supabase.from('site_go_live').select('*').eq('site_id', siteId).single()
-      ]);
-
-      // Build the complete workflow data object
-      const workflowData: SiteWorkflowData = {
-        id: siteData.id,
-        name: siteData.name,
-        organization: siteData.organization?.name || 'Unknown Organization',
-        organization_id: siteData.organization_id,
-        location: siteData.location,
-        address: siteData.address,
-        postcode: siteData.postcode,
-        sector: siteData.sector,
-        unit_code: siteData.unit_code,
-        criticality_level: siteData.criticality_level,
-        status: siteData.status,
-        target_live_date: siteData.target_live_date,
-        assigned_ops_manager: opsManager?.full_name || siteData.assigned_ops_manager,
-        assigned_deployment_engineer: deploymentEngineer?.full_name || siteData.assigned_deployment_engineer,
-        latitude: siteData.latitude,
-        longitude: siteData.longitude,
-        created_at: siteData.created_at,
-        updated_at: siteData.updated_at
-      };
-
-      // Add step data if it exists
-      if (siteCreationResult.data) {
-        workflowData.siteCreation = siteCreationResult.data;
-        console.log('✅ Site creation data found');
-      }
-
-      if (siteStudyResult.data) {
-        workflowData.siteStudy = siteStudyResult.data;
-        console.log('✅ Site study data found');
-      }
-
-      if (scopingResult.data) {
-        workflowData.scoping = scopingResult.data;
-        console.log('✅ Scoping data found');
-      }
-
-      if (approvalResult.data) {
-        workflowData.approval = approvalResult.data;
-        console.log('✅ Approval data found');
-      }
-
-      if (procurementResult.data) {
-        workflowData.procurement = procurementResult.data;
-        console.log('✅ Procurement data found');
-      }
-
-      if (deploymentResult.data) {
-        workflowData.deployment = deploymentResult.data;
-        console.log('✅ Deployment data found');
-      }
-
-      if (goLiveResult.data) {
-        workflowData.goLive = goLiveResult.data;
-        console.log('✅ Go live data found');
-      }
-
-      // Add team assignment IDs for the frontend
-      if (opsManager) {
-        (workflowData as any).assignedOpsManagerId = opsManager.id;
-      }
-      if (deploymentEngineer) {
-        (workflowData as any).assignedDeploymentEngineerId = deploymentEngineer.id;
-      }
-
-      console.log('✅ Complete workflow data assembled for site:', siteId);
-      return workflowData;
-
-    } catch (error) {
-      console.error('❌ Error in getSiteWorkflowData:', error);
-      return null;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  /**
-   * Get software modules for scoping
-   */
   static async getSoftwareModules(): Promise<any[]> {
-    try {
-      const { data, error } = await supabase
-        .from('software_modules')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('❌ Error fetching software modules:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error in getSoftwareModules:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  /**
-   * Get hardware items for scoping
-   */
   static async getHardwareItems(): Promise<any[]> {
-    try {
-      const { data, error } = await supabase
-        .from('hardware_items')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('❌ Error fetching hardware items:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error in getHardwareItems:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  /**
-   * Save site creation data
-   */
   static async saveSiteCreationData(siteId: string, data: Partial<SiteCreationData>): Promise<boolean> {
-    try {
-      const { assigned_ops_manager, assigned_deployment_engineer, ...siteCreationFields } = data;
-
-      // Update the main sites table for location data only
-      const siteUpdateData: any = {
-        updated_at: new Date().toISOString()
-      };
-
-      // Add location data if provided
-      if (siteCreationFields.locationInfo) {
-        if (siteCreationFields.locationInfo.location) {
-          siteUpdateData.address = siteCreationFields.locationInfo.location;
-        }
-        if (siteCreationFields.locationInfo.latitude !== undefined) {
-          siteUpdateData.latitude = siteCreationFields.locationInfo.latitude;
-        }
-        if (siteCreationFields.locationInfo.longitude !== undefined) {
-          siteUpdateData.longitude = siteCreationFields.locationInfo.longitude;
-        }
-      }
-
-      // Only update if there's something to update
-      if (Object.keys(siteUpdateData).length > 1) { // More than just updated_at
-        const { error: siteUpdateError } = await supabase
-          .from('sites')
-          .update(siteUpdateData)
-          .eq('id', siteId);
-
-        if (siteUpdateError) {
-          console.error('❌ Error updating site data:', siteUpdateError);
-          return false;
-        }
-      }
-
-      // Save team assignments to site_assignments table
-      if (assigned_ops_manager !== undefined || assigned_deployment_engineer !== undefined) {
-        // Get current user's profile for assigned_by
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error('❌ No authenticated user found');
-          return false;
-        }
-
-        // Get the profile record for the current user
-        const { data: currentUserProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, user_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (profileError || !currentUserProfile) {
-          console.error('❌ Current user profile not found:', profileError);
-          return false;
-        }
-
-        // Check if assignment already exists
-        const { data: existingAssignment } = await supabase
-          .from('site_assignments')
-          .select('id')
-          .eq('site_id', siteId)
-          .single();
-
-        const assignmentData: any = {
-          site_id: siteId,
-          assigned_by: currentUserProfile.id, // Use profiles.id for foreign key
-          updated_at: new Date().toISOString()
-        };
-
-        if (assigned_ops_manager !== undefined) {
-          assignmentData.ops_manager_id = assigned_ops_manager;
-        }
-        if (assigned_deployment_engineer !== undefined) {
-          assignmentData.deployment_engineer_id = assigned_deployment_engineer;
-        }
-
-        if (existingAssignment) {
-          // Update existing assignment
-          const { error: assignmentError } = await supabase
-            .from('site_assignments')
-            .update(assignmentData)
-            .eq('site_id', siteId);
-
-          if (assignmentError) {
-            console.error('❌ Error updating site assignment:', assignmentError);
-            return false;
-          }
-        } else {
-          // Create new assignment
-          assignmentData.assigned_at = new Date().toISOString();
-          assignmentData.created_at = new Date().toISOString();
-
-          const { error: assignmentError } = await supabase
-            .from('site_assignments')
-            .insert(assignmentData);
-
-          if (assignmentError) {
-            console.error('❌ Error creating site assignment:', assignmentError);
-            return false;
-          }
-        }
-      }
-
-      // Prepare the data for database insertion
-      const dbData: any = {
-        site_id: siteId,
-        updated_at: new Date().toISOString()
-      };
-
-      // Map the data structure to database fields
-      if (siteCreationFields.locationInfo) {
-        dbData.location = siteCreationFields.locationInfo.location;
-        dbData.postcode = siteCreationFields.locationInfo.postcode;
-        dbData.region = siteCreationFields.locationInfo.region;
-        dbData.country = siteCreationFields.locationInfo.country;
-        dbData.latitude = siteCreationFields.locationInfo.latitude;
-        dbData.longitude = siteCreationFields.locationInfo.longitude;
-      }
-
-      if (siteCreationFields.contactInfo) {
-        dbData.unit_manager_name = siteCreationFields.contactInfo.unitManagerName;
-        dbData.job_title = siteCreationFields.contactInfo.jobTitle;
-        dbData.unit_manager_email = siteCreationFields.contactInfo.unitManagerEmail;
-        dbData.unit_manager_mobile = siteCreationFields.contactInfo.unitManagerMobile;
-        dbData.additional_contact_name = siteCreationFields.contactInfo.additionalContactName;
-        dbData.additional_contact_email = siteCreationFields.contactInfo.additionalContactEmail;
-      }
-
-      if (siteCreationFields.additionalNotes) {
-        dbData.additional_notes = siteCreationFields.additionalNotes;
-      }
-
-      const { error } = await supabase
-        .from('site_creation_data')
-        .upsert(dbData, {
-          onConflict: 'site_id'
-        });
-
-      if (error) {
-        console.error('❌ Error saving site creation data:', error);
-        return false;
-      }
-
-      console.log('✅ Site creation data saved for site:', siteId);
-      return true;
-    } catch (error) {
-      console.error('❌ Error in saveSiteCreationData:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  /**
-   * Save site study data
-   */
   static async saveSiteStudyData(siteId: string, data: Partial<SiteStudyData>): Promise<boolean> {
-    try {
-      // Prepare the data for database insertion
-      const dbData: any = {
-        site_id: siteId,
-        updated_at: new Date().toISOString()
-      };
-
-      // Map the complex nested data structure to database fields
-      if (data.spaceAssessment) {
-        dbData.space_type = data.spaceAssessment.spaceType;
-        dbData.footfall_pattern = data.spaceAssessment.footfallPattern;
-        dbData.operating_hours = data.spaceAssessment.operatingHours;
-        dbData.peak_times = data.spaceAssessment.peakTimes;
-        dbData.constraints = data.spaceAssessment.constraints;
-        dbData.layout_photos = data.spaceAssessment.layoutPhotos;
-        
-        if (data.spaceAssessment.mounting) {
-          dbData.mount_type = data.spaceAssessment.mounting.mountType;
-          dbData.surface_material = data.spaceAssessment.mounting.surfaceMaterial;
-          dbData.drilling_required = data.spaceAssessment.mounting.drillingRequired;
-          dbData.clearance_available = data.spaceAssessment.mounting.clearanceAvailable;
-          dbData.distance_to_nearest = data.spaceAssessment.mounting.distanceToNearest;
-          dbData.accessible_height = data.spaceAssessment.mounting.accessibleHeight;
-        }
-      }
-
-      if (data.requirements) {
-        dbData.primary_purpose = data.requirements.primaryPurpose;
-        dbData.expected_transactions = data.requirements.expectedTransactions;
-        dbData.payment_methods = data.requirements.paymentMethods;
-        dbData.special_requirements = data.requirements.specialRequirements;
-        dbData.software_categories = data.requirements.softwareCategories;
-        dbData.category_requirements = data.requirements.categoryRequirements;
-      }
-
-      if (data.infrastructure) {
-        dbData.power_available = data.infrastructure.powerAvailable;
-        dbData.network_available = data.infrastructure.networkAvailable;
-        dbData.wifi_quality = data.infrastructure.wifiQuality;
-        dbData.physical_constraints = data.infrastructure.physicalConstraints;
-      }
-
-      if (data.timeline) {
-        dbData.study_date = data.timeline.studyDate;
-        dbData.proposed_go_live = data.timeline.proposedGoLive;
-        dbData.urgency = data.timeline.urgency;
-      }
-
-      if (data.stakeholders) {
-        dbData.stakeholders = data.stakeholders;
-      }
-
-      if (data.findings) {
-        dbData.findings = data.findings;
-      }
-
-      if (data.recommendations) {
-        dbData.recommendations = data.recommendations;
-      }
-
-      const { error } = await supabase
-        .from('site_study_data')
-        .upsert(dbData, {
-          onConflict: 'site_id'
-        });
-
-      if (error) {
-        console.error('❌ Error saving site study data:', error);
-        return false;
-      }
-
-      console.log('✅ Site study data saved for site:', siteId);
-      return true;
-    } catch (error) {
-      console.error('❌ Error in saveSiteStudyData:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  /**
-   * Save scoping data
-   */
   static async saveScopingData(siteId: string, data: Partial<ScopingData>): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('site_scoping_data')
-        .upsert({
-          site_id: siteId,
-          ...data,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'site_id'
-        });
-
-      if (error) {
-        console.error('❌ Error saving scoping data:', error);
-        return false;
-      }
-
-      console.log('✅ Scoping data saved for site:', siteId);
-      return true;
-    } catch (error) {
-      console.error('❌ Error in saveScopingData:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  /**
-   * Update site status
-   */
   static async updateSiteStatus(siteId: string, status: string): Promise<boolean> {
-    try {
-      const { error } = await supabase
-        .from('sites')
-        .update({
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', siteId);
-
-      if (error) {
-        console.error('❌ Error updating site status:', error);
-        return false;
-      }
-
-      console.log('✅ Site status updated for site:', siteId, 'to:', status);
-      return true;
-    } catch (error) {
-      console.error('❌ Error in updateSiteStatus:', error);
-      return false;
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 }

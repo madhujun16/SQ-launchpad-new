@@ -26,13 +26,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
 import { formatDate } from '@/lib/dateUtils';
+import { UserService, UserWithRole, ROLE_IDS } from '@/services/userService';
 import { PageLoader } from '@/components/ui/loader';
 
 // Interfaces
-interface User {
+interface UserDisplay {
   id: string;
   user_id: string;
   email: string;
@@ -45,12 +44,12 @@ interface User {
 }
 
 export default function UserManagement() {
-  const { currentRole, createUserAsAdmin, user: currentUser } = useAuth();
+  const { currentRole, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<UserDisplay[]>([]);
+  const [editingUser, setEditingUser] = useState<UserDisplay | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,95 +90,61 @@ export default function UserManagement() {
     console.log('UserManagement: Auth ready, loading users...', { currentRole });
 
     loadUsers();
-  }, [currentRole]); // Add currentRole as dependency
+  }, [currentRole]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // OPTIMIZED: Load all users with their roles in a single query using JOIN
-      const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_id,
-          email,
-          full_name,
-          created_at,
-          updated_at,
-          user_roles!inner(role)
-        `)
-        .order('created_at', { ascending: false });
+      // Fetch users from API
+      const usersData = await UserService.getAllUsers();
       
-      if (usersError) {
-        console.error('Error loading users:', usersError);
-        toast.error('Failed to load users');
-        setUsers([]);
-        return;
-      }
-
-      if (usersData && usersData.length > 0) {
-        // Transform the data to match the expected format
-        const usersWithRoles = usersData.map((user: any) => ({
-          id: user.id,
-          user_id: user.user_id,
-          email: user.email,
-          full_name: user.full_name,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
-          user_roles: user.user_roles || []
-        }));
-        
-        setUsers(usersWithRoles);
-        
-        // Calculate user statistics from the loaded data
-        const stats = {
-          total_users: usersWithRoles.length,
-          admin_count: 0,
-          ops_manager_count: 0,
-          deployment_engineer_count: 0
-        };
-
-        usersWithRoles.forEach(user => {
-          user.user_roles.forEach((role: any) => {
-            if (role.role === 'admin') stats.admin_count++;
-            if (role.role === 'ops_manager') stats.ops_manager_count++;
-            if (role.role === 'deployment_engineer') stats.deployment_engineer_count++;
-          });
-        });
-
-        setUserStats(stats);
-      } else {
-        setUsers([]);
-        setUserStats({
-          total_users: 0,
-          admin_count: 0,
-          ops_manager_count: 0,
-          deployment_engineer_count: 0
-        });
-      }
-    } catch (error) {
-      console.error('Error loading users:', error);
-      setError('Failed to load users');
+      // Transform to display format
+      const displayUsers: UserDisplay[] = usersData.map(user => ({
+        id: user.id,
+        user_id: user.user_id,
+        email: user.email,
+        full_name: user.full_name,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        user_roles: [{ role: user.role }]
+      }));
+      
+      setUsers(displayUsers);
+      
+      // Calculate stats
+      const stats = {
+        total_users: displayUsers.length,
+        admin_count: displayUsers.filter(u => u.user_roles.some(r => r.role === 'admin')).length,
+        ops_manager_count: displayUsers.filter(u => u.user_roles.some(r => r.role === 'ops_manager')).length,
+        deployment_engineer_count: displayUsers.filter(u => u.user_roles.some(r => r.role === 'deployment_engineer')).length
+      };
+      setUserStats(stats);
+      
+    } catch (err) {
+      console.error('Error loading users:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
   const addUser = () => {
-    const newUser: User = {
+    const newUser: UserDisplay = {
       id: 'new',
       user_id: 'new',
       email: '',
       full_name: '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      user_roles: []
+      user_roles: [{ role: 'admin' }] // Default role
     };
     setEditingUser(newUser);
   };
 
-  const editUser = (user: User) => {
+  const editUser = (user: UserDisplay) => {
     setEditingUser(user);
   };
 
@@ -189,131 +154,62 @@ export default function UserManagement() {
     setSaving(true);
     try {
       const isNewUser = editingUser.id === 'new';
-      let profileId = editingUser.id;
       
-      // Check if this is a new user (id === 'new')
-      if (isNewUser) {
-        // Validate required fields
-        if (!editingUser.email || !editingUser.email.trim()) {
-          toast.error('Email is required');
-          setSaving(false);
-          return;
-        }
-        
-        if (!editingUser.full_name || !editingUser.full_name.trim()) {
-          toast.error('Full name is required');
-          setSaving(false);
-          return;
-        }
-        
-        if (editingUser.user_roles.length === 0) {
-          toast.error('At least one role is required');
-          setSaving(false);
-          return;
-        }
-        
-        // Get the primary role for auth user creation
-        const primaryRole = editingUser.user_roles[0]?.role || 'admin';
-        
-        // Create user via edge function (handles auth user, profile, and roles)
-        const { data: createdAuthUser, error: authError } = await createUserAsAdmin(
-          editingUser.email,
-          undefined, // No password - OTP based login
-          primaryRole,
-          editingUser.full_name,
-          editingUser.user_roles
-        );
-        
-        if (authError) {
-          console.error('Error creating user:', authError);
-          // Show more detailed error message
-          const errorMsg = typeof authError === 'string' ? authError : authError.message || 'Failed to create user';
-          toast.error(`Failed to create user: ${errorMsg}`);
-          setSaving(false);
-          return;
-        }
-        
-        if (!createdAuthUser?.user?.id) {
-          console.error('Created user ID not found');
-          toast.error('Failed to get created user ID');
-          setSaving(false);
-          return;
-        }
-        
-        const newUserId = createdAuthUser.user.id;
-        
-        // Reload users to get the newly created profile data
-        await loadUsers();
-        
-        // Find the newly created user to get the profile ID
-        const { data: usersData } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', newUserId)
-          .single();
-        
-        if (usersData) {
-          profileId = (usersData as any)?.id || '';
-          editingUser.id = profileId;
-          editingUser.user_id = newUserId;
-        }
-      } else {
-        // Update existing user profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: editingUser.full_name,
-            updated_at: new Date().toISOString()
-          } as any)
-          .eq('id', editingUser.id as any);
-        
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
-          toast.error('Failed to update user profile');
-          setSaving(false);
-          return;
-        }
+      // Validate required fields
+      if (!editingUser.email || !editingUser.email.trim()) {
+        toast.error('Email is required');
+        setSaving(false);
+        return;
       }
       
-      // Update user roles (only for existing users - new users have roles created by edge function)
-      if (!isNewUser && editingUser.user_roles.length > 0) {
-        // Get the current admin user's ID for assigned_by
-        const assignedByUserId = currentUser?.id || editingUser.user_id;
+      if (!editingUser.full_name || !editingUser.full_name.trim()) {
+        toast.error('Full name is required');
+        setSaving(false);
+        return;
+      }
+      
+      if (editingUser.user_roles.length === 0) {
+        toast.error('At least one role is required');
+        setSaving(false);
+        return;
+      }
+      
+      if (isNewUser) {
+        // Create new user via API
+        const primaryRole = editingUser.user_roles[0]?.role || 'admin';
         
-        // First, delete existing roles
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', editingUser.user_id as any);
+        const result = await UserService.createUser(
+          editingUser.full_name.trim(),
+          editingUser.email.trim(),
+          primaryRole
+        );
         
-        // Then insert new roles
-        const rolesToInsert = editingUser.user_roles.map(role => ({
-          user_id: editingUser.user_id,
-          role: role.role as Database["public"]["Enums"]["app_role"],
-          assigned_by: assignedByUserId,
-          assigned_at: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        }));
-        
-        const { error: rolesError } = await supabase
-          .from('user_roles')
-          .insert(rolesToInsert as any);
-        
-        if (rolesError) {
-          console.error('Error updating roles:', rolesError);
-          toast.error('Failed to update user roles');
+        if (!result.success) {
+          toast.error(result.error || 'Failed to create user');
           setSaving(false);
           return;
         }
+        
+        toast.success('User created successfully! They can now log in using OTP.');
+      } else {
+        // Update existing user
+        const primaryRole = editingUser.user_roles[0]?.role || 'admin';
+        
+        const result = await UserService.updateUser(editingUser.id, {
+          name: editingUser.full_name.trim(),
+          role: primaryRole
+        });
+        
+        if (!result.success) {
+          toast.error(result.error || 'Failed to update user');
+          setSaving(false);
+          return;
+        }
+        
+        toast.success('User updated successfully');
       }
       
       setEditingUser(null);
-      
-      if (isNewUser) {
-        toast.success('User created successfully! They can now log in using OTP.');
-      } else {
-        toast.success('User updated successfully');
-      }
       
       // Reload users to get fresh data
       await loadUsers();
@@ -331,37 +227,22 @@ export default function UserManagement() {
     }
 
     try {
-      // First delete user roles
-      const { error: rolesError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId as any);
+      const result = await UserService.deleteUser(userId);
       
-      if (rolesError) {
-        console.error('Error deleting user roles:', rolesError);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to delete user');
+        return;
       }
       
-      // Then delete user profile
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId as any);
-      
-      if (error) {
-        console.error('Error deleting user:', error);
-        toast.error('Failed to delete user');
-      } else {
-        setUsers(prev => prev.filter(u => u.id !== userId));
-        toast.success('User deleted successfully');
-        await loadUsers(); // Reload to update stats
-      }
+      toast.success('User deleted successfully');
+      await loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
     }
   };
 
-  // Filter and paginate users (similar to Sites page)
+  // Filter and paginate users
   const { filteredUsers, totalPages, currentUsers } = useMemo(() => {
     let filtered = users;
 
@@ -498,7 +379,7 @@ export default function UserManagement() {
           </Card>
         </div>
 
-        {/* Search and Filters - All in One Line (Desktop) */}
+        {/* Search and Filters */}
         <div className="mb-4">
           <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
             {/* Search Bar */}
@@ -710,55 +591,25 @@ export default function UserManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="userRoles">Roles</Label>
-                <div className="space-y-2">
-                  {editingUser.user_roles.map((role, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Select
-                        value={role.role} 
-                        onValueChange={(value) => {
-                          const newRoles = [...editingUser.user_roles];
-                          newRoles[index] = { role: value as 'admin' | 'ops_manager' | 'deployment_engineer' };
-                          setEditingUser({...editingUser, user_roles: newRoles});
-                        }}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="ops_manager">Ops Manager</SelectItem>
-                          <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const newRoles = editingUser.user_roles.filter((_, i) => i !== index);
-                          setEditingUser({...editingUser, user_roles: newRoles});
-                        }}
-                        className="px-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingUser({
-                        ...editingUser,
-                        user_roles: [...editingUser.user_roles, { role: 'admin' }]
-                      });
-                    }}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Role
-                  </Button>
-                </div>
+                <Label htmlFor="userRole">Role</Label>
+                <Select
+                  value={editingUser.user_roles[0]?.role || 'admin'} 
+                  onValueChange={(value) => {
+                    setEditingUser({
+                      ...editingUser, 
+                      user_roles: [{ role: value as 'admin' | 'ops_manager' | 'deployment_engineer' }]
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="ops_manager">Ops Manager</SelectItem>
+                    <SelectItem value="deployment_engineer">Deployment Engineer</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex justify-end space-x-2 pt-4">
                 <Button 

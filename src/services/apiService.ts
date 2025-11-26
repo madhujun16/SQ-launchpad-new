@@ -1,7 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+// TODO: Connect to GCP backend APIs
+// TODO: All methods need to be reimplemented with GCP APIs
 
-// Centralized API service that respects RLS policies and role-based access
+const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
+
+// Centralized API service - needs GCP implementation
 export class ApiService {
   private static instance: ApiService;
 
@@ -29,550 +31,184 @@ export class ApiService {
     }
   }
 
-  // Sites API - respects RLS policies for assignment-based access
-  async getSites() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('sites')
-        .select(`
-          *,
-          sector:sectors(name),
-          city:cities(name),
-          assignments:site_assignments(
-            ops_manager:profiles!ops_manager_id(full_name),
-            deployment_engineer:profiles!deployment_engineer_id(full_name)
-          ),
-          status_tracking:site_status_tracking(*)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  // Sites API
+  async getSites(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async getSiteById(id: string) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('sites')
-        .select(`
-          *,
-          sector:sectors(name),
-          city:cities(name),
-          assignments:site_assignments(
-            ops_manager:profiles!ops_manager_id(full_name, email),
-            deployment_engineer:profiles!deployment_engineer_id(full_name, email)
-          ),
-          status_tracking:site_status_tracking(*),
-          studies:site_studies(*)
-        `)
-        .eq('id', id)
-        .single();
-    });
+  async getSiteById(id: string): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createSite(siteData: Omit<Database['public']['Tables']['sites']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('sites')
-        .insert(siteData)
-        .select()
-        .single();
-    });
+  async createSite(siteData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateSite(id: string, updates: Database['public']['Tables']['sites']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('sites')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateSite(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Assets API - respects role-based filtering
-  async getAssets() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('assets')
-        .select(`
-          *,
-          site:sites(name),
-          assigned_user:profiles!assigned_to(full_name, email)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  // Assets API
+  async getAssets(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createAsset(assetData: Omit<Database['public']['Tables']['assets']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('assets')
-        .insert(assetData)
-        .select()
-        .single();
-    });
+  async createAsset(assetData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateAsset(id: string, updates: Database['public']['Tables']['assets']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('assets')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateAsset(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Inventory API
-  async getInventoryItems() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('inventory_items')
-        .select(`
-          *,
-          site:sites(name),
-          assigned_user:profiles!assigned_to(full_name, email),
-          creator:profiles!created_by(full_name, email)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  async getInventoryItems(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createInventoryItem(itemData: Omit<Database['public']['Tables']['inventory_items']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('inventory_items')
-        .insert(itemData)
-        .select()
-        .single();
-    });
+  async createInventoryItem(itemData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateInventoryItem(id: string, updates: Database['public']['Tables']['inventory_items']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('inventory_items')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateInventoryItem(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Hardware Requests API - respects role-based access
-  async getHardwareRequests() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_requests')
-        .select(`
-          *,
-          site:sites(name),
-          requestor:profiles!requested_by(full_name, email),
-          ops_manager:profiles!assigned_ops_manager(full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer(full_name, email),
-          items:hardware_request_items(
-            *,
-            hardware_item:hardware_items(*)
-          )
-        `)
-        .order('requested_at', { ascending: false });
-    });
+  // Hardware Requests API
+  async getHardwareRequests(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createHardwareRequest(requestData: Omit<Database['public']['Tables']['hardware_requests']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_requests')
-        .insert(requestData)
-        .select()
-        .single();
-    });
+  async createHardwareRequest(requestData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateHardwareRequest(id: string, updates: Database['public']['Tables']['hardware_requests']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_requests')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateHardwareRequest(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Scoping Approvals API
-  async getScopingApprovals() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('scoping_approvals')
-        .select(`
-          *,
-          site:sites(name),
-          deployment_engineer:profiles!deployment_engineer_id(full_name, email),
-          ops_manager:profiles!ops_manager_id(full_name, email),
-          reviewer:profiles!reviewed_by(full_name, email)
-        `)
-        .order('submitted_at', { ascending: false });
-    });
+  async getScopingApprovals(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createScopingApproval(approvalData: Omit<Database['public']['Tables']['scoping_approvals']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('scoping_approvals')
-        .insert(approvalData)
-        .select()
-        .single();
-    });
+  async createScopingApproval(approvalData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateScopingApproval(id: string, updates: Database['public']['Tables']['scoping_approvals']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('scoping_approvals')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateScopingApproval(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Costing Approvals API
-  async getCostingApprovals() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('costing_approvals')
-        .select(`
-          *,
-          site:sites(name),
-          deployment_engineer:profiles!deployment_engineer_id(full_name, email),
-          ops_manager:profiles!ops_manager_id(full_name, email),
-          reviewer:profiles!reviewed_by(full_name, email),
-          items:costing_items(*)
-        `)
-        .order('submitted_at', { ascending: false });
-    });
+  async getCostingApprovals(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createCostingApproval(approvalData: Omit<Database['public']['Tables']['costing_approvals']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('costing_approvals')
-        .insert(approvalData)
-        .select()
-        .single();
-    });
+  async createCostingApproval(approvalData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateCostingApproval(id: string, updates: Database['public']['Tables']['costing_approvals']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('costing_approvals')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateCostingApproval(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Deployments API
-  async getDeployments() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('deployments')
-        .select(`
-          *,
-          site:sites(name),
-          ops_manager:profiles!assigned_ops_manager(full_name, email),
-          deployment_engineer:profiles!assigned_deployment_engineer(full_name, email)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  async getDeployments(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateDeployment(id: string, updates: Database['public']['Tables']['deployments']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('deployments')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateDeployment(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Site Studies API
-  async getSiteStudies() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('site_studies')
-        .select(`
-          *,
-          site:sites(name),
-          conductor:profiles!conducted_by(full_name, email)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  async getSiteStudies(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createSiteStudy(studyData: Omit<Database['public']['Tables']['site_studies']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('site_studies')
-        .insert(studyData)
-        .select()
-        .single();
-    });
+  async createSiteStudy(studyData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateSiteStudy(id: string, updates: Database['public']['Tables']['site_studies']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('site_studies')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateSiteStudy(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Platform Configuration APIs (Admin only)
-  async getHardwareItems() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_items')
-        .select('*')
-        .order('created_at', { ascending: false });
-    });
+  async getHardwareItems(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createHardwareItem(itemData: Omit<Database['public']['Tables']['hardware_items']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_items')
-        .insert(itemData)
-        .select()
-        .single();
-    });
+  async createHardwareItem(itemData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateHardwareItem(id: string, updates: Database['public']['Tables']['hardware_items']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_items')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateHardwareItem(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async deleteHardwareItem(id: string) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('hardware_items')
-        .delete()
-        .eq('id', id);
-    });
+  async deleteHardwareItem(id: string): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // User Management APIs (Admin only)
-  async getProfiles() {
-    return this.handleApiCall(async () => {
-      // OPTIMIZED: Single query with JOIN to fetch all users and their roles
-      return await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  async getProfiles(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // OPTIMIZED: Get users by role in a single query
-  async getUsersByRole(role: string) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', role)
-        .order('created_at', { ascending: false });
-    });
+  async getUsersByRole(role: string): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // OPTIMIZED: Get user statistics in a single query
-  async getUserStatistics() {
-    return this.handleApiCall(async () => {
-      const { data: roleStats, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .order('role');
-
-      if (roleError) throw roleError;
-
-      const stats = {
-        total_users: 0,
-        admin_count: 0,
-        ops_manager_count: 0,
-        deployment_engineer_count: 0
-      };
-
-      if (roleStats) {
-        stats.total_users = roleStats.length;
-        roleStats.forEach(role => {
-          if (role.role === 'admin') stats.admin_count++;
-          if (role.role === 'ops_manager') stats.ops_manager_count++;
-          if (role.role === 'deployment_engineer') stats.deployment_engineer_count++;
-        });
-      }
-
-      return { data: stats, error: null };
-    });
+  async getUserStatistics(): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async getUserRoles() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('user_roles')
-        .select(`
-          *,
-          user:profiles(full_name, email)
-        `)
-        .order('created_at', { ascending: false });
-    });
+  async getUserRoles(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createUserRole(roleData: Omit<Database['public']['Tables']['user_roles']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('user_roles')
-        .insert(roleData)
-        .select()
-        .single();
-    });
+  async createUserRole(roleData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async deleteUserRole(id: string) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('user_roles')
-        .delete()
-        .eq('id', id);
-    });
+  async deleteUserRole(id: string): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
   // Site Assignments API (Admin only)
-  async getSiteAssignments() {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('site_assignments')
-        .select(`
-          *,
-          site:sites(name),
-          ops_manager:profiles!ops_manager_id(full_name, email),
-          deployment_engineer:profiles!deployment_engineer_id(full_name, email),
-          assigner:profiles!assigned_by(full_name, email)
-        `)
-        .order('assigned_at', { ascending: false });
-    });
+  async getSiteAssignments(): Promise<any[]> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async createSiteAssignment(assignmentData: Omit<Database['public']['Tables']['site_assignments']['Insert'], 'id'>) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('site_assignments')
-        .insert(assignmentData)
-        .select()
-        .single();
-    });
+  async createSiteAssignment(assignmentData: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  async updateSiteAssignment(id: string, updates: Database['public']['Tables']['site_assignments']['Update']) {
-    return this.handleApiCall(async () => {
-      return await supabase
-        .from('site_assignments')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-    });
+  async updateSiteAssignment(id: string, updates: any): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  // Real-time subscriptions for live updates
-  subscribeToSites(callback: (payload: any) => void) {
-    return supabase
-      .channel('sites-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'sites' }, 
-        callback
-      )
-      .subscribe();
+  // Real-time subscriptions - needs WebSocket or SSE implementation
+  subscribeToSites(callback: (payload: any) => void): { unsubscribe: () => void } {
+    console.warn('Real-time subscriptions not implemented - connect to GCP backend');
+    return { unsubscribe: () => {} };
   }
 
-  subscribeToAssets(callback: (payload: any) => void) {
-    return supabase
-      .channel('assets-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'assets' }, 
-        callback
-      )
-      .subscribe();
+  subscribeToAssets(callback: (payload: any) => void): { unsubscribe: () => void } {
+    console.warn('Real-time subscriptions not implemented - connect to GCP backend');
+    return { unsubscribe: () => {} };
   }
 
-  subscribeToHardwareRequests(callback: (payload: any) => void) {
-    return supabase
-      .channel('hardware-requests-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'hardware_requests' }, 
-        callback
-      )
-      .subscribe();
+  subscribeToHardwareRequests(callback: (payload: any) => void): { unsubscribe: () => void } {
+    console.warn('Real-time subscriptions not implemented - connect to GCP backend');
+    return { unsubscribe: () => {} };
   }
 
   // Audit logging
-  async logAuditEvent(entity: string, action: string, details?: string) {
-    return this.handleApiCall(async () => {
-      return await supabase.rpc('log_audit_event', {
-        p_entity: entity,
-        p_action: action,
-        p_details: details
-      });
-    });
+  async logAuditEvent(entity: string, action: string, details?: string): Promise<any> {
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 }
 

@@ -1,59 +1,52 @@
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Connect to GCP backend APIs
+// TODO: All methods need to be reimplemented with GCP APIs
+
 import type { InventoryItem, InventoryFilters, License } from '@/types/inventory';
 
+const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
+
 export const inventoryService = {
-  // Mock implementation since inventory_items table doesn't exist in schema
   async getInventoryItems(filters?: InventoryFilters): Promise<InventoryItem[]> {
-    // Return empty array since table doesn't exist
+    // Return empty array until API is implemented
     return [];
   },
 
-  // Mock implementation  
   async getInventoryItem(id: string): Promise<InventoryItem | null> {
     return null;
   },
 
-  // Mock implementation
   async createInventoryItem(item: Partial<InventoryItem>): Promise<InventoryItem> {
-    throw new Error('Inventory items table not available');
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Mock implementation
   async updateInventoryItem(id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> {
-    throw new Error('Inventory items table not available');
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Mock implementation
   async deleteInventoryItem(id: string): Promise<void> {
-    throw new Error('Inventory items table not available');
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Mock licenses implementation since table doesn't exist in schema
   async getLicenses(): Promise<License[]> {
     return [];
   },
 
-  // Mock implementation
   async getLicense(id: string): Promise<License | null> {
     return null;
   },
 
-  // Mock implementation
   async createLicense(license: Partial<License>): Promise<License> {
-    throw new Error('Licenses table not available');
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Mock implementation
   async updateLicense(id: string, updates: Partial<License>): Promise<License> {
-    throw new Error('Licenses table not available');
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Mock implementation
   async deleteLicense(id: string): Promise<void> {
-    throw new Error('Licenses table not available');
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get inventory statistics - mock since table doesn't exist
   async getInventoryStats() {
     return {
       total: 0,

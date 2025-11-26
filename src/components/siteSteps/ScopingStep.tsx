@@ -9,8 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock, Calculator, DollarSign } from 'lucide-react';
 import { PlatformConfigService, SoftwareModule, HardwareItem } from '@/services/platformConfigService';
 import { Site } from '@/types/siteTypes';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+// TODO: Replace with GCP API calls
 
 interface ScopingStepProps {
   site: Site | null;
@@ -263,27 +264,9 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       
       const costSummary = calculateCostSummary();
       
-      // Save scoping data to database
-      const { error } = await supabase
-        .from('site_scoping')
-        .upsert({
-          site_id: site?.id,
-          selected_software: selectedSoftwareIds.map(id => ({
-            id,
-            quantity: softwareQuantities[id] || 1
-          })),
-          selected_hardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
-          status: 'submitted',
-          submitted_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Error submitting scoping:', error);
-        toast.error('Failed to submit scoping');
-        return;
-      }
+      // TODO: Replace with GCP API call
+      console.warn('Scoping submission not implemented - connect to GCP backend');
+      // Continuing without database save for now
 
       // Update site status
       onUpdate({

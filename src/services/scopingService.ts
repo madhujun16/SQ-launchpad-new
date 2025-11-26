@@ -1,6 +1,8 @@
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Connect to GCP backend APIs
+// TODO: All methods need to be reimplemented with GCP APIs
 
-// Enhanced interfaces for scoping integration
+const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
+
 export interface ScopingSoftwareModule {
   id: string;
   name: string;
@@ -86,109 +88,8 @@ export interface ScopingRecommendation {
   businessRules: ScopingBusinessRule[];
 }
 
-// Service functions
 export const getScopingRecommendations = async (): Promise<ScopingRecommendation[]> => {
-  try {
-    // Get software modules
-    const { data: softwareData, error: softwareError } = await supabase
-      .from('software_modules')
-      .select('*')
-      .eq('is_active', true);
-
-    if (softwareError) throw softwareError;
-
-    // Get hardware items
-    const { data: hardwareData, error: hardwareError } = await supabase
-      .from('hardware_items')
-      .select('*')
-      .eq('is_active', true);
-
-    if (hardwareError) throw hardwareError;
-
-    // Get recommendation rules
-    const { data: rulesData, error: rulesError } = await supabase
-      .from('recommendation_rules')
-      .select('*');
-
-    if (rulesError) throw rulesError;
-
-    // Get business rules
-    const { data: businessRulesData, error: businessRulesError } = await supabase
-      .from('business_rules')
-      .select('*');
-
-    if (businessRulesError) throw businessRulesError;
-
-    // Build recommendations
-    const recommendations: ScopingRecommendation[] = (softwareData || []).map(software => {
-      const softwareRules = (rulesData || []).filter(rule => rule.software_module_id === software.id);
-      const softwareBusinessRules = (businessRulesData || []).filter(rule => 
-        rule.software_module_ids?.includes(software.id)
-      );
-
-      const recommendedHardware = softwareRules.map(rule => {
-        const hardware = (hardwareData || []).find(h => h.id === rule.hardware_item_id);
-        if (!hardware) return null;
-
-        return {
-          hardwareItem: {
-            id: hardware.id,
-            name: hardware.name,
-            description: hardware.description,
-            category: hardware.category,
-            model: hardware.model,
-            manufacturer: hardware.manufacturer,
-            unit_cost: (hardware as any).unit_cost || hardware.estimated_cost || 0,
-            installation_cost: (hardware as any).installation_cost || 0,
-            maintenance_cost: (hardware as any).maintenance_cost || 0,
-            is_active: hardware.is_active
-          },
-          rule: {
-            id: rule.id,
-            softwareModuleId: rule.software_module_id,
-            hardwareItemId: rule.hardware_item_id,
-            defaultQuantity: rule.default_quantity || 1,
-            isRequired: rule.is_required || false,
-            reason: rule.reason || '',
-            costMultiplier: rule.cost_multiplier || 1.0,
-            minQuantity: (rule as any).min_quantity || 1,
-            maxQuantity: (rule as any).max_quantity || 5
-          },
-          suggestedQuantity: rule.default_quantity || 1
-        };
-      }).filter(Boolean);
-
-      return {
-        softwareModule: {
-          id: software.id,
-          name: software.name,
-          description: software.description,
-          category: software.category,
-          monthly_fee: (software as any).monthly_fee || 0,
-          setup_fee: (software as any).setup_fee || 0,
-          license_fee: (software as any).license_fee || 0,
-          is_active: software.is_active
-        },
-        recommendedHardware,
-        businessRules: softwareBusinessRules.map(rule => ({
-          id: rule.id,
-          name: rule.name,
-          description: rule.description,
-          ruleType: rule.rule_type as any,
-          softwareModuleIds: rule.software_module_ids || [],
-          hardwareItemIds: rule.hardware_item_ids || [],
-          ruleValue: rule.rule_value,
-          priority: rule.priority,
-          costImpact: (rule as any).cost_impact || 0
-        }))
-      };
-    });
-
-    return recommendations;
-  } catch (error) {
-    console.error('Error getting scoping recommendations:', error);
-    throw error;
-  }
+  throw new Error(API_NOT_IMPLEMENTED);
 };
 
 export const calculateScopingCosts = (

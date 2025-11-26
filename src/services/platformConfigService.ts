@@ -1,4 +1,7 @@
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Connect to GCP backend APIs
+// TODO: All methods need to be reimplemented with GCP APIs
+
+const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
 
 export interface SoftwareCategory {
   id: string;
@@ -13,7 +16,7 @@ export interface SoftwareModule {
   id: string;
   name: string;
   description: string;
-  category_id: string; // Changed to category_id to match database
+  category_id: string;
   license_fee: number;
   is_active: boolean;
   created_at: string;
@@ -27,9 +30,9 @@ export interface SoftwareModule {
 
 export interface HardwareItem {
   id: string;
-  name: string; // Changed back to 'name' to match actual table
+  name: string;
   description?: string;
-  category_id: string; // Changed to category_id to match database
+  category_id: string;
   subcategory?: string;
   manufacturer?: string;
   configuration_notes?: string;
@@ -61,186 +64,35 @@ export interface RecommendationRule {
 }
 
 export const PlatformConfigService = {
-  // Get all software categories
   async getSoftwareCategories(): Promise<SoftwareCategory[]> {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching software categories:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getSoftwareCategories:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get software modules by categories (by category_id)
   async getSoftwareModulesByCategories(categories: string[]): Promise<SoftwareModule[]> {
-    try {
-      if (categories.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from('software_modules')
-        .select('*')
-        .in('category_id', categories)
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching software modules:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getSoftwareModulesByCategories:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get hardware items by categories (by category_id)
   async getHardwareItemsByCategories(categories: string[]): Promise<HardwareItem[]> {
-    try {
-      if (categories.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from('hardware_items')
-        .select('*')
-        .in('category_id', categories)
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching hardware items:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getHardwareItemsByCategories:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get all active software modules for scoping
   async getAllActiveSoftwareModules(): Promise<SoftwareModule[]> {
-    try {
-      console.log('🔍 Fetching all active software modules...');
-      const { data, error } = await supabase
-        .from('software_modules')
-        .select(`
-          *,
-          category:categories(id, name, description)
-        `)
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('❌ Error fetching all active software modules:', error);
-        throw error;
-      }
-
-      console.log('✅ Software modules fetched successfully:', data);
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error in getAllActiveSoftwareModules:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get all active hardware items for scoping
   async getAllActiveHardwareItems(): Promise<HardwareItem[]> {
-    try {
-      console.log('🔍 Fetching all active hardware items...');
-      const { data, error } = await supabase
-        .from('hardware_items')
-        .select(`
-          *,
-          category:categories(id, name, description)
-        `)
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('❌ Error fetching all active hardware items:', error);
-        throw error;
-      }
-
-      console.log('✅ Hardware items fetched successfully:', data);
-      return data || [];
-    } catch (error) {
-      console.error('❌ Error in getAllActiveHardwareItems:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get recommendation rules for software categories
   async getRecommendationRules(categories: string[]): Promise<RecommendationRule[]> {
-    try {
-      if (categories.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from('recommendation_rules')
-        .select('*')
-        .in('software_category', categories);
-
-      if (error) {
-        console.error('Error fetching recommendation rules:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getRecommendationRules:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get all software modules (for admin management)
   async getAllSoftwareModules(): Promise<SoftwareModule[]> {
-    try {
-      const { data, error } = await supabase
-        .from('software_modules')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching all software modules:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getAllSoftwareModules:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   },
 
-  // Get all hardware items (for admin management)
   async getAllHardwareItems(): Promise<HardwareItem[]> {
-    try {
-      const { data, error } = await supabase
-        .from('hardware_items')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching all hardware items:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Error in getAllHardwareItems:', error);
-      return [];
-    }
+    throw new Error(API_NOT_IMPLEMENTED);
   }
 };

@@ -1,10 +1,9 @@
 // Storage Configuration
-// Update this file with the correct bucket ID from your Supabase project
+// TODO: Update this file for GCP Cloud Storage
 
 export const STORAGE_CONFIG = {
-  // Organization logos bucket
-  // Update this ID based on what you find in your Supabase storage
-  ORGANIZATION_LOGOS_BUCKET: 'organization-logos', // Change this to the actual bucket ID
+  // Organization logos bucket - update for GCP Cloud Storage
+  ORGANIZATION_LOGOS_BUCKET: 'organization-logos',
   
   // File size limits (in bytes)
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB

@@ -1,4 +1,4 @@
-// Database schema interfaces (snake_case matching Supabase)
+// Database schema interfaces (snake_case matching database)
 export interface ScopingApprovalRow {
   id: string;
   site_id: string;

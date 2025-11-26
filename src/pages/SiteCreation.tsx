@@ -48,7 +48,9 @@ import { LocationPicker } from '@/components/ui/location-picker';
 import { UserService, UserWithRole } from '@/services/userService';
 import { DatePicker } from '@/components/ui/date-picker';
 import { PageLoader } from '@/components/ui/loader';
-import { supabase } from '@/integrations/supabase/client';
+import { FileUploadService } from '@/services/fileUploadService';
+
+// TODO: Replace with GCP Cloud Storage
 
 interface SiteData {
   name: string;
@@ -328,31 +330,19 @@ const SiteCreation = () => {
 
   const uploadLogoToStorage = async (file: File, organizationId: string): Promise<string | null> => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${organizationId}-${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('organization-logos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) {
-        console.error('Error uploading logo:', error);
-        toast.error(`Failed to upload logo: ${error.message}`);
+      // Use FileUploadService to upload org logo
+      const result = await FileUploadService.uploadOrgLogo(file, organizationId);
+      
+      if (result.success && result.publicUrl) {
+        return result.publicUrl;
+      } else {
+        console.error('Logo upload failed:', result.error);
+        toast.error(result.error || 'Failed to upload logo');
         return null;
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('organization-logos')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
     } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast.error(`Failed to upload logo: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Logo upload error:', error);
+      toast.error('Failed to upload logo');
       return null;
     }
   };
@@ -389,61 +379,10 @@ const SiteCreation = () => {
         }
       }
 
-      // Add new organization
-      const { data, error } = await supabase
-        .from('organizations')
-        .insert([{
-          name: newOrganization.name.trim(),
-          description: newOrganization.description.trim(),
-          sector: newOrganization.sector,
-          unit_code: newOrganization.unit_code.trim(),
-          logo_url: logoUrl,
-          created_by: profile?.id || 'system',
-          created_on: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Supabase insert error:', error);
-        toast.error(`Failed to create organization: ${error.message}`);
-        return;
-      }
-      
-      const newOrg: Organization = {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        sector: data.sector || '',
-        unit_code: data.unit_code || '',
-        logo_url: data.logo_url || logoUrl || null,
-        created_at: data.created_at || '',
-        updated_at: data.updated_at || new Date().toISOString(),
-        sites_count: 0
-      };
-      
-      // Add to local state and refresh organizations
-      setOrganizations(prev => [...prev, newOrg]);
-      
-      // Auto-select the newly created organization
-      setFormData(prev => ({
-        ...prev,
-        organization: newOrg.id,
-        sector: newOrg.sector,
-        unitCode: newOrg.unit_code
-      }));
-      
-      toast.success(`Organization "${newOrg.name}" created successfully!`);
-      
-      // Clear logo upload state and close modal
-      clearLogoUpload();
-      setAddOrgModalOpen(false);
-      setNewOrganization({
-        name: '',
-        description: '',
-        sector: '',
-        unit_code: ''
-      });
+      // TODO: Replace with GCP API call
+      console.warn('Organization creation not implemented - connect to GCP backend');
+      toast.error('Organization creation requires GCP backend connection');
+      return;
     } catch (error) {
       console.error('Error saving organization:', error);
       toast.error(`Failed to save organization: ${error instanceof Error ? error.message : 'Unknown error'}`);

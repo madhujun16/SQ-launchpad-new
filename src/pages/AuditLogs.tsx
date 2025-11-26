@@ -18,8 +18,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { formatDateTime } from '@/lib/dateUtils';
+
+// TODO: Replace with GCP API calls
 import { Loader } from '@/components/ui/loader';
 
 // Interfaces
@@ -125,19 +126,7 @@ export default function AuditLogs() {
 
       setAuditLogs(sampleLogs);
       
-      // In a real implementation, you would fetch from the database:
-      // const { data: logsData, error: logsError } = await supabase
-      //   .from('audit_logs')
-      //   .select('*')
-      //   .order('created_at', { ascending: false });
-      
-      // if (logsError) {
-      //   console.error('Error loading audit logs:', logsError);
-      //   toast.error('Failed to load audit logs');
-      //   setAuditLogs([]);
-      // } else {
-      //   setAuditLogs(logsData || []);
-      // }
+      // TODO: Replace with GCP API call to fetch audit logs from backend
       
     } catch (error) {
       console.error('Error loading audit logs:', error);
@@ -148,27 +137,13 @@ export default function AuditLogs() {
   };
 
   const logAudit = async (entry: Omit<AuditLog, 'id' | 'created_at'>) => {
-    try {
-      // Log to database
-      await supabase.rpc('log_audit_event', {
-        _action: entry.type,
-        _table_name: 'platform_configuration',
-        _metadata: { message: entry.message, actor: entry.actor }
-      });
-      
-      // Also update local state for immediate UI feedback
-      setAuditLogs(prev => [
-        { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
-        ...prev,
-      ]);
-    } catch (error) {
-      console.error('Failed to log audit event:', error);
-      // Fallback to local state only
-      setAuditLogs(prev => [
-        { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
-        ...prev,
-      ]);
-    }
+    // TODO: Replace with GCP API call
+    console.warn('Audit logging not implemented - connect to GCP backend');
+    // Fallback to local state only
+    setAuditLogs(prev => [
+      { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...entry },
+      ...prev,
+    ]);
   };
 
   // CSV export for logs

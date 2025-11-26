@@ -15,18 +15,7 @@ SmartQ-LaunchPad/
 │   ├── services/          # API and business logic
 │   ├── types/             # TypeScript type definitions
 │   └── utils/             # Utility functions
-├── supabase/              # Supabase configuration and migrations
-│   ├── migrations/        # Database migration files
-│   └── functions/         # Edge functions
-├── database/              # Database scripts and utilities
-│   ├── scripts/           # Manual database scripts
-│   ├── migrations/        # Additional migration files
-│   └── backups/           # Database backups
 ├── scripts/               # Development and deployment scripts
-├── docs/                  # Project documentation
-│   ├── database/          # Database documentation
-│   ├── deployment/        # Deployment guides
-│   └── development/       # Development guides
 ├── public/                # Static assets
 └── package.json           # Dependencies and scripts
 ```
@@ -153,8 +142,7 @@ This project is built with:
 
 - **Frontend**: React + TypeScript + Vite
 - **UI Components**: shadcn-ui + Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
+- **Backend**: GCP (Google Cloud Platform)
 - **State Management**: React Query (TanStack Query)
 - **Forms**: React Hook Form + Zod validation
 - **Routing**: React Router DOM
@@ -168,7 +156,7 @@ This project is built with:
 ### Prerequisites
 
 - Node.js & npm installed
-- Supabase account and project setup
+- Backend API configured
 
 ### Installation
 
@@ -200,8 +188,7 @@ src/
 ├── pages/             # Page components
 ├── hooks/             # Custom React hooks
 ├── lib/               # Utility functions
-├── integrations/      # External service integrations
-│   └── supabase/     # Supabase client and types
+├── services/          # API services
 └── assets/           # Static assets
 ```
 
@@ -232,8 +219,7 @@ src/
 Create a `.env` file in the root directory:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_BASE_URL=your_api_base_url
 ```
 
 ---
@@ -266,16 +252,14 @@ nvm use
 
 npm install
 
-# Optional but recommended: create your env
-cp env.secure.example .env
-# Then edit .env and set your Supabase URL and anon key
+# Create your env
+cp env.example .env
+# Then edit .env and set your API base URL
 
 npm run dev
 ```
 
 App runs at: `http://localhost:8080`
-
-Note: The project has safe defaults in `src/integrations/supabase/client.ts`, so it can boot without a `.env`. To connect to your own Supabase, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env`.
 
 ### Troubleshooting (macOS)
 
@@ -285,7 +269,6 @@ Note: The project has safe defaults in `src/integrations/supabase/client.ts`, so
   kill -9 <PID>
   ```
 - Node version errors: run `nvm use` (ensure Node 20 is active)
-- Supabase Auth redirects: add `http://localhost:8080` to your project's allowed URLs in Supabase Auth settings
 
 ---
 

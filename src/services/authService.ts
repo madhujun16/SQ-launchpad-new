@@ -1,218 +1,167 @@
-/**
- * Authentication Service for Backend API
- * Handles login, logout, and token management
- */
+// Authentication Service - OTP based authentication
 
-import { apiClient, ApiResponse } from '@/services/apiClient';
-import { API_ENDPOINTS } from '@/config/api';
+const API_BASE_URL = 'https://sqlaunchpad.com/api';
 
-export interface LoginCredentials {
-  email: string;
-  password?: string;
-  otp?: string;
+export interface SendOtpResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
 }
 
-export interface LoginResponse {
-  user: {
+export interface VerifyOtpResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  token?: string;
+  user?: {
     id: string;
     email: string;
-    name?: string;
+    full_name?: string;
     role?: string;
+    roles?: Array<{ role: string }>;
   };
-  token: string;
-  refreshToken?: string;
-  expiresIn?: number;
 }
 
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt?: number;
-}
-
-export class AuthService {
-  private static readonly TOKEN_KEY = 'backend_auth_token';
-  private static readonly REFRESH_TOKEN_KEY = 'backend_refresh_token';
-  private static readonly USER_KEY = 'backend_user';
-
+export const AuthService = {
   /**
-   * Login with email and password
+   * Send OTP to the user's email
    */
-  static async loginWithPassword(
-    email: string,
-    password: string
-  ): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>(
-      API_ENDPOINTS.AUTH.LOGIN,
-      {
-        email,
-        password,
-        loginType: 'password',
+  async sendOtp(email: string): Promise<SendOtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/send/otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || data.error || `HTTP ${response.status}: Failed to send OTP`,
+        };
       }
-    );
 
-    if (response.success && response.data) {
-      this.storeAuthData(response.data);
-    }
-
-    return response;
-  }
-
-  /**
-   * Login with email and OTP
-   */
-  static async loginWithOTP(
-    email: string,
-    otp: string
-  ): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>(
-      API_ENDPOINTS.AUTH.VERIFY_OTP,
-      {
-        email,
-        otp,
-      }
-    );
-
-    if (response.success && response.data) {
-      this.storeAuthData(response.data);
-    }
-
-    return response;
-  }
-
-  /**
-   * Request OTP for email - sends OTP to user's email
-   */
-  static async requestOTP(email: string): Promise<ApiResponse<{ message: string }>> {
-    return apiClient.post(API_ENDPOINTS.AUTH.REQUEST_OTP, { email });
-  }
-
-  /**
-   * Logout user
-   */
-  static async logout(): Promise<ApiResponse<void>> {
-    const response = await apiClient.post<void>(API_ENDPOINTS.AUTH.LOGOUT);
-    
-    // Clear local storage regardless of API response
-    this.clearAuthData();
-    
-    return response;
-  }
-
-  /**
-   * Refresh access token
-   */
-  static async refreshToken(): Promise<ApiResponse<LoginResponse>> {
-    const refreshToken = this.getRefreshToken();
-    
-    if (!refreshToken) {
+      return {
+        success: true,
+        message: data.message || 'OTP sent successfully',
+      };
+    } catch (error) {
+      console.error('Send OTP error:', error);
       return {
         success: false,
-        error: {
-          message: 'No refresh token available',
-          code: 'NO_REFRESH_TOKEN',
-        },
+        error: error instanceof Error ? error.message : 'Network error - failed to send OTP',
       };
     }
-
-    const response = await apiClient.post<LoginResponse>(
-      API_ENDPOINTS.AUTH.REFRESH,
-      { refreshToken }
-    );
-
-    if (response.success && response.data) {
-      this.storeAuthData(response.data);
-    }
-
-    return response;
-  }
+  },
 
   /**
-   * Validate current token
+   * Verify OTP and authenticate user
    */
-  static async validateToken(): Promise<ApiResponse<{ valid: boolean; user?: any }>> {
-    return apiClient.get(API_ENDPOINTS.AUTH.VALIDATE);
-  }
+  async verifyOtp(email: string, otp: string): Promise<VerifyOtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/verify/otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || data.error || `HTTP ${response.status}: Invalid OTP`,
+        };
+      }
+
+      return {
+        success: true,
+        message: data.message || 'OTP verified successfully',
+        token: data.token,
+        user: data.user,
+      };
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error - failed to verify OTP',
+      };
+    }
+  },
+
+  /**
+   * Get stored auth token
+   */
+  getToken(): string | null {
+    return localStorage.getItem('auth_token');
+  },
+
+  /**
+   * Store auth token
+   */
+  setToken(token: string): void {
+    localStorage.setItem('auth_token', token);
+  },
+
+  /**
+   * Remove auth token
+   */
+  removeToken(): void {
+    localStorage.removeItem('auth_token');
+  },
+
+  /**
+   * Get stored user data
+   */
+  getStoredUser(): VerifyOtpResponse['user'] | null {
+    const userData = localStorage.getItem('auth_user');
+    if (userData) {
+      try {
+        return JSON.parse(userData);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Store user data
+   */
+  setStoredUser(user: VerifyOtpResponse['user']): void {
+    if (user) {
+      localStorage.setItem('auth_user', JSON.stringify(user));
+    }
+  },
+
+  /**
+   * Remove stored user data
+   */
+  removeStoredUser(): void {
+    localStorage.removeItem('auth_user');
+  },
+
+  /**
+   * Clear all auth data
+   */
+  clearAuth(): void {
+    this.removeToken();
+    this.removeStoredUser();
+    localStorage.removeItem('currentRole');
+  },
 
   /**
    * Check if user is authenticated
    */
-  static isAuthenticated(): boolean {
-    const token = this.getAccessToken();
-    if (!token) return false;
-
-    // Check if token is expired
-    const expiresAt = localStorage.getItem('backend_token_expires_at');
-    if (expiresAt) {
-      const expiresAtTime = parseInt(expiresAt);
-      if (Date.now() >= expiresAtTime) {
-        this.clearAuthData();
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Get current access token
-   */
-  static getAccessToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  /**
-   * Get current refresh token
-   */
-  static getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  /**
-   * Get current user
-   */
-  static getCurrentUser(): any | null {
-    const userStr = localStorage.getItem(this.USER_KEY);
-    if (!userStr) return null;
-    
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Store authentication data
-   */
-  private static storeAuthData(data: LoginResponse): void {
-    localStorage.setItem(this.TOKEN_KEY, data.token);
-    
-    if (data.refreshToken) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, data.refreshToken);
-    }
-    
-    if (data.user) {
-      localStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
-    }
-
-    // Store expiration time if provided
-    if (data.expiresIn) {
-      const expiresAt = Date.now() + data.expiresIn * 1000;
-      localStorage.setItem('backend_token_expires_at', expiresAt.toString());
-    }
-  }
-
-  /**
-   * Clear authentication data
-   */
-  private static clearAuthData(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
-    localStorage.removeItem('backend_token_expires_at');
-  }
-}
+  isAuthenticated(): boolean {
+    return !!this.getToken() && !!this.getStoredUser();
+  },
+};
 
 export default AuthService;
-

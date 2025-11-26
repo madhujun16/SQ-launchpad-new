@@ -10,8 +10,7 @@ interface LocationPickerProps {
   className?: string;
 }
 
-// Secure geocoding via Edge Function
-import { supabase } from '@/integrations/supabase/client';
+// TODO: Replace with GCP geocoding API
 
 interface LocationIQResponse {
   display_name: string;
@@ -68,53 +67,25 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     };
   }, []);
 
-  // Secure reverse geocoding function
+  // Secure reverse geocoding function - TODO: Replace with GCP geocoding API
   const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
     try {
       setError(null);
-      
-      const { data, error } = await supabase.functions.invoke('geocoding', {
-        body: { action: 'reverse', lat, lng }
-      });
-
-      if (error) {
-        console.warn('Geocoding service unavailable, using coordinates:', error);
-        return `${lat}, ${lng}`;
-      }
-
-      const result: LocationIQResponse = data.data;
-      return result.display_name || `${lat}, ${lng}`;
+      // TODO: Replace with GCP geocoding API
+      console.warn('Geocoding service not implemented - connect to GCP backend');
+      return `${lat}, ${lng}`;
     } catch (error) {
       console.warn('Geocoding service unavailable, using coordinates:', error);
       return `${lat}, ${lng}`;
     }
   }, []);
 
-  // Secure forward geocoding function
+  // Secure forward geocoding function - TODO: Replace with GCP geocoding API
   const forwardGeocode = useCallback(async (address: string): Promise<{ lat: number; lng: number; address: string } | null> => {
     try {
       setError(null);
-      
-      const { data, error } = await supabase.functions.invoke('geocoding', {
-        body: { action: 'search', query: address, limit: 1 }
-      });
-
-      if (error) {
-        console.warn('Geocoding service unavailable:', error);
-        return null;
-      }
-
-      const results = data.data;
-      
-      if (results && results.length > 0) {
-        const location = results[0];
-        return {
-          lat: parseFloat(location.lat),
-          lng: parseFloat(location.lon),
-          address: location.display_name
-        };
-      }
-      
+      // TODO: Replace with GCP geocoding API
+      console.warn('Geocoding service not implemented - connect to GCP backend');
       return null;
     } catch (error) {
       console.warn('Geocoding service unavailable:', error);
@@ -122,7 +93,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     }
   }, []);
 
-  // Secure search suggestions function
+  // Secure search suggestions function - TODO: Replace with GCP geocoding API
   const getSearchSuggestions = useCallback(async (query: string): Promise<LocationIQSearchResult[]> => {
     if (!query.trim() || query.length < 3) {
       setSearchSuggestions([]);
@@ -132,17 +103,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
     try {
       setError(null);
-      
-      const { data, error } = await supabase.functions.invoke('geocoding', {
-        body: { action: 'search', query, limit: 5 }
-      });
-
-      if (error) {
-        console.warn('Geocoding service unavailable:', error);
-        return [];
-      }
-
-      return data.data || [];
+      // TODO: Replace with GCP geocoding API
+      console.warn('Geocoding service not implemented - connect to GCP backend');
+      return [];
     } catch (error) {
       console.warn('Geocoding service unavailable:', error);
       return [];

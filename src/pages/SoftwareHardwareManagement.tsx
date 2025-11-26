@@ -34,8 +34,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { CategoryService } from '@/services/categoryService';
-import { supabase } from '@/integrations/supabase/client';
 import { PageLoader } from '@/components/ui/loader';
+
+// TODO: Replace with GCP API calls
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -144,41 +145,10 @@ export default function SoftwareHardwareManagement() {
     try {
       setLoading(true);
       
-      // Load software modules with category information
-      const { data: softwareData, error: softwareError } = await supabase
-        .from('software_modules')
-        .select(`
-          *,
-          category:categories(id, name, description)
-        `)
-        .eq('is_active', !showArchived)
-        .order('name');
-      
-      if (softwareError) {
-        console.error('Error loading software modules:', softwareError);
-        toast.error('Failed to load software modules');
-        setSoftwareModules([]);
-      } else {
-        setSoftwareModules((softwareData || []) as any);
-      }
-
-      // Load hardware items with category information
-      const { data: hardwareData, error: hardwareError } = await supabase
-        .from('hardware_items')
-        .select(`
-          *,
-          category:categories(id, name, description)
-        `)
-        .eq('is_active', !showArchived)
-        .order('name');
-      
-      if (hardwareError) {
-        console.error('Error loading hardware items:', hardwareError);
-        toast.error('Failed to load hardware items');
-        setHardwareItems([]);
-      } else {
-        setHardwareItems((hardwareData || []) as any);
-      }
+      // TODO: Replace with GCP API calls
+      console.warn('Loading software/hardware data not implemented - connect to GCP backend');
+      setSoftwareModules([]);
+      setHardwareItems([]);
 
     } catch (err) {
       console.error('Error loading data:', err);
@@ -207,53 +177,10 @@ export default function SoftwareHardwareManagement() {
       
       console.log('Saving software module:', editingSoftwareModule);
       
-      if (editingSoftwareModule.id) {
-        // Update existing
-        const updateData = {
-          name: editingSoftwareModule.name,
-          description: editingSoftwareModule.description,
-          category_id: editingSoftwareModule.category_id,
-          license_fee: editingSoftwareModule.license_fee,
-          is_active: editingSoftwareModule.is_active
-        };
-        
-        console.log('Updating software module with data:', updateData);
-        
-        const { error } = await supabase
-          .from('software_modules')
-          .update(updateData)
-          .eq('id', editingSoftwareModule.id);
-
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
-        toast.success('Software module updated successfully');
-      } else {
-        // Create new
-        const insertData = {
-          name: editingSoftwareModule.name,
-          description: editingSoftwareModule.description,
-          category_id: editingSoftwareModule.category_id,
-          license_fee: editingSoftwareModule.license_fee,
-          is_active: editingSoftwareModule.is_active
-        };
-        
-        console.log('Creating software module with data:', insertData);
-        
-        const { error } = await supabase
-          .from('software_modules')
-          .insert(insertData);
-
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
-        toast.success('Software module created successfully');
-      }
-
-      setEditingSoftwareModule(null);
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Saving software module not implemented - connect to GCP backend');
+      toast.error('Software module save requires GCP backend connection');
+      return;
     } catch (error) {
       console.error('Error saving software module:', error);
       toast.error('Failed to save software module');
@@ -291,77 +218,10 @@ export default function SoftwareHardwareManagement() {
       
       console.log('Saving hardware item:', editingHardwareItem);
       
-      if (editingHardwareItem.id) {
-        // Update existing
-        const updateData = {
-          name: editingHardwareItem.name,
-          description: editingHardwareItem.description,
-          category_id: editingHardwareItem.category_id,
-          manufacturer: editingHardwareItem.manufacturer,
-          unit_cost: unitCost,
-          type: editingHardwareItem.type || 'Other',
-          is_active: editingHardwareItem.is_active,
-          quantity: editingHardwareItem.quantity || 1,
-          total_cost: unitCost * (editingHardwareItem.quantity || 1)
-        };
-        
-        console.log('Updating hardware item with data:', updateData);
-        
-        const { error } = await supabase
-          .from('hardware_items')
-          .update(updateData)
-          .eq('id', editingHardwareItem.id);
-
-        if (error) {
-          console.error('Supabase error:', error);
-          console.error('Error details:', {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint
-          });
-          console.error('Data being sent:', updateData);
-          console.error('Full error object:', JSON.stringify(error, null, 2));
-          throw error;
-        }
-        toast.success('Hardware item updated successfully');
-      } else {
-        // Create new
-        const insertData = {
-          name: editingHardwareItem.name,
-          description: editingHardwareItem.description,
-          category_id: editingHardwareItem.category_id,
-          manufacturer: editingHardwareItem.manufacturer,
-          unit_cost: unitCost,
-          type: editingHardwareItem.type || 'Other',
-          is_active: editingHardwareItem.is_active,
-          quantity: editingHardwareItem.quantity || 1,
-          total_cost: unitCost * (editingHardwareItem.quantity || 1)
-        };
-        
-        console.log('Creating hardware item with data:', insertData);
-        
-        const { error } = await supabase
-          .from('hardware_items')
-          .insert(insertData);
-
-        if (error) {
-          console.error('Supabase error:', error);
-          console.error('Error details:', {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint
-          });
-          console.error('Data being sent:', insertData);
-          console.error('Full error object:', JSON.stringify(error, null, 2));
-          throw error;
-        }
-        toast.success('Hardware item created successfully');
-      }
-
-      setEditingHardwareItem(null);
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Saving hardware item not implemented - connect to GCP backend');
+      toast.error('Hardware item save requires GCP backend connection');
+      return;
     } catch (error) {
       console.error('Error saving hardware item:', error);
       toast.error('Failed to save hardware item');
@@ -374,14 +234,9 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to delete this software module?')) return;
 
     try {
-      const { error } = await supabase
-        .from('software_modules')
-        .delete()
-        .eq('id', id as any);
-
-      if (error) throw error;
-      toast.success('Software module deleted successfully');
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Deleting software module not implemented - connect to GCP backend');
+      toast.error('Delete requires GCP backend connection');
     } catch (error) {
       console.error('Error deleting software module:', error);
       toast.error('Failed to delete software module');
@@ -392,14 +247,9 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to archive this software module?')) return;
 
     try {
-      const { error } = await supabase
-        .from('software_modules')
-        .update({ is_active: false })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Software module archived successfully');
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Archiving software module not implemented - connect to GCP backend');
+      toast.error('Archive requires GCP backend connection');
     } catch (error) {
       console.error('Error archiving software module:', error);
       toast.error('Failed to archive software module');
@@ -410,14 +260,9 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to archive this hardware item?')) return;
 
     try {
-      const { error } = await supabase
-        .from('hardware_items')
-        .update({ is_active: false })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Hardware item archived successfully');
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Archiving hardware item not implemented - connect to GCP backend');
+      toast.error('Archive requires GCP backend connection');
     } catch (error) {
       console.error('Error archiving hardware item:', error);
       toast.error('Failed to archive hardware item');
@@ -426,14 +271,9 @@ export default function SoftwareHardwareManagement() {
 
   const handleRestoreSoftwareModule = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('software_modules')
-        .update({ is_active: true })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Software module restored successfully');
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Restoring software module not implemented - connect to GCP backend');
+      toast.error('Restore requires GCP backend connection');
     } catch (error) {
       console.error('Error restoring software module:', error);
       toast.error('Failed to restore software module');
@@ -442,14 +282,9 @@ export default function SoftwareHardwareManagement() {
 
   const handleRestoreHardwareItem = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('hardware_items')
-        .update({ is_active: true })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Hardware item restored successfully');
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Restoring hardware item not implemented - connect to GCP backend');
+      toast.error('Restore requires GCP backend connection');
     } catch (error) {
       console.error('Error restoring hardware item:', error);
       toast.error('Failed to restore hardware item');
@@ -460,14 +295,9 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to delete this hardware item?')) return;
 
     try {
-      const { error } = await supabase
-        .from('hardware_items')
-        .delete()
-        .eq('id', id as any);
-
-      if (error) throw error;
-      toast.success('Hardware item deleted successfully');
-      loadData();
+      // TODO: Replace with GCP API call
+      console.warn('Deleting hardware item not implemented - connect to GCP backend');
+      toast.error('Delete requires GCP backend connection');
     } catch (error) {
       console.error('Error deleting hardware item:', error);
       toast.error('Failed to delete hardware item');
@@ -610,29 +440,16 @@ export default function SoftwareHardwareManagement() {
     setShowCategoryModal(true);
   };
 
-  // Load categories from backend (actual categories table)
+  // Load categories from backend
   const loadCategories = async () => {
     try {
-      console.log('Loading categories from database...');
+      console.log('Loading categories from backend...');
       
-      // Fetch categories from the actual categories table
-      const { data: categoriesData, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching categories:', error);
-        throw error;
-      }
-
-      console.log('Loaded categories from database:', categoriesData);
-      setCategories(categoriesData || []);
+      // TODO: Replace with GCP API call
+      console.warn('Loading categories not implemented - connect to GCP backend');
+      setCategories([]);
     } catch (error) {
       console.error('Error loading categories:', error);
-      // Fallback to empty array if database fails
-      console.log('Using empty categories list due to error');
       setCategories([]);
     }
   };

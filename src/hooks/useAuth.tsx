@@ -1,9 +1,10 @@
+// Authentication Hook - OTP based authentication with sqlaunchpad.com API
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { AuthService } from '@/services/authService';
 import type { Database } from '@/types/database';
 
+// Types
 type Profile = Database['public']['Tables']['profiles']['Row'] & {
   user_roles?: Array<{
     role: Database['public']['Enums']['app_role'];
@@ -11,6 +12,19 @@ type Profile = Database['public']['Tables']['profiles']['Row'] & {
 };
 
 type UserRole = Database['public']['Enums']['app_role'];
+
+// User type from auth API
+interface User {
+  id: string;
+  email?: string;
+  full_name?: string;
+}
+
+// Session type
+interface Session {
+  access_token: string;
+  user: User;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -38,161 +52,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [profileCache, setProfileCache] = useState<Map<string, { profile: Profile; timestamp: number }>>(new Map());
 
-  const fetchProfile = async (userId: string) => {
-    // Check cache first (5 minute cache)
-    const cached = profileCache.get(userId);
-    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
-      setProfile(cached.profile);
-      setAvailableRoles(cached.profile.user_roles?.map(r => r.role) || ['admin']);
-      const savedRole = localStorage.getItem('currentRole') as UserRole;
-      if (savedRole && cached.profile.user_roles?.some(r => r.role === savedRole)) {
-        setCurrentRole(savedRole);
-      } else {
-        setCurrentRole(cached.profile.user_roles?.[0]?.role || 'admin');
-      }
-      return;
-    }
+  // Initialize auth state from localStorage on mount
+  useEffect(() => {
+    const initializeAuth = () => {
+      const storedUser = AuthService.getStoredUser();
+      const token = AuthService.getToken();
 
-    try {
-      console.log('🔍 Fetching profile for user:', userId);
-      
-      // Add timeout to profile fetch
-      const profilePromise = supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId as any)
-        .maybeSingle();
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
-      );
-      
-      const { data: profileData, error: profileError } = await Promise.race([
-        profilePromise,
-        timeoutPromise
-      ]) as any;
-
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        // Set fallback profile data to prevent hanging
-        const fallbackProfile: Profile = {
-          id: 'fallback-id',
-          user_id: userId,
-          email: 'user@example.com',
-          full_name: 'User',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          invited_at: new Date().toISOString(),
-          invited_by: 'system',
-          last_login_at: new Date().toISOString(),
-          welcome_email_sent: false,
-          is_active: true,
-          user_roles: [{ role: 'admin' as UserRole }]
+      if (storedUser && token) {
+        const authUser: User = {
+          id: storedUser.id,
+          email: storedUser.email,
+          full_name: storedUser.full_name,
         };
-        setProfile(fallbackProfile);
-        setAvailableRoles(['admin' as UserRole]);
-        setCurrentRole('admin' as UserRole);
-        return;
+
+        setUser(authUser);
+        setSession({
+          access_token: token,
+          user: authUser,
+        });
+
+        // Set up roles from stored user
+        const roles = storedUser.roles?.map(r => r.role as UserRole) || [];
+        if (roles.length === 0 && storedUser.role) {
+          roles.push(storedUser.role as UserRole);
+        }
+        // Default to admin if no roles specified
+        if (roles.length === 0) {
+          roles.push('admin');
+        }
+        setAvailableRoles(roles);
+
+        // Restore current role from localStorage or use first available
+        const savedRole = localStorage.getItem('currentRole') as UserRole | null;
+        if (savedRole && roles.includes(savedRole)) {
+          setCurrentRole(savedRole);
+        } else {
+          setCurrentRole(roles[0]);
+        }
+
+        // Create profile from user data
+        setProfile({
+          id: storedUser.id,
+          email: storedUser.email || '',
+          full_name: storedUser.full_name || '',
+          user_roles: roles.map(role => ({ role })),
+        } as Profile);
       }
 
-      if (!profileData) {
-        console.warn('No profile data found, using fallback');
-        // Set fallback profile data to prevent hanging
-        const fallbackProfile: Profile = {
-          id: 'fallback-id',
-          user_id: userId,
-          email: 'user@example.com',
-          full_name: 'User',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          invited_at: new Date().toISOString(),
-          invited_by: 'system',
-          last_login_at: new Date().toISOString(),
-          welcome_email_sent: false,
-          is_active: true,
-          user_roles: [{ role: 'admin' as UserRole }]
-        };
-        setProfile(fallbackProfile);
-        setAvailableRoles(['admin' as UserRole]);
-        setCurrentRole('admin' as UserRole);
-        return;
-      }
+      setLoading(false);
+    };
 
-      // Fetch roles with timeout
-      const rolesPromise = supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId as any);
-      
-      const rolesTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Roles fetch timeout')), 5000)
-      );
-      
-      const { data: rolesData, error: rolesError } = await Promise.race([
-        rolesPromise,
-        rolesTimeoutPromise
-      ]) as any;
-
-      if (rolesError) {
-        console.error('Roles fetch error:', rolesError);
-        // Use fallback roles to prevent hanging
-        const fallbackRoles: UserRole[] = ['admin'];
-        const profileWithRoles: Profile = { 
-          ...(profileData as any || {}), 
-          user_roles: fallbackRoles.map(role => ({ role }))
-        };
-        
-        setProfile(profileWithRoles);
-        setAvailableRoles(fallbackRoles);
-        setCurrentRole(fallbackRoles[0]);
-        return;
-      }
-
-      const roles = (rolesData?.map((r: any) => r.role) || ['admin']) as UserRole[];
-      const profileWithRoles: Profile = { 
-        ...(profileData as any || {}), 
-        user_roles: roles.map(role => ({ role }))
-      };
-      
-      setProfile(profileWithRoles);
-      setAvailableRoles(roles);
-      
-      // Cache the profile data
-      setProfileCache(prev => new Map(prev).set(userId, {
-        profile: profileWithRoles,
-        timestamp: Date.now()
-      }));
-      
-      const savedRole = localStorage.getItem('currentRole') as UserRole;
-      if (savedRole && roles.includes(savedRole)) {
-        setCurrentRole(savedRole);
-      } else {
-        setCurrentRole(roles[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      // Set fallback data to prevent hanging
-      const fallbackProfile: Profile = {
-        id: 'fallback-id',
-        user_id: userId,
-        email: 'user@example.com',
-        full_name: 'User',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        invited_at: new Date().toISOString(),
-        invited_by: 'system',
-        last_login_at: new Date().toISOString(),
-        welcome_email_sent: false,
-        is_active: true,
-        user_roles: [{ role: 'admin' as UserRole }]
-      };
-      setProfile(fallbackProfile);
-      setAvailableRoles(['admin' as UserRole]);
-      setCurrentRole('admin' as UserRole);
-    }
-  };
+    initializeAuth();
+  }, []);
 
   const switchRole = (role: UserRole) => {
     if (availableRoles.includes(role)) {
@@ -202,210 +114,124 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setProfile(null);
-      setCurrentRole(null);
-      setAvailableRoles([]);
-      setProfileCache(new Map());
-      localStorage.removeItem('currentRole');
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
+    AuthService.clearAuth();
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setCurrentRole(null);
+    setAvailableRoles([]);
   };
 
-  const signInWithOtp = async (email: string) => {
+  const signInWithOtp = async (email: string): Promise<{ error: string | null }> => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth`
-        }
-      });
-      return { error: error?.message || null };
-    } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    }
-  };
-
-  const verifyOtp = async (email: string, token: string) => {
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email'
-      });
-      return { error: error?.message || null };
-    } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    }
-  };
-
-  const createUserAsAdmin = async (email: string, password: string | undefined, role: UserRole, fullName: string, roles: Array<{ role: UserRole }>) => {
-    try {
-      // Get the current session to pass auth token
-      const { data: { session } } = await supabase.auth.getSession();
+      const result = await AuthService.sendOtp(email);
       
-      if (!session) {
-        return { error: 'Not authenticated', data: null };
+      if (!result.success) {
+        return { error: result.error || 'Failed to send OTP' };
       }
 
-      // Get the Supabase URL and anon key for direct fetch
-      // Import from client file or use env vars
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ngzvoekvwgjinagdvdhf.supabase.co';
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5nenZvZWt2d2dqaW5hZ2R2ZGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NzE1MzksImV4cCI6MjA2OTM0NzUzOX0.uYNZPJvpIRVBQYrP1JilauuF2evR-vgvSNp3RnnWHGw';
-      const functionUrl = `${supabaseUrl}/functions/v1/create-user`;
-
-      // Use fetch directly to get better error handling
-      try {
-        const response = await fetch(functionUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': anonKey
-          },
-          body: JSON.stringify({
-            email,
-            full_name: fullName,
-            roles: roles
-          })
-        });
-
-        const responseData = await response.json();
-
-        if (!response.ok) {
-          // Extract error message from response
-          const errorMessage = responseData?.error || `Request failed with status ${response.status}`;
-          console.error('Edge function error:', errorMessage);
-          return { error: errorMessage, data: null };
-        }
-
-        if (responseData?.error) {
-          console.error('Edge function returned error:', responseData.error);
-          return { error: responseData.error, data: null };
-        }
-
-        if (responseData?.success && responseData?.user) {
-          return { 
-            data: { user: { id: responseData.user.user_id } as User }, 
-            error: null 
-          };
-        }
-
-        return { error: 'Unexpected response from server', data: null };
-      } catch (fetchError: any) {
-        console.error('Fetch error:', fetchError);
-        return { error: fetchError?.message || 'Network error occurred', data: null };
-      }
-    } catch (error: any) {
-      return { error: error?.message || 'An unexpected error occurred', data: null };
+      return { error: null };
+    } catch (error) {
+      console.error('signInWithOtp error:', error);
+      return { error: error instanceof Error ? error.message : 'Failed to send OTP' };
     }
+  };
+
+  const verifyOtp = async (email: string, otp: string): Promise<{ error: string | null }> => {
+    try {
+      const result = await AuthService.verifyOtp(email, otp);
+
+      if (!result.success) {
+        return { error: result.error || 'Invalid OTP' };
+      }
+
+      // Store auth data
+      if (result.token) {
+        AuthService.setToken(result.token);
+      }
+
+      // If no user data returned, create a minimal user object
+      const userData = result.user || {
+        id: crypto.randomUUID(),
+        email: email,
+        full_name: email.split('@')[0],
+      };
+
+      AuthService.setStoredUser(userData);
+
+      // Update state
+      const authUser: User = {
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.full_name,
+      };
+
+      setUser(authUser);
+      setSession({
+        access_token: result.token || 'authenticated',
+        user: authUser,
+      });
+
+      // Set up roles
+      const roles = userData.roles?.map(r => r.role as UserRole) || [];
+      if (roles.length === 0 && userData.role) {
+        roles.push(userData.role as UserRole);
+      }
+      // Default to admin if no roles specified
+      if (roles.length === 0) {
+        roles.push('admin');
+      }
+      setAvailableRoles(roles);
+      setCurrentRole(roles[0]);
+      localStorage.setItem('currentRole', roles[0]);
+
+      // Create profile
+      setProfile({
+        id: userData.id,
+        email: userData.email || email,
+        full_name: userData.full_name || '',
+        user_roles: roles.map(role => ({ role })),
+      } as Profile);
+
+      return { error: null };
+    } catch (error) {
+      console.error('verifyOtp error:', error);
+      return { error: error instanceof Error ? error.message : 'Failed to verify OTP' };
+    }
+  };
+
+  const createUserAsAdmin = async (
+    email: string, 
+    password: string | undefined, 
+    role: UserRole, 
+    fullName: string, 
+    roles: Array<{ role: UserRole }>
+  ): Promise<{ data?: { user: User } | null; error: string | null }> => {
+    // TODO: Implement admin user creation API
+    console.warn('createUserAsAdmin not implemented - need backend API');
+    return { error: 'User creation API not implemented', data: null };
   };
 
   const forceRefresh = async () => {
-    if (user) {
-      setRefreshing(true);
-      try {
-        await fetchProfile(user.id);
-      } finally {
-        setRefreshing(false);
-      }
+    setRefreshing(true);
+    // Re-initialize from localStorage
+    const storedUser = AuthService.getStoredUser();
+    const token = AuthService.getToken();
+
+    if (storedUser && token) {
+      const authUser: User = {
+        id: storedUser.id,
+        email: storedUser.email,
+        full_name: storedUser.full_name,
+      };
+      setUser(authUser);
+      setSession({
+        access_token: token,
+        user: authUser,
+      });
     }
+    setRefreshing(false);
   };
-
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        console.log('🔄 Starting auth initialization...');
-        
-        // Check localStorage availability first
-        try {
-          localStorage.setItem('auth-test', 'test');
-          localStorage.removeItem('auth-test');
-          console.log('✅ LocalStorage is accessible');
-        } catch (storageError) {
-          console.error('❌ LocalStorage error:', storageError);
-          setLoading(false);
-          return;
-        }
-        
-        // Simplified session initialization with longer timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session timeout')), 15000) // Increased to 15 seconds
-        );
-        
-        const { session: initialSession, error } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]) as any;
-        
-        if (error) {
-          console.error('❌ Session initialization failed:', error);
-          // Don't fail completely, just log and continue
-          console.warn('⚠️ Continuing without initial session');
-        }
-        
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        
-        if (initialSession?.user) {
-          console.log('👤 Fetching profile for user:', initialSession.user.email);
-          // Don't await profile fetch to prevent blocking
-          fetchProfile(initialSession.user.id).catch(err => 
-            console.warn('Profile fetch failed:', err)
-          );
-        } else {
-          console.log('ℹ️ No initial session - user needs to authenticate');
-        }
-        
-        setLoading(false);
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            console.log('🔍 Auth state change:', event, session ? 'Session exists' : 'No session');
-            
-            // Handle refresh token events
-            if (event === 'TOKEN_REFRESHED') {
-              console.log('🔄 Token refreshed, updating session...');
-              setRefreshing(true);
-              setSession(session);
-              setUser(session?.user ?? null);
-              setRefreshing(false);
-              return;
-            }
-            
-            setSession(session);
-            setUser(session?.user ?? null);
-
-            if (session?.user) {
-              console.log('👤 User authenticated, fetching profile...');
-              // Don't await profile fetch to prevent blocking
-              fetchProfile(session.user.id).catch(err => 
-                console.warn('Profile fetch failed:', err)
-              );
-            } else {
-              console.log('👋 User signed out, clearing data...');
-              setProfile(null);
-              setCurrentRole(null);
-              setAvailableRoles([]);
-              localStorage.removeItem('currentRole');
-            }
-            
-            setLoading(false);
-          }
-        );
-
-        return () => subscription.unsubscribe();
-      } catch (error) {
-        console.error('❌ Auth initialization error:', error);
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
 
   const contextValue: AuthContextType = {
     user,
@@ -434,9 +260,7 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
   
   if (!context) {
-    // This should never happen if the provider is set up correctly
     console.error('useAuth: Context is null - AuthProvider may not be wrapping this component');
-    // Return a minimal fallback to prevent crashes
     return {
       user: null,
       session: null,
@@ -448,7 +272,7 @@ export const useAuth = () => {
       signInWithOtp: async () => ({ error: 'Context not ready' }),
       verifyOtp: async () => ({ error: 'Context not ready' }),
       createUserAsAdmin: async () => ({ error: 'Context not ready', data: null }) as any,
-      loading: true,
+      loading: false,
       refreshing: false,
       forceRefresh: async () => {}
     };
