@@ -90,9 +90,6 @@ const HardwareMaster = createLazyComponent(() => import("./pages/HardwareMaster"
 const Inventory = createLazyComponent(() => import("./pages/Inventory"), "Inventory");
 const LicenseManagement = createLazyComponent(() => import("./pages/LicenseManagement"), "LicenseManagement");
 
-// Backend API Test Component
-const BackendApiExample = createLazyComponent(() => import("./components/BackendApiExample"), "BackendApiExample");
-
 // Create a client with optimized settings for Chrome and performance
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -582,26 +579,6 @@ function App() {
 
               {/* Legacy Forecast route - redirect to Insights */}
               <Route path="/forecast" element={<Navigate to="/insights/forecast" replace />} />
-
-              {/* Backend API Test Route */}
-              <Route
-                path="/api-test"
-                element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <BackendApiExample />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
-                }
-              />
 
               {/* Legacy route redirects */}
               <Route path="/site-study" element={<Navigate to="/sites" replace />} />
