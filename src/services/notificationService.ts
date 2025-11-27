@@ -20,7 +20,7 @@ export const markAllAsRead = async (userId: string): Promise<void> => {
 export const getUnreadCount = async (userId: string): Promise<number> => {
   // Return 0 until API is implemented
   console.warn('Notification API not implemented');
-  return 0;
+    return 0;
 };
 
 export const subscribeToNotifications = (

@@ -1,8 +1,9 @@
-// File Upload Service - Using signed URLs from sqlaunchpad.com API
+// File Upload Service - Using signed URLs from backend API
 
 import { AuthService } from './authService';
 
-const API_BASE_URL = 'https://sqlaunchpad.com/api';
+// API URL - configured via environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sqlaunchpad.com/api';
 
 export interface UploadedFile {
   id: string;

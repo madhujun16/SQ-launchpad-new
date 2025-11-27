@@ -47,7 +47,7 @@ export class SessionMonitor {
   async forceRefreshSession(): Promise<boolean> {
     // TODO: Implement session refresh for GCP auth
     console.warn('⚠️ Session refresh - GCP auth not yet implemented');
-    return false;
+        return false;
   }
 
   async getSessionInfo(): Promise<{
@@ -58,10 +58,10 @@ export class SessionMonitor {
     userId?: string;
   }> {
     // TODO: Implement for GCP auth
-    return {
-      hasSession: false,
-      hasRefreshToken: false
-    };
+      return {
+        hasSession: false,
+        hasRefreshToken: false
+      };
   }
 }
 

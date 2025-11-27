@@ -29,9 +29,9 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const redirectTimer = setTimeout(() => {
       if (!loading && !refreshing && !user && location.pathname !== '/auth' && !hasRedirected) {
         console.log('🔄 No user found, redirecting to auth page');
-        setHasRedirected(true);
-        sessionStorage.setItem('redirectAfterAuth', location.pathname + location.search);
-        navigate('/auth', { replace: true });
+          setHasRedirected(true);
+          sessionStorage.setItem('redirectAfterAuth', location.pathname + location.search);
+          navigate('/auth', { replace: true });
       }
     }, 2000);
 

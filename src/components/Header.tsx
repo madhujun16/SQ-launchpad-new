@@ -90,15 +90,15 @@ const DesktopNavigation = React.memo(({
             <DropdownMenu key={item.path}>
               <DropdownMenuTrigger asChild>
                 <button
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isInsightsActive
                       ? 'text-white'
                       : 'text-white/85 hover:text-white'
                   }`}
                 >
-                  <item.icon className="h-4 w-4 inline mr-2" />
+                  <item.icon className="h-4 w-4 mr-2" />
                   {item.label}
-                  <ChevronDown className="h-3 w-3 inline ml-1" />
+                  <ChevronDown className="h-3 w-3 ml-1" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -120,13 +120,13 @@ const DesktopNavigation = React.memo(({
           <Link
             key={item.path}
             to={item.path}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               currentPath === item.path
                 ? 'bg-white/10 text-white border border-white/20'
                 : 'text-white/85 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <item.icon className="h-4 w-4 inline mr-2" />
+            <item.icon className="h-4 w-4 mr-2" />
             {item.label}
           </Link>
         );
@@ -667,8 +667,8 @@ const Header = () => {
     return (
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+          <div className="flex items-center h-16">
+            <div className="flex items-center flex-shrink-0">
               <div className="hidden lg:block">
                 <Logo />
               </div>
@@ -676,7 +676,10 @@ const Header = () => {
                 <MobileLogo />
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex-1 flex justify-center">
+              {/* Loading placeholder for navigation */}
+            </div>
+            <div className="flex items-center space-x-4 flex-shrink-0">
               <div className="animate-pulse bg-green-200 h-8 w-32 rounded"></div>
             </div>
           </div>
@@ -688,8 +691,9 @@ const Header = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-black to-green-800 shadow-lg border-b border-green-600" data-mobile-menu>
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+        <div className="flex items-center h-16">
+          {/* Left section - Logo */}
+          <div className="flex items-center flex-shrink-0">
             <div className="hidden lg:block">
               <Logo />
             </div>
@@ -698,12 +702,16 @@ const Header = () => {
             </div>
           </div>
           
-          <DesktopNavigation 
-            navigationItems={navigationItems} 
-            currentPath={currentPath} 
-          />
+          {/* Center section - Navigation (takes remaining space and centers content) */}
+          <div className="flex-1 flex justify-center">
+            <DesktopNavigation 
+              navigationItems={navigationItems} 
+              currentPath={currentPath} 
+            />
+          </div>
           
-          <div className="flex items-center space-x-4">
+          {/* Right section - User controls */}
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <NotificationBell />
             
             <div className="hidden md:flex items-center space-x-3">

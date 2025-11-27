@@ -97,3 +97,4 @@ dist
 # Temporary folders
 tmp/
 temp/
+sqlaunchpad-backend.json

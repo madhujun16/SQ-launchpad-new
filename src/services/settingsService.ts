@@ -16,12 +16,12 @@ export interface GeneralSettings {
 
 // Default settings to use when API is not available
 const DEFAULT_SETTINGS: GeneralSettings = {
-  dateFormat: 'dd-mmm-yyyy',
-  currency: 'GBP',
-  fyBudget: 500000,
-  siteTargets: 1000,
-  approvalResponseTime: 24
-};
+          dateFormat: 'dd-mmm-yyyy',
+          currency: 'GBP',
+          fyBudget: 500000,
+          siteTargets: 1000,
+          approvalResponseTime: 24
+        };
 
 export const SettingsService = {
   async getGeneralSettings(): Promise<GeneralSettings> {

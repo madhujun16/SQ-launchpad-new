@@ -52,7 +52,7 @@ const MOCK_METRICS: DashboardMetrics = {
 export const dashboardService = {
   async getDashboardStats() {
     console.warn('Dashboard API not implemented - returning mock data');
-    return {
+      return {
       totalUsers: 0,
       totalSites: 0,
       activeSites: 0,
@@ -62,7 +62,7 @@ export const dashboardService = {
       totalLicenses: 0,
       activeLicenses: 0,
       expiringLicenses: 0,
-    };
+      };
   },
 
   async getOpsManagerDashboardMetrics(): Promise<DashboardMetrics> {
@@ -71,11 +71,11 @@ export const dashboardService = {
   },
 
   async getTaskQueueItems(): Promise<TaskQueueItem[]> {
-    return [];
+      return [];
   },
 
   async getExceptionAlerts(): Promise<ExceptionAlert[]> {
-    return [];
+      return [];
   },
 
   async getDeploymentEngineerDashboardMetrics(): Promise<DashboardMetrics> {
@@ -88,18 +88,18 @@ export const dashboardService = {
   },
 
   async getRecentInventoryItems(limit = 5) {
-    return [];
+      return [];
   },
 
   async getRecentLicenses(limit = 5) {
-    return [];
+      return [];
   },
 
   async getAlerts() {
-    return [];
+      return [];
   },
 
   async getUserTasks(userId: string) {
-    return [];
+      return [];
   },
 };
