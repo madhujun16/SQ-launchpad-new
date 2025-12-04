@@ -62,6 +62,7 @@ export const AuthService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email }),
+        credentials: 'include', // Include cookies for CORS
       });
 
       const data = await response.json();
@@ -69,10 +70,11 @@ export const AuthService = {
       if (!response.ok) {
         return {
           success: false,
-          error: data.message || data.error || `HTTP ${response.status}: Failed to send OTP`,
+          error: data.error || data.message || `HTTP ${response.status}: Failed to send OTP`,
         };
       }
 
+      // Backend returns: { message: "OTP sent successfully to user@example.com" }
       return {
         success: true,
         message: data.message || 'OTP sent successfully',
@@ -137,6 +139,7 @@ export const AuthService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, otp }),
+        credentials: 'include', // Include cookies - JWT will be set in cookies by backend
       });
 
       const data = await response.json();
@@ -148,11 +151,23 @@ export const AuthService = {
         };
       }
 
+      // Backend returns: { message: "Login successful" }
+      // JWT token is set in HTTP-only cookie named 'session_id'
+      // Cookie settings: HttpOnly, SameSite=Lax, Max-Age=3600 (1 hour)
+      // We need to get user info separately or from the response if available
+      
+      // Note: Backend may not return user data in response, only sets cookie
+      // You may need to call a user info endpoint after login
+      const userData = data.user || {
+        email: email, // Use email from request
+        // Other user fields would need to be fetched separately
+      };
+      
       return {
         success: true,
-        message: data.message || 'OTP verified successfully',
-        token: data.token,
-        user: data.user,
+        message: data.message || 'Login successful',
+        token: 'cookie-based', // Token is in session_id cookie, not in response
+        user: userData,
       };
     } catch (error) {
       console.error('Verify OTP error:', error);

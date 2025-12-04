@@ -1,9 +1,7 @@
 // File Upload Service - Using signed URLs from backend API
 
-import { AuthService } from './authService';
-
-// API URL - configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sqlaunchpad.com/api';
+import { apiClient } from './apiClient';
+import { API_ENDPOINTS } from '@/config/api';
 
 export interface UploadedFile {
   id: string;
@@ -28,14 +26,7 @@ export interface SignedUrlResponse {
   error?: string;
 }
 
-// Helper to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-  const token = AuthService.getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-  };
-};
+// Note: Authentication is handled via cookies (JWT) by the apiClient
 
 export class FileUploadService {
   private static readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -49,25 +40,28 @@ export class FileUploadService {
    */
   static async generateUploadUrl(dataIdentifier: string): Promise<SignedUrlResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-upload-url`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ Data_identifier: dataIdentifier }),
-      });
+      const response = await apiClient.post<{ 
+        message: string;
+        data: { upload_url: string; public_url: string };
+      }>(
+        API_ENDPOINTS.UPLOAD.GENERATE_URL,
+        { data_identifier: dataIdentifier } // Backend expects lowercase
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!response.success || !response.data) {
         return {
           success: false,
-          error: data.message || data.error || 'Failed to generate upload URL',
+          error: response.error?.message || 'Failed to generate upload URL',
         };
       }
 
+      // Backend returns { message, data: { upload_url, public_url } }
+      const uploadData = response.data?.data || response.data;
+      
       return {
         success: true,
-        upload_url: data.upload_url,
-        public_url: data.public_url,
+        upload_url: uploadData.upload_url,
+        public_url: uploadData.public_url,
       };
     } catch (error) {
       console.error('generateUploadUrl error:', error);

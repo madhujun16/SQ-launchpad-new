@@ -28,20 +28,9 @@ class APIClient {
   }
 
   /**
-   * Get authentication token from Backend API
-   */
-  private async getAuthToken(): Promise<string | null> {
-    try {
-      const backendToken = localStorage.getItem('backend_auth_token');
-      return backendToken || null;
-    } catch (error) {
-      console.error('Failed to get auth token:', error);
-      return null;
-    }
-  }
-
-  /**
    * Build headers for API requests
+   * Note: JWT tokens are stored in cookies by the Flask backend
+   * The browser automatically sends cookies with credentials: 'include'
    */
   private async buildHeaders(customHeaders?: HeadersInit): Promise<HeadersInit> {
     const headers: HeadersInit = {
@@ -49,12 +38,8 @@ class APIClient {
       ...customHeaders,
     };
 
-    // Add authentication token if available
-    const token = await this.getAuthToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    // JWT tokens are handled via cookies, not Authorization header
+    // The backend sets cookies on login, and browser sends them automatically
     return headers;
   }
 
@@ -107,6 +92,7 @@ class APIClient {
         ...options,
         headers,
         signal: controller.signal,
+        credentials: 'include', // Include cookies for JWT authentication
       });
 
       if (timeoutId) clearTimeout(timeoutId);
@@ -256,6 +242,7 @@ class APIClient {
         headers,
         body: formData,
         signal: controller.signal,
+        credentials: 'include', // Include cookies for JWT authentication
       });
 
       clearTimeout(timeoutId);

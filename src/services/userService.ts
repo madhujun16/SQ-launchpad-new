@@ -1,12 +1,10 @@
 // User Service - CRUD operations with backend API
 
-import { AuthService } from './authService';
-
-// API URL - configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sqlaunchpad.com/api';
+import { apiClient } from './apiClient';
+import { API_ENDPOINTS } from '@/config/api';
 
 // Development mode check
-const isDevMode = () => import.meta.env.DEV;
+const isDevMode = () => import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_AUTH !== 'false';
 
 // Mock users for development
 const MOCK_USERS: UserWithRole[] = [
@@ -85,14 +83,7 @@ export interface GetUsersResponse {
   error?: string;
 }
 
-// Helper to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-  const token = AuthService.getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-  };
-};
+// Note: Authentication is handled via cookies (JWT) by the apiClient
 
 export class UserService {
   // Local mock users storage for dev mode
@@ -109,20 +100,14 @@ export class UserService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/user/all`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+      const response = await apiClient.get<UserWithRole[] | { users: UserWithRole[] }>(API_ENDPOINTS.USERS.LIST);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Failed to fetch users:', data);
-        throw new Error(data.message || data.error || 'Failed to fetch users');
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Failed to fetch users');
       }
 
       // Transform API response to our format
-      const users = Array.isArray(data) ? data : (data.users || []);
+      const users = Array.isArray(response.data) ? response.data : (response.data.users || []);
       return users.map((user: any) => this.transformUser(user));
     } catch (error) {
       console.error('getAllUsers error:', error);
@@ -172,25 +157,19 @@ export class UserService {
         Role: ROLE_IDS[role],
       };
 
-      const response = await fetch(`${API_BASE_URL}/user`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
+      const response = await apiClient.post<{ user?: any; message?: string }>(API_ENDPOINTS.USERS.CREATE, payload);
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!response.success) {
         return {
           success: false,
-          error: data.message || data.error || 'Failed to create user',
+          error: response.error?.message || 'Failed to create user',
         };
       }
 
       return {
         success: true,
-        user: this.transformUser(data.user || data),
-        message: data.message || 'User created successfully',
+        user: response.data?.user ? this.transformUser(response.data.user) : undefined,
+        message: response.data?.message || 'User created successfully',
       };
     } catch (error) {
       console.error('createUser error:', error);
@@ -275,7 +254,7 @@ export class UserService {
   }
 
   /**
-   * Delete a user (if API supports it)
+   * Delete a user
    */
   static async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
     // Dev mode - remove from mock users
@@ -289,9 +268,24 @@ export class UserService {
       return { success: false, error: 'User not found' };
     }
 
-    // TODO: Implement when API endpoint is available
-    console.warn('deleteUser not implemented - need backend API endpoint');
-    return { success: false, error: 'Delete user API not implemented' };
+    try {
+      const response = await apiClient.delete(API_ENDPOINTS.USERS.DELETE(userId));
+      
+      if (!response.success) {
+        return {
+          success: false,
+          error: response.error?.message || 'Failed to delete user',
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('deleteUser error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete user',
+      };
+    }
   }
 }
 

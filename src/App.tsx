@@ -137,7 +137,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
           <div className="min-h-screen">
             <Routes>
               {/* Public routes - no providers needed */}
