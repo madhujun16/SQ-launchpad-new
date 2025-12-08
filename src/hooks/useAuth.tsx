@@ -44,38 +44,62 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Bypass auth if enabled via environment variable
+const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
+
+// Mock user for bypass mode
+const MOCK_USER: User = {
+  id: 'bypass-user',
+  email: 'dev@sqlaunchpad.com',
+  full_name: 'Development User',
+};
+
+const MOCK_PROFILE: Profile = {
+  id: 'bypass-user',
+  email: 'dev@sqlaunchpad.com',
+  full_name: 'Development User',
+  user_roles: [{ role: 'admin' }],
+} as Profile;
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
-  const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(BYPASS_AUTH ? MOCK_USER : null);
+  const [session, setSession] = useState<Session | null>(BYPASS_AUTH ? { access_token: 'bypass', user: MOCK_USER } : null);
+  const [profile, setProfile] = useState<Profile | null>(BYPASS_AUTH ? MOCK_PROFILE : null);
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(BYPASS_AUTH ? 'admin' : null);
+  const [availableRoles, setAvailableRoles] = useState<UserRole[]>(BYPASS_AUTH ? ['admin'] : []);
+  const [loading, setLoading] = useState(!BYPASS_AUTH);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Initialize auth state from localStorage on mount
+  // Initialize auth state from backend on mount
   useEffect(() => {
-    const initializeAuth = () => {
-      const storedUser = AuthService.getStoredUser();
-      const token = AuthService.getToken();
+    // Skip auth initialization if bypass is enabled
+    if (BYPASS_AUTH) {
+      setLoading(false);
+      return;
+    }
 
-      if (storedUser && token) {
+    const initializeAuth = async () => {
+      // Try to get current user from backend (uses session cookie)
+      const currentUser = await AuthService.getCurrentUser();
+      
+      if (currentUser) {
+        // User is authenticated, set up state
         const authUser: User = {
-          id: storedUser.id,
-          email: storedUser.email,
-          full_name: storedUser.full_name,
+          id: currentUser.id,
+          email: currentUser.email,
+          full_name: currentUser.full_name,
         };
 
         setUser(authUser);
         setSession({
-          access_token: token,
+          access_token: 'cookie-based',
           user: authUser,
         });
 
-        // Set up roles from stored user
-        const roles = storedUser.roles?.map(r => r.role as UserRole) || [];
-        if (roles.length === 0 && storedUser.role) {
-          roles.push(storedUser.role as UserRole);
+        // Set up roles from user data
+        const roles = currentUser.roles?.map(r => r.role as UserRole) || [];
+        if (roles.length === 0 && currentUser.role) {
+          roles.push(currentUser.role as UserRole);
         }
         // Default to admin if no roles specified
         if (roles.length === 0) {
@@ -93,11 +117,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Create profile from user data
         setProfile({
-          id: storedUser.id,
-          email: storedUser.email || '',
-          full_name: storedUser.full_name || '',
+          id: currentUser.id,
+          email: currentUser.email || '',
+          full_name: currentUser.full_name || '',
           user_roles: roles.map(role => ({ role })),
         } as Profile);
+
+        // Store user data locally
+        AuthService.setStoredUser(currentUser);
+        AuthService.setToken('cookie-based');
+      } else {
+        // No valid session, clear any stale data
+        AuthService.clearAuth();
       }
 
       setLoading(false);
@@ -114,6 +145,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Call backend logout endpoint to clear session cookie
+    await AuthService.logout();
+    
+    // Clear local state
     AuthService.clearAuth();
     setUser(null);
     setSession(null);
@@ -214,22 +249,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const forceRefresh = async () => {
     setRefreshing(true);
-    // Re-initialize from localStorage
-    const storedUser = AuthService.getStoredUser();
-    const token = AuthService.getToken();
-
-    if (storedUser && token) {
+    
+    // Fetch current user from backend
+    const currentUser = await AuthService.getCurrentUser();
+    
+    if (currentUser) {
       const authUser: User = {
-        id: storedUser.id,
-        email: storedUser.email,
-        full_name: storedUser.full_name,
+        id: currentUser.id,
+        email: currentUser.email,
+        full_name: currentUser.full_name,
       };
+      
       setUser(authUser);
       setSession({
-        access_token: token,
+        access_token: 'cookie-based',
         user: authUser,
       });
+
+      // Update roles
+      const roles = currentUser.roles?.map(r => r.role as UserRole) || [];
+      if (roles.length === 0 && currentUser.role) {
+        roles.push(currentUser.role as UserRole);
+      }
+      if (roles.length === 0) {
+        roles.push('admin');
+      }
+      setAvailableRoles(roles);
+      
+      // Update profile
+      setProfile({
+        id: currentUser.id,
+        email: currentUser.email || '',
+        full_name: currentUser.full_name || '',
+        user_roles: roles.map(role => ({ role })),
+      } as Profile);
+    } else {
+      // Session expired or invalid
+      AuthService.clearAuth();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setCurrentRole(null);
+      setAvailableRoles([]);
     }
+    
     setRefreshing(false);
   };
 

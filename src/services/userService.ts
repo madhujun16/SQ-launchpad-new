@@ -3,42 +3,7 @@
 import { apiClient } from './apiClient';
 import { API_ENDPOINTS } from '@/config/api';
 
-// Development mode check
-const isDevMode = () => import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_AUTH !== 'false';
-
-// Mock users for development
-const MOCK_USERS: UserWithRole[] = [
-  {
-    id: '1',
-    user_id: '1',
-    email: 'admin@smartq.com',
-    full_name: 'Admin User',
-    role: 'admin',
-    role_id: 1,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '2',
-    user_id: '2',
-    email: 'ops.manager@smartq.com',
-    full_name: 'Operations Manager',
-    role: 'ops_manager',
-    role_id: 2,
-    created_at: '2024-01-02T00:00:00Z',
-    updated_at: '2024-01-02T00:00:00Z',
-  },
-  {
-    id: '3',
-    user_id: '3',
-    email: 'deploy.engineer@smartq.com',
-    full_name: 'Deployment Engineer',
-    role: 'deployment_engineer',
-    role_id: 3,
-    created_at: '2024-01-03T00:00:00Z',
-    updated_at: '2024-01-03T00:00:00Z',
-  },
-];
+// All user operations now use real backend API
 
 // Role ID mapping
 export const ROLE_IDS = {
@@ -86,19 +51,10 @@ export interface GetUsersResponse {
 // Note: Authentication is handled via cookies (JWT) by the apiClient
 
 export class UserService {
-  // Local mock users storage for dev mode
-  private static mockUsers: UserWithRole[] = [...MOCK_USERS];
-
   /**
    * Get all users
    */
   static async getAllUsers(): Promise<UserWithRole[]> {
-    // Dev mode - return mock users
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Returning mock users');
-      return [...this.mockUsers];
-    }
-
     try {
       const response = await apiClient.get<UserWithRole[] | { users: UserWithRole[] }>(API_ENDPOINTS.USERS.LIST);
 
@@ -111,12 +67,6 @@ export class UserService {
       return users.map((user: any) => this.transformUser(user));
     } catch (error) {
       console.error('getAllUsers error:', error);
-      
-      // Fallback to mock users in dev mode
-      if (isDevMode()) {
-        console.log('🔧 API unavailable - using mock users');
-        return [...this.mockUsers];
-      }
       throw error;
     }
   }
@@ -129,27 +79,6 @@ export class UserService {
     email: string,
     role: 'admin' | 'ops_manager' | 'deployment_engineer'
   ): Promise<CreateUserResponse> {
-    // Dev mode - add to mock users
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Creating mock user', { name, email, role });
-      const newUser: UserWithRole = {
-        id: `mock-${Date.now()}`,
-        user_id: `mock-${Date.now()}`,
-        email,
-        full_name: name,
-        role,
-        role_id: ROLE_IDS[role],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      this.mockUsers.push(newUser);
-      return {
-        success: true,
-        user: newUser,
-        message: 'DEV MODE: User created successfully',
-      };
-    }
-
     try {
       const payload: CreateUserPayload = {
         name,
@@ -242,32 +171,102 @@ export class UserService {
   }
 
   /**
-   * Update a user (if API supports it)
+   * Get user by ID
+   */
+  static async getUserById(userId: string): Promise<UserWithRole | null> {
+    try {
+      const response = await apiClient.get<{
+        message: string;
+        data: any;
+      }>(API_ENDPOINTS.USERS.GET(userId));
+
+      if (!response.success || !response.data) {
+        if (response.error?.statusCode === 404) {
+          return null; // User not found
+        }
+        throw new Error(response.error?.message || 'Failed to fetch user');
+      }
+
+      // Backend returns { message, data: {...} }
+      return this.transformUser(response.data.data);
+    } catch (error) {
+      console.error('getUserById error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get current logged-in user
+   */
+  static async getCurrentUser(): Promise<UserWithRole | null> {
+    try {
+      const response = await apiClient.get<{
+        message: string;
+        data: any;
+      }>(API_ENDPOINTS.USERS.GET_ME);
+
+      if (!response.success || !response.data) {
+        if (response.error?.statusCode === 401) {
+          return null; // Not authenticated
+        }
+        throw new Error(response.error?.message || 'Failed to fetch current user');
+      }
+
+      // Backend returns { message, data: {...} }
+      return this.transformUser(response.data.data);
+    } catch (error) {
+      console.error('getCurrentUser error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update a user
    */
   static async updateUser(
     userId: string,
     updates: Partial<{ name: string; email: string; role: 'admin' | 'ops_manager' | 'deployment_engineer' }>
   ): Promise<CreateUserResponse> {
-    // TODO: Implement when API endpoint is available
-    console.warn('updateUser not implemented - need backend API endpoint');
-    return { success: false, error: 'Update user API not implemented' };
+    try {
+      // Build update payload
+      const payload: any = {};
+      if (updates.name) payload.name = updates.name;
+      if (updates.email) payload.emailid = updates.email; // Backend expects emailid
+      if (updates.role) payload.Role = ROLE_IDS[updates.role];
+
+      const response = await apiClient.put<{
+        message: string;
+        data: any;
+      }>(API_ENDPOINTS.USERS.UPDATE(userId), payload);
+
+      if (!response.success) {
+        if (response.error?.statusCode === 404) {
+          return { success: false, error: 'User not found' };
+        }
+        return {
+          success: false,
+          error: response.error?.message || 'Failed to update user',
+        };
+      }
+
+      return {
+        success: true,
+        user: response.data?.data ? this.transformUser(response.data.data) : undefined,
+        message: response.data?.message || 'User updated successfully',
+      };
+    } catch (error) {
+      console.error('updateUser error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update user',
+      };
+    }
   }
 
   /**
    * Delete a user
    */
   static async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
-    // Dev mode - remove from mock users
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Deleting mock user', userId);
-      const index = this.mockUsers.findIndex(u => u.id === userId);
-      if (index !== -1) {
-        this.mockUsers.splice(index, 1);
-        return { success: true };
-      }
-      return { success: false, error: 'User not found' };
-    }
-
     try {
       const response = await apiClient.delete(API_ENDPOINTS.USERS.DELETE(userId));
       

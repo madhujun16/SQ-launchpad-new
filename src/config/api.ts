@@ -3,21 +3,18 @@
  */
 
 // Get API URL from environment variables
-// Default: http://localhost:8080/api (local) or https://sqlaunchpad.com/api (production)
+// Always uses production API: https://api.sqlaunchpad.com/api
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.sqlaunchpad.com/api',
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000'),
-  // Use proxy in development, direct URL in production
-  isDevelopment: import.meta.env.DEV,
-  // In development, we use '/api' which gets proxied by Vite
-  // In production, we use the full URL
+  // Always use production API URL directly
   get url() {
     // If baseURL already includes /api, use it as-is
     if (this.baseURL.includes('/api')) {
-      return this.isDevelopment ? '/api' : this.baseURL;
+      return this.baseURL;
     }
     // Otherwise append /api
-    return this.isDevelopment ? '/api' : `${this.baseURL}/api`;
+    return `${this.baseURL}/api`;
   }
 };
 
@@ -28,46 +25,47 @@ export const API_ENDPOINTS = {
   
   // Authentication
   AUTH: {
-    LOGIN: '/api/login',
-    LOGOUT: '/api/logout',
-    SEND_OTP: '/api/send/otp',
-    VERIFY_OTP: '/api/verify/otp',
+    LOGIN: '/login',
+    LOGOUT: '/logout', // POST - Logout user
+    SEND_OTP: '/send/otp',
+    VERIFY_OTP: '/verify/otp', // Now returns user data
   },
   
   // Users
   USERS: {
-    LIST: '/api/user/all',
-    GET: (id: string) => `/api/user/${id}`,
-    CREATE: '/api/user',
-    UPDATE: (id: string) => `/api/user/${id}`,
-    DELETE: (id: string) => `/api/user/${id}`,
+    LIST: '/user/all',
+    GET: (id: string) => `/user/${id}`,
+    GET_ME: '/user/me', // Get current logged-in user
+    CREATE: '/user',
+    UPDATE: (id: string) => `/user/${id}`,
+    DELETE: (id: string) => `/user/${id}`,
   },
   
   // Organizations
   ORGANIZATIONS: {
     LIST: (organizationId?: string | 'all') => {
       const id = organizationId || 'all';
-      return `/api/organization?organization_id=${id}`;
+      return `/organization?organization_id=${id}`;
     },
-    CREATE: '/api/organization',
-    UPDATE: '/api/organization', // PUT with id in body
-    DELETE: (id: string) => `/api/organization?organization_id=${id}`,
+    CREATE: '/organization',
+    UPDATE: '/organization', // PUT with id in body
+    DELETE: (id: string) => `/organization?organization_id=${id}`,
   },
   
   // Sites
   SITES: {
-    LIST: '/api/site/all',
-    CREATE: '/api/site',
-    UPDATE: '/api/site', // PUT with id in body
-    DELETE: (id: string) => `/api/site?site_id=${id}`,
+    LIST: '/site/all',
+    CREATE: '/site',
+    UPDATE: '/site', // PUT with id in body
+    DELETE: (id: string) => `/site?site_id=${id}`,
   },
   
   // Pages (belong to sites) - uses query params
   PAGES: {
     GET: (pageName: string, siteId: string | number) => 
-      `/api/page?page_name=${pageName}&site_id=${siteId}`,
-    CREATE: '/api/page',
-    UPDATE: '/api/page', // PUT with id in body
+      `/page?page_name=${pageName}&site_id=${siteId}`,
+    CREATE: '/page',
+    UPDATE: '/page', // PUT with id in body
   },
   
   // Sections (belong to pages) - uses query params
@@ -75,14 +73,14 @@ export const API_ENDPOINTS = {
     GET: (pageId: string | number, sectionName?: string) => {
       const params = new URLSearchParams({ page_id: String(pageId) });
       if (sectionName) params.append('section_name', sectionName);
-      return `/api/section?${params.toString()}`;
+      return `/section?${params.toString()}`;
     },
-    CREATE: '/api/section',
+    CREATE: '/section',
   },
   
   // File Upload
   UPLOAD: {
-    GENERATE_URL: '/api/generate-upload-url',
+    GENERATE_URL: '/generate-upload-url',
   },
 };
 

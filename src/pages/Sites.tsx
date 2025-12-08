@@ -158,12 +158,26 @@ const Sites = () => {
           setLoading(false);
           clearTimeout(timeoutId);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching sites:', error);
         if (isMounted) {
-          setError('Failed to load sites');
-          toast.error('Failed to load sites');
-          // Set empty array to prevent blank page
+          // Only show error for actual API failures, not for empty responses
+          // If the API returns successfully with empty data, that's not an error
+          const isNetworkError = error?.message?.includes('fetch') || 
+                                 error?.message?.includes('network') ||
+                                 error?.message?.includes('Failed to fetch') ||
+                                 error?.code === 'NETWORK_ERROR';
+          
+          if (isNetworkError || error?.response?.status >= 500) {
+            // Real API error - show error state
+            setError('Failed to load sites. Please try again.');
+            toast.error('Failed to load sites');
+          } else {
+            // Likely a successful response with no data - just set empty array
+            setError(null);
+          }
+          
+          // Always set empty array so empty state can show
           setSites([]);
           setLoading(false);
           clearTimeout(timeoutId);
@@ -387,16 +401,24 @@ const Sites = () => {
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state - only show for actual API errors, not empty data
+  // If there's an error but we have sites (from cache), show them
+  // If there's an error and no sites, show error state
+  if (error && sites.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Sites</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={handleCreateSite}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Site
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -482,18 +504,23 @@ const Sites = () => {
                 <TableBody>
                   {currentSites.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">
+                      <TableCell colSpan={6} className="text-center py-12">
+                        <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
                           {searchTerm || statusFilter !== 'all' 
-                            ? 'No sites match your current filters' 
+                            ? 'No sites match your filters' 
                             : 'No sites found'}
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                          {searchTerm || statusFilter !== 'all' 
+                            ? 'Try adjusting your search or filter criteria' 
+                            : 'Get started by creating your first site'}
                         </p>
-                        {(searchTerm || statusFilter !== 'all') && (
-                          <Button variant="outline" onClick={clearFilters} className="mt-2">
+                        {searchTerm || statusFilter !== 'all' ? (
+                          <Button variant="outline" onClick={clearFilters}>
                             Clear Filters
                           </Button>
-                        )}
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   ) : (

@@ -6,6 +6,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Loader } from '../components/ui/loader';
 
+// Bypass auth if enabled via environment variable
+const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
+
 const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -13,6 +16,11 @@ const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasRedirected, setHasRedirected] = useState(false);
   
   const { user, loading, refreshing, currentRole } = useAuth();
+
+  // Bypass auth check if enabled
+  if (BYPASS_AUTH) {
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

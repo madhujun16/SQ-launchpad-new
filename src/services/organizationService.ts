@@ -3,8 +3,7 @@
 import { apiClient } from './apiClient';
 import { API_ENDPOINTS } from '@/config/api';
 
-// Development mode check
-const isDevMode = () => import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_AUTH !== 'false';
+// All organization operations now use real backend API
 
 export interface Organization {
   id: string;
@@ -41,35 +40,11 @@ export interface OrganizationResponse {
   error?: string;
 }
 
-// Mock organizations for development
-const MOCK_ORGANIZATIONS: Organization[] = [
-  {
-    id: '1',
-    name: 'Test Organization',
-    sector: 'Retail',
-    unit_code: 'TO001',
-    logo_url: '',
-    description: 'Test organization for development',
-    sites_count: 0,
-    is_archived: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 export class OrganizationService {
-  private static mockOrganizations: Organization[] = [...MOCK_ORGANIZATIONS];
-
   /**
    * Get all organizations
    */
   static async getAllOrganizations(): Promise<Organization[]> {
-    // Dev mode - return mock organizations
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Returning mock organizations');
-      return [...this.mockOrganizations];
-    }
-
     try {
       // Backend: GET /api/organization?organization_id=all
       const response = await apiClient.get<{ 
@@ -87,12 +62,6 @@ export class OrganizationService {
       return organizations.map((org: any) => this.transformOrganization(org));
     } catch (error) {
       console.error('getAllOrganizations error:', error);
-      
-      // Fallback to mock organizations in dev mode
-      if (isDevMode()) {
-        console.log('🔧 API unavailable - using mock organizations');
-        return [...this.mockOrganizations];
-      }
       throw error;
     }
   }
@@ -101,12 +70,6 @@ export class OrganizationService {
    * Get organization by ID
    */
   static async getOrganizationById(id: string): Promise<Organization | null> {
-    // Dev mode - find in mock organizations
-    if (isDevMode()) {
-      const org = this.mockOrganizations.find(o => o.id === id);
-      return org || null;
-    }
-
     try {
       // Backend: GET /api/organization?organization_id={id}
       const response = await apiClient.get<{ 
@@ -133,29 +96,6 @@ export class OrganizationService {
   static async createOrganization(
     payload: CreateOrganizationPayload
   ): Promise<OrganizationResponse> {
-    // Dev mode - add to mock organizations
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Creating mock organization', payload);
-      const newOrg: Organization = {
-        id: `mock-${Date.now()}`,
-        name: payload.name,
-        sector: payload.sector,
-        unit_code: payload.unit_code,
-        logo_url: payload.logo_url,
-        description: payload.description,
-        sites_count: 0,
-        is_archived: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      this.mockOrganizations.push(newOrg);
-      return {
-        success: true,
-        organization: newOrg,
-        message: 'DEV MODE: Organization created successfully',
-      };
-    }
-
     try {
       // Backend expects: { name, description, sector, unit_code, organization_logo }
       const backendPayload = {
@@ -202,25 +142,6 @@ export class OrganizationService {
     id: string,
     payload: Partial<CreateOrganizationPayload>
   ): Promise<OrganizationResponse> {
-    // Dev mode - update mock organization
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Updating mock organization', id, payload);
-      const index = this.mockOrganizations.findIndex(o => o.id === id);
-      if (index !== -1) {
-        this.mockOrganizations[index] = {
-          ...this.mockOrganizations[index],
-          ...payload,
-          updated_at: new Date().toISOString(),
-        };
-        return {
-          success: true,
-          organization: this.mockOrganizations[index],
-          message: 'DEV MODE: Organization updated successfully',
-        };
-      }
-      return { success: false, error: 'Organization not found' };
-    }
-
     try {
       // Backend PUT expects id in body along with other fields
       const backendPayload = {
@@ -264,17 +185,6 @@ export class OrganizationService {
    * Delete an organization
    */
   static async deleteOrganization(id: string): Promise<{ success: boolean; error?: string }> {
-    // Dev mode - remove from mock organizations
-    if (isDevMode()) {
-      console.log('🔧 DEV MODE: Deleting mock organization', id);
-      const index = this.mockOrganizations.findIndex(o => o.id === id);
-      if (index !== -1) {
-        this.mockOrganizations.splice(index, 1);
-        return { success: true };
-      }
-      return { success: false, error: 'Organization not found' };
-    }
-
     try {
       // Backend: DELETE /api/organization?organization_id={id}
       const response = await apiClient.delete(API_ENDPOINTS.ORGANIZATIONS.DELETE(id));

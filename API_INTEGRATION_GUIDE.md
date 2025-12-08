@@ -9,10 +9,10 @@ This document describes how the React frontend integrates with the Flask backend
 - **Authentication**: JWT tokens stored in HTTP-only cookies (`session_id`)
 - **Deployment**: Google Cloud Platform (App Engine)
 - **API Base URL**: 
+  - Production: `https://api.sqlaunchpad.com/api`
   - Local: `http://localhost:8080/api`
-  - Production: `https://[YOUR-APP-ENGINE-URL]/api`
-- **Swagger UI**: `http://localhost:8080/api/ui/`
-- **OpenAPI Spec**: `http://localhost:8080/api/openapi.json`
+- **Swagger UI**: `https://api.sqlaunchpad.com/api/ui/`
+- **OpenAPI Spec**: `https://api.sqlaunchpad.com/api/openapi.json`
 
 ## Authentication
 
@@ -54,7 +54,8 @@ fetch(url, {
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/send/otp` | POST | Send OTP to user's email |
-| `/api/verify/otp` | POST | Verify OTP and login (sets JWT cookie) |
+| `/api/verify/otp` | POST | Verify OTP and login (sets JWT cookie, returns user data) |
+| `/api/logout` | POST | Logout user (clears session cookie) |
 
 **Request Examples:**
 ```typescript
@@ -65,6 +66,12 @@ POST /api/send/otp
 // Verify OTP
 POST /api/verify/otp
 { "email": "user@example.com", "otp": "123456" }
+// Response: { message: "Login successful", user: { id, email, name, role, role_id } }
+
+// Logout
+POST /api/logout
+// No body required (uses session cookie)
+// Response: { message: "Logged out successfully" }
 ```
 
 ### Users
@@ -72,9 +79,25 @@ POST /api/verify/otp
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/user/all` | GET | Get all users |
+| `/api/user/{user_id}` | GET | Get user by ID (returns 404 if not found) |
+| `/api/user/me` | GET | Get current logged-in user (uses session cookie, returns 401 if not authenticated) |
 | `/api/user` | POST | Create user |
-| `/api/user/{id}` | PUT | Update user |
-| `/api/user/{id}` | DELETE | Delete user |
+| `/api/user/{user_id}` | PUT | Update user (name, email, role) |
+| `/api/user/{user_id}` | DELETE | Delete user (returns 404 if not found) |
+
+**Response Format:**
+```json
+{
+  "message": "details fetched succesfully",
+  "data": {
+    "id": 1,
+    "email": "user@example.com",
+    "name": "User Name",
+    "role": "admin",
+    "role_id": 1
+  }
+}
+```
 
 **Create User Payload:**
 ```json

@@ -1,17 +1,11 @@
 // Authentication Service - OTP based authentication
 
-// API URL - can be configured via environment variable
-// Examples:
-//   VITE_API_BASE_URL=https://sqlaunchpad.com/api
-//   VITE_API_BASE_URL=http://12.12.121.2:8080/api
-//   VITE_API_BASE_URL=http://localhost:3000/api
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sqlaunchpad.com/api';
+// API URL - Always uses production API
+// Production: https://api.sqlaunchpad.com/api
+// Can be overridden via VITE_API_BASE_URL environment variable if needed
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.sqlaunchpad.com/api';
 
-// Development mode - set to true to bypass API and use mock auth
-const DEV_MODE = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_AUTH !== 'false';
-
-// Mock OTP for development (any 6-digit code works)
-const MOCK_OTP = '123456';
+// All authentication now uses real backend API
 
 export interface SendOtpResponse {
   success: boolean;
@@ -35,26 +29,9 @@ export interface VerifyOtpResponse {
 
 export const AuthService = {
   /**
-   * Check if running in dev mode with mock auth
-   */
-  isDevMode(): boolean {
-    return DEV_MODE;
-  },
-
-  /**
    * Send OTP to the user's email
    */
   async sendOtp(email: string): Promise<SendOtpResponse> {
-    // Development mode - skip API call
-    if (DEV_MODE) {
-      console.log('🔧 DEV MODE: Mock OTP sent to', email);
-      console.log('🔑 Use OTP: 123456 (or any 6-digit code)');
-      return {
-        success: true,
-        message: `DEV MODE: Use OTP "123456" to login`,
-      };
-    }
-
     try {
       const response = await fetch(`${API_BASE_URL}/send/otp`, {
         method: 'POST',
@@ -65,16 +42,22 @@ export const AuthService = {
         credentials: 'include', // Include cookies for CORS
       });
 
-      const data = await response.json();
-
+      // Check if response is OK before parsing
       if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
         return {
           success: false,
-          error: data.error || data.message || `HTTP ${response.status}: Failed to send OTP`,
+          error: errorData.error || errorData.message || `HTTP ${response.status}: Failed to send OTP`,
         };
       }
 
       // Backend returns: { message: "OTP sent successfully to user@example.com" }
+      const data = await response.json();
       return {
         success: true,
         message: data.message || 'OTP sent successfully',
@@ -82,13 +65,11 @@ export const AuthService = {
     } catch (error) {
       console.error('Send OTP error:', error);
       
-      // If API fails, offer dev mode fallback
-      if (import.meta.env.DEV) {
-        console.log('🔧 API unavailable - switching to DEV MODE');
-        console.log('🔑 Use OTP: 123456 to login');
+      // Check if it's a network/connection error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
         return {
-          success: true,
-          message: `API offline - DEV MODE: Use OTP "123456" to login`,
+          success: false,
+          error: `Cannot connect to backend at ${API_BASE_URL}. Please ensure the backend server is running.`,
         };
       }
       
@@ -103,35 +84,6 @@ export const AuthService = {
    * Verify OTP and authenticate user
    */
   async verifyOtp(email: string, otp: string): Promise<VerifyOtpResponse> {
-    // Development mode - accept any 6-digit OTP
-    if (DEV_MODE || (import.meta.env.DEV && otp.length === 6)) {
-      console.log('🔧 DEV MODE: Mock login for', email);
-      
-      // Create mock user based on email
-      const isAdmin = email.includes('admin');
-      const isOpsManager = email.includes('ops') || email.includes('manager');
-      const isEngineer = email.includes('engineer') || email.includes('deploy');
-      
-      let role: 'admin' | 'ops_manager' | 'deployment_engineer' = 'admin';
-      if (isOpsManager) role = 'ops_manager';
-      if (isEngineer) role = 'deployment_engineer';
-      
-      const mockUser = {
-        id: `dev-user-${Date.now()}`,
-        email: email,
-        full_name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-        role: role,
-        roles: [{ role }],
-      };
-
-      return {
-        success: true,
-        message: 'DEV MODE: Login successful',
-        token: `dev-token-${Date.now()}`,
-        user: mockUser,
-      };
-    }
-
     try {
       const response = await fetch(`${API_BASE_URL}/verify/otp`, {
         method: 'POST',
@@ -142,25 +94,38 @@ export const AuthService = {
         credentials: 'include', // Include cookies - JWT will be set in cookies by backend
       });
 
-      const data = await response.json();
-
+      // Check if response is OK before parsing
       if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
         return {
           success: false,
-          error: data.message || data.error || `HTTP ${response.status}: Invalid OTP`,
+          error: errorData.message || errorData.error || `HTTP ${response.status}: Invalid OTP`,
         };
       }
 
-      // Backend returns: { message: "Login successful" }
+      // Backend returns: { message: "Login successful", user: {...} }
       // JWT token is set in HTTP-only cookie named 'session_id'
       // Cookie settings: HttpOnly, SameSite=Lax, Max-Age=3600 (1 hour)
-      // We need to get user info separately or from the response if available
+      // User data is now included in the response
       
-      // Note: Backend may not return user data in response, only sets cookie
-      // You may need to call a user info endpoint after login
+      // Parse response data
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        return {
+          success: false,
+          error: 'Invalid response from server',
+        };
+      }
+      
       const userData = data.user || {
-        email: email, // Use email from request
-        // Other user fields would need to be fetched separately
+        email: email, // Fallback to email from request
       };
       
       return {
@@ -172,21 +137,11 @@ export const AuthService = {
     } catch (error) {
       console.error('Verify OTP error:', error);
       
-      // If API fails in dev, use mock auth
-      if (import.meta.env.DEV && otp.length === 6) {
-        console.log('🔧 API unavailable - using DEV MODE login');
-        const mockUser = {
-          id: `dev-user-${Date.now()}`,
-          email: email,
-          full_name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-          role: 'admin',
-          roles: [{ role: 'admin' }],
-        };
+      // Check if it's a network/connection error
+      if (error instanceof TypeError && error.message.includes('fetch')) {
         return {
-          success: true,
-          message: 'DEV MODE: Login successful (API offline)',
-          token: `dev-token-${Date.now()}`,
-          user: mockUser,
+          success: false,
+          error: `Cannot connect to backend at ${API_BASE_URL}. Please ensure the backend server is running.`,
         };
       }
       
@@ -263,6 +218,90 @@ export const AuthService = {
    */
   isAuthenticated(): boolean {
     return !!this.getToken() && !!this.getStoredUser();
+  },
+
+  /**
+   * Get current logged-in user from backend
+   * Uses /api/user/me endpoint
+   */
+  async getCurrentUser(): Promise<VerifyOtpResponse['user'] | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Not authenticated
+          this.clearAuth();
+          return null;
+        }
+        throw new Error(`HTTP ${response.status}: Failed to get user`);
+      }
+
+      const data = await response.json();
+      
+      // Backend returns: { message: "...", data: { id, email, name, role, role_id } }
+      const userData = data.data || data.user;
+      
+      if (userData) {
+        // Store user data
+        this.setStoredUser(userData);
+        return userData;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('getCurrentUser error:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Logout user
+   * Calls backend logout endpoint to clear session cookie
+   */
+  async logout(): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || data.error || 'Failed to logout',
+        };
+      }
+
+      // Clear local storage
+      this.clearAuth();
+
+      return {
+        success: true,
+        message: data.message || 'Logged out successfully',
+      };
+    } catch (error) {
+      console.error('Logout error:', error);
+      
+      // Clear local storage even if API call fails
+      this.clearAuth();
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error during logout',
+      };
+    }
   },
 };
 
