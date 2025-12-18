@@ -54,6 +54,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { PageLoader } from '@/components/ui/loader';
 import { FileUploadService } from '@/services/fileUploadService';
+import { OrganizationService } from '@/services/organizationService';
 
 // TODO: Replace with GCP API calls
 
@@ -90,7 +91,7 @@ const sectorOptions = [
 ];
 
 export default function OrganizationsManagement() {
-  const { currentRole } = useAuth();
+  const { currentRole, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,8 +131,20 @@ export default function OrganizationsManagement() {
 
   // Load organizations with caching (similar to Sites page)
   useEffect(() => {
-    // Load organizations even if currentRole is not set yet - this prevents the blank page issue
-    console.log('OrganizationsManagement: Loading organizations...', { currentRole });
+    // Wait for authentication to complete before loading
+    if (authLoading) {
+      console.log('OrganizationsManagement: Waiting for authentication...');
+      return; // Still authenticating
+    }
+
+    // Don't load if user is not authenticated
+    if (!user) {
+      console.log('OrganizationsManagement: No user, skipping load');
+      setLoading(false);
+      return;
+    }
+
+    console.log('OrganizationsManagement: Loading organizations...', { currentRole, user: user.email });
 
     const loadWithRetry = async () => {
       try {
@@ -153,7 +166,7 @@ export default function OrganizationsManagement() {
     };
 
     loadWithRetry();
-  }, []); // Remove currentRole dependency to prevent waiting
+  }, [authLoading, user, currentRole]); // Wait for auth to complete and user to be set
 
   const loadOrganizations = async () => {
     try {
@@ -161,13 +174,26 @@ export default function OrganizationsManagement() {
       setLoading(true);
       setError(null);
       
-      // TODO: Replace with GCP API call
-      console.warn('Organization loading not implemented - connect to GCP backend');
-      toast.error('Organization management requires GCP backend connection');
-      
-      setOrganizations([]);
+      // Load organizations from backend API
+      const orgs = await OrganizationService.getAllOrganizations();
+      setOrganizations(orgs.map(org => ({
+        id: org.id,
+        name: org.name,
+        description: org.description || '',
+        sector: org.sector,
+        unit_code: org.unit_code || '',
+        logo_url: org.logo_url,
+        created_by: 'system',
+        created_on: org.created_at,
+        updated_at: org.updated_at,
+        is_archived: org.is_archived,
+        archived_at: org.archived_at,
+        archive_reason: org.archive_reason,
+        mapped_sites_count: org.sites_count
+      })));
     } catch (error) {
       console.error('Error loading organizations:', error);
+      setError('Failed to load organizations');
       setOrganizations([]);
     } finally {
       console.log('OrganizationsManagement: Finished loadOrganizations');
@@ -272,13 +298,40 @@ export default function OrganizationsManagement() {
         }
       }
 
-      // TODO: Replace with GCP API call
-      console.warn('Organization saving not implemented - connect to GCP backend');
-      toast.error('Organization saving requires GCP backend connection');
-      
-      // Clear logo upload state
-      clearLogoUpload();
-      setEditingOrganization(null);
+      let result;
+      if (editingOrganization.id === 'new') {
+        // Create new organization
+        result = await OrganizationService.createOrganization({
+          name: editingOrganization.name.trim(),
+          description: editingOrganization.description || '',
+          sector: editingOrganization.sector,
+          unit_code: editingOrganization.unit_code.trim(),
+          logo_url: logoUrl || undefined,
+        });
+      } else {
+        // Update existing organization
+        result = await OrganizationService.updateOrganization(
+          editingOrganization.id,
+          {
+            name: editingOrganization.name.trim(),
+            description: editingOrganization.description || '',
+            sector: editingOrganization.sector,
+            unit_code: editingOrganization.unit_code.trim(),
+            logo_url: logoUrl || undefined,
+          }
+        );
+      }
+
+      if (result.success) {
+        toast.success(result.message || 'Organization saved successfully!');
+        // Reload organizations
+        await loadOrganizations();
+        // Clear logo upload state
+        clearLogoUpload();
+        setEditingOrganization(null);
+      } else {
+        toast.error(result.error || 'Failed to save organization');
+      }
     } catch (error) {
       console.error('Error saving organization:', error);
       toast.error(`Failed to save organization: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -1,20 +1,17 @@
 /**
- * API Configuration for Google Cloud Backend
+ * API Configuration for Render Backend
  */
 
-// Get API URL from environment variables
-// Always uses production API: https://api.sqlaunchpad.com/api
+// Centralized API Base URL - Change this to update all API endpoints
+// This should be the full base URL including /api (e.g., https://sq-launchpad-backend.onrender.com/api)
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sq-launchpad-backend.onrender.com/api';
+
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.sqlaunchpad.com/api',
+  baseURL: API_BASE_URL,
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000'),
-  // Always use production API URL directly
+  // Return the base URL directly (should already include /api)
   get url() {
-    // If baseURL already includes /api, use it as-is
-    if (this.baseURL.includes('/api')) {
-      return this.baseURL;
-    }
-    // Otherwise append /api
-    return `${this.baseURL}/api`;
+    return this.baseURL;
   }
 };
 

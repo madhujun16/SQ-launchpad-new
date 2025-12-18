@@ -48,6 +48,7 @@ import { LocationPicker } from '@/components/ui/location-picker';
 import { UserService, UserWithRole } from '@/services/userService';
 import { DatePicker } from '@/components/ui/date-picker';
 import { PageLoader } from '@/components/ui/loader';
+import { OrganizationService } from '@/services/organizationService';
 import { FileUploadService } from '@/services/fileUploadService';
 
 // TODO: Replace with GCP Cloud Storage
@@ -379,10 +380,43 @@ const SiteCreation = () => {
         }
       }
 
-      // TODO: Replace with GCP API call
-      console.warn('Organization creation not implemented - connect to GCP backend');
-      toast.error('Organization creation requires GCP backend connection');
-      return;
+      // Create organization using OrganizationService
+      const result = await OrganizationService.createOrganization({
+        name: newOrganization.name.trim(),
+        description: newOrganization.description || '',
+        sector: newOrganization.sector,
+        unit_code: newOrganization.unit_code.trim(),
+        logo_url: logoUrl || undefined,
+      });
+
+      if (result.success && result.organization) {
+        toast.success('Organization created successfully!');
+        
+        // Refresh organizations list
+        const allOrgs = await SitesService.getAllOrganizations();
+        const activeOrgs = allOrgs.filter(org => !org.is_archived);
+        setOrganizations(activeOrgs);
+        
+        // Auto-select the newly created organization
+        setFormData(prev => ({
+          ...prev,
+          organization: result.organization!.id,
+          sector: result.organization!.sector,
+          unitCode: result.organization!.unit_code || ''
+        }));
+        
+        // Close modal and reset form
+        clearLogoUpload();
+        setAddOrgModalOpen(false);
+        setNewOrganization({
+          name: '',
+          description: '',
+          sector: '',
+          unit_code: ''
+        });
+      } else {
+        toast.error(result.error || 'Failed to create organization');
+      }
     } catch (error) {
       console.error('Error saving organization:', error);
       toast.error(`Failed to save organization: ${error instanceof Error ? error.message : 'Unknown error'}`);

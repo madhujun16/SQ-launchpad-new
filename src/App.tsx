@@ -142,69 +142,59 @@ function App() {
             <Routes>
               {/* Public routes - no providers needed */}
               <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={
-                <AuthProvider>
-                  <Auth />
-                </AuthProvider>
-              } />
+              <Route path="/auth" element={<Auth />} />
               
               {/* Protected routes - wrapped with providers */}
               <Route
                 path="/sites/:id/flow"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <SiteFlowHub />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <SiteFlowHub />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/sites/:id/flow/:stepKey"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <SiteStepEdit />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <SiteStepEdit />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/dashboard"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <ErrorBoundary>
-                              <Suspense fallback={<PageLoader />}>
-                                <Dashboard />
-                              </Suspense>
-                            </ErrorBoundary>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <ErrorBoundary>
+                            <Suspense fallback={<PageLoader />}>
+                              <Dashboard />
+                            </Suspense>
+                          </ErrorBoundary>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -212,57 +202,51 @@ function App() {
               <Route
                 path="/sites"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Sites />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Sites />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/sites/create"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <SiteCreation />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <SiteCreation />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/sites/:id"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Site />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Site />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -270,76 +254,68 @@ function App() {
               <Route
                 path="/approvals-procurement"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <ApprovalsProcurement />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <ApprovalsProcurement />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/approvals-procurement/hardware-approvals"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <HardwareApprovals />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <HardwareApprovals />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/approvals-procurement/hardware-scoping"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <HardwareScoping />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <HardwareScoping />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/approvals-procurement/hardware-master"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <HardwareMaster />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <HardwareMaster />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -347,19 +323,17 @@ function App() {
               <Route
                 path="/deployment"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Deployment />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Deployment />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -367,57 +341,51 @@ function App() {
               <Route
                 path="/assets"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Assets />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Assets />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/assets/inventory"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Inventory />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Inventory />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/assets/license-management"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <LicenseManagement />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <LicenseManagement />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -425,95 +393,85 @@ function App() {
               <Route
                 path="/platform-configuration/organizations"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <OrganizationsManagement />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <OrganizationsManagement />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/platform-configuration/users"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <UserManagement />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <UserManagement />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/platform-configuration/software-hardware"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <SoftwareHardwareManagement />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <SoftwareHardwareManagement />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/platform-configuration/general"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <GeneralSettings />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <GeneralSettings />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
               <Route
                 path="/platform-configuration/audit-logs"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <AuditLogs />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <AuditLogs />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -521,19 +479,17 @@ function App() {
               <Route
                 path="/insights"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Insights />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Insights />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -541,19 +497,17 @@ function App() {
               <Route
                 path="/insights/forecast"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Forecast />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Forecast />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 
@@ -561,19 +515,17 @@ function App() {
               <Route
                 path="/insights/financials"
                 element={
-                  <AuthProvider>
-                    <SiteProvider>
-                      <AuthGuard>
-                        <RoleBasedRoute>
-                          <Layout>
-                            <Suspense fallback={<PageLoader />}>
-                              <Financials />
-                            </Suspense>
-                          </Layout>
-                        </RoleBasedRoute>
-                      </AuthGuard>
-                    </SiteProvider>
-                  </AuthProvider>
+                  <SiteProvider>
+                    <AuthGuard>
+                      <RoleBasedRoute>
+                        <Layout>
+                          <Suspense fallback={<PageLoader />}>
+                            <Financials />
+                          </Suspense>
+                        </Layout>
+                      </RoleBasedRoute>
+                    </AuthGuard>
+                  </SiteProvider>
                 }
               />
 

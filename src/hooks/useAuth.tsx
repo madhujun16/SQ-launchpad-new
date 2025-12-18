@@ -185,12 +185,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         AuthService.setToken(result.token);
       }
 
-      // If no user data returned, create a minimal user object
-      const userData = result.user || {
+      // After OTP verification, the backend sets a session cookie
+      // Wait a moment for the cookie to be set, then verify the session
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify the session by calling /user/me to ensure the cookie is working
+      const currentUser = await AuthService.getCurrentUser();
+      
+      if (!currentUser) {
+        console.warn('Session cookie not set properly, but OTP was verified. Using response data.');
+        // Use the user data from OTP response as fallback
+      }
+
+      // Use the verified user data from /user/me, or fallback to OTP response
+      const userData = currentUser || result.user || {
         id: crypto.randomUUID(),
         email: email,
         full_name: email.split('@')[0],
       };
+
+      // Ensure we have an ID
+      if (!userData.id && result.user?.id) {
+        userData.id = result.user.id;
+      }
 
       AuthService.setStoredUser(userData);
 
@@ -203,7 +220,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setUser(authUser);
       setSession({
-        access_token: result.token || 'authenticated',
+        access_token: 'cookie-based', // Session is in cookie, not localStorage
         user: authUser,
       });
 
@@ -228,6 +245,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user_roles: roles.map(role => ({ role })),
       } as Profile);
 
+      console.log('✅ Authentication successful, session cookie should be set');
       return { error: null };
     } catch (error) {
       console.error('verifyOtp error:', error);

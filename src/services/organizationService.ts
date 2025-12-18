@@ -2,6 +2,7 @@
 
 import { apiClient } from './apiClient';
 import { API_ENDPOINTS } from '@/config/api';
+import { AuthService } from './authService';
 
 // All organization operations now use real backend API
 
@@ -52,8 +53,35 @@ export class OrganizationService {
         data: any[];
       }>(API_ENDPOINTS.ORGANIZATIONS.LIST('all'));
 
+      // Handle 401 Unauthorized - user needs to login
+      if (response.error?.statusCode === 401) {
+        console.warn('🔒 Authentication required for organizations API - session may have expired');
+        console.warn('Response error:', response.error);
+        
+        // Clear auth and return empty array (UI should handle redirect)
+        if (typeof window !== 'undefined') {
+          AuthService.clearAuth();
+          
+          // Show a toast message (dynamic import to avoid circular dependency)
+          import('sonner').then(({ toast }) => {
+            toast.error('Session expired. Please login again.');
+          });
+          
+          // Redirect to login if not already there
+          if (window.location.pathname !== '/auth') {
+            setTimeout(() => {
+              window.location.href = '/auth';
+            }, 1000);
+          }
+        }
+        return [];
+      }
+
       if (!response.success || !response.data) {
-        throw new Error(response.error?.message || 'Failed to fetch organizations');
+        const errorMessage = response.error?.message || 'Failed to fetch organizations';
+        console.error('getAllOrganizations error:', errorMessage);
+        // Return empty array instead of throwing to prevent UI crashes
+        return [];
       }
 
       // Backend returns { message, data: [...] }
@@ -62,7 +90,8 @@ export class OrganizationService {
       return organizations.map((org: any) => this.transformOrganization(org));
     } catch (error) {
       console.error('getAllOrganizations error:', error);
-      throw error;
+      // Return empty array instead of throwing to prevent UI crashes
+      return [];
     }
   }
 
@@ -110,6 +139,21 @@ export class OrganizationService {
         message: string;
         data: any;
       }>(API_ENDPOINTS.ORGANIZATIONS.CREATE, backendPayload);
+
+      // Handle 401 Unauthorized - user needs to login
+      if (response.error?.statusCode === 401) {
+        console.warn('Authentication required for creating organization');
+        if (typeof window !== 'undefined') {
+          AuthService.clearAuth();
+          if (window.location.pathname !== '/auth') {
+            window.location.href = '/auth';
+          }
+        }
+        return {
+          success: false,
+          error: 'Authentication required. Please login again.',
+        };
+      }
 
       if (!response.success) {
         return {

@@ -1,9 +1,7 @@
 // Authentication Service - OTP based authentication
 
-// API URL - Always uses production API
-// Production: https://api.sqlaunchpad.com/api
-// Can be overridden via VITE_API_BASE_URL environment variable if needed
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.sqlaunchpad.com/api';
+// Import centralized API base URL
+import { API_BASE_URL } from '@/config/api';
 
 // All authentication now uses real backend API
 
