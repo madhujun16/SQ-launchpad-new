@@ -251,9 +251,14 @@ const Sites = () => {
     if (!selectedSite || !deleteReason) return;
     
     try {
-      // Archive the site instead of hard deleting
-      await SitesService.archiveSite(selectedSite.id, deleteReason);
-      toast.success('Site archived successfully');
+      // Hard-delete the site (admin-only action)
+      const success = await SitesService.deleteSite(selectedSite.id);
+      if (!success) {
+        toast.error('Failed to delete site');
+        return;
+      }
+
+      toast.success('Site deleted successfully');
       
       // Refresh sites
       const updatedSites = sites.filter(s => s.id !== selectedSite.id);
@@ -262,8 +267,8 @@ const Sites = () => {
       setSelectedSite(null);
       setDeleteReason('');
     } catch (error) {
-      console.error('Error archiving site:', error);
-      toast.error('Failed to archive site');
+      console.error('Error deleting site:', error);
+      toast.error('Failed to delete site');
     }
   };
 
@@ -351,7 +356,9 @@ const Sites = () => {
         </Button>
       );
     } else if (isCreated || isIntermediateStatus) {
-      // Created or intermediate statuses: Edit + Archive (2 buttons)
+      // Created or intermediate statuses:
+      // - Everyone can edit
+      // - Only admins can delete
       return (
         <>
           <Button
@@ -363,15 +370,17 @@ const Sites = () => {
           >
             <Edit className="h-4 w-4 text-green-600" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleDeleteSite(site)}
-            className="h-8 w-8 p-0 hover:bg-red-50"
-            title="Archive Site"
-          >
-            <Trash2 className="h-4 w-4 text-red-600" />
-          </Button>
+          {currentRole === 'admin' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDeleteSite(site)}
+              className="h-8 w-8 p-0 hover:bg-red-50"
+              title="Delete Site"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          )}
         </>
       );
     } else {

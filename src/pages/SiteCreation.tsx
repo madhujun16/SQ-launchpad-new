@@ -242,14 +242,18 @@ const SiteCreation = () => {
       setSubmitting(true);
 
       // Prepare site data for backend
+      const opsManagerUser = opsManagers.find(u => u.id === formData.operationsManager);
+      const deploymentEngineerUser = deploymentEngineers.find(u => u.id === formData.deploymentEngineer);
+
       const siteData = {
         name: formData.name,
         organization_id: formData.organization,
         organization_name: selectedOrg.name, // Add organization name for NOT NULL constraint
         location: formData.location,
         target_live_date: formData.targetLiveDate,
-        assigned_ops_manager: formData.operationsManager,
-        assigned_deployment_engineer: formData.deploymentEngineer,
+        // For list display we store the human-readable names
+        assigned_ops_manager: opsManagerUser?.full_name || formData.operationsManager,
+        assigned_deployment_engineer: deploymentEngineerUser?.full_name || formData.deploymentEngineer,
         status: 'Created', // Initial status
         sector: formData.sector,
         unit_code: formData.unitCode,

@@ -197,6 +197,7 @@ export default function UserManagement() {
         
         const result = await UserService.updateUser(editingUser.id, {
           name: editingUser.full_name.trim(),
+          email: editingUser.email.trim(),
           role: primaryRole
         });
         

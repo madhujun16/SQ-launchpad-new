@@ -98,8 +98,19 @@ export class PageService {
         data: Page;
       }>(API_ENDPOINTS.PAGES.GET(pageName, siteId));
 
-      if (!response.success || !response.data) {
-        throw new Error(response.error?.message || 'Failed to fetch page');
+      // If page doesn't exist (400), return null gracefully
+      if (!response.success) {
+        if (response.error?.statusCode === 400) {
+          // Page doesn't exist yet - this is OK for new sites
+          return null;
+        }
+        // For other errors, log but still return null
+        console.warn(`getPage error for ${pageName} (site ${siteId}):`, response.error?.message);
+        return null;
+      }
+
+      if (!response.data?.data) {
+        return null;
       }
 
       // Backend returns { message, data: { page_id, page_name, site_id, sections: [...] } }
@@ -126,12 +137,19 @@ export class PageService {
    */
   static async createPage(payload: CreatePagePayload): Promise<PageResponse> {
     try {
+      console.log('createPage payload:', JSON.stringify(payload, null, 2));
+      
       const response = await apiClient.post<{
         message: string;
         data: Page;
       }>(API_ENDPOINTS.PAGES.CREATE, payload);
 
       if (!response.success) {
+        console.error('createPage error response:', {
+          statusCode: response.error?.statusCode,
+          message: response.error?.message,
+          details: response.error?.details,
+        });
         return {
           success: false,
           error: response.error?.message || 'Failed to create page',
@@ -201,16 +219,22 @@ export class PageService {
 
       if (!currentPage) {
         // Page doesn't exist, create it with the field
+        // Backend expects field_value to be an object, so wrap if it's a primitive
+        const wrappedValue = typeof fieldValue === 'object' && fieldValue !== null 
+          ? fieldValue 
+          : { value: fieldValue };
+        
         return this.createPage({
           page_name: pageName,
           site_id: Number(siteId),
+          status: 'created', // Backend expects lowercase
           sections: [
             {
               section_name: sectionName,
               fields: [
                 {
                   field_name: fieldName,
-                  field_value: fieldValue,
+                  field_value: wrappedValue,
                 },
               ],
             },
@@ -292,7 +316,7 @@ export class PageService {
   static async initializeSiteWorkflow(siteId: number | string): Promise<{ success: boolean; errors?: string[] }> {
     const workflowPages = [
       { name: 'create_site', sections: ['general_info', 'location', 'stakeholders'] },
-      { name: 'site_study', sections: ['study_details', 'findings', 'documents'] },
+      { name: 'site_study', sections: ['general_info', 'study_details', 'findings', 'documents'] }, // Added general_info for site data
       { name: 'scoping', sections: ['hardware_requirements', 'cost_breakdown', 'approvals'] },
       { name: 'approval', sections: ['approval_details', 'comments', 'attachments'] },
       { name: 'procurement', sections: ['procurement_items', 'vendor_info', 'delivery'] },
@@ -303,9 +327,17 @@ export class PageService {
     const errors: string[] = [];
 
     for (const page of workflowPages) {
+      // Check if page already exists (e.g., site_study might be created separately)
+      const existingPage = await this.getPage(page.name, siteId);
+      if (existingPage) {
+        console.log(`Page ${page.name} already exists, skipping creation`);
+        continue;
+      }
+
       const result = await this.createPage({
         page_name: page.name,
         site_id: Number(siteId),
+        status: 'created', // Backend expects lowercase
         sections: page.sections.map(sectionName => ({
           section_name: sectionName,
           fields: [], // Empty fields initially

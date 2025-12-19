@@ -40,9 +40,14 @@ export const API_ENDPOINTS = {
   
   // Organizations
   ORGANIZATIONS: {
+    // If organizationId is provided and not "all", fetch a single org via query param
+    // If omitted or "all", fetch all organizations via plain /organization
     LIST: (organizationId?: string | 'all') => {
-      const id = organizationId || 'all';
-      return `/organization?organization_id=${id}`;
+      if (organizationId && organizationId !== 'all') {
+        return `/organization?organization_id=${organizationId}`;
+      }
+      // Backend: GET /api/organization → all organizations
+      return '/organization';
     },
     CREATE: '/organization',
     UPDATE: '/organization', // PUT with id in body

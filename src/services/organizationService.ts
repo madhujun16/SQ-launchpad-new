@@ -48,10 +48,9 @@ export class OrganizationService {
   static async getAllOrganizations(): Promise<Organization[]> {
     try {
       // Backend: GET /api/organization?organization_id=all
-      const response = await apiClient.get<{ 
-        message: string;
-        data: any[];
-      }>(API_ENDPOINTS.ORGANIZATIONS.LIST('all'));
+      // Different environments may wrap the data slightly differently, so we
+      // handle multiple shapes here instead of assuming one exact format.
+      const response = await apiClient.get<any>(API_ENDPOINTS.ORGANIZATIONS.LIST('all'));
 
       // Handle 401 Unauthorized - user needs to login
       if (response.error?.statusCode === 401) {
@@ -84,10 +83,33 @@ export class OrganizationService {
         return [];
       }
 
-      // Backend returns { message, data: [...] }
-      const organizations = response.data.data || [];
+      // Log raw payload once for debugging different backend shapes
+      console.log('getAllOrganizations raw payload:', response.data);
+
+      // Backend may return:
+      // 1) { message, data: [...] }
+      // 2) { success, data: [...] }
+      // 3) { organizations: [...] }
+      // 4) Just an array [...]
+      let organizationsRaw: any[] = [];
+
+      const payload = response.data as any;
+
+      if (Array.isArray(payload)) {
+        organizationsRaw = payload;
+      } else if (Array.isArray(payload.data)) {
+        organizationsRaw = payload.data;
+      } else if (Array.isArray(payload.organizations)) {
+        organizationsRaw = payload.organizations;
+      } else if (payload.data && Array.isArray(payload.data.data)) {
+        // Handle double-wrapped case: { data: { data: [...] } }
+        organizationsRaw = payload.data.data;
+      } else {
+        console.warn('getAllOrganizations: Unexpected payload shape, defaulting to empty list');
+        organizationsRaw = [];
+      }
       
-      return organizations.map((org: any) => this.transformOrganization(org));
+      return organizationsRaw.map((org: any) => this.transformOrganization(org));
     } catch (error) {
       console.error('getAllOrganizations error:', error);
       // Return empty array instead of throwing to prevent UI crashes
@@ -127,18 +149,34 @@ export class OrganizationService {
   ): Promise<OrganizationResponse> {
     try {
       // Backend expects: { name, description, sector, unit_code, organization_logo }
-      const backendPayload = {
-        name: payload.name,
-        description: payload.description || '',
+      // Only include organization_logo if it's actually provided (not empty string)
+      const backendPayload: any = {
+        name: payload.name.trim(),
+        description: payload.description?.trim() || '',
         sector: payload.sector,
-        unit_code: payload.unit_code || '',
-        organization_logo: payload.logo_url || '',
+        unit_code: payload.unit_code?.trim() || '',
       };
+
+      // Only include organization_logo if it's provided and not empty
+      if (payload.logo_url && payload.logo_url.trim()) {
+        backendPayload.organization_logo = payload.logo_url.trim();
+      }
+
+      console.log('createOrganization payload:', backendPayload);
 
       const response = await apiClient.post<{ 
         message: string;
         data: any;
       }>(API_ENDPOINTS.ORGANIZATIONS.CREATE, backendPayload);
+
+      // Log error details for debugging
+      if (!response.success && response.error) {
+        console.error('createOrganization error response:', {
+          statusCode: response.error.statusCode,
+          message: response.error.message,
+          details: response.error.details,
+        });
+      }
 
       // Handle 401 Unauthorized - user needs to login
       if (response.error?.statusCode === 401) {

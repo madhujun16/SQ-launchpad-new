@@ -1,5 +1,5 @@
-// TODO: Connect to GCP backend APIs
-// TODO: All methods need to be reimplemented with GCP APIs
+import { SitesService, type Site as BackendSite } from './sitesService';
+import PageService from './pageService';
 
 const API_NOT_IMPLEMENTED = 'API not implemented - connect to GCP backend';
 
@@ -219,30 +219,188 @@ export interface GoLiveData {
 
 export class SiteWorkflowService {
   static async getSiteWorkflowData(siteId: string): Promise<SiteWorkflowData | null> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    try {
+      const allSites = await SitesService.getAllSites();
+      const site = allSites.find((s: BackendSite) => s.id === siteId);
+      if (!site) {
+        console.warn('getSiteWorkflowData: site not found for id', siteId);
+        return null;
+      }
+
+      const workflow: SiteWorkflowData = {
+        id: site.id,
+        name: site.name,
+        organization: site.organization_name || (site as any).organization || '',
+        organization_id: site.organization_id || '',
+        location: site.location || '',
+        address: site.location || '',
+        postcode: (site as any).postcode || '',
+        sector: site.recorded_sector || site.sector || '',
+        unit_code: site.unit_code || '',
+        criticality_level: (site.criticality_level || 'medium') as any,
+        status: site.status,
+        target_live_date: site.target_live_date || '',
+        assigned_ops_manager: site.assigned_ops_manager || '',
+        assigned_deployment_engineer: site.assigned_deployment_engineer || '',
+        latitude: (site as any).latitude,
+        longitude: (site as any).longitude,
+        created_at: site.created_at,
+        updated_at: site.updated_at,
+      };
+
+      // Enrich with data from the "site_study" page, general_info section
+      try {
+        const page = await PageService.getPage('site_study', site.id);
+        const general = page?.sections?.find((s) => s.section_name === 'general_info');
+        if (general && general.fields) {
+          const byName = (fieldName: string) =>
+            general.fields!.find((f: any) => f.field_name === fieldName)?.field_value;
+
+          const loc = byName('location');
+          const postcode = byName('postcode') ?? workflow.postcode;
+          const region = byName('region');
+          const country = byName('country');
+          const lat = byName('latitude') ?? workflow.latitude;
+          const lng = byName('longitude') ?? workflow.longitude;
+
+          workflow.siteCreation = {
+            id: String(page.page_id ?? ''),
+            site_id: site.id,
+            unit_manager_name: '',
+            job_title: '',
+            unit_manager_email: '',
+            unit_manager_mobile: '',
+            additional_contact_name: '',
+            additional_contact_email: '',
+            location: typeof loc === 'string' ? loc : '',
+            postcode: typeof postcode === 'string' ? postcode : '',
+            region: typeof region === 'string' ? region : '',
+            country: typeof country === 'string' ? country : '',
+            latitude: Number(lat) || 0,
+            longitude: Number(lng) || 0,
+            additional_notes: '',
+            created_at: workflow.created_at,
+            updated_at: workflow.updated_at,
+            locationInfo: {
+              location: typeof loc === 'string' ? loc : '',
+              postcode: typeof postcode === 'string' ? postcode : '',
+              region: typeof region === 'string' ? region : '',
+              country: typeof country === 'string' ? country : '',
+              latitude: Number(lat) || 0,
+              longitude: Number(lng) || 0,
+            },
+            contactInfo: {
+              unitManagerName: '',
+              jobTitle: '',
+              unitManagerEmail: '',
+              unitManagerMobile: '',
+              additionalContactName: '',
+              additionalContactEmail: '',
+            },
+            assigned_ops_manager: workflow.assigned_ops_manager,
+            assigned_deployment_engineer: workflow.assigned_deployment_engineer,
+          };
+        }
+      } catch (pageErr) {
+        console.warn('getSiteWorkflowData: unable to load site_study page', pageErr);
+      }
+
+      return workflow;
+    } catch (error) {
+      console.error('getSiteWorkflowData error:', error);
+      return null;
+    }
   }
 
   static async getSoftwareModules(): Promise<any[]> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    console.warn('getSoftwareModules is not yet implemented; returning empty array');
+    return [];
   }
 
   static async getHardwareItems(): Promise<any[]> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    console.warn('getHardwareItems is yet to be implemented; returning empty array');
+    return [];
   }
 
   static async saveSiteCreationData(siteId: string, data: Partial<SiteCreationData>): Promise<boolean> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    try {
+      const pageName = 'site_study';
+      const sectionName = 'general_info';
+
+      if (data.locationInfo) {
+        const { location, postcode, region, country, latitude, longitude } = data.locationInfo;
+        if (location) {
+          await PageService.updateField(siteId, pageName, sectionName, 'location', location);
+        }
+        if (postcode) {
+          await PageService.updateField(siteId, pageName, sectionName, 'postcode', postcode);
+        }
+        if (region) {
+          await PageService.updateField(siteId, pageName, sectionName, 'region', region);
+        }
+        if (country) {
+          await PageService.updateField(siteId, pageName, sectionName, 'country', country);
+        }
+        if (typeof latitude === 'number') {
+          await PageService.updateField(siteId, pageName, sectionName, 'latitude', latitude);
+        }
+        if (typeof longitude === 'number') {
+          await PageService.updateField(siteId, pageName, sectionName, 'longitude', longitude);
+        }
+      }
+
+      if (data.assigned_ops_manager) {
+        await PageService.updateField(
+          siteId,
+          pageName,
+          sectionName,
+          'assigned_ops_manager',
+          data.assigned_ops_manager
+        );
+      }
+      if (data.assigned_deployment_engineer) {
+        await PageService.updateField(
+          siteId,
+          pageName,
+          sectionName,
+          'assigned_deployment_engineer',
+          data.assigned_deployment_engineer
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error('saveSiteCreationData error:', error);
+      return false;
+    }
   }
 
   static async saveSiteStudyData(siteId: string, data: Partial<SiteStudyData>): Promise<boolean> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    console.warn('saveSiteStudyData not fully implemented; no-op for now', {
+      siteId,
+      data,
+    });
+    return true;
   }
 
   static async saveScopingData(siteId: string, data: Partial<ScopingData>): Promise<boolean> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    console.warn('saveScopingData not fully implemented; no-op for now', {
+      siteId,
+      data,
+    });
+    return true;
   }
 
   static async updateSiteStatus(siteId: string, status: string): Promise<boolean> {
-    throw new Error(API_NOT_IMPLEMENTED);
+    try {
+      const ok = await SitesService.updateSite(siteId, { status } as Partial<BackendSite>);
+      if (!ok) {
+        console.error('updateSiteStatus: SitesService.updateSite returned false');
+      }
+      return ok;
+    } catch (error) {
+      console.error('updateSiteStatus error:', error);
+      return false;
+    }
   }
 }

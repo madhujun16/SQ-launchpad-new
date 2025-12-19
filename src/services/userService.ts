@@ -56,15 +56,40 @@ export class UserService {
    */
   static async getAllUsers(): Promise<UserWithRole[]> {
     try {
-      const response = await apiClient.get<UserWithRole[] | { users: UserWithRole[] }>(API_ENDPOINTS.USERS.LIST);
+      // Backend: GET /api/user/all
+      // Integration guide shows typical shape:
+      // { message: "...", data: [ { id, email, name, role, role_id }, ... ] }
+      const response = await apiClient.get<any>(API_ENDPOINTS.USERS.LIST);
 
       if (!response.success || !response.data) {
         throw new Error(response.error?.message || 'Failed to fetch users');
       }
 
-      // Transform API response to our format
-      const users = Array.isArray(response.data) ? response.data : (response.data.users || []);
-      return users.map((user: any) => this.transformUser(user));
+      // Log raw payload once to help debug backend variations
+      console.log('getAllUsers raw payload:', response.data);
+
+      // Handle multiple possible shapes:
+      // 1) { message, data: [...] }
+      // 2) { users: [...] }
+      // 3) Plain array [...]
+      let usersRaw: any[] = [];
+      const payload = response.data as any;
+
+      if (Array.isArray(payload)) {
+        usersRaw = payload;
+      } else if (Array.isArray(payload.data)) {
+        usersRaw = payload.data;
+      } else if (Array.isArray(payload.users)) {
+        usersRaw = payload.users;
+      } else if (payload.data && Array.isArray(payload.data.data)) {
+        // Handle double-wrapped case: { data: { data: [...] } }
+        usersRaw = payload.data.data;
+      } else {
+        console.warn('getAllUsers: Unexpected payload shape, defaulting to empty list');
+        usersRaw = [];
+      }
+
+      return usersRaw.map((user: any) => this.transformUser(user));
     } catch (error) {
       console.error('getAllUsers error:', error);
       throw error;
@@ -86,7 +111,7 @@ export class UserService {
         Role: ROLE_IDS[role],
       };
 
-      const response = await apiClient.post<{ user?: any; message?: string }>(API_ENDPOINTS.USERS.CREATE, payload);
+      const response = await apiClient.post<any>(API_ENDPOINTS.USERS.CREATE, payload);
 
       if (!response.success) {
         return {
@@ -95,10 +120,15 @@ export class UserService {
         };
       }
 
+      // Backend is expected to return either:
+      // { message, data: { ...user } } OR { user: { ... } }
+      const apiPayload = response.data as any;
+      const createdUser = apiPayload?.data || apiPayload?.user;
+
       return {
         success: true,
-        user: response.data?.user ? this.transformUser(response.data.user) : undefined,
-        message: response.data?.message || 'User created successfully',
+        user: createdUser ? this.transformUser(createdUser) : undefined,
+        message: apiPayload?.message || 'User created successfully',
       };
     } catch (error) {
       console.error('createUser error:', error);
@@ -147,15 +177,27 @@ export class UserService {
    * Transform API user response to our UserWithRole format
    */
   private static transformUser(apiUser: any): UserWithRole {
-    // Determine role from role_id or role field
+    // Determine role from backend fields.
+    // Prefer numeric Role / role_id (source of truth), then fall back to string role.
     let role: 'admin' | 'ops_manager' | 'deployment_engineer' = 'admin';
-    
+
+    // 1) Prefer numeric Role / role_id as the authoritative value
     if (apiUser.Role !== undefined) {
-      role = ROLE_NAMES[apiUser.Role] || 'admin';
+      const mapped = ROLE_NAMES[Number(apiUser.Role)];
+      if (mapped) {
+        role = mapped;
+      }
     } else if (apiUser.role_id !== undefined) {
-      role = ROLE_NAMES[apiUser.role_id] || 'admin';
-    } else if (apiUser.role) {
-      role = apiUser.role;
+      const mapped = ROLE_NAMES[Number(apiUser.role_id)];
+      if (mapped) {
+        role = mapped;
+      }
+    }
+    // 2) Fall back to explicit string role if numeric fields are missing
+    else if (typeof apiUser.role === 'string') {
+      if (apiUser.role === 'admin' || apiUser.role === 'ops_manager' || apiUser.role === 'deployment_engineer') {
+        role = apiUser.role;
+      }
     }
 
     return {
@@ -231,8 +273,13 @@ export class UserService {
       // Build update payload
       const payload: any = {};
       if (updates.name) payload.name = updates.name;
-      if (updates.email) payload.emailid = updates.email; // Backend expects emailid
-      if (updates.role) payload.Role = ROLE_IDS[updates.role];
+      if (updates.email) payload.emailid = updates.email; // Backend expects emailid / emailid or email
+      if (updates.role) {
+        // Backend expects numeric role; support both "role" and "Role" for compatibility
+        const roleId = ROLE_IDS[updates.role];
+        payload.role = roleId;
+        payload.Role = roleId;
+      }
 
       const response = await apiClient.put<{
         message: string;
