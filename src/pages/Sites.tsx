@@ -108,7 +108,9 @@ const Sites = () => {
         }, 30000); // 30 second timeout
         
         // Remove cache clearing to prevent loading issues
+        console.log('🔍 Sites: Calling SitesService.getAllSites()...');
         const sitesData = await SitesService.getAllSites();
+        console.log('✅ Sites: Received sites data:', { count: sitesData?.length, sites: sitesData });
         
         if (isMounted) {
           // Transform SitesService data to match SiteContext interface
@@ -251,24 +253,38 @@ const Sites = () => {
     if (!selectedSite || !deleteReason) return;
     
     try {
+      console.log('🔍 Sites: Attempting to delete site:', selectedSite.id, selectedSite.name);
       // Hard-delete the site (admin-only action)
-      const success = await SitesService.deleteSite(selectedSite.id);
-      if (!success) {
-        toast.error('Failed to delete site');
+      const result = await SitesService.deleteSite(selectedSite.id);
+      
+      if (!result.success) {
+        const errorMessage = result.error || 'Failed to delete site';
+        console.error('❌ Sites: Delete failed:', errorMessage);
+        toast.error(errorMessage);
         return;
       }
 
+      console.log('✅ Sites: Site deleted successfully');
       toast.success('Site deleted successfully');
       
-      // Refresh sites
-      const updatedSites = sites.filter(s => s.id !== selectedSite.id);
-      setSites(updatedSites);
+      // Refresh sites list by refetching from backend
+      try {
+        const updatedSitesData = await SitesService.getAllSites();
+        setSites(updatedSitesData);
+      } catch (refreshError) {
+        console.error('Error refreshing sites list:', refreshError);
+        // Fallback: remove from local state
+        const updatedSites = sites.filter(s => s.id !== selectedSite.id);
+        setSites(updatedSites);
+      }
+      
       setDeleteModalOpen(false);
       setSelectedSite(null);
       setDeleteReason('');
-    } catch (error) {
-      console.error('Error deleting site:', error);
-      toast.error('Failed to delete site');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'An unexpected error occurred while deleting the site';
+      console.error('❌ Sites: Exception during delete:', error);
+      toast.error(errorMessage);
     }
   };
 

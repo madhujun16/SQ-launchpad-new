@@ -68,6 +68,12 @@ export interface CreateSiteData {
   team_assignment?: string;
   stakeholders?: any[];
   description?: string;
+  // Location fields
+  postcode?: string;
+  region?: string;
+  country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export class SitesService {
@@ -85,30 +91,181 @@ export class SitesService {
    */
   static async getAllSites(): Promise<Site[]> {
     try {
+      console.log('🔍 SitesService.getAllSites: Calling API endpoint:', API_ENDPOINTS.SITES.LIST);
       const response = await apiClient.get<{
         message: string;
         data: any[];
       }>(API_ENDPOINTS.SITES.LIST);
 
+      console.log('🔍 SitesService.getAllSites: API response:', { 
+        success: response.success, 
+        hasData: !!response.data,
+        dataType: typeof response.data,
+        error: response.error 
+      });
+
       // If response is not successful, throw error
       if (!response.success) {
-        throw new Error(response.error?.message || 'Failed to fetch sites');
+        const errorMsg = response.error?.message || 'Failed to fetch sites';
+        console.error('❌ SitesService.getAllSites: API call failed:', errorMsg, response.error);
+        throw new Error(errorMsg);
       }
 
       // If response.data is null/undefined, return empty array (no sites)
       if (!response.data || !response.data.data) {
+        console.log('⚠️ SitesService.getAllSites: No data in response, returning empty array');
         return [];
       }
 
-      // Backend returns sites with fields as top-level properties
-      // Transform to our Site format
-      const sites = Array.isArray(response.data.data) 
+      // Backend returns sites with fields normalized from create_site/general_info
+      // Fields are already extracted and normalized to top-level properties
+      // Missing fields are simply not included (not null/empty)
+      let sites = Array.isArray(response.data.data) 
         ? response.data.data.map((site: any) => this.transformSite(site))
         : [];
       
-      return sites;
+      // Backend now reads from create_site page, but we still fetch as fallback for sites without pages
+      // Only fetch from create_site page if backend didn't provide normalized fields
+      // Only fetch from create_site page if backend didn't normalize fields (fallback)
+      const sitesWithPageData = await Promise.all(
+        sites.map(async (site) => {
+          // Check if backend provided normalized fields
+          const needsPageData = !site.name || site.name === '' || 
+                               !site.organization_name || site.organization_name === '' || 
+                               !site.target_live_date || site.target_live_date === '';
+          
+          if (needsPageData) {
+            console.log(`🔍 SitesService.getAllSites: Site ${site.id} missing normalized data, fetching from create_site page as fallback`, {
+              currentName: site.name,
+              currentOrg: site.organization_name,
+              currentTargetDate: site.target_live_date
+            });
+            try {
+            const createSitePage = await PageService.getPage('create_site', site.id);
+            console.log(`🔍 SitesService.getAllSites: create_site page for site ${site.id}:`, {
+              hasPage: !!createSitePage,
+              pageId: createSitePage?.page_id,
+              sectionsCount: createSitePage?.sections?.length,
+              sections: createSitePage?.sections?.map(s => ({ name: s.section_name, fieldsCount: s.fields?.length }))
+            });
+            
+            if (createSitePage) {
+              const generalInfo = createSitePage.sections?.find((s) => s.section_name === 'general_info');
+              const locationInfo = createSitePage.sections?.find((s) => s.section_name === 'location_info');
+              
+              console.log(`🔍 SitesService.getAllSites: general_info section for site ${site.id}:`, {
+                found: !!generalInfo,
+                fieldsCount: generalInfo?.fields?.length,
+                fieldNames: generalInfo?.fields?.map((f: any) => f.field_name)
+              });
+              
+              if (generalInfo && generalInfo.fields && generalInfo.fields.length > 0) {
+                const byName = (fieldName: string) => {
+                  const field = generalInfo.fields!.find((f: any) => f.field_name === fieldName);
+                  if (!field) {
+                    console.log(`  ⚠️ Field "${fieldName}" not found in general_info`);
+                    return null;
+                  }
+                  const value = field.field_value;
+                  // Handle {value: "..."}, {text: "..."}, {label: "..."}, or plain string
+                  let extractedValue;
+                  if (typeof value === 'object' && value !== null) {
+                    if ('value' in value) extractedValue = value.value;
+                    else if ('text' in value) extractedValue = value.text;
+                    else if ('label' in value) extractedValue = value.label;
+                    else extractedValue = value;
+                  } else {
+                    extractedValue = value;
+                  }
+                  console.log(`  ✅ Field "${fieldName}":`, { rawValue: value, extractedValue });
+                  return extractedValue;
+                };
+
+                // Extract ALL fields from create_site/general_info
+                const siteName = byName('site_name');
+                const orgName = byName('org_name');
+                const unitId = byName('unit_id');
+                const targetLiveDate = byName('target_live_date');
+                const suggestedGoLive = byName('suggested_go_live');
+                const assignedOpsManager = byName('assigned_ops_manager');
+                const assignedDeploymentEngineer = byName('assigned_deployment_engineer');
+                const sector = byName('sector');
+                const criticalityLevel = byName('criticality_level');
+                const organizationId = byName('organization_id');
+                
+                // Update site with data from create_site/general_info (overwrite empty strings)
+                if (siteName) site.name = String(siteName);
+                if (orgName) site.organization_name = String(orgName);
+                if (unitId) site.unit_code = String(unitId);
+                if (targetLiveDate) site.target_live_date = String(targetLiveDate);
+                if (suggestedGoLive) site.suggested_go_live = String(suggestedGoLive);
+                if (assignedOpsManager) site.assigned_ops_manager = String(assignedOpsManager);
+                if (assignedDeploymentEngineer) site.assigned_deployment_engineer = String(assignedDeploymentEngineer);
+                if (sector) site.sector = String(sector);
+                if (criticalityLevel) site.criticality_level = String(criticalityLevel) as any;
+                if (organizationId) site.organization_id = String(organizationId);
+                
+                // Extract location data from location_info section
+                if (locationInfo && locationInfo.fields && locationInfo.fields.length > 0) {
+                  const byNameLoc = (fieldName: string) => {
+                    const field = locationInfo.fields!.find((f: any) => f.field_name === fieldName);
+                    if (!field) return null;
+                    const value = field.field_value;
+                    if (typeof value === 'object' && value !== null) {
+                      if ('value' in value) return value.value;
+                      if ('text' in value) return value.text;
+                      if ('label' in value) return value.label;
+                      return value;
+                    }
+                    return value;
+                  };
+                  
+                  const loc = byNameLoc('location');
+                  const postcode = byNameLoc('postcode');
+                  const region = byNameLoc('region');
+                  const country = byNameLoc('country');
+                  const lat = byNameLoc('latitude');
+                  const lng = byNameLoc('longitude');
+                  
+                  if (loc) site.location = String(loc);
+                  if (postcode) site.postcode = String(postcode);
+                  if (region) site.region = String(region);
+                  if (country) site.country = String(country);
+                  if (lat !== null && lat !== undefined) site.latitude = Number(lat);
+                  if (lng !== null && lng !== undefined) site.longitude = Number(lng);
+                }
+                
+                console.log(`✅ SitesService.getAllSites: Enriched site ${site.id} from create_site page:`, {
+                  name: site.name,
+                  organization_name: site.organization_name,
+                  target_live_date: site.target_live_date,
+                  assigned_ops_manager: site.assigned_ops_manager,
+                  assigned_deployment_engineer: site.assigned_deployment_engineer,
+                  sector: site.sector,
+                  location: site.location,
+                  unit_code: site.unit_code
+                });
+              } else {
+                console.warn(`⚠️ SitesService.getAllSites: general_info section not found or has no fields for site ${site.id}`);
+              }
+            } else {
+              console.warn(`⚠️ SitesService.getAllSites: create_site page not found for site ${site.id} (404 - page may not have been created yet)`);
+            }
+          } catch (pageErr) {
+            console.error(`❌ SitesService.getAllSites: Error fetching create_site page for site ${site.id}:`, pageErr);
+          }
+          } else {
+            console.log(`✅ SitesService.getAllSites: Site ${site.id} has normalized data from backend, skipping page fetch`);
+          }
+          
+          return site;
+        })
+      );
+      
+      console.log('✅ SitesService.getAllSites: Transformed sites:', { count: sitesWithPageData.length });
+      return sitesWithPageData;
     } catch (error) {
-      console.error('getAllSites error:', error);
+      console.error('❌ SitesService.getAllSites: Error:', error);
       throw error;
     }
   }
@@ -168,11 +325,35 @@ export class SitesService {
 
   /**
    * Transform backend site response to our Site format
+   * 
+   * Backend normalizes fields from create_site/general_info:
+   * - site_name → name
+   * - org_name/organization_name → organization_name
+   * - unit_id/unit_code → unit_code
+   * - Other fields are normalized as-is
+   * 
+   * Missing fields are not included in response (not null/empty)
    */
   private static transformSite(apiSite: any): Site {
-    // Normalize organization and unit fields from current backend payload
-    const organizationName = apiSite.organization_name || apiSite.org_name || '';
-    const unitCode = apiSite.unit_code || apiSite.unit_id;
+    // Debug: Log the raw API site data to see what backend is returning
+    console.log('🔍 SitesService.transformSite: Raw API site data:', {
+      site_id: apiSite.site_id || apiSite.id,
+      name: apiSite.name,
+      organization_name: apiSite.organization_name,
+      target_live_date: apiSite.target_live_date,
+      suggested_go_live: apiSite.suggested_go_live,
+      assigned_ops_manager: apiSite.assigned_ops_manager,
+      assigned_deployment_engineer: apiSite.assigned_deployment_engineer,
+      sector: apiSite.sector,
+      unit_code: apiSite.unit_code,
+      status: apiSite.status,
+      allKeys: Object.keys(apiSite)
+    });
+    
+    // Backend already normalizes these fields, so use them directly
+    // Fallback to empty string if missing (backend doesn't include missing fields)
+    const organizationName = apiSite.organization_name || '';
+    const unitCode = apiSite.unit_code || '';
 
     // Normalize status values to UI-friendly variants
     let status: string = apiSite.status || 'Created';
@@ -182,22 +363,22 @@ export class SitesService {
 
     return {
       id: apiSite.site_id?.toString() || apiSite.id?.toString() || '',
-      name: apiSite.name || apiSite.site_name || '',
+      name: apiSite.name || '', // Backend normalizes site_name → name
       organization_id: apiSite.organization_id?.toString(),
-      organization_name: organizationName,
-      organization_logo: apiSite.organization_logo,
+      organization_name: organizationName, // Backend normalizes org_name → organization_name
+      organization_logo: apiSite.organization_logo || '',
       location: apiSite.location || '',
       status,
-      target_live_date: apiSite.target_live_date,
-      suggested_go_live: apiSite.suggested_go_live,
-      assigned_ops_manager: apiSite.assigned_ops_manager,
-      assigned_deployment_engineer: apiSite.assigned_deployment_engineer,
-      sector: apiSite.sector,
-      unit_code: unitCode,
+      target_live_date: apiSite.target_live_date || '', // Missing fields not included, so use empty string
+      suggested_go_live: apiSite.suggested_go_live || '',
+      assigned_ops_manager: apiSite.assigned_ops_manager || '',
+      assigned_deployment_engineer: apiSite.assigned_deployment_engineer || '',
+      sector: apiSite.sector || '',
+      unit_code: unitCode, // Backend normalizes unit_id → unit_code
       criticality_level: apiSite.criticality_level,
       team_assignment: apiSite.team_assignment,
-      stakeholders: apiSite.stakeholders,
-      notes: apiSite.notes,
+      stakeholders: apiSite.stakeholders || [],
+      notes: apiSite.notes || '',
       unitManagerName: apiSite.unitManagerName,
       jobTitle: apiSite.jobTitle,
       unitManagerEmail: apiSite.unitManagerEmail,
@@ -257,10 +438,25 @@ export class SitesService {
 
   /**
    * Create a new site
-   * This creates the site and initializes all workflow pages
+   * 
+   * This creates the site and initializes all 7 workflow pages:
+   * 1. create_site - with general_info populated (org_name, site_name, unit_id, target_live_date, assigned_ops_manager, assigned_deployment_engineer, sector)
+   * 2. site_study - with sections: general_info, study_details, findings, documents
+   * 3. scoping - with sections: hardware_requirements, cost_breakdown, approvals
+   * 4. approval - with sections: approval_details, comments, attachments
+   * 5. procurement - with sections: procurement_items, vendor_info, delivery
+   * 6. deployment - with sections: deployment_checklist, installation, testing
+   * 7. go_live - with sections: go_live_checklist, activation, post_live
+   * 
+   * Backend reads from create_site/general_info to populate site list fields.
+   * Frontend reads from create_site page to display site details.
+   * 
+   * Called from:
+   * - SiteCreation.tsx (when user clicks "Create Site" from Sites list page)
    */
   static async createSite(siteData: CreateSiteData): Promise<Site | null> {
     try {
+      console.log('🔍 SitesService.createSite: Step 1 - Creating site shell with status:', siteData.status || 'Created');
       // Step 1: Create the site (backend creates site with status)
       const siteResponse = await apiClient.post<{
         message: string;
@@ -269,55 +465,124 @@ export class SitesService {
         status: siteData.status || 'Created',
       });
 
+      console.log('🔍 SitesService.createSite: Step 1 response:', { 
+        success: siteResponse.success, 
+        data: siteResponse.data,
+        error: siteResponse.error 
+      });
+
       if (!siteResponse.success) {
-        throw new Error(siteResponse.error?.message || 'Failed to create site');
+        const errorMsg = siteResponse.error?.message || 'Failed to create site';
+        console.error('❌ SitesService.createSite: Step 1 failed:', errorMsg);
+        throw new Error(errorMsg);
       }
 
       const siteId = siteResponse.data?.data?.site_id || siteResponse.data?.site_id;
       if (!siteId) {
+        console.error('❌ SitesService.createSite: No site_id in response:', siteResponse.data);
         throw new Error('Site created but no site_id returned');
       }
 
-      // Step 2: Create the site_study page with all general_info fields at once
-      // This is more efficient and avoids multiple failed page creation attempts
-      // Backend expects field_value to be an object, so we wrap string values in { value: ... }
-      const siteStudyPageResult = await PageService.createPage({
-        page_name: 'site_study',
-        site_id: siteId,
-        status: 'created', // Backend expects lowercase
-        sections: [
-          {
-            section_name: 'general_info',
-            fields: [
-              { field_name: 'org_name', field_value: { value: siteData.organization_name } },
-              { field_name: 'site_name', field_value: { value: siteData.name } },
-              { field_name: 'unit_id', field_value: { value: siteData.unit_code || '' } },
-              { field_name: 'target_live_date', field_value: { value: siteData.target_live_date } },
-              { field_name: 'suggested_go_live', field_value: { value: siteData.target_live_date } },
-              { field_name: 'assigned_ops_manager', field_value: { value: siteData.assigned_ops_manager || '' } },
-              { field_name: 'assigned_deployment_engineer', field_value: { value: siteData.assigned_deployment_engineer || '' } },
-              { field_name: 'sector', field_value: { value: siteData.sector || '' } },
-              { field_name: 'organization_logo', field_value: { value: '' } },
-            ],
-          },
-        ],
-      });
+      console.log('✅ SitesService.createSite: Step 1 success, site_id:', siteId);
 
-      if (!siteStudyPageResult.success) {
-        console.warn('Site created but failed to create site_study page:', siteStudyPageResult.error);
+      // Step 2: Create the create_site page with ALL form data in general_info and location_info sections
+      // This is the FIRST page in the workflow - backend reads from here for site list
+      // Backend normalizes: site_name → name, org_name → organization_name, unit_id → unit_code
+      // Field values can be {value: "..."}, {text: "..."}, {label: "..."}, or plain string
+      // Using {value: "..."} format for consistency
+      console.log('🔍 SitesService.createSite: Step 2 - Creating create_site page with ALL form data');
+      
+      // Check if page already exists (shouldn't happen, but handle gracefully)
+      const existingPage = await PageService.getPage('create_site', siteId);
+      if (existingPage) {
+        console.warn('⚠️ SitesService.createSite: create_site page already exists, skipping creation');
+      } else {
+        const createSitePageResult = await PageService.createPage({
+          page_name: 'create_site', // Backend query needs to look for this (currently looks for 'site_study')
+          site_id: siteId,
+          status: 'created', // Backend expects lowercase - also updates site status
+          sections: [
+            {
+              section_name: 'general_info', // Backend reads from this section for site list
+              fields: [
+                { field_name: 'org_name', field_value: { value: siteData.organization_name } }, // Normalized to organization_name
+                { field_name: 'site_name', field_value: { value: siteData.name } }, // Normalized to name
+                { field_name: 'unit_id', field_value: { value: siteData.unit_code || '' } }, // Normalized to unit_code
+                { field_name: 'target_live_date', field_value: { value: siteData.target_live_date } },
+                { field_name: 'suggested_go_live', field_value: { value: siteData.target_live_date } },
+                { field_name: 'assigned_ops_manager', field_value: { value: siteData.assigned_ops_manager || '' } },
+                { field_name: 'assigned_deployment_engineer', field_value: { value: siteData.assigned_deployment_engineer || '' } },
+                { field_name: 'sector', field_value: { value: siteData.sector || '' } },
+                { field_name: 'criticality_level', field_value: { value: siteData.criticality_level || 'medium' } },
+                { field_name: 'organization_id', field_value: { value: siteData.organization_id } },
+                { field_name: 'organization_logo', field_value: { value: '' } },
+              ],
+            },
+            {
+              section_name: 'location_info', // Location data from form
+              fields: [
+                { field_name: 'location', field_value: { value: siteData.location || '' } },
+                { field_name: 'postcode', field_value: { value: siteData.postcode || '' } },
+                { field_name: 'region', field_value: { value: siteData.region || '' } },
+                { field_name: 'country', field_value: { value: siteData.country || 'United Kingdom' } },
+                { field_name: 'latitude', field_value: { value: siteData.latitude || null } },
+                { field_name: 'longitude', field_value: { value: siteData.longitude || null } },
+              ],
+            },
+          ],
+        });
+
+        console.log('🔍 SitesService.createSite: Step 2 response:', { 
+          success: createSitePageResult.success, 
+          error: createSitePageResult.error 
+        });
+
+        if (!createSitePageResult.success) {
+          // Check if it's a duplicate page error (page already exists)
+          const isDuplicateError = createSitePageResult.error?.includes('Duplicate') || 
+                                   createSitePageResult.error?.includes('already exists') ||
+                                   createSitePageResult.error?.includes('IntegrityError') ||
+                                   createSitePageResult.error?.includes('unique constraint');
+          
+          if (isDuplicateError) {
+            console.warn('⚠️ SitesService.createSite: create_site page already exists (duplicate), continuing...');
+          } else {
+            console.error('❌ SitesService.createSite: Step 2 failed - Site created but failed to create create_site page:', {
+              error: createSitePageResult.error,
+              siteId,
+              siteData: {
+                name: siteData.name,
+                organization_name: siteData.organization_name
+              }
+            });
+            // Still continue - site was created, just page creation failed
+          }
+        } else {
+          console.log('✅ SitesService.createSite: Step 2 success - create_site page created with ALL form data');
+          console.log('✅ SitesService.createSite: Page created with:', {
+            page_id: createSitePageResult.data?.page_id,
+            sections: createSitePageResult.data?.sections?.map(s => ({
+              name: s.section_name,
+              fieldsCount: s.fields?.length
+            }))
+          });
+        }
       }
 
-      // Step 3: Initialize remaining workflow pages (create_site, scoping, approval, etc.)
-      const initResult = await PageService.initializeSiteWorkflow(siteId);
-      if (!initResult.success) {
-        console.warn('Site created but failed to initialize some workflow pages:', initResult.errors);
-      }
+      // Note: Other workflow pages (site_study, scoping, approval, etc.) will be created lazily
+      // when the user progresses through those workflow steps. We only create create_site page here.
 
-      // Step 4: Return the created site
+      // Step 3: Return the created site
+      console.log('🔍 SitesService.createSite: Step 4 - Fetching created site by ID:', siteId);
       const createdSite = await this.getSiteById(siteId.toString());
+      console.log('✅ SitesService.createSite: Step 4 - Retrieved site:', { 
+        hasSite: !!createdSite, 
+        siteId: createdSite?.id,
+        siteName: createdSite?.name 
+      });
       return createdSite;
     } catch (error) {
-      console.error('createSite error:', error);
+      console.error('❌ SitesService.createSite: Fatal error:', error);
       return null;
     }
   }
@@ -398,22 +663,92 @@ export class SitesService {
     throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  static async deleteSite(siteId: string): Promise<boolean> {
+  static async deleteSite(siteId: string): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log('🔍 SitesService.deleteSite: Attempting to delete site:', siteId);
       // Backend: DELETE /api/site?site_id={id}
+      const endpoint = API_ENDPOINTS.SITES.DELETE(siteId);
+      console.log('🔍 SitesService.deleteSite: Calling endpoint:', endpoint);
+      
       const response = await apiClient.delete<{
         message?: string;
-      }>(API_ENDPOINTS.SITES.DELETE(siteId));
+        error?: string;
+      }>(endpoint);
+
+      console.log('🔍 SitesService.deleteSite: Response:', {
+        success: response.success,
+        error: response.error,
+        statusCode: response.error?.statusCode,
+        data: response.data
+      });
 
       if (!response.success) {
-        console.error('deleteSite error:', response.error);
-        return false;
+        // Handle different error status codes
+        const statusCode = response.error?.statusCode;
+        let errorMessage = response.error?.message || 'Failed to delete site';
+        
+        // Extract error message from response data if available
+        if (response.data && typeof response.data === 'object') {
+          const data = response.data as any;
+          if (data.message) errorMessage = data.message;
+          else if (data.error) errorMessage = data.error;
+        }
+        
+        // Extract additional details from error.details (contains full error response)
+        const errorDetails = response.error?.details;
+        if (errorDetails && typeof errorDetails === 'object') {
+          const details = errorDetails as any;
+          if (details.message && details.message !== errorMessage) {
+            errorMessage = details.message;
+          } else if (details.error) {
+            errorMessage = details.error;
+          }
+        }
+        
+        // Provide more specific error messages based on status code
+        if (statusCode === 500) {
+          // For 500 errors, show the backend's error message if available
+          const backendMessage = errorMessage.includes('internal error') 
+            ? errorMessage 
+            : `Server error: ${errorMessage}`;
+          errorMessage = `${backendMessage}. Please contact support if this issue persists.`;
+        } else if (statusCode === 404) {
+          errorMessage = 'Site not found. It may have already been deleted.';
+        } else if (statusCode === 403) {
+          errorMessage = 'You do not have permission to delete this site.';
+        } else if (statusCode === 400) {
+          errorMessage = `Invalid request: ${errorMessage}`;
+        }
+        
+        // Log full error details for debugging
+        console.error('❌ SitesService.deleteSite: Delete failed:', {
+          siteId,
+          statusCode,
+          error: response.error,
+          errorMessage: response.error?.message,
+          errorDetails: response.error?.details,
+          responseData: response.data,
+          finalErrorMessage: errorMessage
+        });
+        
+        // In development, log the full error response
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Full error response:', JSON.stringify(response.error, null, 2));
+        }
+        
+        return { success: false, error: errorMessage };
       }
 
-      return true;
-    } catch (error) {
-      console.error('deleteSite error:', error);
-      return false;
+      console.log('✅ SitesService.deleteSite: Site deleted successfully:', siteId);
+      return { success: true };
+    } catch (error: any) {
+      const errorMessage = error?.message || 'An unexpected error occurred while deleting the site';
+      console.error('❌ SitesService.deleteSite: Exception:', {
+        siteId,
+        error,
+        message: errorMessage
+      });
+      return { success: false, error: errorMessage };
     }
   }
 

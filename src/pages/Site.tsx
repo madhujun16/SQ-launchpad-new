@@ -1229,9 +1229,18 @@ const SiteDetail = () => {
           </div>
           <div className="flex items-center space-x-4 mt-2">
             <p className="text-gray-600">
-              Sector - <span className="font-medium">{site.sector}</span> | 
-              Organization - <span className="font-medium">{site.organization}</span> | 
-              Target Date - <span className="font-medium">{site.goLiveDate}</span>
+              {site.sector && (
+                <>Sector - <span className="font-medium">{site.sector}</span> | </>
+              )}
+              {site.organization && (
+                <>Organization - <span className="font-medium">{site.organization}</span> | </>
+              )}
+              {site.goLiveDate && (
+                <>Target Date - <span className="font-medium">{site.goLiveDate}</span></>
+              )}
+              {!site.sector && !site.organization && !site.goLiveDate && (
+                <span className="text-gray-400 italic">Site details will appear after creation data is saved</span>
+              )}
             </p>
           </div>
         </div>

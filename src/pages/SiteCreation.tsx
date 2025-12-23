@@ -257,22 +257,30 @@ const SiteCreation = () => {
         status: 'Created', // Initial status
         sector: formData.sector,
         unit_code: formData.unitCode,
-        criticality_level: formData.criticalityLevel
-        // Removed description field until the column is available in the database
+        criticality_level: formData.criticalityLevel,
+        // Location fields - ALL form data
+        postcode: formData.postcode || '',
+        region: formData.region || '',
+        country: formData.country || 'United Kingdom',
+        latitude: formData.latitude,
+        longitude: formData.longitude
       };
 
       // Create site using backend service
+      console.log('🔍 SiteCreation: Creating site with data:', siteData);
       const createdSite = await SitesService.createSite(siteData);
+      console.log('✅ SiteCreation: Site creation result:', { createdSite, hasId: !!createdSite?.id });
 
       if (createdSite) {
         toast.success(`Site "${formData.name}" created successfully for organization "${selectedOrg.name}"!`);
         navigate('/sites');
       } else {
-        toast.error('Failed to create site. Please try again.');
+        console.error('❌ SiteCreation: createSite returned null/undefined');
+        toast.error('Failed to create site. Please check the console for details.');
       }
     } catch (error) {
-      console.error('Error creating site:', error);
-      toast.error('An error occurred while creating the site');
+      console.error('❌ SiteCreation: Error creating site:', error);
+      toast.error(`An error occurred while creating the site: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSubmitting(false);
     }

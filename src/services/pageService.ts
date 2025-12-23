@@ -98,10 +98,16 @@ export class PageService {
         data: Page;
       }>(API_ENDPOINTS.PAGES.GET(pageName, siteId));
 
-      // If page doesn't exist (400), return null gracefully
+      // If page doesn't exist (404), return null gracefully
       if (!response.success) {
-        if (response.error?.statusCode === 400) {
-          // Page doesn't exist yet - this is OK for new sites
+        const isPageNotFound = (response.error?.statusCode === 404 || response.error?.statusCode === 400) && 
+                               (response.error?.message?.includes('not found') || 
+                                response.error?.message?.includes('Invalid Page') ||
+                                response.error?.message?.includes('Invalid page'));
+        
+        if (isPageNotFound) {
+          // Page doesn't exist yet - this is OK (normal for sites created before create_site page was implemented)
+          console.log(`ℹ️ Page "${pageName}" not found for site ${siteId} (404 - this is normal for existing sites)`);
           return null;
         }
         // For other errors, log but still return null
@@ -252,25 +258,30 @@ export class PageService {
         currentPage.sections.push(section);
       }
 
-      // Find or create field
+      // Find existing field or prepare to add new one
       let field = section.fields.find(f => f.field_name === fieldName);
       if (field) {
+        // Field exists - update it (requires field_id for PUT /api/page)
         field.field_value = fieldValue;
       } else {
+        // Field doesn't exist - need to add it
+        // For new fields, we need to create them via POST /api/page or add to existing page
+        // Since we're updating, we'll add it to the sections array
         section.fields.push({
           field_name: fieldName,
           field_value: fieldValue,
         });
       }
 
-      // Update the page
+      // Update the page using PUT /api/page
+      // Backend requires: page_id, section_id for each section, field_id for each field
       return this.updatePage({
         id: currentPage.page_id!,
         sections: currentPage.sections.map(s => ({
-          section_id: s.section_id,
+          section_id: s.section_id, // Required for updates
           section_name: s.section_name,
           fields: s.fields.map(f => ({
-            field_id: f.field_id,
+            field_id: f.field_id, // Required for updates - existing fields have this
             field_name: f.field_name,
             field_value: f.field_value,
           })),
@@ -311,41 +322,76 @@ export class PageService {
 
   /**
    * Initialize workflow pages for a new site
-   * Creates all standard workflow pages with empty sections
+   * Creates all 7 standard workflow pages with their sections
+   * Pages are created in workflow order: create_site → site_study → scoping → approval → procurement → deployment → go_live
    */
   static async initializeSiteWorkflow(siteId: number | string): Promise<{ success: boolean; errors?: string[] }> {
+    // All 7 workflow pages in order: create_site → site_study → scoping → approval → procurement → deployment → go_live
     const workflowPages = [
-      { name: 'create_site', sections: ['general_info', 'location', 'stakeholders'] },
-      { name: 'site_study', sections: ['general_info', 'study_details', 'findings', 'documents'] }, // Added general_info for site data
-      { name: 'scoping', sections: ['hardware_requirements', 'cost_breakdown', 'approvals'] },
-      { name: 'approval', sections: ['approval_details', 'comments', 'attachments'] },
-      { name: 'procurement', sections: ['procurement_items', 'vendor_info', 'delivery'] },
-      { name: 'deployment', sections: ['deployment_checklist', 'installation', 'testing'] },
-      { name: 'go_live', sections: ['go_live_checklist', 'activation', 'post_live'] },
+      { 
+        name: 'create_site', 
+        sections: ['general_info', 'location_info', 'stakeholders'],
+        description: 'Initial site creation with basic info and location'
+      },
+      { 
+        name: 'site_study', 
+        sections: ['general_info', 'study_details', 'findings', 'documents'],
+        description: 'Site study and assessment data'
+      },
+      { 
+        name: 'scoping', 
+        sections: ['hardware_requirements', 'cost_breakdown', 'approvals'],
+        description: 'Hardware and software scoping with cost breakdown'
+      },
+      { 
+        name: 'approval', 
+        sections: ['approval_details', 'comments', 'attachments'],
+        description: 'Approval workflow and comments'
+      },
+      { 
+        name: 'procurement', 
+        sections: ['procurement_items', 'vendor_info', 'delivery'],
+        description: 'Procurement tracking and vendor information'
+      },
+      { 
+        name: 'deployment', 
+        sections: ['deployment_checklist', 'installation', 'testing'],
+        description: 'Deployment process and installation tracking'
+      },
+      { 
+        name: 'go_live', 
+        sections: ['go_live_checklist', 'activation', 'post_live'],
+        description: 'Go-live process and post-launch monitoring'
+      },
     ];
 
     const errors: string[] = [];
 
     for (const page of workflowPages) {
-      // Check if page already exists (e.g., site_study might be created separately)
+      // Check if page already exists (e.g., create_site might be created separately with data)
       const existingPage = await this.getPage(page.name, siteId);
       if (existingPage) {
-        console.log(`Page ${page.name} already exists, skipping creation`);
+        console.log(`✅ Page "${page.name}" already exists (${existingPage.sections?.length || 0} sections), skipping creation`);
         continue;
       }
 
+      console.log(`🔍 Creating page "${page.name}" with sections: ${page.sections.join(', ')}`);
       const result = await this.createPage({
         page_name: page.name,
         site_id: Number(siteId),
         status: 'created', // Backend expects lowercase
         sections: page.sections.map(sectionName => ({
           section_name: sectionName,
-          fields: [], // Empty fields initially
+          fields: [], // Empty fields initially - will be populated as workflow progresses
         })),
       });
 
       if (!result.success) {
-        errors.push(`Failed to create ${page.name}: ${result.error}`);
+        const errorMsg = `Failed to create ${page.name}: ${result.error}`;
+        console.error(`❌ ${errorMsg}`);
+        errors.push(errorMsg);
+      } else {
+        console.log(`✅ Page "${page.name}" created successfully`);
       }
     }
 

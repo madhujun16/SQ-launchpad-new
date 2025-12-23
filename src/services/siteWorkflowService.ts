@@ -220,12 +220,24 @@ export interface GoLiveData {
 export class SiteWorkflowService {
   static async getSiteWorkflowData(siteId: string): Promise<SiteWorkflowData | null> {
     try {
+      console.log('🔍 SiteWorkflowService.getSiteWorkflowData: Fetching data for site:', siteId);
       const allSites = await SitesService.getAllSites();
       const site = allSites.find((s: BackendSite) => s.id === siteId);
       if (!site) {
-        console.warn('getSiteWorkflowData: site not found for id', siteId);
+        console.warn('❌ SiteWorkflowService.getSiteWorkflowData: site not found for id', siteId);
         return null;
       }
+
+      console.log('🔍 SiteWorkflowService.getSiteWorkflowData: Found site:', {
+        id: site.id,
+        name: site.name,
+        organization_name: site.organization_name,
+        target_live_date: site.target_live_date,
+        assigned_ops_manager: site.assigned_ops_manager,
+        assigned_deployment_engineer: site.assigned_deployment_engineer,
+        sector: site.sector,
+        unit_code: site.unit_code
+      });
 
       const workflow: SiteWorkflowData = {
         id: site.id,
@@ -248,13 +260,102 @@ export class SiteWorkflowService {
         updated_at: site.updated_at,
       };
 
-      // Enrich with data from the "site_study" page, general_info section
+      // Enrich with data from the "create_site" page, general_info section (FIRST page in workflow)
+      // Backend GET /api/site/all already normalizes these fields, but we read from page for detail view
+      // to get the full page structure and any additional fields not normalized
       try {
-        const page = await PageService.getPage('site_study', site.id);
-        const general = page?.sections?.find((s) => s.section_name === 'general_info');
-        if (general && general.fields) {
-          const byName = (fieldName: string) =>
-            general.fields!.find((f: any) => f.field_name === fieldName)?.field_value;
+        console.log('🔍 SiteWorkflowService.getSiteWorkflowData: Attempting to load create_site page for site:', site.id);
+        const createSitePage = await PageService.getPage('create_site', site.id);
+        
+        if (!createSitePage) {
+          console.warn('⚠️ SiteWorkflowService.getSiteWorkflowData: create_site page not found for site:', site.id);
+        } else {
+          console.log('🔍 SiteWorkflowService.getSiteWorkflowData: create_site page result:', {
+            hasPage: !!createSitePage,
+            pageId: createSitePage?.page_id,
+            sectionsCount: createSitePage?.sections?.length,
+            sections: createSitePage?.sections?.map(s => ({ name: s.section_name, fieldsCount: s.fields?.length }))
+          });
+          
+          const generalInfo = createSitePage?.sections?.find((s) => s.section_name === 'general_info');
+          const locationInfo = createSitePage?.sections?.find((s) => s.section_name === 'location_info');
+          
+          console.log('🔍 SiteWorkflowService.getSiteWorkflowData: general_info section:', {
+            found: !!generalInfo,
+            fieldsCount: generalInfo?.fields?.length,
+            fieldNames: generalInfo?.fields?.map((f: any) => f.field_name)
+          });
+          
+          console.log('🔍 SiteWorkflowService.getSiteWorkflowData: location_info section:', {
+            found: !!locationInfo,
+            fieldsCount: locationInfo?.fields?.length,
+            fieldNames: locationInfo?.fields?.map((f: any) => f.field_name)
+          });
+          
+          if (generalInfo && generalInfo.fields) {
+            const byName = (fieldName: string) => {
+              const field = generalInfo.fields!.find((f: any) => f.field_name === fieldName);
+              if (!field) return null;
+              const value = field.field_value;
+              // Backend supports: {value: "..."}, {text: "..."}, {label: "..."}, or plain string
+              if (typeof value === 'object' && value !== null) {
+                if ('value' in value) return value.value;
+                if ('text' in value) return value.text;
+                if ('label' in value) return value.label;
+                return value; // Return object as-is if no recognized key
+              }
+              return value; // Plain string
+            };
+
+            // Extract organization, site name, etc. from general_info
+            // Backend already normalized these in getAllSites, but we use page data for detail view
+            const orgName = byName('org_name');
+            const siteName = byName('site_name');
+            const unitId = byName('unit_id');
+            const targetLiveDate = byName('target_live_date');
+            const suggestedGoLive = byName('suggested_go_live');
+            const assignedOpsManager = byName('assigned_ops_manager');
+            const assignedDeploymentEngineer = byName('assigned_deployment_engineer');
+            const sector = byName('sector');
+
+            // Update workflow with data from create_site/general_info
+            // Prefer page data as it's the source of truth
+            if (orgName) workflow.organization = String(orgName);
+            if (siteName) workflow.name = String(siteName);
+            if (unitId) workflow.unit_code = String(unitId);
+            if (targetLiveDate) workflow.target_live_date = String(targetLiveDate);
+            if (suggestedGoLive) workflow.suggested_go_live = String(suggestedGoLive);
+            if (assignedOpsManager) workflow.assigned_ops_manager = String(assignedOpsManager);
+            if (assignedDeploymentEngineer) workflow.assigned_deployment_engineer = String(assignedDeploymentEngineer);
+            if (sector) workflow.sector = String(sector);
+            
+            console.log('✅ SiteWorkflowService.getSiteWorkflowData: Updated workflow from create_site/general_info:', {
+              organization: workflow.organization,
+              name: workflow.name,
+              unit_code: workflow.unit_code,
+              target_live_date: workflow.target_live_date,
+              assigned_ops_manager: workflow.assigned_ops_manager,
+              assigned_deployment_engineer: workflow.assigned_deployment_engineer,
+              sector: workflow.sector
+            });
+          }
+        }
+
+        // Extract location data from location_info section
+        if (locationInfo && locationInfo.fields) {
+          const byName = (fieldName: string) => {
+            const field = locationInfo.fields!.find((f: any) => f.field_name === fieldName);
+            if (!field) return null;
+            const value = field.field_value;
+            // Backend supports: {value: "..."}, {text: "..."}, {label: "..."}, or plain string
+            if (typeof value === 'object' && value !== null) {
+              if ('value' in value) return value.value;
+              if ('text' in value) return value.text;
+              if ('label' in value) return value.label;
+              return value;
+            }
+            return value;
+          };
 
           const loc = byName('location');
           const postcode = byName('postcode') ?? workflow.postcode;
@@ -264,7 +365,7 @@ export class SiteWorkflowService {
           const lng = byName('longitude') ?? workflow.longitude;
 
           workflow.siteCreation = {
-            id: String(page.page_id ?? ''),
+            id: String(createSitePage?.page_id ?? ''),
             site_id: site.id,
             unit_manager_name: '',
             job_title: '',
@@ -272,22 +373,22 @@ export class SiteWorkflowService {
             unit_manager_mobile: '',
             additional_contact_name: '',
             additional_contact_email: '',
-            location: typeof loc === 'string' ? loc : '',
-            postcode: typeof postcode === 'string' ? postcode : '',
+            location: typeof loc === 'string' ? loc : workflow.location || '',
+            postcode: typeof postcode === 'string' ? postcode : workflow.postcode || '',
             region: typeof region === 'string' ? region : '',
-            country: typeof country === 'string' ? country : '',
-            latitude: Number(lat) || 0,
-            longitude: Number(lng) || 0,
+            country: typeof country === 'string' ? country : 'United Kingdom',
+            latitude: Number(lat) || workflow.latitude || 0,
+            longitude: Number(lng) || workflow.longitude || 0,
             additional_notes: '',
             created_at: workflow.created_at,
             updated_at: workflow.updated_at,
             locationInfo: {
-              location: typeof loc === 'string' ? loc : '',
-              postcode: typeof postcode === 'string' ? postcode : '',
+              location: typeof loc === 'string' ? loc : workflow.location || '',
+              postcode: typeof postcode === 'string' ? postcode : workflow.postcode || '',
               region: typeof region === 'string' ? region : '',
-              country: typeof country === 'string' ? country : '',
-              latitude: Number(lat) || 0,
-              longitude: Number(lng) || 0,
+              country: typeof country === 'string' ? country : 'United Kingdom',
+              latitude: Number(lat) || workflow.latitude || 0,
+              longitude: Number(lng) || workflow.longitude || 0,
             },
             contactInfo: {
               unitManagerName: '',
@@ -302,7 +403,7 @@ export class SiteWorkflowService {
           };
         }
       } catch (pageErr) {
-        console.warn('getSiteWorkflowData: unable to load site_study page', pageErr);
+        console.warn('getSiteWorkflowData: unable to load create_site page', pageErr);
       }
 
       return workflow;

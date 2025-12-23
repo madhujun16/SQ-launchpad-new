@@ -4,6 +4,7 @@
 
 // Centralized API Base URL - Change this to update all API endpoints
 // This should be the full base URL including /api (e.g., https://sq-launchpad-backend.onrender.com/api)
+// NOTE: If you have VITE_API_BASE_URL in .env, it will override this default
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://sq-launchpad-backend.onrender.com/api';
 
 export const API_CONFIG = {
