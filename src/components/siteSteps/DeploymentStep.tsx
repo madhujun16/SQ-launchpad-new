@@ -14,7 +14,8 @@ import {
   Clock, 
   AlertCircle,
   Plus,
-  Package
+  Package,
+  Save
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
@@ -71,6 +72,7 @@ interface Asset {
 }
 
 const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [procuredHardware, setProcuredHardware] = useState<any[]>([]);
   const [siteAssets, setSiteAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,20 +164,11 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Deployment</h2>
           <p className="text-gray-600 mt-1">Hardware installation and system deployment</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <Edit className="h-4 w-4 mr-1" />
-            Update Progress
-          </Button>
-          <Button size="sm">
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Mark Complete
-          </Button>
         </div>
       </div>
       
@@ -432,6 +425,38 @@ const DeploymentStep: React.FC<DeploymentStepProps> = ({ site, onSiteUpdate }) =
             Update Progress
           </Button>
         </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        {!isEditing ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button
+              onClick={() => setIsEditing(false)}
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mark Complete
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

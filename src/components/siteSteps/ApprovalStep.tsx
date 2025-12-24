@@ -14,7 +14,8 @@ import {
   Clock, 
   Package,
   Edit,
-  AlertCircle
+  AlertCircle,
+  Save
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { SettingsService } from '@/services/settingsService';
@@ -26,6 +27,7 @@ interface ApprovalStepProps {
 }
 
 const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [approvalResponseTime, setApprovalResponseTime] = useState<number>(24);
 
   // Load approval response time from settings
@@ -110,16 +112,11 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Hardware & Software Approval</h2>
           <p className="text-gray-600 mt-1">Review Ops Manager's approval decision and approved specifications before proceeding with deployment</p>
-        </div>
-        <div className="flex space-x-2">
-          <Badge variant="outline" className="text-sm text-gray-600">
-            <Handshake className="h-4 w-4 mr-1" />
-            Read-Only Approval Review
-          </Badge>
         </div>
       </div>
       
@@ -393,6 +390,38 @@ const ApprovalStep: React.FC<ApprovalStepProps> = ({ site, onSiteUpdate }) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        {!isEditing ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button
+              onClick={() => setIsEditing(false)}
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mark Complete
+            </Button>
+          </>
+        )}
+      </div>
     </div>
   );
 };

@@ -5,7 +5,14 @@ import { Input } from './input';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 
 interface LocationPickerProps {
-  onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
+  onLocationSelect: (location: { 
+    lat: number; 
+    lng: number; 
+    address: string;
+    postcode?: string;
+    region?: string;
+    country?: string;
+  }) => void;
   initialLocation?: { lat: number; lng: number };
   className?: string;
 }
@@ -13,8 +20,10 @@ interface LocationPickerProps {
 // TODO: Replace with GCP geocoding API
 
 interface LocationIQResponse {
+  lat: string;
+  lon: string;
   display_name: string;
-  address: {
+  address?: {
     house_number?: string;
     road?: string;
     city?: string;
@@ -25,10 +34,10 @@ interface LocationIQResponse {
 }
 
 interface LocationIQSearchResult {
-  display_name: string;
   lat: string;
   lon: string;
-  address: {
+  display_name: string;
+  address?: {
     house_number?: string;
     road?: string;
     city?: string;
@@ -67,33 +76,120 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     };
   }, []);
 
-  // Secure reverse geocoding function - TODO: Replace with GCP geocoding API
-  const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
+  // LocationIQ reverse geocoding - get address and location attributes from coordinates
+  const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<{
+    address: string;
+    postcode?: string;
+    region?: string;
+    country?: string;
+  }> => {
     try {
       setError(null);
-      // TODO: Replace with GCP geocoding API
-      console.warn('Geocoding service not implemented - connect to GCP backend');
-      return `${lat}, ${lng}`;
+      // LocationIQ reverse geocoding API
+      // Get free API key from: https://locationiq.com/
+      // Add to .env: VITE_LOCATIONIQ_API_KEY=your_api_key_here
+      const apiKey = import.meta.env.VITE_LOCATIONIQ_API_KEY;
+      if (!apiKey) {
+        console.warn('⚠️ VITE_LOCATIONIQ_API_KEY not set in .env - location attributes will not be fetched');
+        return {
+          address: `${lat}, ${lng}`,
+          postcode: '',
+          region: '',
+          country: 'United Kingdom'
+        };
+      }
+      
+      // Correct LocationIQ API endpoint format
+      const url = `https://us1.locationiq.com/v1/reverse?key=${apiKey}&lat=${lat}&lon=${lng}&format=json`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`LocationIQ API error: ${response.status}`);
+      }
+      
+      const data: LocationIQResponse = await response.json();
+      
+      // Extract location attributes - only need lat, lon, and display_name
+      const address = data.display_name || `${lat}, ${lng}`;
+      const postcode = data.address?.postcode || '';
+      const region = data.address?.state || data.address?.city || '';
+      const country = data.address?.country || 'United Kingdom';
+      
+      console.log('✅ LocationIQ reverse geocoding result:', {
+        lat: data.lat,
+        lon: data.lon,
+        display_name: data.display_name,
+        address,
+        postcode,
+        region,
+        country
+      });
+      
+      return { address, postcode, region, country };
     } catch (error) {
-      console.warn('Geocoding service unavailable, using coordinates:', error);
-      return `${lat}, ${lng}`;
+      console.warn('⚠️ LocationIQ reverse geocoding failed, using coordinates:', error);
+      return {
+        address: `${lat}, ${lng}`,
+        postcode: '',
+        region: '',
+        country: 'United Kingdom'
+      };
     }
   }, []);
 
-  // Secure forward geocoding function - TODO: Replace with GCP geocoding API
-  const forwardGeocode = useCallback(async (address: string): Promise<{ lat: number; lng: number; address: string } | null> => {
+  // LocationIQ forward geocoding - get coordinates from address
+  const forwardGeocode = useCallback(async (address: string): Promise<{ 
+    lat: number; 
+    lng: number; 
+    address: string;
+    postcode?: string;
+    region?: string;
+    country?: string;
+  } | null> => {
     try {
       setError(null);
-      // TODO: Replace with GCP geocoding API
-      console.warn('Geocoding service not implemented - connect to GCP backend');
-      return null;
+      const apiKey = import.meta.env.VITE_LOCATIONIQ_API_KEY;
+      if (!apiKey) {
+        console.warn('⚠️ VITE_LOCATIONIQ_API_KEY not set - forward geocoding disabled');
+        return null;
+      }
+      
+      // LocationIQ search API endpoint
+      const url = `https://us1.locationiq.com/v1/search?key=${apiKey}&q=${encodeURIComponent(address)}&format=json&limit=1`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`LocationIQ API error: ${response.status}`);
+      }
+      
+      const data: LocationIQSearchResult[] = await response.json();
+      if (!data || data.length === 0) {
+        return null;
+      }
+      
+      const result = data[0];
+      const lat = parseFloat(result.lat);
+      const lng = parseFloat(result.lon);
+      const displayAddress = result.display_name;
+      const postcode = result.address?.postcode || '';
+      const region = result.address?.state || result.address?.city || '';
+      const country = result.address?.country || 'United Kingdom';
+      
+      return {
+        lat,
+        lng,
+        address: displayAddress,
+        postcode,
+        region,
+        country
+      };
     } catch (error) {
-      console.warn('Geocoding service unavailable:', error);
+      console.warn('⚠️ LocationIQ forward geocoding failed:', error);
       return null;
     }
   }, []);
 
-  // Secure search suggestions function - TODO: Replace with GCP geocoding API
+  // LocationIQ search suggestions - autocomplete addresses
   const getSearchSuggestions = useCallback(async (query: string): Promise<LocationIQSearchResult[]> => {
     if (!query.trim() || query.length < 3) {
       setSearchSuggestions([]);
@@ -103,14 +199,40 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
     try {
       setError(null);
-      // TODO: Replace with GCP geocoding API
-      console.warn('Geocoding service not implemented - connect to GCP backend');
-      return [];
+      const apiKey = import.meta.env.VITE_LOCATIONIQ_API_KEY;
+      if (!apiKey) {
+        console.warn('⚠️ VITE_LOCATIONIQ_API_KEY not set - search suggestions disabled');
+        return [];
+      }
+      
+      // LocationIQ autocomplete API endpoint
+      const url = `https://us1.locationiq.com/v1/autocomplete?key=${apiKey}&q=${encodeURIComponent(query)}&format=json&limit=5`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`LocationIQ API error: ${response.status}`);
+      }
+      
+      const data: LocationIQSearchResult[] = await response.json();
+      return data || [];
     } catch (error) {
-      console.warn('Geocoding service unavailable:', error);
+      console.warn('⚠️ LocationIQ search suggestions failed:', error);
       return [];
     }
   }, []);
+
+  // Load address for initial location using reverse geocoding
+  // This must be after reverseGeocode is defined
+  useEffect(() => {
+    if (initialLocation && !searchAddress) {
+      reverseGeocode(initialLocation.lat, initialLocation.lng).then(result => {
+        setSearchAddress(result.address);
+      }).catch(err => {
+        console.warn('Failed to reverse geocode initial location:', err);
+        setSearchAddress(`${initialLocation.lat}, ${initialLocation.lng}`);
+      });
+    }
+  }, [initialLocation, reverseGeocode, searchAddress]);
 
   const handleSearchInputChange = useCallback(async (value: string) => {
     try {
@@ -133,17 +255,27 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const handleSuggestionSelect = useCallback(async (suggestion: LocationIQSearchResult) => {
     try {
       setError(null);
+      const lat = parseFloat(suggestion.lat);
+      const lng = parseFloat(suggestion.lon);
+      const address = suggestion.display_name;
+      const postcode = suggestion.address?.postcode || '';
+      const region = suggestion.address?.state || suggestion.address?.city || '';
+      const country = suggestion.address?.country || 'United Kingdom';
+      
       const location = {
-        lat: parseFloat(suggestion.lat),
-        lng: parseFloat(suggestion.lon),
-        address: suggestion.display_name
+        lat,
+        lng,
+        address,
+        postcode,
+        region,
+        country
       };
       
-      setSearchAddress(suggestion.display_name);
+      setSearchAddress(address);
       setSearchSuggestions([]);
       setShowSuggestions(false);
       
-      const newLocation = { lat: location.lat, lng: location.lng };
+      const newLocation = { lat, lng };
       setMarker(newLocation);
       
       onLocationSelect(location);
@@ -198,10 +330,17 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             
             setMarker(newLocation);
             
-            // Use LocationIQ for reverse geocoding
-            const address = await reverseGeocode(lat, lng);
-            onLocationSelect({ lat, lng, address });
-            setSearchAddress(address);
+            // Use LocationIQ for reverse geocoding to get full location attributes
+            const locationData = await reverseGeocode(lat, lng);
+            onLocationSelect({ 
+              lat, 
+              lng, 
+              address: locationData.address,
+              postcode: locationData.postcode,
+              region: locationData.region,
+              country: locationData.country
+            });
+            setSearchAddress(locationData.address);
             
             // Auto-collapse after selection
             setIsExpanded(false);
@@ -235,8 +374,17 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
       const lng = parseFloat(manualLng);
       
       if (!isNaN(lat) && !isNaN(lng)) {
-        const address = manualAddress || await reverseGeocode(lat, lng);
-        const location = { lat, lng, address };
+        // Use reverse geocoding to get full location attributes
+        const locationData = await reverseGeocode(lat, lng);
+        const address = manualAddress || locationData.address;
+        const location = { 
+          lat, 
+          lng, 
+          address,
+          postcode: locationData.postcode,
+          region: locationData.region,
+          country: locationData.country
+        };
         onLocationSelect(location);
         setMarker({ lat, lng });
         setSearchAddress(address);

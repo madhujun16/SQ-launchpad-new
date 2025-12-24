@@ -21,7 +21,9 @@ import {
   AlertTriangle,
   FileText,
   Wrench,
-  Loader2
+  Loader2,
+  Edit,
+  Save
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
@@ -34,6 +36,7 @@ interface ProcurementStepProps {
 }
 
 const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [approvedHardware, setApprovedHardware] = useState<any[]>([]);
   const [procurementItems, setProcurementItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,6 +139,14 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Procurement</h2>
+          <p className="text-gray-600 mt-1">Hardware and software procurement management</p>
+        </div>
+      </div>
+
       {/* Approved Hardware Section */}
       <Card>
         <CardHeader>
@@ -306,6 +317,38 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
           </CardContent>
         </Card>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        {!isEditing ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button
+              onClick={() => setIsEditing(false)}
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mark Complete
+            </Button>
+          </>
+        )}
+      </div>
     </div>
   );
 };

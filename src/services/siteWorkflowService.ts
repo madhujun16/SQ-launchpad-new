@@ -221,7 +221,8 @@ export class SiteWorkflowService {
   static async getSiteWorkflowData(siteId: string): Promise<SiteWorkflowData | null> {
     try {
       console.log('🔍 SiteWorkflowService.getSiteWorkflowData: Fetching data for site:', siteId);
-      const allSites = await SitesService.getAllSites();
+      // Use cache to avoid duplicate getAllSites calls
+      const allSites = await SitesService.getAllSites(true);
       const site = allSites.find((s: BackendSite) => s.id === siteId);
       if (!site) {
         console.warn('❌ SiteWorkflowService.getSiteWorkflowData: site not found for id', siteId);
@@ -406,6 +407,109 @@ export class SiteWorkflowService {
         console.warn('getSiteWorkflowData: unable to load create_site page', pageErr);
       }
 
+      // Load site_study page data
+      try {
+        const siteStudyPage = await PageService.getPage('site_study', site.id);
+        
+        if (siteStudyPage && siteStudyPage.sections) {
+          const parseFieldValue = (value: any): any => {
+            if (typeof value === 'string') {
+              // Try to parse as JSON, fallback to string
+              try {
+                return JSON.parse(value);
+              } catch {
+                return value;
+              }
+            }
+            // Handle object format {value: "..."} or plain object
+            if (typeof value === 'object' && value !== null) {
+              if ('value' in value) {
+                try {
+                  return JSON.parse(value.value);
+                } catch {
+                  return value.value;
+                }
+              }
+              return value;
+            }
+            return value;
+          };
+
+          const bySection = (sectionName: string) => {
+            const section = siteStudyPage.sections?.find((s) => s.section_name === sectionName);
+            if (!section || !section.fields) return null;
+            
+            const result: any = {};
+            section.fields.forEach((field: any) => {
+              result[field.field_name] = parseFieldValue(field.field_value);
+            });
+            return result;
+          };
+
+          const spaceAssessment = bySection('space_assessment');
+          const stakeholders = bySection('stakeholders');
+          const requirements = bySection('requirements');
+          const infrastructure = bySection('infrastructure');
+          const timeline = bySection('timeline');
+          const findings = bySection('findings');
+          const recommendations = bySection('recommendations');
+
+          // Build siteStudy object
+          const siteStudy: SiteStudyData = {
+            spaceAssessment: spaceAssessment ? {
+              spaceType: spaceAssessment.spaceType || '',
+              footfallPattern: spaceAssessment.footfallPattern || '',
+              operatingHours: spaceAssessment.operatingHours || '',
+              peakTimes: spaceAssessment.peakTimes || '',
+              constraints: Array.isArray(spaceAssessment.constraints) ? spaceAssessment.constraints : [],
+              layoutPhotos: Array.isArray(spaceAssessment.layoutPhotos) ? spaceAssessment.layoutPhotos : [],
+              mounting: spaceAssessment.mounting || {
+                mountType: '',
+                surfaceMaterial: '',
+                drillingRequired: false,
+                clearanceAvailable: '',
+                distanceToNearest: '',
+                accessibleHeight: false
+              }
+            } : undefined,
+            stakeholders: stakeholders?.stakeholders ? (Array.isArray(stakeholders.stakeholders) ? stakeholders.stakeholders : []) : [],
+            requirements: requirements ? {
+              primaryPurpose: requirements.primaryPurpose || '',
+              expectedTransactions: requirements.expectedTransactions || '',
+              paymentMethods: Array.isArray(requirements.paymentMethods) ? requirements.paymentMethods : [],
+              specialRequirements: Array.isArray(requirements.specialRequirements) ? requirements.specialRequirements : [],
+              softwareCategories: Array.isArray(requirements.softwareCategories) ? requirements.softwareCategories : [],
+              categoryRequirements: requirements.categoryRequirements || {}
+            } : undefined,
+            infrastructure: infrastructure ? {
+              powerAvailable: infrastructure.powerAvailable === 'true' || infrastructure.powerAvailable === true,
+              networkAvailable: infrastructure.networkAvailable === 'true' || infrastructure.networkAvailable === true,
+              wifiQuality: infrastructure.wifiQuality || '',
+              physicalConstraints: Array.isArray(infrastructure.physicalConstraints) ? infrastructure.physicalConstraints : []
+            } : undefined,
+            timeline: timeline ? {
+              studyDate: timeline.studyDate || '',
+              proposedGoLive: timeline.proposedGoLive || '',
+              urgency: timeline.urgency || 'normal'
+            } : undefined,
+            findings: findings?.findings || '',
+            recommendations: recommendations?.recommendations || ''
+          };
+
+          workflow.siteStudy = siteStudy;
+          
+          console.log('✅ SiteWorkflowService.getSiteWorkflowData: Loaded site_study page data', {
+            hasSpaceAssessment: !!siteStudy.spaceAssessment,
+            hasStakeholders: siteStudy.stakeholders?.length > 0,
+            hasRequirements: !!siteStudy.requirements,
+            hasInfrastructure: !!siteStudy.infrastructure,
+            hasTimeline: !!siteStudy.timeline
+          });
+        }
+      } catch (siteStudyErr) {
+        console.warn('getSiteWorkflowData: unable to load site_study page', siteStudyErr);
+      }
+
       return workflow;
     } catch (error) {
       console.error('getSiteWorkflowData error:', error);
@@ -425,47 +529,50 @@ export class SiteWorkflowService {
 
   static async saveSiteCreationData(siteId: string, data: Partial<SiteCreationData>): Promise<boolean> {
     try {
-      const pageName = 'site_study';
-      const sectionName = 'general_info';
+      const pageName = 'create_site'; // Save to create_site page, not site_study
+      const generalInfoSection = 'general_info';
+      const locationInfoSection = 'location_info';
 
+      // Save location data to location_info section
       if (data.locationInfo) {
         const { location, postcode, region, country, latitude, longitude } = data.locationInfo;
         if (location) {
-          await PageService.updateField(siteId, pageName, sectionName, 'location', location);
+          await PageService.updateField(siteId, pageName, locationInfoSection, 'location', location);
         }
         if (postcode) {
-          await PageService.updateField(siteId, pageName, sectionName, 'postcode', postcode);
+          await PageService.updateField(siteId, pageName, locationInfoSection, 'postcode', postcode);
         }
         if (region) {
-          await PageService.updateField(siteId, pageName, sectionName, 'region', region);
+          await PageService.updateField(siteId, pageName, locationInfoSection, 'region', region);
         }
         if (country) {
-          await PageService.updateField(siteId, pageName, sectionName, 'country', country);
+          await PageService.updateField(siteId, pageName, locationInfoSection, 'country', country);
         }
         if (typeof latitude === 'number') {
-          await PageService.updateField(siteId, pageName, sectionName, 'latitude', latitude);
+          await PageService.updateField(siteId, pageName, locationInfoSection, 'latitude', String(latitude));
         }
         if (typeof longitude === 'number') {
-          await PageService.updateField(siteId, pageName, sectionName, 'longitude', longitude);
+          await PageService.updateField(siteId, pageName, locationInfoSection, 'longitude', String(longitude));
         }
       }
 
+      // Save team assignments to general_info section
       if (data.assigned_ops_manager) {
         await PageService.updateField(
           siteId,
           pageName,
-          sectionName,
+          generalInfoSection,
           'assigned_ops_manager',
-          data.assigned_ops_manager
+          String(data.assigned_ops_manager)
         );
       }
       if (data.assigned_deployment_engineer) {
         await PageService.updateField(
           siteId,
           pageName,
-          sectionName,
+          generalInfoSection,
           'assigned_deployment_engineer',
-          data.assigned_deployment_engineer
+          String(data.assigned_deployment_engineer)
         );
       }
 
@@ -477,11 +584,174 @@ export class SiteWorkflowService {
   }
 
   static async saveSiteStudyData(siteId: string, data: Partial<SiteStudyData>): Promise<boolean> {
-    console.warn('saveSiteStudyData not fully implemented; no-op for now', {
-      siteId,
-      data,
-    });
-    return true;
+    try {
+      const pageName = 'site_study';
+      
+      // Convert complex form data to sections/fields
+      // All field values must be strings (JSON stringified for complex objects)
+      const sections: Array<{
+        section_name: string;
+        fields: Array<{ field_name: string; field_value: string }>;
+      }> = [];
+
+      // Section: space_assessment
+      if (data.spaceAssessment) {
+        const spaceFields: Array<{ field_name: string; field_value: string }> = [];
+        
+        if (data.spaceAssessment.spaceType !== undefined) {
+          spaceFields.push({ field_name: 'spaceType', field_value: String(data.spaceAssessment.spaceType) });
+        }
+        if (data.spaceAssessment.footfallPattern !== undefined) {
+          spaceFields.push({ field_name: 'footfallPattern', field_value: String(data.spaceAssessment.footfallPattern) });
+        }
+        if (data.spaceAssessment.operatingHours !== undefined) {
+          spaceFields.push({ field_name: 'operatingHours', field_value: String(data.spaceAssessment.operatingHours) });
+        }
+        if (data.spaceAssessment.peakTimes !== undefined) {
+          spaceFields.push({ field_name: 'peakTimes', field_value: String(data.spaceAssessment.peakTimes) });
+        }
+        if (data.spaceAssessment.constraints !== undefined) {
+          spaceFields.push({ field_name: 'constraints', field_value: JSON.stringify(data.spaceAssessment.constraints) });
+        }
+        if (data.spaceAssessment.layoutPhotos !== undefined) {
+          spaceFields.push({ field_name: 'layoutPhotos', field_value: JSON.stringify(data.spaceAssessment.layoutPhotos) });
+        }
+        if (data.spaceAssessment.mounting) {
+          spaceFields.push({ field_name: 'mounting', field_value: JSON.stringify(data.spaceAssessment.mounting) });
+        }
+        
+        if (spaceFields.length > 0) {
+          sections.push({ section_name: 'space_assessment', fields: spaceFields });
+        }
+      }
+
+      // Section: stakeholders
+      if (data.stakeholders !== undefined) {
+        sections.push({
+          section_name: 'stakeholders',
+          fields: [{ field_name: 'stakeholders', field_value: JSON.stringify(data.stakeholders) }]
+        });
+      }
+
+      // Section: requirements
+      if (data.requirements) {
+        const reqFields: Array<{ field_name: string; field_value: string }> = [];
+        
+        if (data.requirements.primaryPurpose !== undefined) {
+          reqFields.push({ field_name: 'primaryPurpose', field_value: String(data.requirements.primaryPurpose) });
+        }
+        if (data.requirements.expectedTransactions !== undefined) {
+          reqFields.push({ field_name: 'expectedTransactions', field_value: String(data.requirements.expectedTransactions) });
+        }
+        if (data.requirements.paymentMethods !== undefined) {
+          reqFields.push({ field_name: 'paymentMethods', field_value: JSON.stringify(data.requirements.paymentMethods) });
+        }
+        if (data.requirements.specialRequirements !== undefined) {
+          reqFields.push({ field_name: 'specialRequirements', field_value: JSON.stringify(data.requirements.specialRequirements) });
+        }
+        if (data.requirements.softwareCategories !== undefined) {
+          reqFields.push({ field_name: 'softwareCategories', field_value: JSON.stringify(data.requirements.softwareCategories) });
+        }
+        if (data.requirements.categoryRequirements !== undefined) {
+          reqFields.push({ field_name: 'categoryRequirements', field_value: JSON.stringify(data.requirements.categoryRequirements) });
+        }
+        
+        if (reqFields.length > 0) {
+          sections.push({ section_name: 'requirements', fields: reqFields });
+        }
+      }
+
+      // Section: infrastructure
+      if (data.infrastructure) {
+        const infraFields: Array<{ field_name: string; field_value: string }> = [];
+        
+        if (data.infrastructure.powerAvailable !== undefined) {
+          infraFields.push({ field_name: 'powerAvailable', field_value: String(data.infrastructure.powerAvailable) });
+        }
+        if (data.infrastructure.networkAvailable !== undefined) {
+          infraFields.push({ field_name: 'networkAvailable', field_value: String(data.infrastructure.networkAvailable) });
+        }
+        if (data.infrastructure.wifiQuality !== undefined) {
+          infraFields.push({ field_name: 'wifiQuality', field_value: String(data.infrastructure.wifiQuality) });
+        }
+        if (data.infrastructure.physicalConstraints !== undefined) {
+          infraFields.push({ field_name: 'physicalConstraints', field_value: JSON.stringify(data.infrastructure.physicalConstraints) });
+        }
+        
+        if (infraFields.length > 0) {
+          sections.push({ section_name: 'infrastructure', fields: infraFields });
+        }
+      }
+
+      // Section: timeline
+      if (data.timeline) {
+        const timelineFields: Array<{ field_name: string; field_value: string }> = [];
+        
+        if (data.timeline.studyDate !== undefined) {
+          timelineFields.push({ field_name: 'studyDate', field_value: String(data.timeline.studyDate) });
+        }
+        if (data.timeline.proposedGoLive !== undefined) {
+          timelineFields.push({ field_name: 'proposedGoLive', field_value: String(data.timeline.proposedGoLive) });
+        }
+        if (data.timeline.urgency !== undefined) {
+          timelineFields.push({ field_name: 'urgency', field_value: String(data.timeline.urgency) });
+        }
+        
+        if (timelineFields.length > 0) {
+          sections.push({ section_name: 'timeline', fields: timelineFields });
+        }
+      }
+
+      // Section: findings
+      if (data.findings !== undefined) {
+        sections.push({
+          section_name: 'findings',
+          fields: [{ field_name: 'findings', field_value: String(data.findings) }]
+        });
+      }
+
+      // Section: recommendations
+      if (data.recommendations !== undefined) {
+        sections.push({
+          section_name: 'recommendations',
+          fields: [{ field_name: 'recommendations', field_value: String(data.recommendations) }]
+        });
+      }
+
+      // Save all sections to the site_study page
+      if (sections.length > 0) {
+        // Check if page exists
+        const existingPage = await PageService.getPage(pageName, siteId);
+        
+        if (!existingPage) {
+          // Create new page with all sections
+          await PageService.createPage({
+            page_name: pageName,
+            site_id: Number(siteId),
+            status: 'site_study_done',
+            sections: sections
+          });
+        } else {
+          // Update existing page - update each field
+          for (const section of sections) {
+            for (const field of section.fields) {
+              await PageService.updateField(siteId, pageName, section.section_name, field.field_name, field.field_value);
+            }
+          }
+        }
+        
+        console.log('✅ SiteWorkflowService.saveSiteStudyData: Saved site study data', {
+          siteId,
+          sectionsCount: sections.length,
+          sections: sections.map(s => s.section_name)
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('❌ SiteWorkflowService.saveSiteStudyData: Error saving site study data:', error);
+      return false;
+    }
   }
 
   static async saveScopingData(siteId: string, data: Partial<ScopingData>): Promise<boolean> {

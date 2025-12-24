@@ -11,7 +11,8 @@ import {
   ListChecks, 
   Award, 
   Clock, 
-  AlertCircle 
+  AlertCircle,
+  Save
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 
@@ -21,6 +22,8 @@ interface GoLiveStepProps {
 }
 
 const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'live':
@@ -34,20 +37,11 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Go-Live</h2>
           <p className="text-gray-600 mt-1">Final system activation and go-live preparation</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <Edit className="h-4 w-4 mr-1" />
-            Update Go-Live Status
-          </Button>
-          <Button size="sm">
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Mark Complete
-          </Button>
         </div>
       </div>
       
@@ -166,6 +160,38 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        {!isEditing ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button
+              onClick={() => setIsEditing(false)}
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mark Complete
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

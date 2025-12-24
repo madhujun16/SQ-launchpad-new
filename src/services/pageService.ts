@@ -57,7 +57,7 @@ export interface CreatePagePayload {
     section_name: string;
     fields: Array<{
       field_name: string;
-      field_value: any; // JSON object
+      field_value: string; // Always a string
     }>;
   }>;
 }
@@ -225,10 +225,10 @@ export class PageService {
 
       if (!currentPage) {
         // Page doesn't exist, create it with the field
-        // Backend expects field_value to be an object, so wrap if it's a primitive
-        const wrappedValue = typeof fieldValue === 'object' && fieldValue !== null 
+        // Backend expects field_value to be a string
+        const stringValue = typeof fieldValue === 'string' 
           ? fieldValue 
-          : { value: fieldValue };
+          : (fieldValue !== null && fieldValue !== undefined ? String(fieldValue) : '');
         
         return this.createPage({
           page_name: pageName,
@@ -240,7 +240,7 @@ export class PageService {
               fields: [
                 {
                   field_name: fieldName,
-                  field_value: wrappedValue,
+                  field_value: stringValue,
                 },
               ],
             },
@@ -258,18 +258,23 @@ export class PageService {
         currentPage.sections.push(section);
       }
 
+      // Convert fieldValue to string (backend expects string)
+      const stringValue = typeof fieldValue === 'string' 
+        ? fieldValue 
+        : (fieldValue !== null && fieldValue !== undefined ? String(fieldValue) : '');
+
       // Find existing field or prepare to add new one
       let field = section.fields.find(f => f.field_name === fieldName);
       if (field) {
         // Field exists - update it (requires field_id for PUT /api/page)
-        field.field_value = fieldValue;
+        field.field_value = stringValue;
       } else {
         // Field doesn't exist - need to add it
         // For new fields, we need to create them via POST /api/page or add to existing page
         // Since we're updating, we'll add it to the sections array
         section.fields.push({
           field_name: fieldName,
-          field_value: fieldValue,
+          field_value: stringValue,
         });
       }
 
@@ -283,7 +288,7 @@ export class PageService {
           fields: s.fields.map(f => ({
             field_id: f.field_id, // Required for updates - existing fields have this
             field_name: f.field_name,
-            field_value: f.field_value,
+            field_value: typeof f.field_value === 'string' ? f.field_value : String(f.field_value || ''),
           })),
         })),
       });

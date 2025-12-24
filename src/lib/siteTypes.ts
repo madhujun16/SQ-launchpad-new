@@ -62,15 +62,22 @@ export interface Site {
   expectedFootfall?: number;
 }
 
-// Unified status system - Finalized sequence
+// Unified status system - Uses page names to reflect current in-progress step
 export type UnifiedSiteStatus = 
   | 'Created'
-  | 'site_study_done'
-  | 'scoping_done'
-  | 'approved'
-  | 'procurement_done'
-  | 'deployed'
-  | 'live'
+  | 'create_site'  // Page name for Create Site
+  | 'site_study'   // Page name for Site Study (current in-progress)
+  | 'site_study_done'  // Legacy support
+  | 'scoping'      // Page name for Scoping (current in-progress)
+  | 'scoping_done' // Legacy support
+  | 'approval'     // Page name for Approval (current in-progress)
+  | 'approved'     // Legacy support
+  | 'procurement'  // Page name for Procurement (current in-progress)
+  | 'procurement_done' // Legacy support
+  | 'deployment'   // Page name for Deployment (current in-progress)
+  | 'deployed'     // Legacy support
+  | 'go_live'      // Page name for Go Live (current in-progress)
+  | 'live'         // Legacy support
   | 'archived';
 
 // Stepper step interface - Updated to match EnhancedStepperStep
@@ -86,15 +93,23 @@ export interface StepperStep {
 }
 
 // Map status to stepper step
+// Status now uses page names (e.g., 'site_study', 'scoping') instead of 'done' statuses
 export const getStepperStepFromStatus = (status: UnifiedSiteStatus): number => {
   const statusMap: Record<UnifiedSiteStatus, number> = {
   Created: 0,
-  site_study_done: 1,
-  scoping_done: 2,
-  approved: 3,
-  procurement_done: 4,
-  deployed: 5,
-  live: 6,
+  create_site: 0,
+  site_study: 1,
+  site_study_done: 1, // Legacy support
+  scoping: 2,
+  scoping_done: 2, // Legacy support
+  approval: 3,
+  approved: 3, // Legacy support
+  procurement: 4,
+  procurement_done: 4, // Legacy support
+  deployment: 5,
+  deployed: 5, // Legacy support
+  go_live: 6,
+  live: 6, // Legacy support
   archived: 7
 };
   return statusMap[status] || 0;
@@ -221,41 +236,50 @@ export const getStatusColor = (status: string) => {
 
 export const getStatusDisplayName = (status: string) => {
   switch (status) {
-    // New finalized statuses - aligned with Sites page
+    // Page names (current in-progress steps)
     case 'Created':
     case 'site_created':
-      return 'Created';
+    case 'create_site':
+      return 'Create Site';
+    case 'site_study':
+      return 'Site Study';
+    case 'scoping':
+      return 'Scoping';
+    case 'approval':
+      return 'Approval';
+    case 'procurement':
+      return 'Procurement';
+    case 'deployment':
+      return 'Deployment';
+    case 'go_live':
+      return 'Go Live';
+    // Legacy "done" statuses (for backward compatibility)
     case 'site_study_done':
-      return 'Site Study Done';
+      return 'Site Study';
     case 'scoping_done':
-      return 'Scoping Done';
+      return 'Scoping';
     case 'approved':
-      return 'Approved';
+      return 'Approval';
     case 'procurement_done':
-      return 'Procurement Done';
+      return 'Procurement';
     case 'deployed':
-      return 'Deployed';
+      return 'Deployment';
     case 'live':
-      return 'Live';
+      return 'Go Live';
     case 'archived':
       return 'Archived';
     // Legacy status mappings for backward compatibility
     case 'created':
-      return 'Created';
+      return 'Create Site';
     case 'study_in_progress':
-      return 'Site Study Done';
+      return 'Site Study';
     case 'study_completed':
-      return 'Site Study Done';
+      return 'Site Study';
     case 'hardware_scoped':
-      return 'Scoping Done';
-    case 'procurement':
-      return 'Procurement Done';
-    case 'deployment':
-      return 'Deployed';
-    case 'activated':
-      return 'Live';
+      return 'Scoping';
     default:
-      return status;
+      // Capitalize page names for display
+      return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   }
 };
 
@@ -263,18 +287,25 @@ export const getStatusDisplayName = (status: string) => {
 export const getNextValidStatuses = (currentStatus: UnifiedSiteStatus): UnifiedSiteStatus[] => {
   switch (currentStatus) {
     case 'Created':
-      return ['site_study_done'];
-    case 'site_study_done':
-      return ['scoping_done'];
-    case 'scoping_done':
-      return ['approved'];
-    case 'approved':
-      return ['procurement_done'];
-    case 'procurement_done':
-      return ['deployed'];
-    case 'deployed':
-      return ['live'];
-    case 'live':
+    case 'create_site':
+      return ['site_study'];
+    case 'site_study':
+    case 'site_study_done': // Legacy support
+      return ['scoping'];
+    case 'scoping':
+    case 'scoping_done': // Legacy support
+      return ['approval'];
+    case 'approval':
+    case 'approved': // Legacy support
+      return ['procurement'];
+    case 'procurement':
+    case 'procurement_done': // Legacy support
+      return ['deployment'];
+    case 'deployment':
+    case 'deployed': // Legacy support
+      return ['go_live'];
+    case 'go_live':
+    case 'live': // Legacy support
       return []; // Final status
     default:
       return [];
@@ -290,7 +321,8 @@ export const canProgressToStatus = (currentStatus: UnifiedSiteStatus, targetStat
 };
 
 export const validateStatusProgression = (currentStatus: UnifiedSiteStatus, targetStatus: UnifiedSiteStatus): { valid: boolean; message?: string } => {
-  const statusOrder: UnifiedSiteStatus[] = ['Created', 'site_study_done', 'scoping_done', 'approved', 'procurement_done', 'deployed', 'live'];
+  // Status order using page names (current in-progress steps)
+  const statusOrder: UnifiedSiteStatus[] = ['Created', 'site_study', 'scoping', 'approval', 'procurement', 'deployment', 'go_live'];
   
   const currentIndex = statusOrder.indexOf(currentStatus);
   const targetIndex = statusOrder.indexOf(targetStatus);

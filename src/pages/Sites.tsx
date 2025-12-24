@@ -84,6 +84,51 @@ const Sites = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
 
+  // Shared function to transform sites data
+  const transformSitesData = (sitesData: any[]) => {
+    return sitesData.map((site: any) => {
+      const transformed = {
+        ...site,
+        organization: site.organization_name || site.organization || 'Unknown Organization',
+        foodCourt: site.name || `Site ${site.id.slice(0, 8)}`,
+        unitCode: site.unit_code || `UNIT-${site.id.slice(0, 8)}`,
+        goLiveDate: site.target_live_date || '2025-12-31',
+        priority: site.criticality_level || 'medium',
+        riskLevel: 'medium',
+        criticality: site.criticality_level || 'medium',
+        assignedOpsManager: site.assigned_ops_manager || 'TBD',
+        assignedDeploymentEngineer: site.assigned_deployment_engineer || 'TBD',
+        stakeholders: site.stakeholders || [],
+        notes: site.notes || '',
+        description: site.description || '',
+        lastUpdated: site.updated_at ? new Date(site.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+      };
+      
+      // Debug logging for the first site
+      if (site.id === sitesData[0]?.id) {
+        console.log('🔍 Sites data transformation:', {
+          original: {
+            id: site.id,
+            name: site.name,
+            organization_name: site.organization_name,
+            organization: site.organization,
+            assigned_ops_manager: site.assigned_ops_manager,
+            assigned_deployment_engineer: site.assigned_deployment_engineer
+          },
+          transformed: {
+            id: transformed.id,
+            name: transformed.name,
+            organization: transformed.organization,
+            assignedOpsManager: transformed.assignedOpsManager,
+            assignedDeploymentEngineer: transformed.assignedDeploymentEngineer
+          }
+        });
+      }
+      
+      return transformed;
+    });
+  };
+
   // Fetch sites from backend only
   useEffect(() => {
     // Load sites even if currentRole is not set yet - this prevents the blank page issue
@@ -113,49 +158,7 @@ const Sites = () => {
         console.log('✅ Sites: Received sites data:', { count: sitesData?.length, sites: sitesData });
         
         if (isMounted) {
-          // Transform SitesService data to match SiteContext interface
-          const transformedSites = sitesData.map((site: any) => {
-            const transformed = {
-              ...site,
-              organization: site.organization_name || site.organization || 'Unknown Organization',
-              foodCourt: site.name || `Site ${site.id.slice(0, 8)}`,
-              unitCode: site.unit_code || `UNIT-${site.id.slice(0, 8)}`,
-              goLiveDate: site.target_live_date || '2025-12-31',
-              priority: site.criticality_level || 'medium',
-              riskLevel: 'medium',
-              criticality: site.criticality_level || 'medium',
-              assignedOpsManager: site.assigned_ops_manager || 'TBD',
-              assignedDeploymentEngineer: site.assigned_deployment_engineer || 'TBD',
-              stakeholders: site.stakeholders || [],
-              notes: site.notes || '',
-              description: site.description || '',
-              lastUpdated: site.updated_at ? new Date(site.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-            };
-            
-            // Debug logging for the first site
-            if (site.id === sitesData[0]?.id) {
-              console.log('🔍 Sites data transformation:', {
-                original: {
-                  id: site.id,
-                  name: site.name,
-                  organization_name: site.organization_name,
-                  organization: site.organization,
-                  assigned_ops_manager: site.assigned_ops_manager,
-                  assigned_deployment_engineer: site.assigned_deployment_engineer
-                },
-                transformed: {
-                  id: transformed.id,
-                  name: transformed.name,
-                  organization: transformed.organization,
-                  assignedOpsManager: transformed.assignedOpsManager,
-                  assignedDeploymentEngineer: transformed.assignedDeploymentEngineer
-                }
-              });
-            }
-            
-            return transformed;
-          });
-          
+          const transformedSites = transformSitesData(sitesData);
           setSites(transformedSites);
           setLoading(false);
           clearTimeout(timeoutId);
@@ -194,6 +197,45 @@ const Sites = () => {
       clearTimeout(timeoutId);
     };
   }, []); // Remove currentRole dependency to prevent waiting
+
+  // Refresh sites when page becomes visible (e.g., when navigating back from site detail page)
+  useEffect(() => {
+    const refreshSites = async () => {
+      try {
+        console.log('🔍 Sites: Refreshing sites list...');
+        SitesService.clearCache();
+        setLoading(true);
+        const sitesData = await SitesService.getAllSites();
+        const transformedSites = transformSitesData(sitesData);
+        setSites(transformedSites);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error refreshing sites:', error);
+        setLoading(false);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('🔍 Sites: Page became visible, refreshing sites list...');
+        refreshSites();
+      }
+    };
+
+    // Also refresh when window gains focus (for cases where visibility API might not fire)
+    const handleFocus = () => {
+      console.log('🔍 Sites: Window gained focus, refreshing sites list...');
+      refreshSites();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
 
   // Filter and paginate sites
   const { filteredSites, totalPages, currentSites } = useMemo(() => {

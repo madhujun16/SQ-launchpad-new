@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock, Calculator, DollarSign } from 'lucide-react';
+import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock, Calculator, DollarSign, Edit, Save } from 'lucide-react';
 import { PlatformConfigService, SoftwareModule, HardwareItem } from '@/services/platformConfigService';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
@@ -280,7 +280,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
           submittedAt: new Date().toISOString(),
           costSummary
         },
-        status: 'scoping_done'
+        status: 'approval'
       });
 
       toast.success('Scoping submitted successfully for approval');
@@ -412,9 +412,18 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Column - Software and Hardware Selection (67%) */}
-      <div className="lg:col-span-2 space-y-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Scoping</h2>
+          <p className="text-gray-600 mt-1">Define software and hardware requirements</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Software and Hardware Selection (67%) */}
+        <div className="lg:col-span-2 space-y-6">
         {/* Software Selection */}
         <Card>
           <CardHeader>
@@ -574,9 +583,39 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         )}
       </div>
 
-      {/* Right Column - Cost Summary (33%) */}
-      <div className="lg:col-span-1">
-        <CostSummarySection />
+        {/* Right Column - Cost Summary (33%) */}
+        <div className="lg:col-span-1">
+          <CostSummarySection />
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        {!isEditing ? (
+          <Button
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mark Complete
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

@@ -78,7 +78,15 @@ export interface CreateSiteData {
 
 export class SitesService {
   private static sitesCache: { data: Site[]; timestamp: number } | null = null;
-  private static readonly CACHE_DURATION = 5 * 60 * 1000;
+  private static readonly CACHE_DURATION = 2 * 60 * 1000; // 2 minutes cache to reduce API calls
+
+  /**
+   * Clear sites cache (call after create/update/delete operations)
+   */
+  static clearCache(): void {
+    this.sitesCache = null;
+    console.log('🗑️ SitesService: Cache cleared');
+  }
 
   private static isValidUUID(str: string): boolean {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -89,8 +97,17 @@ export class SitesService {
    * Get all sites
    * Backend returns: { message: "...", data: [{ site_id, status, field_name_1: {...}, ... }] }
    */
-  static async getAllSites(): Promise<Site[]> {
+  static async getAllSites(useCache: boolean = true): Promise<Site[]> {
     try {
+      // Check cache first to reduce API calls
+      if (useCache && this.sitesCache) {
+        const cacheAge = Date.now() - this.sitesCache.timestamp;
+        if (cacheAge < this.CACHE_DURATION) {
+          console.log('✅ SitesService.getAllSites: Using cached data (age:', Math.round(cacheAge / 1000), 's)');
+          return this.sitesCache.data;
+        }
+      }
+
       console.log('🔍 SitesService.getAllSites: Calling API endpoint:', API_ENDPOINTS.SITES.LIST);
       const response = await apiClient.get<{
         message: string;
@@ -124,143 +141,113 @@ export class SitesService {
         ? response.data.data.map((site: any) => this.transformSite(site))
         : [];
       
-      // Backend now reads from create_site page, but we still fetch as fallback for sites without pages
-      // Only fetch from create_site page if backend didn't provide normalized fields
-      // Only fetch from create_site page if backend didn't normalize fields (fallback)
-      const sitesWithPageData = await Promise.all(
-        sites.map(async (site) => {
-          // Check if backend provided normalized fields
-          const needsPageData = !site.name || site.name === '' || 
-                               !site.organization_name || site.organization_name === '' || 
-                               !site.target_live_date || site.target_live_date === '';
-          
-          if (needsPageData) {
-            console.log(`🔍 SitesService.getAllSites: Site ${site.id} missing normalized data, fetching from create_site page as fallback`, {
-              currentName: site.name,
-              currentOrg: site.organization_name,
-              currentTargetDate: site.target_live_date
-            });
-            try {
-            const createSitePage = await PageService.getPage('create_site', site.id);
-            console.log(`🔍 SitesService.getAllSites: create_site page for site ${site.id}:`, {
-              hasPage: !!createSitePage,
-              pageId: createSitePage?.page_id,
-              sectionsCount: createSitePage?.sections?.length,
-              sections: createSitePage?.sections?.map(s => ({ name: s.section_name, fieldsCount: s.fields?.length }))
-            });
-            
-            if (createSitePage) {
-              const generalInfo = createSitePage.sections?.find((s) => s.section_name === 'general_info');
-              const locationInfo = createSitePage.sections?.find((s) => s.section_name === 'location_info');
-              
-              console.log(`🔍 SitesService.getAllSites: general_info section for site ${site.id}:`, {
-                found: !!generalInfo,
-                fieldsCount: generalInfo?.fields?.length,
-                fieldNames: generalInfo?.fields?.map((f: any) => f.field_name)
-              });
-              
-              if (generalInfo && generalInfo.fields && generalInfo.fields.length > 0) {
-                const byName = (fieldName: string) => {
-                  const field = generalInfo.fields!.find((f: any) => f.field_name === fieldName);
-                  if (!field) {
-                    console.log(`  ⚠️ Field "${fieldName}" not found in general_info`);
-                    return null;
-                  }
-                  const value = field.field_value;
-                  // Handle {value: "..."}, {text: "..."}, {label: "..."}, or plain string
-                  let extractedValue;
-                  if (typeof value === 'object' && value !== null) {
-                    if ('value' in value) extractedValue = value.value;
-                    else if ('text' in value) extractedValue = value.text;
-                    else if ('label' in value) extractedValue = value.label;
-                    else extractedValue = value;
-                  } else {
-                    extractedValue = value;
-                  }
-                  console.log(`  ✅ Field "${fieldName}":`, { rawValue: value, extractedValue });
-                  return extractedValue;
-                };
-
-                // Extract ALL fields from create_site/general_info
-                const siteName = byName('site_name');
-                const orgName = byName('org_name');
-                const unitId = byName('unit_id');
-                const targetLiveDate = byName('target_live_date');
-                const suggestedGoLive = byName('suggested_go_live');
-                const assignedOpsManager = byName('assigned_ops_manager');
-                const assignedDeploymentEngineer = byName('assigned_deployment_engineer');
-                const sector = byName('sector');
-                const criticalityLevel = byName('criticality_level');
-                const organizationId = byName('organization_id');
-                
-                // Update site with data from create_site/general_info (overwrite empty strings)
-                if (siteName) site.name = String(siteName);
-                if (orgName) site.organization_name = String(orgName);
-                if (unitId) site.unit_code = String(unitId);
-                if (targetLiveDate) site.target_live_date = String(targetLiveDate);
-                if (suggestedGoLive) site.suggested_go_live = String(suggestedGoLive);
-                if (assignedOpsManager) site.assigned_ops_manager = String(assignedOpsManager);
-                if (assignedDeploymentEngineer) site.assigned_deployment_engineer = String(assignedDeploymentEngineer);
-                if (sector) site.sector = String(sector);
-                if (criticalityLevel) site.criticality_level = String(criticalityLevel) as any;
-                if (organizationId) site.organization_id = String(organizationId);
-                
-                // Extract location data from location_info section
-                if (locationInfo && locationInfo.fields && locationInfo.fields.length > 0) {
-                  const byNameLoc = (fieldName: string) => {
-                    const field = locationInfo.fields!.find((f: any) => f.field_name === fieldName);
-                    if (!field) return null;
-                    const value = field.field_value;
-                    if (typeof value === 'object' && value !== null) {
-                      if ('value' in value) return value.value;
-                      if ('text' in value) return value.text;
-                      if ('label' in value) return value.label;
-                      return value;
-                    }
-                    return value;
-                  };
-                  
-                  const loc = byNameLoc('location');
-                  const postcode = byNameLoc('postcode');
-                  const region = byNameLoc('region');
-                  const country = byNameLoc('country');
-                  const lat = byNameLoc('latitude');
-                  const lng = byNameLoc('longitude');
-                  
-                  if (loc) site.location = String(loc);
-                  if (postcode) site.postcode = String(postcode);
-                  if (region) site.region = String(region);
-                  if (country) site.country = String(country);
-                  if (lat !== null && lat !== undefined) site.latitude = Number(lat);
-                  if (lng !== null && lng !== undefined) site.longitude = Number(lng);
-                }
-                
-                console.log(`✅ SitesService.getAllSites: Enriched site ${site.id} from create_site page:`, {
-                  name: site.name,
-                  organization_name: site.organization_name,
-                  target_live_date: site.target_live_date,
-                  assigned_ops_manager: site.assigned_ops_manager,
-                  assigned_deployment_engineer: site.assigned_deployment_engineer,
-                  sector: site.sector,
-                  location: site.location,
-                  unit_code: site.unit_code
-                });
-              } else {
-                console.warn(`⚠️ SitesService.getAllSites: general_info section not found or has no fields for site ${site.id}`);
-              }
-            } else {
-              console.warn(`⚠️ SitesService.getAllSites: create_site page not found for site ${site.id} (404 - page may not have been created yet)`);
-            }
-          } catch (pageErr) {
-            console.error(`❌ SitesService.getAllSites: Error fetching create_site page for site ${site.id}:`, pageErr);
-          }
-          } else {
-            console.log(`✅ SitesService.getAllSites: Site ${site.id} has normalized data from backend, skipping page fetch`);
-          }
-          
-          return site;
-        })
+      // Backend should provide normalized fields, but use fallback if missing
+      // Only fetch pages for sites that are actually missing critical data
+      const sitesNeedingData = sites.filter(site => 
+        !site.name || site.name === '' || 
+        !site.organization_name || site.organization_name === '' || 
+        !site.target_live_date || site.target_live_date === ''
       );
+
+      if (sitesNeedingData.length > 0) {
+        console.log(`🔍 SitesService.getAllSites: ${sitesNeedingData.length} site(s) missing normalized data, fetching from create_site pages as fallback`);
+        
+        // Fetch pages in parallel but with error handling
+        const pageResults = await Promise.allSettled(
+          sitesNeedingData.map(site => 
+            PageService.getPage('create_site', site.id)
+          )
+        );
+
+        // Map results back to sites
+        pageResults.forEach((result, index) => {
+          const site = sitesNeedingData[index];
+          const siteIndex = sites.findIndex(s => s.id === site.id);
+          
+          if (result.status === 'fulfilled' && result.value) {
+            const createSitePage = result.value;
+            const generalInfo = createSitePage.sections?.find((s) => s.section_name === 'general_info');
+            const locationInfo = createSitePage.sections?.find((s) => s.section_name === 'location_info');
+            
+            if (generalInfo && generalInfo.fields && generalInfo.fields.length > 0) {
+              const byName = (fieldName: string) => {
+                const field = generalInfo.fields!.find((f: any) => f.field_name === fieldName);
+                if (!field) return null;
+                const value = field.field_value;
+                // Handle both string and object formats (backward compatibility)
+                if (typeof value === 'object' && value !== null) {
+                  if ('value' in value) return value.value;
+                  if ('text' in value) return value.text;
+                  if ('label' in value) return value.label;
+                  return value;
+                }
+                return value;
+              };
+
+              // Enrich site with data from create_site/general_info
+              const siteName = byName('site_name');
+              const orgName = byName('org_name');
+              const unitId = byName('unit_id');
+              const targetLiveDate = byName('target_live_date');
+              const suggestedGoLive = byName('suggested_go_live');
+              const assignedOpsManager = byName('assigned_ops_manager');
+              const assignedDeploymentEngineer = byName('assigned_deployment_engineer');
+              const sector = byName('sector');
+              
+              if (siteIndex >= 0) {
+                if (siteName) sites[siteIndex].name = String(siteName);
+                if (orgName) sites[siteIndex].organization_name = String(orgName);
+                if (unitId) sites[siteIndex].unit_code = String(unitId);
+                if (targetLiveDate) sites[siteIndex].target_live_date = String(targetLiveDate);
+                if (suggestedGoLive) sites[siteIndex].suggested_go_live = String(suggestedGoLive);
+                if (assignedOpsManager) sites[siteIndex].assigned_ops_manager = String(assignedOpsManager);
+                if (assignedDeploymentEngineer) sites[siteIndex].assigned_deployment_engineer = String(assignedDeploymentEngineer);
+                if (sector) sites[siteIndex].sector = String(sector);
+              }
+            }
+
+            // Extract location data
+            if (locationInfo && locationInfo.fields && locationInfo.fields.length > 0 && siteIndex >= 0) {
+              const byNameLoc = (fieldName: string) => {
+                const field = locationInfo.fields!.find((f: any) => f.field_name === fieldName);
+                if (!field) return null;
+                const value = field.field_value;
+                if (typeof value === 'object' && value !== null) {
+                  if ('value' in value) return value.value;
+                  if ('text' in value) return value.text;
+                  if ('label' in value) return value.label;
+                  return value;
+                }
+                return value;
+              };
+              
+              const loc = byNameLoc('location');
+              const postcode = byNameLoc('postcode');
+              const region = byNameLoc('region');
+              const country = byNameLoc('country');
+              const lat = byNameLoc('latitude');
+              const lng = byNameLoc('longitude');
+              
+              if (loc) sites[siteIndex].location = String(loc);
+              if (postcode) sites[siteIndex].postcode = String(postcode);
+              if (region) sites[siteIndex].region = String(region);
+              if (country) sites[siteIndex].country = String(country);
+              if (lat !== null && lat !== undefined) sites[siteIndex].latitude = Number(lat);
+              if (lng !== null && lng !== undefined) sites[siteIndex].longitude = Number(lng);
+            }
+          } else if (result.status === 'rejected') {
+            console.warn(`⚠️ SitesService.getAllSites: Failed to fetch create_site page for site ${site.id}:`, result.reason);
+          }
+        });
+      }
+      
+      const sitesWithPageData = sites;
+      
+      // Update cache
+      this.sitesCache = {
+        data: sitesWithPageData,
+        timestamp: Date.now()
+      };
       
       console.log('✅ SitesService.getAllSites: Transformed sites:', { count: sitesWithPageData.length });
       return sitesWithPageData;
@@ -505,28 +492,28 @@ export class SitesService {
             {
               section_name: 'general_info', // Backend reads from this section for site list
               fields: [
-                { field_name: 'org_name', field_value: { value: siteData.organization_name } }, // Normalized to organization_name
-                { field_name: 'site_name', field_value: { value: siteData.name } }, // Normalized to name
-                { field_name: 'unit_id', field_value: { value: siteData.unit_code || '' } }, // Normalized to unit_code
-                { field_name: 'target_live_date', field_value: { value: siteData.target_live_date } },
-                { field_name: 'suggested_go_live', field_value: { value: siteData.target_live_date } },
-                { field_name: 'assigned_ops_manager', field_value: { value: siteData.assigned_ops_manager || '' } },
-                { field_name: 'assigned_deployment_engineer', field_value: { value: siteData.assigned_deployment_engineer || '' } },
-                { field_name: 'sector', field_value: { value: siteData.sector || '' } },
-                { field_name: 'criticality_level', field_value: { value: siteData.criticality_level || 'medium' } },
-                { field_name: 'organization_id', field_value: { value: siteData.organization_id } },
-                { field_name: 'organization_logo', field_value: { value: '' } },
+                { field_name: 'org_name', field_value: String(siteData.organization_name || '') }, // Normalized to organization_name
+                { field_name: 'site_name', field_value: String(siteData.name || '') }, // Normalized to name
+                { field_name: 'unit_id', field_value: String(siteData.unit_code || '') }, // Normalized to unit_code
+                { field_name: 'target_live_date', field_value: String(siteData.target_live_date || '') },
+                { field_name: 'suggested_go_live', field_value: String(siteData.target_live_date || '') },
+                { field_name: 'assigned_ops_manager', field_value: String(siteData.assigned_ops_manager || '') },
+                { field_name: 'assigned_deployment_engineer', field_value: String(siteData.assigned_deployment_engineer || '') },
+                { field_name: 'sector', field_value: String(siteData.sector || '') },
+                { field_name: 'criticality_level', field_value: String(siteData.criticality_level || 'medium') },
+                { field_name: 'organization_id', field_value: String(siteData.organization_id || '') },
+                { field_name: 'organization_logo', field_value: '' },
               ],
             },
             {
               section_name: 'location_info', // Location data from form
               fields: [
-                { field_name: 'location', field_value: { value: siteData.location || '' } },
-                { field_name: 'postcode', field_value: { value: siteData.postcode || '' } },
-                { field_name: 'region', field_value: { value: siteData.region || '' } },
-                { field_name: 'country', field_value: { value: siteData.country || 'United Kingdom' } },
-                { field_name: 'latitude', field_value: { value: siteData.latitude || null } },
-                { field_name: 'longitude', field_value: { value: siteData.longitude || null } },
+                { field_name: 'location', field_value: String(siteData.location || '') },
+                { field_name: 'postcode', field_value: String(siteData.postcode || '') },
+                { field_name: 'region', field_value: String(siteData.region || '') },
+                { field_name: 'country', field_value: String(siteData.country || 'United Kingdom') },
+                { field_name: 'latitude', field_value: siteData.latitude !== null && siteData.latitude !== undefined ? String(siteData.latitude) : '' },
+                { field_name: 'longitude', field_value: siteData.longitude !== null && siteData.longitude !== undefined ? String(siteData.longitude) : '' },
               ],
             },
           ],
@@ -580,6 +567,10 @@ export class SitesService {
         siteId: createdSite?.id,
         siteName: createdSite?.name 
       });
+      
+      // Clear cache so new site appears in list
+      this.clearCache();
+      
       return createdSite;
     } catch (error) {
       console.error('❌ SitesService.createSite: Fatal error:', error);
@@ -646,6 +637,12 @@ export class SitesService {
         if (!updateResponse.success) {
           throw new Error(updateResponse.error?.message || 'Failed to update site');
         }
+      }
+
+      // Clear cache after updating site status so Sites list page shows updated status
+      if (siteData.status) {
+        console.log('🔍 SitesService.updateSite: Clearing cache after status update');
+        this.clearCache();
       }
 
       return true;
@@ -740,6 +737,10 @@ export class SitesService {
       }
 
       console.log('✅ SitesService.deleteSite: Site deleted successfully:', siteId);
+      
+      // Clear cache so deleted site is removed from list
+      this.clearCache();
+      
       return { success: true };
     } catch (error: any) {
       const errorMessage = error?.message || 'An unexpected error occurred while deleting the site';
@@ -764,8 +765,4 @@ export class SitesService {
     throw new Error(API_NOT_IMPLEMENTED);
   }
 
-  static clearCache(): void {
-    this.sitesCache = null;
-    console.log('🔍 Sites cache cleared');
-  }
 }

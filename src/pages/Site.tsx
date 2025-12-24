@@ -800,47 +800,7 @@ const SiteDetail = () => {
                 additionalNotes: workflowData.siteCreation.additional_notes
               } : undefined,
               
-              siteStudy: workflowData.siteStudy ? {
-                // Map the database fields to the Site interface structure
-                spaceAssessment: {
-                  spaceType: workflowData.siteStudy.space_type,
-                  footfallPattern: workflowData.siteStudy.footfall_pattern,
-                  operatingHours: workflowData.siteStudy.operating_hours,
-                  peakTimes: workflowData.siteStudy.peak_times,
-                  constraints: workflowData.siteStudy.constraints || [],
-                  layoutPhotos: workflowData.siteStudy.layout_photos || [],
-                  mounting: {
-                    mountType: workflowData.siteStudy.mount_type,
-                    surfaceMaterial: workflowData.siteStudy.surface_material,
-                    drillingRequired: workflowData.siteStudy.drilling_required,
-                    clearanceAvailable: workflowData.siteStudy.clearance_available,
-                    distanceToNearest: workflowData.siteStudy.distance_to_nearest,
-                    accessibleHeight: workflowData.siteStudy.accessible_height
-                  }
-                },
-                requirements: {
-                  primaryPurpose: workflowData.siteStudy.primary_purpose,
-                  expectedTransactions: workflowData.siteStudy.expected_transactions,
-                  paymentMethods: workflowData.siteStudy.payment_methods || [],
-                  specialRequirements: workflowData.siteStudy.special_requirements || [],
-                  softwareCategories: workflowData.siteStudy.software_categories || [],
-                  categoryRequirements: workflowData.siteStudy.category_requirements || {}
-                },
-                infrastructure: {
-                  powerAvailable: workflowData.siteStudy.power_available,
-                  networkAvailable: workflowData.siteStudy.network_available,
-                  wifiQuality: workflowData.siteStudy.wifi_quality,
-                  physicalConstraints: workflowData.siteStudy.physical_constraints || []
-                },
-                timeline: {
-                  studyDate: workflowData.siteStudy.study_date,
-                  proposedGoLive: workflowData.siteStudy.proposed_go_live,
-                  urgency: workflowData.siteStudy.urgency
-                },
-                stakeholders: workflowData.siteStudy.stakeholders || [],
-                findings: workflowData.siteStudy.findings,
-                recommendations: workflowData.siteStudy.recommendations
-              } : undefined,
+              siteStudy: workflowData.siteStudy || undefined,
               
               scoping: workflowData.scoping ? {
                 selectedSoftware: Array.isArray(workflowData.scoping.selected_software) && workflowData.scoping.selected_software.length > 0 && typeof workflowData.scoping.selected_software[0] === 'string' 
@@ -972,12 +932,18 @@ const SiteDetail = () => {
         case 0: // Create Site
           if (site?.siteCreation) {
             enhancedStep.status = 'completed';
+            // If Create Site is completed but status is still 'Created', 
+            // then Site Study (next step) should be current
+            if (currentStatus === 'Created' && index === 0) {
+              // This will be handled in case 1
+            }
           }
           break;
         case 1: // Site Study
           if (site?.siteStudy) {
             enhancedStep.status = 'completed';
-          } else if (index === currentStepIndex) {
+          } else if (index === currentStepIndex || currentStatus === 'site_study' || (currentStatus === 'Created' && site?.siteCreation)) {
+            // If status is 'site_study' or Create Site is completed, Site Study is current
             enhancedStep.status = 'current';
           }
           break;

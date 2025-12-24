@@ -34,6 +34,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { CategoryService } from '@/services/categoryService';
+import { PlatformConfigService } from '@/services/platformConfigService';
 import { PageLoader } from '@/components/ui/loader';
 
 // TODO: Replace with GCP API calls
@@ -41,7 +42,28 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
-// Categories are now loaded dynamically from the database
+// Hardcoded categories that cannot be edited or deleted
+const HARDCODED_SOFTWARE_CATEGORIES = [
+  { id: 'hardcoded-food-ordering', name: 'Food Ordering App', description: 'Mobile/web app for food ordering', is_hardcoded: true },
+  { id: 'hardcoded-kiosk', name: 'Kiosk', description: 'Self-service kiosk system', is_hardcoded: true },
+  { id: 'hardcoded-pos', name: 'POS', description: 'Point of Sale system', is_hardcoded: true },
+  { id: 'hardcoded-kitchen', name: 'Kitchen Display System', description: 'Kitchen display and order management', is_hardcoded: true },
+  { id: 'hardcoded-inventory', name: 'Inventory Management', description: 'Inventory tracking and management', is_hardcoded: true }
+];
+
+const HARDCODED_HARDWARE_CATEGORIES = [
+  { id: 'hardcoded-display', name: 'Display Screen', description: 'Display screens and monitors', is_hardcoded: true },
+  { id: 'hardcoded-touch', name: 'Touch Screen', description: 'Touch screen displays', is_hardcoded: true },
+  { id: 'hardcoded-pos-terminal', name: 'POS Terminal', description: 'Point of Sale terminals', is_hardcoded: true },
+  { id: 'hardcoded-printer', name: 'Printer', description: 'Printers and printing devices', is_hardcoded: true },
+  { id: 'hardcoded-scanner', name: 'Scanner', description: 'Barcode and QR scanners', is_hardcoded: true },
+  { id: 'hardcoded-tablet', name: 'Tablet', description: 'Tablet devices', is_hardcoded: true },
+  { id: 'hardcoded-support', name: 'Support', description: 'Mounting and support equipment', is_hardcoded: true },
+  { id: 'hardcoded-accessories', name: 'Accessories', description: 'Cables, adapters, and accessories', is_hardcoded: true },
+  { id: 'hardcoded-connectivity', name: 'Connectivity', description: 'Network and connectivity devices', is_hardcoded: true }
+];
+
+// Categories are now loaded dynamically from the database (in addition to hardcoded ones)
 
 // Hardware types for the type dropdown
 const HARDWARE_TYPES = [
@@ -145,15 +167,22 @@ export default function SoftwareHardwareManagement() {
     try {
       setLoading(true);
       
-      // TODO: Replace with GCP API calls
-      console.warn('Loading software/hardware data not implemented - connect to GCP backend');
-      setSoftwareModules([]);
-      setHardwareItems([]);
+      // Load software modules and hardware items from backend
+      const [softwareModulesData, hardwareItemsData] = await Promise.all([
+        PlatformConfigService.getAllSoftwareModules(),
+        PlatformConfigService.getAllHardwareItems()
+      ]);
+      
+      setSoftwareModules(softwareModulesData);
+      setHardwareItems(hardwareItemsData);
 
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load data');
       toast.error('Failed to load data');
+      // Set empty arrays on error
+      setSoftwareModules([]);
+      setHardwareItems([]);
     } finally {
       setLoading(false);
     }
@@ -177,13 +206,37 @@ export default function SoftwareHardwareManagement() {
       
       console.log('Saving software module:', editingSoftwareModule);
       
-      // TODO: Replace with GCP API call
-      console.warn('Saving software module not implemented - connect to GCP backend');
-      toast.error('Software module save requires GCP backend connection');
-      return;
+      let savedModule;
+      if (editingSoftwareModule.id) {
+        // Update existing module
+        savedModule = await PlatformConfigService.updateSoftwareModule(editingSoftwareModule.id, {
+          name: editingSoftwareModule.name.trim(),
+          description: editingSoftwareModule.description || undefined,
+          category_id: editingSoftwareModule.category_id,
+          license_fee: editingSoftwareModule.license_fee || 0,
+          is_active: editingSoftwareModule.is_active ?? true
+        });
+      } else {
+        // Create new module
+        savedModule = await PlatformConfigService.createSoftwareModule({
+          name: editingSoftwareModule.name.trim(),
+          description: editingSoftwareModule.description || undefined,
+          category_id: editingSoftwareModule.category_id,
+          license_fee: editingSoftwareModule.license_fee || 0,
+          is_active: editingSoftwareModule.is_active ?? true
+        });
+      }
+      
+      if (savedModule) {
+        toast.success(editingSoftwareModule.id ? 'Software module updated successfully' : 'Software module created successfully');
+        await loadData(); // Reload data
+        setEditingSoftwareModule(null); // Close modal
+      } else {
+        toast.error('Failed to save software module');
+      }
     } catch (error) {
       console.error('Error saving software module:', error);
-      toast.error('Failed to save software module');
+      toast.error(`Failed to save software module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -218,13 +271,47 @@ export default function SoftwareHardwareManagement() {
       
       console.log('Saving hardware item:', editingHardwareItem);
       
-      // TODO: Replace with GCP API call
-      console.warn('Saving hardware item not implemented - connect to GCP backend');
-      toast.error('Hardware item save requires GCP backend connection');
-      return;
+      let savedItem;
+      if (editingHardwareItem.id) {
+        // Update existing item
+        savedItem = await PlatformConfigService.updateHardwareItem(editingHardwareItem.id, {
+          name: editingHardwareItem.name.trim(),
+          description: editingHardwareItem.description || undefined,
+          category_id: editingHardwareItem.category_id,
+          subcategory: editingHardwareItem.subcategory || undefined,
+          manufacturer: editingHardwareItem.manufacturer || undefined,
+          configuration_notes: editingHardwareItem.configuration_notes || undefined,
+          unit_cost: unitCost,
+          support_type: editingHardwareItem.support_type || undefined,
+          support_cost: editingHardwareItem.support_cost || undefined,
+          is_active: editingHardwareItem.is_active ?? true
+        });
+      } else {
+        // Create new item
+        savedItem = await PlatformConfigService.createHardwareItem({
+          name: editingHardwareItem.name.trim(),
+          description: editingHardwareItem.description || undefined,
+          category_id: editingHardwareItem.category_id,
+          subcategory: editingHardwareItem.subcategory || undefined,
+          manufacturer: editingHardwareItem.manufacturer || undefined,
+          configuration_notes: editingHardwareItem.configuration_notes || undefined,
+          unit_cost: unitCost,
+          support_type: editingHardwareItem.support_type || undefined,
+          support_cost: editingHardwareItem.support_cost || undefined,
+          is_active: editingHardwareItem.is_active ?? true
+        });
+      }
+      
+      if (savedItem) {
+        toast.success(editingHardwareItem.id ? 'Hardware item updated successfully' : 'Hardware item created successfully');
+        await loadData(); // Reload data
+        setEditingHardwareItem(null); // Close modal
+      } else {
+        toast.error('Failed to save hardware item');
+      }
     } catch (error) {
       console.error('Error saving hardware item:', error);
-      toast.error('Failed to save hardware item');
+      toast.error(`Failed to save hardware item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -234,12 +321,16 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to delete this software module?')) return;
 
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Deleting software module not implemented - connect to GCP backend');
-      toast.error('Delete requires GCP backend connection');
+      const success = await PlatformConfigService.deleteSoftwareModule(id);
+      if (success) {
+        toast.success('Software module deleted successfully');
+        await loadData(); // Reload data
+      } else {
+        toast.error('Failed to delete software module');
+      }
     } catch (error) {
       console.error('Error deleting software module:', error);
-      toast.error('Failed to delete software module');
+      toast.error(`Failed to delete software module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -247,12 +338,16 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to archive this software module?')) return;
 
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Archiving software module not implemented - connect to GCP backend');
-      toast.error('Archive requires GCP backend connection');
+      const success = await PlatformConfigService.archiveSoftwareModule(id, true);
+      if (success) {
+        toast.success('Software module archived successfully');
+        await loadData(); // Reload data
+      } else {
+        toast.error('Failed to archive software module');
+      }
     } catch (error) {
       console.error('Error archiving software module:', error);
-      toast.error('Failed to archive software module');
+      toast.error(`Failed to archive software module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -260,34 +355,46 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to archive this hardware item?')) return;
 
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Archiving hardware item not implemented - connect to GCP backend');
-      toast.error('Archive requires GCP backend connection');
+      const success = await PlatformConfigService.archiveHardwareItem(id, true);
+      if (success) {
+        toast.success('Hardware item archived successfully');
+        await loadData(); // Reload data
+      } else {
+        toast.error('Failed to archive hardware item');
+      }
     } catch (error) {
       console.error('Error archiving hardware item:', error);
-      toast.error('Failed to archive hardware item');
+      toast.error(`Failed to archive hardware item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleRestoreSoftwareModule = async (id: string) => {
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Restoring software module not implemented - connect to GCP backend');
-      toast.error('Restore requires GCP backend connection');
+      const success = await PlatformConfigService.archiveSoftwareModule(id, false);
+      if (success) {
+        toast.success('Software module restored successfully');
+        await loadData(); // Reload data
+      } else {
+        toast.error('Failed to restore software module');
+      }
     } catch (error) {
       console.error('Error restoring software module:', error);
-      toast.error('Failed to restore software module');
+      toast.error(`Failed to restore software module: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleRestoreHardwareItem = async (id: string) => {
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Restoring hardware item not implemented - connect to GCP backend');
-      toast.error('Restore requires GCP backend connection');
+      const success = await PlatformConfigService.archiveHardwareItem(id, false);
+      if (success) {
+        toast.success('Hardware item restored successfully');
+        await loadData(); // Reload data
+      } else {
+        toast.error('Failed to restore hardware item');
+      }
     } catch (error) {
       console.error('Error restoring hardware item:', error);
-      toast.error('Failed to restore hardware item');
+      toast.error(`Failed to restore hardware item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -295,12 +402,16 @@ export default function SoftwareHardwareManagement() {
     if (!confirm('Are you sure you want to delete this hardware item?')) return;
 
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Deleting hardware item not implemented - connect to GCP backend');
-      toast.error('Delete requires GCP backend connection');
+      const success = await PlatformConfigService.deleteHardwareItem(id);
+      if (success) {
+        toast.success('Hardware item deleted successfully');
+        await loadData(); // Reload data
+      } else {
+        toast.error('Failed to delete hardware item');
+      }
     } catch (error) {
       console.error('Error deleting hardware item:', error);
-      toast.error('Failed to delete hardware item');
+      toast.error(`Failed to delete hardware item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -445,17 +556,45 @@ export default function SoftwareHardwareManagement() {
     try {
       console.log('Loading categories from backend...');
       
-      // TODO: Replace with GCP API call
-      console.warn('Loading categories not implemented - connect to GCP backend');
-      setCategories([]);
+      // Load categories from backend
+      let dbCategories: any[] = [];
+      try {
+        dbCategories = await CategoryService.getAllCategories();
+      } catch (error) {
+        console.warn('Failed to load categories from backend, using hardcoded only:', error);
+      }
+      
+      // Combine hardcoded and database categories
+      // Hardcoded categories come first and cannot be edited/deleted
+      const allCategories = [
+        ...HARDCODED_SOFTWARE_CATEGORIES,
+        ...HARDCODED_HARDWARE_CATEGORIES,
+        ...dbCategories.filter(dbCat => 
+          !HARDCODED_SOFTWARE_CATEGORIES.some(hc => hc.name === dbCat.name) &&
+          !HARDCODED_HARDWARE_CATEGORIES.some(hc => hc.name === dbCat.name)
+        )
+      ];
+      
+      setCategories(allCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
-      setCategories([]);
+      // Fallback to hardcoded categories only
+      setCategories([
+        ...HARDCODED_SOFTWARE_CATEGORIES,
+        ...HARDCODED_HARDWARE_CATEGORIES
+      ]);
     }
   };
 
   const handleEditCategory = (categoryName: string) => {
     const category = categories.find(c => c.name === categoryName);
+    
+    // Prevent editing hardcoded categories
+    if (category?.is_hardcoded) {
+      toast.error('This is a system category and cannot be edited');
+      return;
+    }
+    
     setEditingCategory({ 
       name: categoryName, 
       id: category?.id 
@@ -509,14 +648,21 @@ export default function SoftwareHardwareManagement() {
   };
 
   const handleDeleteCategory = async (categoryName: string) => {
+    // Find category by name to check if it's hardcoded
+    const category = categories.find(c => c.name === categoryName);
+    
+    // Prevent deleting hardcoded categories
+    if (category?.is_hardcoded) {
+      toast.error('This is a system category and cannot be deleted');
+      return;
+    }
+    
     if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
       return;
     }
 
     try {
-      // Find category by name to get ID
-      const category = categories.find(c => c.name === categoryName);
-      if (!category) {
+      if (!category || !category.id) {
         toast.error('Category not found');
         return;
       }
@@ -1277,16 +1423,26 @@ export default function SoftwareHardwareManagement() {
                 filteredCategories.map((category) => (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className={`flex items-center justify-between p-3 border rounded-lg ${
+                      category.is_hardcoded ? 'bg-gray-50' : ''
+                    }`}
                   >
-                    <div className="font-medium">{category.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{category.name}</div>
+                      {category.is_hardcoded && (
+                        <Badge variant="outline" className="text-xs">
+                          System
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditCategory(category.name)}
+                        disabled={category.is_hardcoded}
                         className="h-8 w-8 p-0"
-                        title="Edit"
+                        title={category.is_hardcoded ? 'System category cannot be edited' : 'Edit'}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -1294,8 +1450,9 @@ export default function SoftwareHardwareManagement() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteCategory(category.name)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        title="Delete"
+                        disabled={category.is_hardcoded}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 disabled:opacity-50"
+                        title={category.is_hardcoded ? 'System category cannot be deleted' : 'Delete'}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

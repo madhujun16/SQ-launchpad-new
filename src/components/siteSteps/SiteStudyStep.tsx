@@ -252,6 +252,35 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
     setIsEditing(false);
   };
 
+  const handleMarkComplete = async () => {
+    try {
+      // Save to backend first
+      const success = await SiteWorkflowService.saveSiteStudyData(site.id, formData);
+      
+      if (!success) {
+        toast.error('Failed to mark site study as complete');
+        return;
+      }
+      
+      // Update site status to 'scoping' (next page) when Site Study is marked complete
+      await SiteWorkflowService.updateSiteStatus(site.id, 'scoping');
+      
+      const updatedSite = {
+        ...site,
+        siteStudy: formData,
+        status: 'scoping' as const
+      };
+      
+      // Update local state
+      onSiteUpdate(updatedSite);
+      setIsEditing(false);
+      toast.success('Site study marked as complete');
+    } catch (error) {
+      console.error('Error marking site study as complete:', error);
+      toast.error('Failed to mark site study as complete');
+    }
+  };
+
   const getValue = (path: string) => {
     const keys = path.split('.');
     let current = formData;
@@ -322,42 +351,40 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
           <h2 className="text-2xl font-bold text-gray-900">Site Study</h2>
           <p className="text-gray-600 mt-1">Planning phase assessment to understand deployment requirements</p>
         </div>
-        <div className="flex space-x-2">
+        {/* Action Buttons - Top */}
+        <div className="flex items-center gap-3">
           {!isEditing ? (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit Study
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-1" />
-                Export Report
-              </Button>
-              <Button size="sm">
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Complete Study
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
           ) : (
             <>
-              <Button 
-                variant="outline" 
-                size="sm"
+              <Button
+                variant="outline"
                 onClick={handleCancel}
+                className="flex items-center gap-2"
               >
-                <X className="h-4 w-4 mr-1" />
+                <X className="h-4 w-4" />
                 Cancel
               </Button>
-              <Button 
-                size="sm" 
+              <Button
                 onClick={handleSave}
+                className="flex items-center gap-2"
               >
-                <Save className="h-4 w-4 mr-1" />
-                Save Study
+                <Save className="h-4 w-4" />
+                Save as Draft
+              </Button>
+              <Button
+                onClick={handleMarkComplete}
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Mark Complete
               </Button>
             </>
           )}
@@ -1449,8 +1476,47 @@ const SiteStudyStep: React.FC<SiteStudyStepProps> = ({ site, onSiteUpdate }) => 
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        {!isEditing ? (
+          <Button
+            variant="outline"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save as Draft
+            </Button>
+            <Button
+              onClick={handleMarkComplete}
+              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Mark Complete
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 

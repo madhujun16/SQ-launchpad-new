@@ -40,7 +40,8 @@ import {
   Info,
   Settings,
   Package,
-  Upload
+  Upload,
+  Edit
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SitesService, type Site, type Organization } from '@/services/sitesService';
@@ -636,53 +637,58 @@ const SiteCreation = () => {
 
           {/* Location Picker Section */}
           <Card className="shadow-sm border border-gray-200">
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => toggleSection('locationPicker')}
-            >
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-green-600" />
                   <CardTitle className="text-lg">Location Information</CardTitle>
                 </div>
-                {expandedSections.locationPicker ? (
-                  <ChevronDown className="h-5 w-5 text-gray-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                {(formData.latitude !== null && formData.longitude !== null) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleSection('locationPicker')}
+                    className="flex items-center gap-2 h-8"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </Button>
                 )}
               </div>
               <CardDescription className="text-gray-600">
                 Select site location using the integrated location picker
               </CardDescription>
             </CardHeader>
-            {expandedSections.locationPicker && (
-              <CardContent className="pt-0">
-                <div className="space-y-6">
-                  <div>
-                    {/* Location Picker Component (borderless, no subtitle, expanded) */}
+            <CardContent className="pt-0">
+              <div className="space-y-6">
+                <div>
+                  {(!formData.latitude || !formData.longitude || expandedSections.locationPicker) ? (
                     <LocationPicker
                       onLocationSelect={(location) => {
                         handleInputChange('latitude', location.lat);
                         handleInputChange('longitude', location.lng);
                         handleInputChange('location', location.address);
+                        // Also save postcode, region, country if available
+                        if (location.postcode) handleInputChange('postcode', location.postcode);
+                        if (location.region) handleInputChange('region', location.region);
+                        if (location.country) handleInputChange('country', location.country);
+                        // Close the picker after selection
+                        setExpandedSections(prev => ({ ...prev, locationPicker: false }));
                       }}
                       initialLocation={undefined}
                       className="border-0 shadow-none"
                     />
+                  ) : null}
 
-                    {/* Compact summary after selection */}
-                    {(formData.latitude !== null && formData.longitude !== null) && (
-                      <div className="mt-4 text-sm text-gray-700 space-y-1">
-                        <div><span className="font-medium">Address:</span> {formData.location || '—'}</div>
-                        <div>
-                          <span className="font-medium">Coordinates:</span> {formData.latitude}, {formData.longitude}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Compact summary after selection */}
+                  {!expandedSections.locationPicker && formData.latitude !== null && formData.longitude !== null && (
+                    <div className="text-sm text-gray-700">
+                      <div>{formData.location || '—'}</div>
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            )}
+              </div>
+            </CardContent>
           </Card>
 
         </div>
