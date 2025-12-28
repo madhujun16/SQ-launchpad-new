@@ -53,6 +53,8 @@ import { SettingsService } from '@/services/settingsService';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/dateUtils';
+import { ScopingApprovalService } from '@/services/scopingApprovalService';
+import { ScopingApproval } from '@/types/scopingApproval';
 
 // Interfaces
 interface ApprovalRequest {
@@ -126,6 +128,9 @@ const Approvals = () => {
   const [reviewComment, setReviewComment] = useState('');
   const [approvalResponseTime, setApprovalResponseTime] = useState<number>(24);
   const [overdueApprovals, setOverdueApprovals] = useState<ApprovalRequest[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<ScopingApproval[]>([]);
+  const [approvedApprovals, setApprovedApprovals] = useState<ScopingApproval[]>([]);
+  const [rejectedApprovals, setRejectedApprovals] = useState<ScopingApproval[]>([]);
 
   // Check access permissions
   const tabAccess = getTabAccess('/approvals-procurement');
@@ -139,26 +144,109 @@ const Approvals = () => {
     );
   }
 
-  // Load approval response time and identify overdue approvals
+  // Load scoping approvals and settings
   useEffect(() => {
-    const loadSettingsAndOverdueApprovals = async () => {
+    const loadData = async () => {
       try {
+        setLoading(true);
+        
         // Load approval response time from settings
         const responseTime = await SettingsService.getApprovalResponseTime();
         setApprovalResponseTime(responseTime);
         
-        // Identify overdue approvals from mock data
-        const overdue = mockPendingRequests.filter(request => 
+        // Load all approval types in parallel
+        const [pending, approved, rejected] = await Promise.all([
+          ScopingApprovalService.getApprovals({ status: 'pending' }),
+          ScopingApprovalService.getApprovals({ status: 'approved' }),
+          ScopingApprovalService.getApprovals({ status: 'rejected' }),
+        ]);
+        
+        setPendingApprovals(pending);
+        setApprovedApprovals(approved);
+        setRejectedApprovals(rejected);
+        
+        // Identify overdue approvals
+        const allPending = pending.map(convertScopingToApprovalRequest);
+        const overdue = allPending.filter(request => 
           SettingsService.isApprovalOverdue(request.submittedAt, responseTime)
         );
         setOverdueApprovals(overdue);
       } catch (error) {
-        console.error('Error loading approval settings:', error);
+        console.error('Error loading approval data:', error);
+        toast.error('Failed to load approval data');
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadSettingsAndOverdueApprovals();
+    loadData();
   }, []);
+
+  // Reload approvals after approve/reject action
+  const reloadApprovals = async () => {
+    try {
+      const [pending, approved, rejected] = await Promise.all([
+        ScopingApprovalService.getApprovals({ status: 'pending' }),
+        ScopingApprovalService.getApprovals({ status: 'approved' }),
+        ScopingApprovalService.getApprovals({ status: 'rejected' }),
+      ]);
+      
+      setPendingApprovals(pending);
+      setApprovedApprovals(approved);
+      setRejectedApprovals(rejected);
+      
+      // Update overdue approvals
+      const responseTime = await SettingsService.getApprovalResponseTime();
+      const allPending = pending.map(convertScopingToApprovalRequest);
+      const overdue = allPending.filter(request => 
+        SettingsService.isApprovalOverdue(request.submittedAt, responseTime)
+      );
+      setOverdueApprovals(overdue);
+    } catch (error) {
+      console.error('Error reloading approvals:', error);
+    }
+  };
+
+  // Convert ScopingApproval to ApprovalRequest format
+  const convertScopingToApprovalRequest = (scoping: ScopingApproval): ApprovalRequest => {
+    const scopingData = scoping.scopingData || {};
+    const costBreakdown = scoping.costBreakdown || {};
+    const selectedSoftware = scopingData.selected_software || [];
+    const selectedHardware = scopingData.selected_hardware || [];
+    
+    return {
+      id: scoping.id,
+      siteName: scoping.siteName,
+      siteId: scoping.siteId,
+      deploymentEngineer: scoping.deploymentEngineerName,
+      submittedAt: scoping.submittedAt,
+      status: scoping.status === 'changes_requested' ? 'changes_requested' : scoping.status,
+      priority: 'medium', // Default priority, can be enhanced
+      totalCost: costBreakdown.totalInvestment || costBreakdown.totalCapex || 0,
+      softwareCount: selectedSoftware.length,
+      hardwareCount: selectedHardware.length,
+      comments: scoping.reviewComment || undefined,
+      rejectionReason: scoping.rejectionReason || undefined,
+      reviewedBy: scoping.reviewedBy || undefined,
+      reviewedAt: scoping.reviewedAt || undefined,
+      reviewComment: scoping.reviewComment || undefined,
+      scopingDetails: {
+        software: selectedSoftware.map((sw: any) => ({
+          name: sw.name || sw.id || 'Unknown Software',
+          monthlyFee: sw.monthly_fee || sw.license_fee || 0,
+          setupFee: sw.setup_fee || sw.license_fee || 0,
+          description: sw.description || '',
+        })),
+        hardware: selectedHardware.map((hw: any) => ({
+          name: hw.name || hw.id || 'Unknown Hardware',
+          quantity: hw.quantity || 0,
+          unitCost: hw.unit_cost || 0,
+          totalCost: (hw.quantity || 0) * (hw.unit_cost || 0),
+          description: hw.description || '',
+        })),
+      },
+    };
+  };
 
   // Helper function to check if approval is overdue
   const isApprovalOverdue = (requestDate: string): boolean => {
@@ -172,170 +260,12 @@ const Approvals = () => {
     return Math.floor((now.getTime() - requestDateTime.getTime()) / (1000 * 60 * 60));
   };
 
-  // Mock data
-  const mockPendingRequests: ApprovalRequest[] = [
-      {
-        id: '1',
-      siteName: 'Birmingham South Cafeteria',
-      siteId: 'site-001',
-      deploymentEngineer: 'Tom Wilson',
-              submittedAt: '2025-09-05T10:30:00Z',
-        status: 'pending',
-        priority: 'high',
-      totalCost: 4500,
-      softwareCount: 2,
-      hardwareCount: 3,
-      comments: 'Additional POS terminals needed for peak hours',
-      siteStudyReport: '/reports/birmingham-south-site-study.pdf',
-      scopingDetails: {
-        software: [
-          { name: 'POS System Pro', monthlyFee: 25, setupFee: 150, description: 'Advanced point-of-sale system with inventory management' },
-          { name: 'Kiosk Software', monthlyFee: 20, setupFee: 100, description: 'Self-service ordering system' }
-        ],
-        hardware: [
-          { name: 'POS Terminals', quantity: 2, unitCost: 700, totalCost: 1400, description: 'Touchscreen POS terminals with card readers' },
-          { name: 'Receipt Printers', quantity: 1, unitCost: 120, totalCost: 120, description: 'Thermal receipt printers' },
-          { name: 'Barcode Scanners', quantity: 2, unitCost: 85, totalCost: 170, description: 'USB barcode scanners' }
-        ]
-      },
-      siteDetails: {
-        location: 'Birmingham, UK',
-        type: 'Cafeteria',
-        capacity: 150,
-        currentStatus: 'Operational'
-          }
-      },
-      {
-        id: '2',
-      siteName: 'Leeds Central Office',
-      siteId: 'site-002',
-      deploymentEngineer: 'Chris Taylor',
-              submittedAt: '2025-09-06T14:20:00Z',
-      status: 'changes_requested',
-        priority: 'medium',
-      totalCost: 12000,
-      softwareCount: 3,
-      hardwareCount: 5,
-        comments: 'Complete hardware setup for new cafeteria',
-      reviewComment: 'Please reduce hardware costs by 20%',
-      siteStudyReport: '/reports/leeds-central-site-study.pdf',
-      scopingDetails: {
-        software: [
-          { name: 'POS System Pro', monthlyFee: 25, setupFee: 150, description: 'Advanced point-of-sale system' },
-          { name: 'Kitchen Display', monthlyFee: 20, setupFee: 100, description: 'Kitchen order management system' },
-          { name: 'Inventory Management', monthlyFee: 15, setupFee: 80, description: 'Stock tracking and management' }
-        ],
-        hardware: [
-          { name: 'POS Terminals', quantity: 4, unitCost: 700, totalCost: 2800, description: 'Touchscreen POS terminals' },
-          { name: 'Kitchen Displays', quantity: 2, unitCost: 350, totalCost: 700, description: 'Kitchen order displays' },
-          { name: 'Receipt Printers', quantity: 2, unitCost: 120, totalCost: 240, description: 'Thermal receipt printers' },
-          { name: 'Barcode Scanners', quantity: 3, unitCost: 85, totalCost: 255, description: 'USB barcode scanners' },
-          { name: 'Cash Drawers', quantity: 2, unitCost: 150, totalCost: 300, description: 'Electronic cash drawers' }
-        ]
-      },
-      siteDetails: {
-        location: 'Leeds, UK',
-        type: 'Office Cafeteria',
-        capacity: 200,
-        currentStatus: 'Under Construction'
-      }
-    },
-    {
-      id: '3',
-      siteName: 'Liverpool East Mall',
-      siteId: 'site-003',
-      deploymentEngineer: 'Anna Garcia',
-              submittedAt: '2025-09-07T09:15:00Z',
-      status: 'pending',
-        priority: 'urgent',
-      totalCost: 8000,
-      softwareCount: 1,
-      hardwareCount: 4,
-      comments: 'Self-service kiosk installation',
-      siteStudyReport: '/reports/liverpool-east-site-study.pdf',
-      scopingDetails: {
-        software: [
-          { name: 'Self-Service Kiosks', monthlyFee: 15, setupFee: 80, description: 'Touchscreen ordering system for customers' }
-        ],
-        hardware: [
-          { name: 'Touchscreen Kiosks', quantity: 2, unitCost: 1200, totalCost: 2400, description: 'Large touchscreen displays' },
-          { name: 'Payment Terminals', quantity: 2, unitCost: 150, totalCost: 300, description: 'Card payment terminals' },
-          { name: 'Receipt Printers', quantity: 2, unitCost: 120, totalCost: 240, description: 'Thermal receipt printers' },
-          { name: 'Network Equipment', quantity: 1, unitCost: 500, totalCost: 500, description: 'WiFi routers and switches' }
-        ]
-      },
-      siteDetails: {
-        location: 'Liverpool, UK',
-        type: 'Shopping Mall',
-        capacity: 500,
-        currentStatus: 'Planning Phase'
-      }
-    },
-    {
-        id: '4',
-        siteName: 'London Central',
-        siteId: 'site-004',
-        deploymentEngineer: 'Sarah Wilson',
-        submittedAt: '2025-09-08T16:45:00Z',
-        status: 'pending',
-        priority: 'high',
-        totalCost: 3200,
-        softwareCount: 1,
-        hardwareCount: 2,
-        comments: 'Asset request: Additional POS terminals and software license renewal',
-        siteStudyReport: '/reports/london-central-asset-request.pdf',
-        scopingDetails: {
-          software: [
-            { name: 'POS Software License Renewal', monthlyFee: 25, setupFee: 0, description: 'Annual license renewal for existing POS system' }
-          ],
-          hardware: [
-            { name: 'POS Terminal', quantity: 1, unitCost: 2500, totalCost: 2500, description: 'Additional POS terminal for peak hours' },
-            { name: 'Receipt Printer', quantity: 1, unitCost: 200, totalCost: 200, description: 'Backup receipt printer' }
-          ]
-        },
-        siteDetails: {
-          location: 'London, UK',
-          type: 'Restaurant',
-          capacity: 120,
-          currentStatus: 'Operational'
-        }
-      }
-    ];
-
-  const mockApprovalHistory: ApprovalHistory[] = [
-    {
-      id: 'hist-1',
-      siteName: 'Manchester North',
-      deploymentEngineer: 'David Brown',
-      submittedAt: '2025-09-01T11:45:00Z',
-      reviewedAt: '2025-09-02T09:00:00Z',
-      reviewedBy: 'Emma Davis',
-      status: 'approved',
-      totalCost: 8500,
-      reviewComment: 'Approved with minor cost optimizations'
-    },
-    {
-      id: 'hist-2',
-      siteName: 'Bristol Central',
-      deploymentEngineer: 'Sarah Johnson',
-      submittedAt: '2025-08-30T16:30:00Z',
-      reviewedAt: '2025-08-31T14:20:00Z',
-      reviewedBy: 'Mark Thompson',
-      status: 'rejected',
-      totalCost: 15000,
-      reviewComment: 'Cost exceeds budget by 40%. Please revise scope.'
-    }
-  ];
-
-  // Simulate loading
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-      return () => clearTimeout(timer);
-  }, []);
-
   // Filtered data
   const filteredPendingRequests = useMemo(() => {
-    let filtered = mockPendingRequests;
+    // Convert scoping approvals to approval requests
+    const allRequests = pendingApprovals.map(convertScopingToApprovalRequest);
+
+    let filtered = allRequests;
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -354,18 +284,29 @@ const Approvals = () => {
     }
 
     return filtered;
-  }, [searchTerm, statusFilter, priorityFilter]);
+  }, [searchTerm, statusFilter, priorityFilter, pendingApprovals]);
 
   const filteredHistory = useMemo(() => {
+    // Combine approved and rejected approvals for history
+    const allHistory = [
+      ...approvedApprovals.map(convertScopingToApprovalRequest),
+      ...rejectedApprovals.map(convertScopingToApprovalRequest)
+    ].sort((a, b) => {
+      // Sort by reviewed date (most recent first)
+      const dateA = a.reviewedAt ? new Date(a.reviewedAt).getTime() : 0;
+      const dateB = b.reviewedAt ? new Date(b.reviewedAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      return mockApprovalHistory.filter(request =>
+      return allHistory.filter(request =>
         request.siteName.toLowerCase().includes(searchLower) ||
         request.deploymentEngineer.toLowerCase().includes(searchLower)
       );
     }
-    return mockApprovalHistory;
-  }, [searchTerm]);
+    return allHistory;
+  }, [searchTerm, approvedApprovals, rejectedApprovals]);
 
      // Helper functions
    // Priority levels: Set by deployment engineer during site study
@@ -426,14 +367,35 @@ const Approvals = () => {
 
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast.success(`Request ${reviewAction === 'approve' ? 'approved' : 'rejected'} successfully`);
-    setShowReviewDialog(false);
-    setSelectedRequest(null);
-    setReviewComment('');
+    try {
+      // Check if this is a scoping approval
+      const scopingApproval = pendingApprovals.find(sa => sa.id === selectedRequest.id);
+      
+      if (scopingApproval) {
+        // Handle scoping approval
+        if (reviewAction === 'approve') {
+          await ScopingApprovalService.approveScoping(scopingApproval.id, reviewComment);
+        } else {
+          await ScopingApprovalService.rejectScoping(scopingApproval.id, reviewComment, reviewComment);
+        }
+        
+        // Refresh all approvals
+        await reloadApprovals();
+        
+        toast.success(`Scoping ${reviewAction === 'approve' ? 'approved' : 'rejected'} successfully`);
+      } else {
+        toast.error('Approval request not found');
+      }
+      
+      setShowReviewDialog(false);
+      setSelectedRequest(null);
+      setReviewComment('');
+    } catch (error: any) {
+      console.error('Error submitting review:', error);
+      toast.error(error?.message || `Failed to ${reviewAction} request`);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const clearFilters = () => {
@@ -476,7 +438,7 @@ const Approvals = () => {
               <div>
                 <p className="text-sm text-gray-600">Pending Reviews</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {mockPendingRequests.filter(r => r.status === 'pending').length}
+                  {pendingApprovals.length}
                 </p>
         </div>
       </div>
@@ -492,7 +454,7 @@ const Approvals = () => {
               <div>
                 <p className="text-sm text-gray-600">Changes Requested</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {mockPendingRequests.filter(r => r.status === 'changes_requested').length}
+                  {pendingApprovals.filter(r => r.status === 'changes_requested').length}
                 </p>
               </div>
             </div>
@@ -508,7 +470,13 @@ const Approvals = () => {
         <div>
                 <p className="text-sm text-gray-600">Approved This Month</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {mockApprovalHistory.filter(h => h.status === 'approved').length}
+                  {approvedApprovals.filter(h => {
+                    const reviewedDate = h.reviewedAt ? new Date(h.reviewedAt) : null;
+                    if (!reviewedDate) return false;
+                    const now = new Date();
+                    return reviewedDate.getMonth() === now.getMonth() && 
+                           reviewedDate.getFullYear() === now.getFullYear();
+                  }).length}
                 </p>
           </div>
             </div>
@@ -524,7 +492,10 @@ const Approvals = () => {
               <div>
                 <p className="text-sm text-gray-600">Total Value Pending</p>
                                 <p className="text-2xl font-bold text-gray-900">
-                  £{mockPendingRequests.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.totalCost, 0).toLocaleString()}
+                  £{pendingApprovals.reduce((sum, r) => {
+                    const costBreakdown = r.costBreakdown || {};
+                    return sum + (costBreakdown.totalInvestment || costBreakdown.totalCapex || 0);
+                  }, 0).toLocaleString()}
           </p>
         </div>
         </div>
@@ -542,7 +513,7 @@ const Approvals = () => {
              className="flex-1"
            >
              <Clock className="h-4 w-4 mr-2" />
-             Pending Approvals ({mockPendingRequests.filter(r => r.status === 'pending').length})
+             Pending Approvals ({pendingApprovals.length})
            </Button>
            <Button
              variant={activeTab === 'history' ? 'default' : 'ghost'}
@@ -799,7 +770,7 @@ const Approvals = () => {
                           {formatDate(item.submittedAt)}
                             </TableCell>
                         <TableCell>
-                          {formatDate(item.reviewedAt)}
+                          {item.reviewedAt ? formatDate(item.reviewedAt) : '-'}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col space-y-1">
@@ -813,7 +784,7 @@ const Approvals = () => {
                             )}
                             {item.status === 'rejected' && (
                               <span className="text-xs text-red-600 font-medium">
-                                Final Rejection
+                                {item.rejectionReason ? 'Rejected' : 'Final Rejection'}
                               </span>
                             )}
                               </div>
@@ -821,11 +792,11 @@ const Approvals = () => {
                         <TableCell className="font-medium">
                           £{item.totalCost.toLocaleString()}
                         </TableCell>
-                        <TableCell>{item.reviewedBy}</TableCell>
+                        <TableCell>{item.reviewedBy || '-'}</TableCell>
                         <TableCell>
                           <div className="max-w-xs">
-                            <p className="text-sm text-gray-600 truncate" title={item.reviewComment}>
-                              {item.reviewComment || 'No comment'}
+                            <p className="text-sm text-gray-600 truncate" title={item.reviewComment || item.rejectionReason}>
+                              {item.reviewComment || item.rejectionReason || 'No comment'}
                             </p>
                           </div>
                         </TableCell>
@@ -833,13 +804,7 @@ const Approvals = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleViewDetails({
-                              ...item,
-                              siteId: item.id,
-                              softwareCount: 0,
-                              hardwareCount: 0,
-                              priority: 'medium'
-                            } as ApprovalRequest)}
+                            onClick={() => handleViewDetails(item)}
                             className="h-6 w-6 p-0 hover:bg-gray-100"
                             title="View Details"
                           >
@@ -853,6 +818,16 @@ const Approvals = () => {
               </div>
             </CardContent>
           </Card>
+
+          {filteredHistory.length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No approval history</h3>
+                <p className="text-gray-600">No approved or rejected scoping requests yet.</p>
+              </CardContent>
+            </Card>
+          )}
          </div>
        )}
 

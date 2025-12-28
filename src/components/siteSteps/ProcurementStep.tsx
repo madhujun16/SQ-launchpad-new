@@ -6,29 +6,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { 
-  Plus, 
   CheckCircle, 
   ShoppingCart, 
-  Package, 
   Clock, 
   AlertTriangle,
   FileText,
-  Wrench,
   Loader2,
-  Edit,
-  Save
+  Upload,
+  X,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
-
-// TODO: Replace with GCP API calls
+import { useAuth } from '@/hooks/useAuth';
+import { DatePicker } from '@/components/ui/date-picker';
+import { FileUploadService } from '@/services/fileUploadService';
+import { ProcurementService } from '@/services/procurementService';
 
 interface ProcurementStepProps {
   site: Site;
@@ -36,95 +29,182 @@ interface ProcurementStepProps {
 }
 
 const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [approvedHardware, setApprovedHardware] = useState<any[]>([]);
-  const [procurementItems, setProcurementItems] = useState<any[]>([]);
+  const { currentRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // Form state
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
+  const [deliveryReceipt, setDeliveryReceipt] = useState<File | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string>('');
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+
+  // Check if user can mark as complete (Admin or Deployment Engineer)
+  const canMarkComplete = currentRole === 'admin' || currentRole === 'deployment_engineer';
 
   useEffect(() => {
-    loadApprovedHardware();
-    loadProcurementItems();
+    loadProcurementData();
   }, [site.id]);
 
-  const loadApprovedHardware = async () => {
+  const loadProcurementData = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with GCP API call
-      console.warn('Loading approved hardware not implemented - connect to GCP backend');
-      setApprovedHardware([]);
-    } catch (err) {
-      console.error('Error loading approved hardware:', err);
-      toast.error('Failed to load approved hardware');
+      const procurementData = await ProcurementService.getProcurementData(site.id);
+      
+      if (procurementData) {
+        if (procurementData.delivery_date) {
+          setDeliveryDate(new Date(procurementData.delivery_date));
+        }
+        if (procurementData.delivery_receipt_url) {
+          setReceiptUrl(procurementData.delivery_receipt_url);
+        }
+        if (procurementData.summary) {
+          setSummary(procurementData.summary);
+        }
+        setIsEditing(procurementData.status !== 'completed');
+      } else {
+        setIsEditing(true);
+      }
+    } catch (error) {
+      console.error('Error loading procurement data:', error);
+      toast.error('Failed to load procurement data');
+      setIsEditing(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadProcurementItems = async () => {
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Please upload an image (JPEG, PNG, GIF) or PDF.');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('File size exceeds 10MB limit.');
+      return;
+    }
+
     try {
-      // TODO: Replace with GCP API call
-      console.warn('Loading procurement items not implemented - connect to GCP backend');
-      setProcurementItems([]);
-    } catch (err) {
-      console.error('Error loading procurement items:', err);
-      toast.error('Failed to load procurement items');
+      setUploadingReceipt(true);
+      setDeliveryReceipt(file);
+
+      // Upload file
+      const uploadResult = await FileUploadService.uploadFile(
+        file,
+        `procurement-${site.id}-receipt-${Date.now()}`
+      );
+
+      if (uploadResult.success && uploadResult.publicUrl) {
+        setReceiptUrl(uploadResult.publicUrl);
+        toast.success('Delivery receipt uploaded successfully');
+      } else {
+        toast.error(uploadResult.error || 'Failed to upload receipt');
+        setDeliveryReceipt(null);
+      }
+    } catch (error) {
+      console.error('Error uploading receipt:', error);
+      toast.error('Failed to upload delivery receipt');
+      setDeliveryReceipt(null);
+    } finally {
+      setUploadingReceipt(false);
     }
   };
 
-  const handleCreateProcurementItems = async () => {
-    if (approvedHardware.length === 0) {
-      toast.error('No approved hardware found');
+  const handleRemoveReceipt = () => {
+    setDeliveryReceipt(null);
+    setReceiptUrl(null);
+  };
+
+  const handleSaveDraft = async () => {
+    if (!deliveryDate) {
+      toast.error('Please select a delivery date');
       return;
     }
 
     try {
       setSubmitting(true);
       
-      // Create procurement items for approved hardware
-      const itemsToInsert = approvedHardware.map((hardware: any) => ({
-        site_id: site.id,
-        hardware_item_id: hardware.id,
-        item_type: 'hardware',
-        item_name: hardware.name,
-        quantity: hardware.quantity,
-        unit_cost: hardware.unit_cost,
-        total_cost: hardware.unit_cost * hardware.quantity,
-        status: 'pending',
-        supplier: 'TBD',
-        order_reference: '',
-        notes: `Procurement item for ${hardware.name}`
-      }));
+      await ProcurementService.updateProcurementData(site.id, {
+        delivery_date: deliveryDate.toISOString(),
+        delivery_receipt_url: receiptUrl || undefined,
+        summary: summary || undefined,
+        status: 'draft'
+      });
 
-      // TODO: Replace with GCP API call
-      console.warn('Creating procurement items not implemented - connect to GCP backend');
-      toast.error('Procurement item creation requires GCP backend connection');
-    } catch (err) {
-      console.error('Error creating procurement items:', err);
-      toast.error('Failed to create procurement items');
+      toast.success('Procurement data saved as draft');
+      setIsEditing(false);
+      await loadProcurementData();
+    } catch (error: any) {
+      console.error('Error saving procurement data:', error);
+      toast.error(error?.message || 'Failed to save procurement data');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleUpdateItemStatus = async (itemId: string, status: string) => {
-    try {
-      // TODO: Replace with GCP API call
-      console.warn('Updating item status not implemented - connect to GCP backend');
-      toast.error('Item status update requires GCP backend connection');
-    } catch (err) {
-      console.error('Error updating item status:', err);
-      toast.error('Failed to update item status');
+  const handleMarkComplete = async () => {
+    if (!deliveryDate) {
+      toast.error('Please select a delivery date');
+      return;
     }
-  };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'ordered': return 'bg-blue-100 text-blue-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'installed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+    if (!receiptUrl) {
+      toast.error('Please upload a delivery receipt');
+      return;
+    }
+
+    if (!summary.trim()) {
+      toast.error('Please provide a summary');
+      return;
+    }
+
+    if (!canMarkComplete) {
+      toast.error('You do not have permission to mark procurement as complete');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      await ProcurementService.markProcurementComplete(site.id, {
+        delivery_date: deliveryDate.toISOString(),
+        delivery_receipt_url: receiptUrl,
+        summary: summary.trim()
+      });
+
+      // Update site status
+      onSiteUpdate({
+        ...site,
+        status: 'procurement_done',
+        procurement: {
+          ...site.procurement,
+          status: 'delivered',
+          lastUpdated: new Date().toISOString(),
+          summary: {
+            ...site.procurement?.summary,
+            completed: (site.procurement?.summary?.totalHardwareItems || 0) + (site.procurement?.summary?.totalSoftwareModules || 0)
+          }
+        } as any
+      });
+
+      toast.success('Procurement marked as complete');
+      setIsEditing(false);
+      await loadProcurementData();
+    } catch (error: any) {
+      console.error('Error marking procurement complete:', error);
+      toast.error(error?.message || 'Failed to mark procurement as complete');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -137,218 +217,237 @@ const ProcurementStep: React.FC<ProcurementStepProps> = ({ site, onSiteUpdate })
     );
   }
 
+  const isCompleted = site?.status === 'procurement_done' && !isEditing;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Procurement</h2>
-          <p className="text-gray-600 mt-1">Hardware and software procurement management</p>
+          <p className="text-gray-600 mt-1">Record delivery information and mark procurement as complete</p>
         </div>
+        {isCompleted && (
+          <Badge className="bg-green-100 text-green-800">
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Completed
+          </Badge>
+        )}
       </div>
 
-      {/* Approved Hardware Section */}
+      {/* Status Card */}
+      {isCompleted && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span className="text-green-800 font-medium">Procurement completed</span>
+            </div>
+            {site?.procurement?.lastUpdated && (
+              <p className="text-green-700 text-sm mt-1">
+                Completed on {new Date(site.procurement.lastUpdated).toLocaleDateString()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Procurement Form */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <CheckCircle className="mr-2 h-5 w-5 text-green-600" />
-            Approved Hardware
+            <ShoppingCart className="mr-2 h-5 w-5 text-blue-600" />
+            Delivery Information
           </CardTitle>
           <CardDescription>
-            Hardware items approved during the scoping phase
+            Upload delivery receipt and provide summary information
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {approvedHardware.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm text-gray-500">No approved hardware found</p>
-              <p className="text-xs text-gray-400">Complete the scoping phase first</p>
+        <CardContent className="space-y-6">
+          {/* Delivery Date */}
+          <div>
+            <Label htmlFor="delivery-date" className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              Delivery Date <span className="text-red-500">*</span>
+            </Label>
+            <div className="mt-2">
+              <DatePicker
+                value={deliveryDate}
+                onChange={(date) => setDeliveryDate(date || undefined)}
+                placeholder="Select delivery date"
+                disabled={!isEditing || isCompleted}
+                allowPastDates={true}
+              />
             </div>
-          ) : (
-            <div className="space-y-4">
-              {approvedHardware.map((hardware: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">{hardware.name}</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      Quantity: {hardware.quantity} | Unit Cost: £{hardware.unit_cost?.toLocaleString() || 0}
-                    </div>
-                    <div className="text-sm font-medium text-green-600 mt-1">
-                      Total: £{(hardware.unit_cost * hardware.quantity)?.toLocaleString() || 0}
+            <p className="text-xs text-gray-500 mt-1">
+              Select the date when the delivery was received
+            </p>
+          </div>
+
+          {/* Delivery Receipt Upload */}
+          <div>
+            <Label htmlFor="delivery-receipt" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Delivery Receipt {canMarkComplete && <span className="text-red-500">*</span>}
+            </Label>
+            <div className="mt-2">
+              {receiptUrl ? (
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-8 w-8 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-sm">Receipt uploaded</p>
+                      <a
+                        href={receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        View receipt
+                      </a>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                  {isEditing && !isCompleted && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveReceipt}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              ))}
-              
-              {procurementItems.length === 0 && (
-                <div className="flex justify-end mt-4">
-                  <Button 
-                    onClick={handleCreateProcurementItems}
-                    disabled={submitting}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Procurement Items
-                      </>
-                    )}
-                  </Button>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                  <div className="text-center">
+                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <Label
+                      htmlFor="delivery-receipt"
+                      className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      {uploadingReceipt ? 'Uploading...' : 'Click to upload receipt'}
+                    </Label>
+                    <Input
+                      id="delivery-receipt"
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleReceiptUpload}
+                      disabled={!isEditing || isCompleted || uploadingReceipt}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Upload image (JPEG, PNG, GIF) or PDF (Max 10MB)
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
-          )}
+            {uploadingReceipt && (
+              <div className="mt-2 flex items-center space-x-2 text-sm text-gray-600">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Uploading receipt...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Summary */}
+          <div>
+            <Label htmlFor="summary" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Summary {canMarkComplete && <span className="text-red-500">*</span>}
+            </Label>
+            <div className="mt-2">
+              <Textarea
+                id="summary"
+                placeholder="Enter a summary of the procurement and delivery..."
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                disabled={!isEditing || isCompleted}
+                rows={6}
+                className="resize-none"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Provide details about the delivery, items received, and any notes
+            </p>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Procurement Items Section */}
-      {procurementItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <ShoppingCart className="mr-2 h-5 w-5 text-blue-600" />
-              Procurement Items
-            </CardTitle>
-            <CardDescription>
-              Track the procurement status of approved hardware items
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {procurementItems.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.item_name}</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      Quantity: {item.quantity} | Unit Cost: £{item.unit_cost?.toLocaleString() || 0}
-                    </div>
-                    <div className="text-sm font-medium text-blue-600 mt-1">
-                      Total: £{item.total_cost?.toLocaleString() || 0}
-                    </div>
-                    {item.supplier && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        Supplier: {item.supplier}
-                      </div>
-                    )}
-                    {item.order_reference && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        Order Ref: {item.order_reference}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge className={getStatusColor(item.status)}>
-                      {item.status}
-                    </Badge>
-                    <Select
-                      value={item.status}
-                      onValueChange={(value) => handleUpdateItemStatus(item.id, value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="ordered">Ordered</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="installed">Installed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary Section */}
-      {procurementItems.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="mr-2 h-5 w-5 text-purple-600" />
-              Procurement Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {procurementItems.filter(item => item.status === 'pending').length}
-                </div>
-                <div className="text-sm text-yellow-700">Pending</div>
-              </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {procurementItems.filter(item => item.status === 'ordered').length}
-                </div>
-                <div className="text-sm text-blue-700">Ordered</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {procurementItems.filter(item => item.status === 'delivered').length}
-                </div>
-                <div className="text-sm text-green-700">Delivered</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {procurementItems.filter(item => item.status === 'installed').length}
-                </div>
-                <div className="text-sm text-purple-700">Installed</div>
-              </div>
-            </div>
-            
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Total Procurement Value:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  £{procurementItems.reduce((sum, item) => sum + (item.total_cost || 0), 0).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-        {!isEditing ? (
-          <Button
-            variant="outline"
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Edit
-          </Button>
-        ) : (
-          <>
+      {!isCompleted && (
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          {!isEditing ? (
             <Button
               variant="outline"
-              onClick={() => setIsEditing(false)}
+              onClick={() => setIsEditing(true)}
               className="flex items-center gap-2"
             >
-              <Save className="h-4 w-4" />
-              Save as Draft
+              <FileText className="h-4 w-4" />
+              Edit
             </Button>
-            <Button
-              onClick={() => setIsEditing(false)}
-              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-            >
-              <CheckCircle className="h-4 w-4" />
-              Mark Complete
-            </Button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={submitting || uploadingReceipt}
+                className="flex items-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    Save as Draft
+                  </>
+                )}
+              </Button>
+              {canMarkComplete && (
+                <Button
+                  onClick={handleMarkComplete}
+                  disabled={submitting || uploadingReceipt || !deliveryDate || !receiptUrl || !summary.trim()}
+                  className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Completing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Mark as Complete
+                    </>
+                  )}
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Info Message */}
+      {!canMarkComplete && !isCompleted && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="text-blue-800 font-medium">Limited Access</p>
+                <p className="text-blue-700 text-sm mt-1">
+                  Only Admin or Deployment Engineer can mark procurement as complete. 
+                  You can still save the information as a draft.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

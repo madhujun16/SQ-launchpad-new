@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Monitor, Package, Loader2, Trash2, Plus, Minus, AlertTriangle, X, CheckCircle, Clock, Calculator, DollarSign, Edit, Save } from 'lucide-react';
-import { PlatformConfigService, SoftwareModule, HardwareItem } from '@/services/platformConfigService';
+import { PlatformConfigService, SoftwareModule, HardwareItem, RecommendationRule } from '@/services/platformConfigService';
 import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
+import { ScopingApprovalService } from '@/services/scopingApprovalService';
+import { useAuth } from '@/hooks/useAuth';
 
 // TODO: Replace with GCP API calls
 
@@ -30,13 +32,40 @@ interface SelectedHardware {
 }
 
 export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepProps) {
+  const { profile } = useAuth();
   const [availableSoftwareModules, setAvailableSoftwareModules] = useState<SoftwareModule[]>([]);
   const [availableHardwareItems, setAvailableHardwareItems] = useState<HardwareItem[]>([]);
+  const [recommendationRules, setRecommendationRules] = useState<RecommendationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSoftwareIds, setSelectedSoftwareIds] = useState<string[]>([]);
   const [selectedHardware, setSelectedHardware] = useState<SelectedHardware[]>([]);
   const [softwareQuantities, setSoftwareQuantities] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [approvalStatus, setApprovalStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+  const [rejectionMessage, setRejectionMessage] = useState<string | null>(null);
+
+  // Fetch approval status
+  useEffect(() => {
+    const fetchApprovalStatus = async () => {
+      if (!site?.id) return;
+      
+      try {
+        const approval = await ScopingApprovalService.getApprovalBySiteId(site.id);
+        if (approval) {
+          setApprovalStatus(approval.status);
+          if (approval.status === 'rejected') {
+            setRejectionMessage(approval.rejectionReason || approval.reviewComment || 'Scoping was rejected. Please review and resubmit.');
+          } else if (approval.status === 'approved') {
+            setRejectionMessage(null);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching approval status:', error);
+      }
+    };
+
+    fetchApprovalStatus();
+  }, [site?.id]);
 
   // Initialize from site data
   useEffect(() => {
@@ -79,7 +108,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     }
   }, [site, availableHardwareItems]);
 
-  // Fetch all software modules and hardware items
+  // Fetch all software modules, hardware items, and recommendation rules
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -96,6 +125,30 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         
         setAvailableSoftwareModules(softwareModules);
         setAvailableHardwareItems(hardwareItems);
+        
+        // Fetch recommendation rules for all software categories
+        const softwareCategoryIds = [...new Set(softwareModules.map(sm => sm.category_id).filter(Boolean))];
+        console.log('🔍 Software category IDs for recommendation rules:', softwareCategoryIds);
+        
+        if (softwareCategoryIds.length > 0) {
+          try {
+            const rules = await PlatformConfigService.getRecommendationRules(softwareCategoryIds);
+            console.log('📋 Recommendation rules fetched:', rules);
+            console.log('📊 Number of rules:', rules.length);
+            if (rules.length === 0) {
+              console.warn('⚠️ No recommendation rules found for categories:', softwareCategoryIds);
+              console.warn('💡 Make sure the backend endpoint /api/platform/recommendation-rules is implemented');
+            }
+            setRecommendationRules(rules);
+          } catch (error) {
+            console.error('❌ Error fetching recommendation rules:', error);
+            console.warn('⚠️ Could not fetch recommendation rules. Hardware filtering may not work correctly.');
+            console.warn('💡 Make sure the backend endpoint /api/platform/recommendation-rules is implemented');
+            setRecommendationRules([]);
+          }
+        } else {
+          console.warn('⚠️ No software category IDs found. Cannot fetch recommendation rules.');
+        }
       } catch (error) {
         console.error('❌ Error fetching scoping data:', error);
       } finally {
@@ -122,21 +175,83 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     return grouped;
   }, [availableSoftwareModules]);
 
-  // Get filtered hardware items based on selected software categories
+  // Get recommended quantity for a hardware item based on recommendation rules
+  const getRecommendedQuantity = (hardwareId: string): number => {
+    const hardware = availableHardwareItems.find(h => h.id === hardwareId);
+    if (!hardware?.category_id) return 0;
+    
+    // Get software category IDs from selected software
+    const selectedSoftwareCategoryIds = selectedSoftwareIds
+      .map(id => {
+        const software = availableSoftwareModules.find(s => s.id === id);
+        return software?.category_id;
+      })
+      .filter(Boolean) as string[];
+    
+    if (selectedSoftwareCategoryIds.length === 0) return 0;
+    
+    // Find recommendation rules that match selected software categories and this hardware category
+    const relevantRules = recommendationRules.filter(rule =>
+      selectedSoftwareCategoryIds.includes(rule.software_category) &&
+      rule.hardware_category === hardware.category_id
+    );
+    
+    // Sum up recommended quantities from all matching rules
+    const totalRecommendedQuantity = relevantRules.reduce((sum, rule) => sum + (rule.quantity || 0), 0);
+    
+    return totalRecommendedQuantity;
+  };
+
+  // Get filtered hardware items based on selected software and recommendation rules
   const filteredHardwareItems = useMemo(() => {
     if (selectedSoftwareIds.length === 0) return [];
     
-    // Get categories of selected software
-    const selectedSoftwareCategories = selectedSoftwareIds.map(id => {
-      const software = availableSoftwareModules.find(s => s.id === id);
-      return software?.category?.name;
-    }).filter(Boolean);
+    // Get software category IDs from selected software
+    const selectedSoftwareCategoryIds = selectedSoftwareIds
+      .map(id => {
+        const software = availableSoftwareModules.find(s => s.id === id);
+        return software?.category_id;
+      })
+      .filter(Boolean) as string[];
     
-    // Filter hardware items that match these categories
-    return availableHardwareItems.filter(hardware => 
-      selectedSoftwareCategories.includes(hardware.category?.name)
+    if (selectedSoftwareCategoryIds.length === 0) return [];
+    
+    // Find recommendation rules that match selected software categories
+    const relevantRules = recommendationRules.filter(rule =>
+      selectedSoftwareCategoryIds.includes(rule.software_category)
     );
-  }, [selectedSoftwareIds, availableSoftwareModules, availableHardwareItems]);
+    
+    // Get hardware category IDs from recommendation rules
+    const recommendedHardwareCategoryIds = new Set(
+      relevantRules.map(rule => rule.hardware_category)
+    );
+    
+    // Filter hardware items that belong to recommended hardware categories
+    const filtered = availableHardwareItems.filter(hardware =>
+      hardware.category_id && recommendedHardwareCategoryIds.has(hardware.category_id)
+    );
+    
+    console.log('🔍 Filtered hardware items:', {
+      selectedSoftwareIds,
+      selectedSoftwareCategoryIds,
+      relevantRulesCount: relevantRules.length,
+      relevantRules,
+      recommendedHardwareCategoryIds: Array.from(recommendedHardwareCategoryIds),
+      availableHardwareCount: availableHardwareItems.length,
+      filteredCount: filtered.length,
+      filteredItems: filtered.map(h => ({ id: h.id, name: h.name, category_id: h.category_id }))
+    });
+    
+    if (selectedSoftwareIds.length > 0 && filtered.length === 0) {
+      console.warn('⚠️ No hardware items found for selected software!');
+      console.warn('💡 Check:');
+      console.warn('   1. Are recommendation rules in the database?');
+      console.warn('   2. Is the backend endpoint /api/platform/recommendation-rules implemented?');
+      console.warn('   3. Do the recommendation rules link the correct category IDs?');
+    }
+    
+    return filtered;
+  }, [selectedSoftwareIds, availableSoftwareModules, availableHardwareItems, recommendationRules]);
 
   // Group filtered hardware items by category
   const groupedHardwareItems = useMemo(() => {
@@ -152,19 +267,92 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
     return grouped;
   }, [filteredHardwareItems]);
 
+  // Auto-populate hardware items with recommended quantities when software is selected
+  useEffect(() => {
+    if (!isEditing || selectedSoftwareIds.length === 0 || filteredHardwareItems.length === 0) return;
+    
+    setSelectedHardware(prev => {
+      // Get currently selected hardware IDs
+      const currentHardwareIds = new Set(prev.map(h => h.id));
+      
+      // For each filtered hardware item, if not already selected, add it with recommended quantity
+      const newHardwareItems: SelectedHardware[] = [];
+      
+      filteredHardwareItems.forEach(hardware => {
+        if (!currentHardwareIds.has(hardware.id)) {
+          // Calculate recommended quantity inline to avoid dependency issues
+          const hardwareCategoryId = hardware.category_id;
+          if (!hardwareCategoryId) return;
+          
+          // Get software category IDs from selected software
+          const selectedSoftwareCategoryIds = selectedSoftwareIds
+            .map(id => {
+              const software = availableSoftwareModules.find(s => s.id === id);
+              return software?.category_id;
+            })
+            .filter(Boolean) as string[];
+          
+          if (selectedSoftwareCategoryIds.length === 0) return;
+          
+          // Find recommendation rules that match selected software categories and this hardware category
+          const relevantRules = recommendationRules.filter(rule =>
+            selectedSoftwareCategoryIds.includes(rule.software_category) &&
+            rule.hardware_category === hardwareCategoryId
+          );
+          
+          // Sum up recommended quantities from all matching rules
+          const recommendedQty = relevantRules.reduce((sum, rule) => sum + (rule.quantity || 0), 0);
+          
+          if (recommendedQty > 0) {
+            newHardwareItems.push({
+              id: hardware.id,
+              name: hardware.name,
+              category: hardware.category?.name || 'Uncategorized',
+              quantity: recommendedQty,
+              unit_cost: hardware.unit_cost || 0,
+              installation_cost: 0,
+              maintenance_cost: 0
+            });
+          }
+        }
+      });
+      
+      // Only update if there are new items to add
+      if (newHardwareItems.length > 0) {
+        return [...prev, ...newHardwareItems];
+      }
+      
+      return prev;
+    });
+  }, [selectedSoftwareIds, filteredHardwareItems, isEditing, availableHardwareItems, availableSoftwareModules, recommendationRules]);
+
   // Handle software selection
   const handleSoftwareToggle = (softwareId: string) => {
     setSelectedSoftwareIds(prev => {
       if (prev.includes(softwareId)) {
         // Remove software and clear related hardware
         const newSoftwareIds = prev.filter(id => id !== softwareId);
-        const software = availableSoftwareModules.find(s => s.id === softwareId);
-        const categoryName = software?.category?.name;
         
-        // Remove hardware items from the same category
+        // Get hardware categories that are no longer needed
+        const remainingSoftwareCategoryIds = newSoftwareIds
+          .map(id => {
+            const software = availableSoftwareModules.find(s => s.id === id);
+            return software?.category_id;
+          })
+          .filter(Boolean) as string[];
+        
+        // Find recommendation rules for remaining software
+        const remainingRules = recommendationRules.filter(rule =>
+          remainingSoftwareCategoryIds.includes(rule.software_category)
+        );
+        const remainingHardwareCategoryIds = new Set(
+          remainingRules.map(rule => rule.hardware_category)
+        );
+        
+        // Remove hardware items that are no longer recommended
         const newHardware = selectedHardware.filter(hw => {
           const hardware = availableHardwareItems.find(h => h.id === hw.id);
-          return hardware?.category?.name !== categoryName;
+          return hardware?.category_id && remainingHardwareCategoryIds.has(hardware.category_id);
         });
         
         setSelectedHardware(newHardware);
@@ -259,34 +447,76 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       return;
     }
 
+    if (!site?.id || !site?.name) {
+      toast.error('Site information is missing');
+      return;
+    }
+
     try {
       setSubmitting(true);
       
       const costSummary = calculateCostSummary();
       
-      // TODO: Replace with GCP API call
-      console.warn('Scoping submission not implemented - connect to GCP backend');
-      // Continuing without database save for now
+      // Check if this is a resubmission
+      const existingApproval = await ScopingApprovalService.getApprovalBySiteId(site.id);
+      const isResubmission = existingApproval && existingApproval.status === 'rejected';
 
-      // Update site status
-      onUpdate({
-        scoping: {
+      let approval;
+      if (isResubmission && existingApproval) {
+        // Resubmit after rejection
+        approval = await ScopingApprovalService.resubmitScoping(
+          {
+            siteId: site.id,
+            siteName: site.name,
+            selectedSoftware: selectedSoftwareIds.map(id => ({
+              id,
+              quantity: softwareQuantities[id] || 1
+            })),
+            selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
+            costSummary
+          },
+          existingApproval.id
+        );
+      } else {
+        // New submission
+        approval = await ScopingApprovalService.submitScopingForApproval({
+          siteId: site.id,
+          siteName: site.name,
           selectedSoftware: selectedSoftwareIds.map(id => ({
             id,
             quantity: softwareQuantities[id] || 1
-          })) as any,
+          })),
           selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
-          status: 'submitted',
-          submittedAt: new Date().toISOString(),
           costSummary
-        },
-        status: 'approval'
-      });
+        });
+      }
 
-      toast.success('Scoping submitted successfully for approval');
-    } catch (err) {
+      if (approval) {
+        setApprovalStatus(approval.status);
+        setRejectionMessage(null);
+
+        // Update site status
+        onUpdate({
+          scoping: {
+            selectedSoftware: selectedSoftwareIds.map(id => ({
+              id,
+              quantity: softwareQuantities[id] || 1
+            })) as any,
+            selectedHardware: selectedHardware.map(h => ({ id: h.id, quantity: h.quantity })),
+            status: 'submitted',
+            submittedAt: new Date().toISOString(),
+            costSummary
+          },
+          status: 'approval'
+        });
+
+        toast.success(isResubmission ? 'Scoping resubmitted successfully for approval' : 'Scoping submitted successfully for approval');
+      } else {
+        throw new Error('Failed to submit scoping');
+      }
+    } catch (err: any) {
       console.error('Error submitting scoping:', err);
-      toast.error('Failed to submit scoping');
+      toast.error(err?.message || 'Failed to submit scoping for approval');
     } finally {
       setSubmitting(false);
     }
@@ -523,18 +753,32 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                     <div className="space-y-3">
                       {hardwareItems.map((hardware) => {
                         const selectedHardwareItem = selectedHardware.find(h => h.id === hardware.id);
-                        const quantity = selectedHardwareItem?.quantity || 0;
+                        const recommendedQty = getRecommendedQuantity(hardware.id);
+                        const quantity = selectedHardwareItem?.quantity || recommendedQty || 0;
+                        const isRecommended = recommendedQty > 0;
                         
                         return (
                           <div key={hardware.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                             <div className="flex-1">
-                              <div className="font-medium">{hardware.name}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium">{hardware.name}</div>
+                                {isRecommended && quantity === recommendedQty && (
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    Recommended
+                                  </Badge>
+                                )}
+                              </div>
                               {hardware.description && (
                                 <p className="text-sm text-gray-600 mt-1">{hardware.description}</p>
                               )}
                               <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                                 <span>Cost: £{hardware.unit_cost?.toLocaleString() || 0}</span>
                                 {hardware.manufacturer && <span>Manufacturer: {hardware.manufacturer}</span>}
+                                {isRecommended && (
+                                  <span className="text-blue-600">
+                                    Recommended: {recommendedQty}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -546,7 +790,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                               >
                                 <Minus className="h-4 w-4" />
                               </Button>
-                              <span className="w-8 text-center">{quantity}</span>
+                              <span className="w-8 text-center font-medium">{quantity}</span>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -568,7 +812,7 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
         )}
 
         {/* Status Display */}
-        {site?.scoping?.status === 'submitted' && (
+        {approvalStatus === 'pending' && (
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
@@ -576,8 +820,44 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
                 <span className="text-blue-800 font-medium">Scoping submitted for approval</span>
               </div>
               <p className="text-blue-700 text-sm mt-1">
-                Submitted on {site.scoping.submittedAt ? new Date(site.scoping.submittedAt).toLocaleDateString() : 'Unknown date'}
+                Submitted on {site?.scoping?.submittedAt ? new Date(site.scoping.submittedAt).toLocaleDateString() : 'Unknown date'}
               </p>
+              <p className="text-blue-600 text-xs mt-2">
+                Waiting for Admin or Operations Manager approval
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {approvalStatus === 'approved' && (
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="text-green-800 font-medium">Scoping approved</span>
+              </div>
+              <p className="text-green-700 text-sm mt-1">
+                Your scoping has been approved and is ready for procurement
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {approvalStatus === 'rejected' && rejectionMessage && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start space-x-2">
+                <X className="h-5 w-5 text-red-600 mt-0.5" />
+                <div className="flex-1">
+                  <span className="text-red-800 font-medium block">Scoping rejected</span>
+                  <p className="text-red-700 text-sm mt-2 bg-red-100 p-3 rounded border border-red-200">
+                    {rejectionMessage}
+                  </p>
+                  <p className="text-red-600 text-xs mt-2">
+                    Please review the feedback, make necessary changes, and resubmit for approval.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -609,10 +889,26 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
               Save as Draft
             </Button>
             <Button
-              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              onClick={handleSubmitScoping}
+              disabled={submitting || approvalStatus === 'approved'}
+              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
             >
-              <CheckCircle className="h-4 w-4" />
-              Mark Complete
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : approvalStatus === 'rejected' ? (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  Resubmit for Approval
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  Submit for Approval
+                </>
+              )}
             </Button>
           </>
         )}
