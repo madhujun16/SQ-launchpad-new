@@ -1,20 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { 
-  Edit, 
   CheckCircle, 
-  ListChecks, 
-  Award, 
-  Clock, 
-  AlertCircle,
-  Save
+  Power,
+  Clock,
+  AlertTriangle,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Site } from '@/types/siteTypes';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { GoLiveService } from '@/services/goLiveService';
 
 interface GoLiveStepProps {
   site: Site;
@@ -22,177 +24,301 @@ interface GoLiveStepProps {
 }
 
 const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const { currentRole, profile } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [isLive, setIsLive] = useState(false);
+  const [notes, setNotes] = useState<string>('');
+  const [goLiveDate, setGoLiveDate] = useState<string | null>(null);
+  const [signedOffBy, setSignedOffBy] = useState<string | null>(null);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'live':
-        return 'bg-green-100 text-green-800';
-      case 'postponed':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  // Check if user can toggle go live (Admin or Deployment Engineer)
+  const canToggleGoLive = currentRole === 'admin' || currentRole === 'deployment_engineer';
+
+  useEffect(() => {
+    loadGoLiveData();
+  }, [site.id]);
+
+  const loadGoLiveData = async () => {
+    try {
+      setLoading(true);
+      const goLiveData = await GoLiveService.getGoLiveData(site.id);
+      
+      if (goLiveData) {
+        setIsLive(goLiveData.status === 'live');
+        setNotes(goLiveData.notes || '');
+        setGoLiveDate(goLiveData.go_live_date || null);
+        setSignedOffBy(goLiveData.signed_off_by || null);
+      } else {
+        // Check site status
+        setIsLive(site.status === 'live');
+      }
+    } catch (error) {
+      console.error('Error loading go live data:', error);
+      setIsLive(site.status === 'live');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleToggleGoLive = async (checked: boolean) => {
+    if (!canToggleGoLive) {
+      toast.error('You do not have permission to toggle go live status');
+      return;
+    }
+
+    if (checked && !notes.trim()) {
+      toast.error('Please provide notes before going live');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      if (checked) {
+        // Going live
+        const result = await GoLiveService.markSiteLive(site.id, {
+          notes: notes.trim()
+        });
+
+        if (result) {
+          setIsLive(true);
+          setGoLiveDate(result.go_live_date || new Date().toISOString());
+          setSignedOffBy(result.signed_off_by || profile?.full_name || 'Unknown');
+
+          // Update site status
+          onSiteUpdate({
+            ...site,
+            status: 'live',
+            goLive: {
+              status: 'live',
+              date: result.go_live_date || new Date().toISOString(),
+              signedOffBy: result.signed_off_by || profile?.full_name || 'Unknown',
+              notes: notes.trim(),
+              checklist: site.goLive?.checklist || {
+                hardwareInstallationComplete: 'completed',
+                softwareConfigurationComplete: 'completed',
+                staffTraining: 'completed',
+                finalTesting: 'completed'
+              },
+              timeline: site.goLive?.timeline || {
+                targetGoLiveDate: site.goLiveDate || '',
+                finalTesting: '',
+                staffTraining: '',
+                systemHandover: ''
+              }
+            }
+          });
+
+          toast.success('Site marked as live successfully');
+        }
+      } else {
+        // Taking site offline
+        const result = await GoLiveService.markSiteOffline(site.id, {
+          notes: notes.trim() || 'Site taken offline'
+        });
+
+        if (result) {
+          setIsLive(false);
+
+          // Update site status back to previous state
+          onSiteUpdate({
+            ...site,
+            status: 'procurement_done', // Revert to previous status
+            goLive: {
+              ...site.goLive,
+              status: 'postponed',
+              notes: notes.trim() || 'Site taken offline'
+            } as any
+          });
+
+          toast.success('Site taken offline');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error toggling go live status:', error);
+      toast.error(error?.message || 'Failed to update go live status');
+      // Revert toggle on error
+      setIsLive(!checked);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <span className="ml-3 text-gray-600">Loading go live status...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Go-Live</h2>
-          <p className="text-gray-600 mt-1">Final system activation and go-live preparation</p>
+          <h2 className="text-2xl font-bold text-gray-900">Go Live</h2>
+          <p className="text-gray-600 mt-1">
+            {isLive 
+              ? 'Site is currently live and operational' 
+              : 'Activate the site to go live after procurement is complete'}
+          </p>
         </div>
-      </div>
-      
-      <div className="space-y-6">
-        {/* Go-Live Checklist */}
-        <Card className="shadow-sm border border-gray-200">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <ListChecks className="mr-2 h-5 w-5 text-green-600" />
-              Go-Live Checklist
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Final verification checklist before going live
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Pre-Launch Tasks</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">Hardware Installation Complete</p>
-                        <p className="text-sm text-gray-600">All hardware installed and tested</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">Software Configuration Complete</p>
-                        <p className="text-sm text-gray-600">All software modules configured</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Clock className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium">Staff Training</p>
-                        <p className="text-sm text-gray-600">Team training in progress</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-100 text-green-800">In Progress</Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <AlertCircle className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <p className="font-medium">Final Testing</p>
-                        <p className="text-sm text-gray-600">End-to-end system testing</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Go-Live Details */}
-        <Card className="shadow-sm border border-gray-200">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Award className="mr-2 h-5 w-5 text-yellow-600" />
-              Go-Live Details
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Final confirmation and sign-off information
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Go-Live Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="go-live-date">Go-Live Date</Label>
-                    <Input id="go-live-date" value={site?.goLive?.date ? new Date(site.goLive.date).toLocaleDateString() : ""} readOnly className="bg-gray-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signed-off-by">Signed Off By</Label>
-                    <Input id="signed-off-by" value={site?.goLive?.signedOffBy || ""} readOnly className="bg-gray-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="go-live-status">Status</Label>
-                    <Badge className={getStatusColor(site?.goLive?.status || 'pending')}>
-                      {site?.goLive?.status ? site.goLive.status.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : 'Pending'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-gray-900 border-b pb-2 mb-4">Additional Notes</h4>
-                <div className="space-y-2">
-                  <Label htmlFor="go-live-notes">Notes</Label>
-                  <Textarea
-                    id="go-live-notes"
-                    value={site?.goLive?.notes || ""}
-                    readOnly
-                    rows={3}
-                    className="bg-gray-50"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-        {!isEditing ? (
-          <Button
-            variant="outline"
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Edit
-          </Button>
-        ) : (
-          <>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditing(false)}
-              className="flex items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              Save as Draft
-            </Button>
-            <Button
-              onClick={() => setIsEditing(false)}
-              className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-            >
-              <CheckCircle className="h-4 w-4" />
-              Mark Complete
-            </Button>
-          </>
+        {isLive && (
+          <Badge className="bg-green-100 text-green-800">
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Live
+          </Badge>
         )}
       </div>
+
+      {/* Status Card */}
+      {isLive && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <span className="text-green-800 font-medium">Site is live</span>
+                {goLiveDate && (
+                  <p className="text-green-700 text-sm mt-1">
+                    Went live on {new Date(goLiveDate).toLocaleDateString()}
+                  </p>
+                )}
+                {signedOffBy && (
+                  <p className="text-green-700 text-sm">
+                    Signed off by {signedOffBy}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Prerequisites Check */}
+      {!isLive && site.status !== 'procurement_done' && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div>
+                <p className="text-yellow-800 font-medium">Prerequisites not met</p>
+                <p className="text-yellow-700 text-sm mt-1">
+                  Procurement must be completed before the site can go live. Current status: {site.status}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Go Live Toggle */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Power className="mr-2 h-5 w-5 text-blue-600" />
+            Go Live Status
+          </CardTitle>
+          <CardDescription>
+            {isLive 
+              ? 'Site is currently live. Toggle to take it offline.'
+              : 'Toggle to mark the site as live after procurement is complete.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Toggle Switch */}
+          <div className="flex items-center justify-between p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3">
+                <Label htmlFor="go-live-toggle" className="text-lg font-semibold cursor-pointer">
+                  {isLive ? 'Site is Live' : 'Site is Offline'}
+                </Label>
+                {!canToggleGoLive && (
+                  <Badge variant="outline" className="text-xs">
+                    Read Only
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                {isLive 
+                  ? 'The site is currently live and operational. Users can access the system.'
+                  : 'The site is offline. Toggle to activate and go live.'}
+              </p>
+            </div>
+            <Switch
+              id="go-live-toggle"
+              checked={isLive}
+              onCheckedChange={handleToggleGoLive}
+              disabled={!canToggleGoLive || submitting || site.status !== 'procurement_done'}
+              className="ml-4"
+            />
+          </div>
+
+          {/* Notes Field */}
+          <div>
+            <Label htmlFor="go-live-notes" className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Notes {isLive ? '' : <span className="text-red-500">*</span>}
+            </Label>
+            <div className="mt-2">
+              <Textarea
+                id="go-live-notes"
+                placeholder={isLive 
+                  ? "Add notes about the site status (optional)..." 
+                  : "Enter notes about going live (required)..."}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={!canToggleGoLive || submitting}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {isLive 
+                ? 'Optional notes about the live site status'
+                : 'Required notes explaining the go-live process and any important information'}
+            </p>
+          </div>
+
+          {/* Info Message */}
+          {!canToggleGoLive && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-blue-800 font-medium">Read Only Access</p>
+                    <p className="text-blue-700 text-sm mt-1">
+                      Only Admin or Deployment Engineer can toggle the go live status.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Go Live Information (Read-only when live) */}
+          {isLive && goLiveDate && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium text-gray-600">Go Live Date</Label>
+                <p className="text-sm font-medium mt-1">
+                  {new Date(goLiveDate).toLocaleDateString()}
+                </p>
+              </div>
+              {signedOffBy && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Signed Off By</Label>
+                  <p className="text-sm font-medium mt-1">{signedOffBy}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
