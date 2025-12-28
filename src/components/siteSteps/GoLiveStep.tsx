@@ -17,6 +17,7 @@ import { Site } from '@/types/siteTypes';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { GoLiveService } from '@/services/goLiveService';
+import DeploymentSection from './DeploymentSection';
 
 interface GoLiveStepProps {
   site: Site;
@@ -159,11 +160,9 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Go Live</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Deployment & Go Live</h2>
           <p className="text-gray-600 mt-1">
-            {isLive 
-              ? 'Site is currently live and operational' 
-              : 'Activate the site to go live after procurement is complete'}
+            Track deployment progress and activate the site to go live
           </p>
         </div>
         {isLive && (
@@ -173,6 +172,9 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
           </Badge>
         )}
       </div>
+
+      {/* Deployment Section */}
+      <DeploymentSection site={site} onSiteUpdate={onSiteUpdate} />
 
       {/* Status Card */}
       {isLive && (
@@ -199,7 +201,7 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
       )}
 
       {/* Prerequisites Check */}
-      {!isLive && site.status !== 'procurement_done' && (
+      {!isLive && site.status !== 'deployed' && (
         <Card className="border-yellow-200 bg-yellow-50">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-2">
@@ -207,7 +209,7 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
               <div>
                 <p className="text-yellow-800 font-medium">Prerequisites not met</p>
                 <p className="text-yellow-700 text-sm mt-1">
-                  Procurement must be completed before the site can go live. Current status: {site.status}
+                  Deployment must be completed before the site can go live. Current status: {site.status}
                 </p>
               </div>
             </div>
@@ -252,7 +254,7 @@ const GoLiveStep: React.FC<GoLiveStepProps> = ({ site, onSiteUpdate }) => {
               id="go-live-toggle"
               checked={isLive}
               onCheckedChange={handleToggleGoLive}
-              disabled={!canToggleGoLive || submitting || site.status !== 'procurement_done'}
+              disabled={!canToggleGoLive || submitting || site.status !== 'deployed'}
               className="ml-4"
             />
           </div>
