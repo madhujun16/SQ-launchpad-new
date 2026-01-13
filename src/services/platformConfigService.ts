@@ -12,6 +12,15 @@ export interface SoftwareCategory {
   updated_at: string;
 }
 
+export interface HardwareCategory {
+  id: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SoftwareModule {
   id: string;
   name: string;
@@ -81,6 +90,28 @@ export const PlatformConfigService = {
       return [];
     } catch (error) {
       console.error('❌ PlatformConfigService.getSoftwareCategories: Error fetching software categories:', error);
+      // Return empty array instead of throwing - allows UI to continue
+      return [];
+    }
+  },
+
+  /**
+   * Get all hardware categories
+   * Backend endpoint: GET /api/platform/hardware-categories
+   */
+  async getHardwareCategories(): Promise<HardwareCategory[]> {
+    try {
+      const response = await apiClient.get<{
+        message: string;
+        data: HardwareCategory[];
+      }>('/platform/hardware-categories');
+      
+      if (response.success && response.data?.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ PlatformConfigService.getHardwareCategories: Error fetching hardware categories:', error);
       // Return empty array instead of throwing - allows UI to continue
       return [];
     }
@@ -195,6 +226,156 @@ export const PlatformConfigService = {
   },
 
   /**
+   * Get all recommendation rules
+   * Backend endpoint: GET /api/platform/recommendation-rules
+   */
+  async getAllRecommendationRules(): Promise<RecommendationRule[]> {
+    try {
+      const response = await apiClient.get<{
+        message: string;
+        data: RecommendationRule[];
+      }>('/platform/recommendation-rules');
+      
+      if (response.success && response.data?.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      return [];
+    } catch (error) {
+      console.error('❌ PlatformConfigService.getAllRecommendationRules: Error fetching recommendation rules:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Create a new recommendation rule
+   * Backend endpoint: POST /api/platform/recommendation-rules
+   */
+  async createRecommendationRule(data: {
+    software_category: string;
+    hardware_category: string;
+    is_mandatory: boolean;
+    quantity: number;
+  }): Promise<RecommendationRule | null> {
+    try {
+      const response = await apiClient.post<{
+        message: string;
+        data: RecommendationRule;
+      }>('/platform/recommendation-rules', data);
+      
+      if (!response.success) {
+        const errorMsg = response.error?.message || 'Failed to create recommendation rule';
+        console.error('❌ PlatformConfigService.createRecommendationRule: Create failed:', {
+          data,
+          error: response.error,
+          statusCode: response.error?.statusCode,
+          message: errorMsg
+        });
+        throw new Error(errorMsg);
+      }
+      
+      if (response.data?.data) {
+        return response.data.data;
+      }
+      
+      // Handle case where backend returns data directly (not nested)
+      if (response.data && 'id' in response.data) {
+        return response.data as RecommendationRule;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ PlatformConfigService.createRecommendationRule: Error creating recommendation rule:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing recommendation rule
+   * Backend endpoint: PUT /api/platform/recommendation-rules/:id
+   */
+  async updateRecommendationRule(id: string, data: {
+    software_category?: string;
+    hardware_category?: string;
+    is_mandatory?: boolean;
+    quantity?: number;
+  }): Promise<RecommendationRule | null> {
+    try {
+      const response = await apiClient.put<{
+        message: string;
+        data: RecommendationRule;
+      }>(`/platform/recommendation-rules/${id}`, data);
+      
+      if (!response.success) {
+        const errorMsg = response.error?.message || 'Failed to update recommendation rule';
+        console.error('❌ PlatformConfigService.updateRecommendationRule: Update failed:', {
+          id,
+          data,
+          error: response.error,
+          statusCode: response.error?.statusCode,
+          message: errorMsg
+        });
+        throw new Error(errorMsg);
+      }
+      
+      if (response.data?.data) {
+        return response.data.data;
+      }
+      
+      // Handle case where backend returns data directly (not nested)
+      if (response.data && 'id' in response.data) {
+        return response.data as RecommendationRule;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ PlatformConfigService.updateRecommendationRule: Error updating recommendation rule:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a recommendation rule
+   * Backend endpoint: DELETE /api/platform/recommendation-rules/:id
+   */
+  async deleteRecommendationRule(id: string): Promise<boolean> {
+    try {
+      const response = await apiClient.delete<{
+        message: string;
+      }>(`/platform/recommendation-rules/${id}`);
+      
+      if (!response.success) {
+        // Get detailed error information
+        const errorMsg = response.error?.message || 'Failed to delete recommendation rule';
+        const statusCode = response.error?.statusCode;
+        const errorCode = response.error?.code;
+        const errorDetails = response.error?.details;
+        
+        console.error('❌ PlatformConfigService.deleteRecommendationRule: Delete failed:', {
+          id,
+          statusCode,
+          errorCode,
+          errorMessage: errorMsg,
+          errorDetails: errorDetails,
+          fullError: response.error
+        });
+        
+        // For 500 errors, provide more context
+        if (statusCode === 500) {
+          const detailedMsg = errorDetails?.message || errorMsg;
+          throw new Error(`Server error: ${detailedMsg}. Please check backend logs for details.`);
+        }
+        
+        throw new Error(errorMsg);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ PlatformConfigService.deleteRecommendationRule: Error deleting recommendation rule:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get all software modules (active and inactive)
    * Backend endpoint: GET /api/platform/software-modules
    */
@@ -280,9 +461,28 @@ export const PlatformConfigService = {
         data: SoftwareModule;
       }>(`/platform/software-modules/${id}`, data);
       
-      if (response.success && response.data?.data) {
+      if (!response.success) {
+        const errorMsg = response.error?.message || 'Failed to update software module';
+        console.error('❌ PlatformConfigService.updateSoftwareModule: Update failed:', {
+          id,
+          data,
+          error: response.error,
+          statusCode: response.error?.statusCode,
+          message: errorMsg
+        });
+        throw new Error(errorMsg);
+      }
+      
+      if (response.data?.data) {
         return response.data.data;
       }
+      
+      // Handle case where backend returns data directly (not nested)
+      if (response.data && 'id' in response.data) {
+        return response.data as SoftwareModule;
+      }
+      
+      console.warn('⚠️ PlatformConfigService.updateSoftwareModule: Unexpected response format:', response.data);
       return null;
     } catch (error) {
       console.error('❌ PlatformConfigService.updateSoftwareModule: Error updating software module:', error);
@@ -300,7 +500,32 @@ export const PlatformConfigService = {
         message: string;
       }>(`/platform/software-modules/${id}`);
       
-      return response.success;
+      if (!response.success) {
+        // Get detailed error information
+        const errorMsg = response.error?.message || 'Failed to delete software module';
+        const statusCode = response.error?.statusCode;
+        const errorCode = response.error?.code;
+        const errorDetails = response.error?.details;
+        
+        console.error('❌ PlatformConfigService.deleteSoftwareModule: Delete failed:', {
+          id,
+          statusCode,
+          errorCode,
+          errorMessage: errorMsg,
+          errorDetails: errorDetails,
+          fullError: response.error
+        });
+        
+        // For 500 errors, provide more context
+        if (statusCode === 500) {
+          const detailedMsg = errorDetails?.message || errorMsg;
+          throw new Error(`Server error: ${detailedMsg}. Please check backend logs for details.`);
+        }
+        
+        throw new Error(errorMsg);
+      }
+      
+      return true;
     } catch (error) {
       console.error('❌ PlatformConfigService.deleteSoftwareModule: Error deleting software module:', error);
       throw error;
@@ -379,9 +604,28 @@ export const PlatformConfigService = {
         data: HardwareItem;
       }>(`/platform/hardware-items/${id}`, data);
       
-      if (response.success && response.data?.data) {
+      if (!response.success) {
+        const errorMsg = response.error?.message || 'Failed to update hardware item';
+        console.error('❌ PlatformConfigService.updateHardwareItem: Update failed:', {
+          id,
+          data,
+          error: response.error,
+          statusCode: response.error?.statusCode,
+          message: errorMsg
+        });
+        throw new Error(errorMsg);
+      }
+      
+      if (response.data?.data) {
         return response.data.data;
       }
+      
+      // Handle case where backend returns data directly (not nested)
+      if (response.data && 'id' in response.data) {
+        return response.data as HardwareItem;
+      }
+      
+      console.warn('⚠️ PlatformConfigService.updateHardwareItem: Unexpected response format:', response.data);
       return null;
     } catch (error) {
       console.error('❌ PlatformConfigService.updateHardwareItem: Error updating hardware item:', error);
@@ -399,7 +643,32 @@ export const PlatformConfigService = {
         message: string;
       }>(`/platform/hardware-items/${id}`);
       
-      return response.success;
+      if (!response.success) {
+        // Get detailed error information
+        const errorMsg = response.error?.message || 'Failed to delete hardware item';
+        const statusCode = response.error?.statusCode;
+        const errorCode = response.error?.code;
+        const errorDetails = response.error?.details;
+        
+        console.error('❌ PlatformConfigService.deleteHardwareItem: Delete failed:', {
+          id,
+          statusCode,
+          errorCode,
+          errorMessage: errorMsg,
+          errorDetails: errorDetails,
+          fullError: response.error
+        });
+        
+        // For 500 errors, provide more context
+        if (statusCode === 500) {
+          const detailedMsg = errorDetails?.message || errorMsg;
+          throw new Error(`Server error: ${detailedMsg}. Please check backend logs for details.`);
+        }
+        
+        throw new Error(errorMsg);
+      }
+      
+      return true;
     } catch (error) {
       console.error('❌ PlatformConfigService.deleteHardwareItem: Error deleting hardware item:', error);
       throw error;

@@ -45,10 +45,38 @@ export const ScopingApprovalService = {
         cost_summary: data.costSummary,
       });
 
+      // Handle 401 Unauthorized - session expired or not authenticated
+      if (response.error?.statusCode === 401) {
+        console.warn('🔒 Authentication required for scoping submission - session may have expired');
+        const errorMessage = response.error?.message || 'Your session has expired. Please login again.';
+        
+        // Clear auth and show error message
+        if (typeof window !== 'undefined') {
+          const { AuthService } = await import('./authService');
+          AuthService.clearAuth();
+          
+          // Show toast message
+          const { toast } = await import('sonner');
+          toast.error('Session expired. Please login again to submit scoping for approval.');
+          
+          // Redirect to login if not already there
+          if (window.location.pathname !== '/auth') {
+            setTimeout(() => {
+              window.location.href = '/auth';
+            }, 1500);
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
       if (response.success && response.data?.data) {
         return convertApprovalRowToApproval(response.data.data as any);
       }
-      return null;
+      
+      // Handle other errors
+      const errorMessage = response.error?.message || 'Failed to submit scoping for approval';
+      throw new Error(errorMessage);
     } catch (error) {
       console.error('❌ ScopingApprovalService.submitScopingForApproval: Error submitting scoping:', error);
       throw error;
@@ -226,10 +254,38 @@ export const ScopingApprovalService = {
         cost_summary: data.costSummary,
       });
 
+      // Handle 401 Unauthorized - session expired or not authenticated
+      if (response.error?.statusCode === 401) {
+        console.warn('🔒 Authentication required for scoping resubmission - session may have expired');
+        const errorMessage = response.error?.message || 'Your session has expired. Please login again.';
+        
+        // Clear auth and show error message
+        if (typeof window !== 'undefined') {
+          const { AuthService } = await import('./authService');
+          AuthService.clearAuth();
+          
+          // Show toast message
+          const { toast } = await import('sonner');
+          toast.error('Session expired. Please login again to resubmit scoping for approval.');
+          
+          // Redirect to login if not already there
+          if (window.location.pathname !== '/auth') {
+            setTimeout(() => {
+              window.location.href = '/auth';
+            }, 1500);
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
       if (response.success && response.data?.data) {
         return convertApprovalRowToApproval(response.data.data as any);
       }
-      return null;
+      
+      // Handle other errors
+      const errorMessage = response.error?.message || 'Failed to resubmit scoping for approval';
+      throw new Error(errorMessage);
     } catch (error) {
       console.error('❌ ScopingApprovalService.resubmitScoping: Error resubmitting scoping:', error);
       throw error;

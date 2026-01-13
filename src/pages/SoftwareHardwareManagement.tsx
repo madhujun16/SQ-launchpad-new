@@ -34,7 +34,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoleConfig } from '@/lib/roles';
 import { useNavigate, Link } from 'react-router-dom';
 import { CategoryService } from '@/services/categoryService';
-import { PlatformConfigService } from '@/services/platformConfigService';
+import { PlatformConfigService, RecommendationRule } from '@/services/platformConfigService';
 import { PageLoader } from '@/components/ui/loader';
 
 // TODO: Replace with GCP API calls
@@ -101,8 +101,12 @@ interface HardwareItem {
   name: string;
   description: string | null;
   category_id: string;
+  subcategory?: string | null;
   manufacturer: string | null;
+  configuration_notes?: string | null;
   unit_cost: number | null;
+  support_type?: string | null;
+  support_cost?: number | null;
   type: string | null;
   is_active: boolean | null;
   created_at: string | null;
@@ -128,16 +132,22 @@ export default function SoftwareHardwareManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'software' | 'hardware'>('software');
+  const [activeTab, setActiveTab] = useState<'software' | 'hardware' | 'recommendations'>('software');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
   const [showArchived, setShowArchived] = useState(false);
   
   // Category management state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<{ name: string; id?: string } | null>(null);
+  const [editingCategory, setEditingCategory] = useState<{ name: string; description?: string; id?: string; type?: 'software' | 'hardware' } | null>(null);
   const [categorySearchTerm, setCategorySearchTerm] = useState('');
+  const [categoryTypeFilter, setCategoryTypeFilter] = useState<'all' | 'software' | 'hardware'>('all');
+  const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  
+  // Recommendation rules state
+  const [recommendationRules, setRecommendationRules] = useState<RecommendationRule[]>([]);
+  const [editingRecommendationRule, setEditingRecommendationRule] = useState<RecommendationRule | null>(null);
 
   const roleConfig = getRoleConfig(currentRole || 'admin');
 
@@ -161,7 +171,10 @@ export default function SoftwareHardwareManagement() {
     if (!currentRole) return;
     loadData();
     loadCategories();
-  }, [currentRole, showArchived]);
+    if (activeTab === 'recommendations') {
+      loadRecommendationRules();
+    }
+  }, [currentRole, showArchived, activeTab]);
 
   const loadData = async () => {
     try {
@@ -236,7 +249,8 @@ export default function SoftwareHardwareManagement() {
       }
     } catch (error) {
       console.error('Error saving software module:', error);
-      toast.error(`Failed to save software module: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save software module: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -311,7 +325,8 @@ export default function SoftwareHardwareManagement() {
       }
     } catch (error) {
       console.error('Error saving hardware item:', error);
-      toast.error(`Failed to save hardware item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save hardware item: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -330,7 +345,16 @@ export default function SoftwareHardwareManagement() {
       }
     } catch (error) {
       console.error('Error deleting software module:', error);
-      toast.error(`Failed to delete software module: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Show more detailed error message
+      if (errorMessage.includes('Server error')) {
+        toast.error(errorMessage, {
+          duration: 5000, // Show for longer
+        });
+      } else {
+        toast.error(`Failed to delete software module: ${errorMessage}`);
+      }
     }
   };
 
@@ -411,7 +435,16 @@ export default function SoftwareHardwareManagement() {
       }
     } catch (error) {
       console.error('Error deleting hardware item:', error);
-      toast.error(`Failed to delete hardware item: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Show more detailed error message
+      if (errorMessage.includes('Server error')) {
+        toast.error(errorMessage, {
+          duration: 5000, // Show for longer
+        });
+      } else {
+        toast.error(`Failed to delete hardware item: ${errorMessage}`);
+      }
     }
   };
 
@@ -551,53 +584,29 @@ export default function SoftwareHardwareManagement() {
     setShowCategoryModal(true);
   };
 
-  // Load categories from backend
+  // Load categories from backend (only backend data, no hardcoded)
   const loadCategories = async () => {
     try {
       console.log('Loading categories from backend...');
       
-      // Load categories from backend
-      let dbCategories: any[] = [];
-      try {
-        dbCategories = await CategoryService.getAllCategories();
-      } catch (error) {
-        console.warn('Failed to load categories from backend, using hardcoded only:', error);
-      }
+      // Load categories from backend only
+      const dbCategories = await CategoryService.getAllCategories();
+      console.log('✅ Loaded categories from backend:', dbCategories.length);
       
-      // Combine hardcoded and database categories
-      // Hardcoded categories come first and cannot be edited/deleted
-      const allCategories = [
-        ...HARDCODED_SOFTWARE_CATEGORIES,
-        ...HARDCODED_HARDWARE_CATEGORIES,
-        ...dbCategories.filter(dbCat => 
-          !HARDCODED_SOFTWARE_CATEGORIES.some(hc => hc.name === dbCat.name) &&
-          !HARDCODED_HARDWARE_CATEGORIES.some(hc => hc.name === dbCat.name)
-        )
-      ];
-      
-      setCategories(allCategories);
+      setCategories(dbCategories);
     } catch (error) {
-      console.error('Error loading categories:', error);
-      // Fallback to hardcoded categories only
-      setCategories([
-        ...HARDCODED_SOFTWARE_CATEGORIES,
-        ...HARDCODED_HARDWARE_CATEGORIES
-      ]);
+      console.error('❌ Error loading categories:', error);
+      toast.error('Failed to load categories from backend');
+      setCategories([]);
     }
   };
 
-  const handleEditCategory = (categoryName: string) => {
-    const category = categories.find(c => c.name === categoryName);
-    
-    // Prevent editing hardcoded categories
-    if (category?.is_hardcoded) {
-      toast.error('This is a system category and cannot be edited');
-      return;
-    }
-    
+  const handleEditCategory = (category: any) => {
     setEditingCategory({ 
-      name: categoryName, 
-      id: category?.id 
+      name: category.name,
+      description: category.description || '',
+      id: category.id,
+      type: category.type || 'software'
     });
     setShowCategoryModal(true);
   };
@@ -608,27 +617,45 @@ export default function SoftwareHardwareManagement() {
       return;
     }
 
+    if (!editingCategory.type) {
+      toast.error('Please select a category type');
+      return;
+    }
+
     try {
       setSaving(true);
       
       console.log('Saving category:', editingCategory);
       
-      // Check if category already exists
-      const exists = await CategoryService.categoryExists(editingCategory.name.trim(), editingCategory.id);
-      if (exists) {
-        toast.error('Category already exists');
-        return;
+      // Check if category already exists (only for new categories or if name changed)
+      if (!editingCategory.id || categories.find(c => c.id === editingCategory.id)?.name !== editingCategory.name.trim()) {
+        const exists = await CategoryService.categoryExists(editingCategory.name.trim(), editingCategory.id);
+        if (exists) {
+          toast.error('Category already exists');
+          return;
+        }
       }
+
+      const categoryType = editingCategory.type as 'software' | 'hardware';
 
       if (editingCategory.id) {
         // Update existing category
-        console.log('Updating category with ID:', editingCategory.id);
-        await CategoryService.updateCategory(editingCategory.id, editingCategory.name.trim());
+        console.log('Updating category with ID:', editingCategory.id, 'Type:', categoryType);
+        await CategoryService.updateCategory(
+          editingCategory.id, 
+          editingCategory.name.trim(), 
+          editingCategory.description?.trim(), 
+          categoryType
+        );
         toast.success('Category updated successfully');
       } else {
         // Create new category
-        console.log('Creating new category:', editingCategory.name.trim());
-        await CategoryService.createCategory(editingCategory.name.trim());
+        console.log('Creating new category:', editingCategory.name.trim(), 'Type:', categoryType);
+        await CategoryService.createCategory(
+          editingCategory.name.trim(), 
+          editingCategory.description?.trim(), 
+          categoryType
+        );
         toast.success('Category created successfully');
       }
 
@@ -641,23 +668,15 @@ export default function SoftwareHardwareManagement() {
       
     } catch (error) {
       console.error('Error saving category:', error);
-      toast.error(`Failed to save category: ${error.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save category: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteCategory = async (categoryName: string) => {
-    // Find category by name to check if it's hardcoded
-    const category = categories.find(c => c.name === categoryName);
-    
-    // Prevent deleting hardcoded categories
-    if (category?.is_hardcoded) {
-      toast.error('This is a system category and cannot be deleted');
-      return;
-    }
-    
-    if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
+  const handleDeleteCategory = async (category: any) => {
+    if (!confirm(`Are you sure you want to delete the category "${category.name}"?`)) {
       return;
     }
 
@@ -667,21 +686,157 @@ export default function SoftwareHardwareManagement() {
         return;
       }
 
-      await CategoryService.deleteCategory(category.id);
+      const categoryType = category.type || 'software';
+      await CategoryService.deleteCategory(category.id, categoryType as 'software' | 'hardware');
       toast.success('Category deleted successfully');
       
       // Refresh categories list
       await loadCategories();
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('Failed to delete category');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to delete category: ${errorMessage}`);
     }
   };
 
-  // Filter categories based on search term
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(categorySearchTerm.toLowerCase())
-  );
+  const handleArchiveCategory = async (category: any) => {
+    const action = category.is_active ? 'archive' : 'restore';
+    if (!confirm(`Are you sure you want to ${action} the category "${category.name}"?`)) {
+      return;
+    }
+
+    try {
+      if (!category || !category.id) {
+        toast.error('Category not found');
+        return;
+      }
+
+      const categoryType = category.type || 'software';
+      // archive=true means set is_active=false, archive=false means set is_active=true
+      // So if category is active (is_active=true), we want to archive it (archive=true)
+      await CategoryService.archiveCategory(category.id, category.is_active, categoryType as 'software' | 'hardware');
+      toast.success(`Category ${category.is_active ? 'archived' : 'restored'} successfully`);
+      
+      // Refresh categories list
+      await loadCategories();
+    } catch (error) {
+      console.error('Error archiving category:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to ${category.is_active ? 'archive' : 'restore'} category: ${errorMessage}`);
+    }
+  };
+
+  // Filter categories based on search term, type, and active status
+  const filteredCategories = categories.filter(category => {
+    const matchesSearch = category.name.toLowerCase().includes(categorySearchTerm.toLowerCase()) ||
+                         (category.description && category.description.toLowerCase().includes(categorySearchTerm.toLowerCase()));
+    const matchesType = categoryTypeFilter === 'all' || category.type === categoryTypeFilter;
+    const matchesActive = showArchivedCategories ? !category.is_active : category.is_active;
+    return matchesSearch && matchesType && matchesActive;
+  });
+
+  // Recommendation rules management functions
+  const loadRecommendationRules = async () => {
+    try {
+      const rules = await PlatformConfigService.getAllRecommendationRules();
+      setRecommendationRules(rules);
+    } catch (error) {
+      console.error('Error loading recommendation rules:', error);
+      toast.error('Failed to load recommendation rules');
+      setRecommendationRules([]);
+    }
+  };
+
+  const handleSaveRecommendationRule = async () => {
+    if (!editingRecommendationRule) return;
+
+    // Validation
+    if (!editingRecommendationRule.software_category) {
+      toast.error('Please select a software category');
+      return;
+    }
+    if (!editingRecommendationRule.hardware_category) {
+      toast.error('Please select a hardware category');
+      return;
+    }
+    if (!editingRecommendationRule.quantity || editingRecommendationRule.quantity < 1) {
+      toast.error('Please enter a valid quantity (must be at least 1)');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      let savedRule;
+      if (editingRecommendationRule.id) {
+        // Update existing rule
+        savedRule = await PlatformConfigService.updateRecommendationRule(editingRecommendationRule.id, {
+          software_category: editingRecommendationRule.software_category,
+          hardware_category: editingRecommendationRule.hardware_category,
+          is_mandatory: editingRecommendationRule.is_mandatory,
+          quantity: editingRecommendationRule.quantity
+        });
+      } else {
+        // Create new rule
+        savedRule = await PlatformConfigService.createRecommendationRule({
+          software_category: editingRecommendationRule.software_category,
+          hardware_category: editingRecommendationRule.hardware_category,
+          is_mandatory: editingRecommendationRule.is_mandatory,
+          quantity: editingRecommendationRule.quantity
+        });
+      }
+      
+      if (savedRule) {
+        toast.success(editingRecommendationRule.id ? 'Recommendation rule updated successfully' : 'Recommendation rule created successfully');
+        await loadRecommendationRules();
+        setEditingRecommendationRule(null);
+      } else {
+        toast.error('Failed to save recommendation rule');
+      }
+    } catch (error) {
+      console.error('Error saving recommendation rule:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to save recommendation rule: ${errorMessage}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteRecommendationRule = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this recommendation rule?')) return;
+
+    try {
+      const success = await PlatformConfigService.deleteRecommendationRule(id);
+      if (success) {
+        toast.success('Recommendation rule deleted successfully');
+        await loadRecommendationRules();
+      } else {
+        toast.error('Failed to delete recommendation rule');
+      }
+    } catch (error) {
+      console.error('Error deleting recommendation rule:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Show more detailed error message
+      if (errorMessage.includes('Server error')) {
+        toast.error(errorMessage, {
+          duration: 5000, // Show for longer
+        });
+      } else {
+        toast.error(`Failed to delete recommendation rule: ${errorMessage}`);
+      }
+    }
+  };
+
+  // Get category name by ID
+  const getCategoryName = (categoryId: string, type: 'software' | 'hardware') => {
+    const category = categories.find(c => c.id === categoryId && c.type === type);
+    return category?.name || `Category ${categoryId}`;
+  };
+
+  // Get software and hardware categories separately
+  const softwareCategories = categories.filter(c => !c.type || c.type === 'software');
+  const hardwareCategories = categories.filter(c => !c.type || c.type === 'hardware');
 
   if (loading) {
     return <PageLoader />;
@@ -725,8 +880,12 @@ export default function SoftwareHardwareManagement() {
                   name: '',
                   description: '',
                   category_id: '',
+                  subcategory: '',
                   manufacturer: '',
+                  configuration_notes: '',
                   unit_cost: 0,
+                  support_type: '',
+                  support_cost: undefined,
                   type: 'Other',
                   is_active: true,
                   created_at: '',
@@ -820,6 +979,14 @@ export default function SoftwareHardwareManagement() {
           >
             <Package className="h-4 w-4 mr-2" />
             Hardware & Support ({hardwareItems.length})
+          </Button>
+          <Button
+            variant={activeTab === 'recommendations' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('recommendations')}
+            className="flex-1"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Recommendation Rules ({recommendationRules.length})
           </Button>
         </div>
       </div>
@@ -1098,6 +1265,81 @@ export default function SoftwareHardwareManagement() {
         </div>
       )}
 
+      {/* Recommendation Rules Tab Content */}
+      {activeTab === 'recommendations' && (
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Software Category</TableHead>
+                      <TableHead>Hardware Category</TableHead>
+                      <TableHead>Mandatory</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recommendationRules.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12">
+                          <Settings className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm text-gray-500">No recommendation rules found</p>
+                          <p className="text-xs text-gray-400">Create your first recommendation rule to get started</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      recommendationRules.map((rule) => (
+                        <TableRow key={rule.id} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">
+                            {getCategoryName(rule.software_category, 'software')}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {getCategoryName(rule.hardware_category, 'hardware')}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={rule.is_mandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}>
+                              {rule.is_mandatory ? 'Mandatory' : 'Optional'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            {rule.quantity}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingRecommendationRule(rule)}
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
+                                title="Edit Recommendation Rule"
+                              >
+                                <Edit className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteRecommendationRule(rule.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-100"
+                                title="Delete Recommendation Rule"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Summary and Pagination */}
       <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="text-sm text-gray-500">
@@ -1189,25 +1431,30 @@ export default function SoftwareHardwareManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">Category *</Label>
                 <Select
-                  value={editingSoftwareModule.category_id}
+                  value={editingSoftwareModule.category_id || ''}
                   onValueChange={(value) => setEditingSoftwareModule({
                     ...editingSoftwareModule,
                     category_id: value
                   })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={!editingSoftwareModule.category_id ? 'border-red-300' : ''}>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length > 0 ? categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                    )) : (
-                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
-                    )}
+                    {categories.length > 0 ? categories
+                      .filter(cat => !cat.type || cat.type === 'software' || !cat.type) // Prefer software categories, but allow all if no type
+                      .map(category => (
+                        <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                      )) : (
+                        <SelectItem value="no-categories" disabled>No categories available. Please add categories first.</SelectItem>
+                      )}
                   </SelectContent>
                 </Select>
+                {!editingSoftwareModule.category_id && (
+                  <p className="text-sm text-red-500 mt-1">Category is required</p>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -1287,25 +1534,30 @@ export default function SoftwareHardwareManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">Category *</Label>
                 <Select
-                  value={editingHardwareItem.category_id}
+                  value={editingHardwareItem.category_id || ''}
                   onValueChange={(value) => setEditingHardwareItem({
                     ...editingHardwareItem,
                     category_id: value
                   })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={!editingHardwareItem.category_id ? 'border-red-300' : ''}>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.length > 0 ? categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                    )) : (
-                      <SelectItem value="no-categories" disabled>No categories available</SelectItem>
-                    )}
+                    {categories.length > 0 ? categories
+                      .filter(cat => !cat.type || cat.type === 'hardware' || !cat.type) // Prefer hardware categories, but allow all if no type
+                      .map(category => (
+                        <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                      )) : (
+                        <SelectItem value="no-categories" disabled>No categories available. Please add categories first.</SelectItem>
+                      )}
                   </SelectContent>
                 </Select>
+                {!editingHardwareItem.category_id && (
+                  <p className="text-sm text-red-500 mt-1">Category is required</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="type">Type</Label>
@@ -1327,17 +1579,74 @@ export default function SoftwareHardwareManagement() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="unit_cost">Unit Cost</Label>
+                <Label htmlFor="subcategory">Subcategory</Label>
+                <Input
+                  id="subcategory"
+                  value={editingHardwareItem.subcategory || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    subcategory: e.target.value
+                  })}
+                  placeholder="Enter subcategory (optional)"
+                />
+              </div>
+              <div>
+                <Label htmlFor="unit_cost">Unit Cost *</Label>
                 <Input
                   id="unit_cost"
                   type="number"
                   step="0.01"
-                  value={editingHardwareItem.unit_cost || 0}
+                  min="0"
+                  value={editingHardwareItem.unit_cost || ''}
                   onChange={(e) => setEditingHardwareItem({
                     ...editingHardwareItem,
-                    unit_cost: parseFloat(e.target.value) || 0
+                    unit_cost: e.target.value ? parseFloat(e.target.value) : 0
                   })}
-                  placeholder="Enter unit cost"
+                  placeholder="0.00"
+                  className={(!editingHardwareItem.unit_cost || editingHardwareItem.unit_cost <= 0) ? 'border-red-300' : ''}
+                />
+                {(!editingHardwareItem.unit_cost || editingHardwareItem.unit_cost <= 0) && (
+                  <p className="text-sm text-red-500 mt-1">Unit cost must be greater than 0</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="support_type">Support Type</Label>
+                <Input
+                  id="support_type"
+                  value={editingHardwareItem.support_type || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    support_type: e.target.value
+                  })}
+                  placeholder="e.g., Warranty, Maintenance (optional)"
+                />
+              </div>
+              <div>
+                <Label htmlFor="support_cost">Support Cost</Label>
+                <Input
+                  id="support_cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingHardwareItem.support_cost || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    support_cost: e.target.value ? parseFloat(e.target.value) : undefined
+                  })}
+                  placeholder="0.00 (optional)"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="configuration_notes">Configuration Notes</Label>
+                <Textarea
+                  id="configuration_notes"
+                  value={editingHardwareItem.configuration_notes || ''}
+                  onChange={(e) => setEditingHardwareItem({
+                    ...editingHardwareItem,
+                    configuration_notes: e.target.value
+                  })}
+                  placeholder="Enter configuration notes (optional)"
+                  rows={2}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -1374,92 +1683,182 @@ export default function SoftwareHardwareManagement() {
 
       {/* Category Management Modal */}
       <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Categories</DialogTitle>
             <DialogDescription>
-              Add, edit, or delete categories for software and hardware items.
+              Add, edit, archive, or delete categories for software and hardware items.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex gap-3 items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search categories..."
+                  value={categorySearchTerm}
+                  onChange={(e) => setCategorySearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={categoryTypeFilter} onValueChange={(value: any) => setCategoryTypeFilter(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="software">Software</SelectItem>
+                  <SelectItem value="hardware">Hardware</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                variant={showArchivedCategories ? "default" : "outline"} 
+                onClick={() => setShowArchivedCategories(!showArchivedCategories)}
+                size="sm"
+              >
+                {showArchivedCategories ? 'Show Active' : 'Show Archived'}
+              </Button>
+            </div>
+
             {/* Add/Edit Category Form */}
             {editingCategory && (
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Input
-                    value={editingCategory.name}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                    placeholder="Enter category name"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleSaveCategory}
-                    disabled={saving || !editingCategory.name.trim()}
-                    size="sm"
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditingCategory(null)}
-                    size="sm"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-
-
-            {/* Categories List */}
-            <div className="max-h-80 overflow-y-auto space-y-2">
-              {filteredCategories.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Tag className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No categories found</p>
-                </div>
-              ) : (
-                filteredCategories.map((category) => (
-                  <div
-                    key={category.id}
-                    className={`flex items-center justify-between p-3 border rounded-lg ${
-                      category.is_hardcoded ? 'bg-gray-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium">{category.name}</div>
-                      {category.is_hardcoded && (
-                        <Badge variant="outline" className="text-xs">
-                          System
-                        </Badge>
-                      )}
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="category_name">Category Name *</Label>
+                      <Input
+                        id="category_name"
+                        value={editingCategory.name}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                        placeholder="Enter category name"
+                      />
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditCategory(category.name)}
-                        disabled={category.is_hardcoded}
-                        className="h-8 w-8 p-0"
-                        title={category.is_hardcoded ? 'System category cannot be edited' : 'Edit'}
+                    <div>
+                      <Label htmlFor="category_type">Type *</Label>
+                      <Select
+                        value={editingCategory.type || 'software'}
+                        onValueChange={(value: 'software' | 'hardware') => setEditingCategory({ ...editingCategory, type: value })}
                       >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteCategory(category.name)}
-                        disabled={category.is_hardcoded}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 disabled:opacity-50"
-                        title={category.is_hardcoded ? 'System category cannot be deleted' : 'Delete'}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="software">Software</SelectItem>
+                          <SelectItem value="hardware">Hardware</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="category_description">Description</Label>
+                      <Textarea
+                        id="category_description"
+                        value={editingCategory.description || ''}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                        placeholder="Enter category description (optional)"
+                        rows={2}
+                      />
                     </div>
                   </div>
-                ))
-              )}
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      onClick={handleSaveCategory}
+                      disabled={saving || !editingCategory.name.trim() || !editingCategory.type}
+                      size="sm"
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEditingCategory(null)}
+                      size="sm"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Categories Table */}
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                        <Tag className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">No categories found</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCategories.map((category) => (
+                      <TableRow key={category.id} className={!category.is_active ? 'opacity-60' : ''}>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell>
+                          <Badge className={category.type === 'software' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}>
+                            {category.type || 'Unknown'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {category.description || '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={category.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                            {category.is_active ? 'Active' : 'Archived'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditCategory(category)}
+                              className="h-8 w-8 p-0"
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleArchiveCategory(category)}
+                              className="h-8 w-8 p-0"
+                              title={category.is_active ? 'Archive' : 'Restore'}
+                            >
+                              {category.is_active ? (
+                                <X className="h-4 w-4 text-orange-500" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteCategory(category)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
 
           </div>
@@ -1471,13 +1870,15 @@ export default function SoftwareHardwareManagement() {
                 setShowCategoryModal(false);
                 setEditingCategory(null);
                 setCategorySearchTerm('');
+                setCategoryTypeFilter('all');
+                setShowArchivedCategories(false);
               }}
             >
               Close
             </Button>
             {!editingCategory && (
               <Button
-                onClick={() => setEditingCategory({ name: '' })}
+                onClick={() => setEditingCategory({ name: '', description: '', type: 'software' })}
                 size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -1487,6 +1888,112 @@ export default function SoftwareHardwareManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Recommendation Rule Edit Modal */}
+      {editingRecommendationRule && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-medium mb-6">
+              {editingRecommendationRule.id ? 'Edit Recommendation Rule' : 'Add Recommendation Rule'}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="software_category">Software Category *</Label>
+                <Select
+                  value={editingRecommendationRule.software_category || ''}
+                  onValueChange={(value) => setEditingRecommendationRule({
+                    ...editingRecommendationRule,
+                    software_category: value
+                  })}
+                >
+                  <SelectTrigger className={!editingRecommendationRule.software_category ? 'border-red-300' : ''}>
+                    <SelectValue placeholder="Select software category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {softwareCategories.length > 0 ? softwareCategories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No software categories available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {!editingRecommendationRule.software_category && (
+                  <p className="text-sm text-red-500 mt-1">Software category is required</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="hardware_category">Hardware Category *</Label>
+                <Select
+                  value={editingRecommendationRule.hardware_category || ''}
+                  onValueChange={(value) => setEditingRecommendationRule({
+                    ...editingRecommendationRule,
+                    hardware_category: value
+                  })}
+                >
+                  <SelectTrigger className={!editingRecommendationRule.hardware_category ? 'border-red-300' : ''}>
+                    <SelectValue placeholder="Select hardware category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hardwareCategories.length > 0 ? hardwareCategories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                    )) : (
+                      <SelectItem value="no-categories" disabled>No hardware categories available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {!editingRecommendationRule.hardware_category && (
+                  <p className="text-sm text-red-500 mt-1">Hardware category is required</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="quantity">Quantity *</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={editingRecommendationRule.quantity || ''}
+                  onChange={(e) => setEditingRecommendationRule({
+                    ...editingRecommendationRule,
+                    quantity: parseInt(e.target.value) || 1
+                  })}
+                  placeholder="Enter quantity"
+                  className={(!editingRecommendationRule.quantity || editingRecommendationRule.quantity < 1) ? 'border-red-300' : ''}
+                />
+                {(!editingRecommendationRule.quantity || editingRecommendationRule.quantity < 1) && (
+                  <p className="text-sm text-red-500 mt-1">Quantity must be at least 1</p>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_mandatory"
+                  checked={editingRecommendationRule.is_mandatory || false}
+                  onCheckedChange={(checked) => setEditingRecommendationRule({
+                    ...editingRecommendationRule,
+                    is_mandatory: checked as boolean
+                  })}
+                />
+                <Label htmlFor="is_mandatory">Mandatory</Label>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-8 pt-6 border-t">
+              <Button
+                onClick={handleSaveRecommendationRule}
+                disabled={saving}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditingRecommendationRule(null)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

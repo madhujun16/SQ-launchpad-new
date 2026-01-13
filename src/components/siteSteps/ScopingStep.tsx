@@ -452,6 +452,12 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       return;
     }
 
+    // Check if user is authenticated
+    if (!profile) {
+      toast.error('You must be logged in to submit scoping for approval');
+      return;
+    }
+
     try {
       setSubmitting(true);
       
@@ -516,7 +522,19 @@ export default function ScopingStep({ site, onUpdate, isEditing }: ScopingStepPr
       }
     } catch (err: any) {
       console.error('Error submitting scoping:', err);
-      toast.error(err?.message || 'Failed to submit scoping for approval');
+      
+      // Check if it's an authentication error
+      const errorMessage = err?.message || 'Failed to submit scoping for approval';
+      
+      // If the error message indicates authentication issues, provide more context
+      if (errorMessage.includes('session') || errorMessage.includes('expired') || errorMessage.includes('login')) {
+        // The service already handles redirect, just show the error
+        toast.error(errorMessage);
+      } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        toast.error('Authentication required. Please ensure you are logged in and try again.');
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setSubmitting(false);
     }
