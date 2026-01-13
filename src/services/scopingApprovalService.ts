@@ -70,6 +70,20 @@ export const ScopingApprovalService = {
         throw new Error(errorMessage);
       }
 
+      // Handle 403 Forbidden - user doesn't have Deployment Engineer role
+      if (response.error?.statusCode === 403) {
+        console.warn('🚫 Permission denied - user does not have Deployment Engineer role');
+        const errorMessage = response.error?.message || 'Permission denied. Only Deployment Engineers can submit scoping for approval.';
+        
+        // Show error message
+        if (typeof window !== 'undefined') {
+          const { toast } = await import('sonner');
+          toast.error(errorMessage);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
       if (response.success && response.data?.data) {
         return convertApprovalRowToApproval(response.data.data as any);
       }
@@ -274,6 +288,20 @@ export const ScopingApprovalService = {
               window.location.href = '/auth';
             }, 1500);
           }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Handle 403 Forbidden - user doesn't have Deployment Engineer role
+      if (response.error?.statusCode === 403) {
+        console.warn('🚫 Permission denied - user does not have Deployment Engineer role');
+        const errorMessage = response.error?.message || 'Permission denied. Only Deployment Engineers can resubmit scoping for approval.';
+        
+        // Show error message
+        if (typeof window !== 'undefined') {
+          const { toast } = await import('sonner');
+          toast.error(errorMessage);
         }
         
         throw new Error(errorMessage);
