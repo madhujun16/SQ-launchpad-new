@@ -31,6 +31,10 @@ class APIClient {
    * Build headers for API requests
    * Note: JWT tokens are stored in cookies by the Flask backend
    * The browser automatically sends cookies with credentials: 'include'
+   * 
+   * Supports hybrid authentication:
+   * - Primary: Session cookie (when authentication is enabled)
+   * - Fallback: X-User-Id header (for development when auth is disabled)
    */
   private async buildHeaders(customHeaders?: HeadersInit): Promise<HeadersInit> {
     const headers: HeadersInit = {
@@ -40,6 +44,28 @@ class APIClient {
 
     // JWT tokens are handled via cookies, not Authorization header
     // The backend sets cookies on login, and browser sends them automatically
+    
+    // Optional: Add X-User-Id header as fallback for development
+    // Backend supports both cookie (primary) and header (fallback) authentication
+    // This allows the endpoint to work in both production (cookie) and dev (header) modes
+    const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
+    if (BYPASS_AUTH || import.meta.env.VITE_USE_DEV_AUTH_HEADER === 'true') {
+      try {
+        // Try to get user ID from localStorage (set by AuthService)
+        const storedUser = localStorage.getItem('auth_user');
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          if (user?.id) {
+            headers['X-User-Id'] = String(user.id);
+            console.debug('🔧 Using X-User-Id header for authentication (dev mode)');
+          }
+        }
+      } catch (error) {
+        // Silently fail - cookie authentication will be used instead
+        console.debug('Could not get user ID for X-User-Id header, using cookie auth');
+      }
+    }
+
     return headers;
   }
 
